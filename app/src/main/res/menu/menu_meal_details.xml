@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Edit mode toggle - always visible in toolbar as pencil/checkmark icon -->
+    <item
+        android:id="@+id/action_edit_mode"
+        android:title="@string/edit_meal"
+        android:icon="@drawable/ic_edit"
+        app:showAsAction="always" />
+
+    <!-- Overflow menu items -->
+    <item
+        android:id="@+id/action_edit_properties"
+        android:title="@string/edit_meal_properties"
+        android:icon="@drawable/ic_edit"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_delete_meal"
+        android:title="@string/delete_meal"
+        android:icon="@drawable/ic_delete"
+        app:showAsAction="never" />
+
+</menu>

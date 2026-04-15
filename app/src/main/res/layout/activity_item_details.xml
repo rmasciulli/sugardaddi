@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_item_details.xml - REFACTORED THIN SHELL (v5.0)
+
+    This layout is now a minimal container. All product-specific content is
+    inflated by the appropriate DetailRenderer into @id/rendererContentContainer.
+
+    WHAT STAYS HERE (activity-owned):
+      - AppBarLayout + Toolbar (navigation, menu, title)
+      - FrameLayout renderer content area (renderers inflate into this)
+      - Loading state overlay
+      - Error state overlay
+      - "Add to Meal" floating button at the bottom
+
+    WHAT MOVED OUT:
+      - Product image, name, brand, category, quantity → into renderer layouts
+      - Score stickers (Nutri-Score, Green-Score, Nova) → into renderer layouts
+      - Allergen card → into renderer layouts
+      - Nutrition facts card → into renderer layouts
+      - Attribution panel → into renderer layouts (Ciqual renderer)
+
+    RENDERER CONTENT CONTAINER:
+      The FrameLayout @id/rendererContentContainer fills the remaining screen space
+      under the AppBar. The current DetailRenderer inflates its own layout into this
+      container. When the product changes (e.g. back/forward navigation), the old
+      view is removed and a new one is inflated.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.activities.ItemDetailsActivity">
+
+    <!-- ========================================================= -->
+    <!-- APP BAR — owned by the activity, not by any renderer      -->
+    <!-- ========================================================= -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            app:title="@string/product_details_title" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- ========================================================= -->
+    <!-- RENDERER CONTENT CONTAINER                                -->
+    <!--                                                           -->
+    <!-- The active DetailRenderer inflates its own layout here.  -->
+    <!-- Fills all space below the AppBar via                      -->
+    <!-- app:layout_behavior="appbar_scrolling_view_behavior".     -->
+    <!--                                                           -->
+    <!-- Visibility: GONE during loading/error states.            -->
+    <!-- ========================================================= -->
+    <FrameLayout
+        android:id="@+id/rendererContentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <!-- ========================================================= -->
+    <!-- LOADING STATE OVERLAY                                     -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/loadingView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="visible"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/loading_product"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textColor="?attr/colorOnSurface" />
+
+    </LinearLayout>
+
+    <!-- ========================================================= -->
+    <!-- ERROR STATE OVERLAY                                       -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/errorView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <TextView
+            android:id="@+id/errorTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="Error Title" />
+
+        <TextView
+            android:id="@+id/errorMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Error details will appear here." />
+
+        <Button
+            android:id="@+id/retryButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/retry" />
+
+    </LinearLayout>
+
+    <!-- ========================================================= -->
+    <!-- ADD TO MEAL BUTTON                                        -->
+    <!--                                                           -->
+    <!-- Shown only when the activity was launched with a          -->
+    <!-- RETURN_TO_MEAL intent extra. Anchored to the bottom.      -->
+    <!-- Uses a semi-transparent container so it floats above      -->
+    <!-- the renderer content without obscuring it entirely.       -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/addToMealContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="?attr/colorSurface"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <Button
+            android:id="@+id/btnAddToMeal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="@string/add_to_meal"
+            style="@style/Widget.Material3.Button" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

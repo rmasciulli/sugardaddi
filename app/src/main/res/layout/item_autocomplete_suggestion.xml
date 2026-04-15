@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_autocomplete_suggestion.xml
+    Layout for individual autocomplete suggestion items
+
+    DESIGN:
+    - Simple horizontal layout with icon + text
+    - Material Design ripple effect on tap
+    - Follows app's theming for light/dark mode support
+    - Accessible with proper content descriptions
+
+    USAGE:
+    - Used by AutocompleteAdapter to display suggestion items
+    - Shows search icon + suggestion text in dropdown
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="48dp">
+
+    <!-- Search icon indicating this is a suggestion -->
+    <ImageView
+        android:id="@+id/suggestionIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/ic_search"
+        android:contentDescription="@string/search_hint"
+        android:importantForAccessibility="no"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <!-- Suggestion text -->
+    <TextView
+        android:id="@+id/suggestionText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:importantForAccessibility="yes"
+        tools:text="Milka chocolate" />
+
+</LinearLayout>

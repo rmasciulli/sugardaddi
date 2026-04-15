@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_search_product_off.xml
+    Search result card for OpenFoodFacts products.
+
+    STRUCTURE:
+    [Product name (bold, 1 line max)]          [OFF badge]
+    Food product                               <- productType subtitle
+    [72x72 image]  Brand (primary)             [leaf 32dp    ]
+                   Category (2 lines)          [NUTRISCORE   ]
+                   200 g (italic)
+
+    SCORE STACK (vertical LinearLayout, gravity=center_horizontal):
+    - Both leaf and nutriscore sticker are centered on the same axis.
+    - Works because ScoreOverlayHelper.createNutriScoreTplWithText sets
+      imageParams.gravity = Gravity.CENTER_HORIZONTAL on the sticker ImageView.
+    - No FrameLayout tricks, no match_parent hacks needed.
+
+    Used by: OffProductSearchDelegate
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp"
+    app:cardBackgroundColor="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ROW 1: product name + source badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="2dp">
+
+            <TextView
+                android:id="@+id/productName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Belvita Petit-Dejeuner Miel et Pepites de Chocolat" />
+
+            <TextView
+                android:id="@+id/sourceBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingHorizontal="7dp"
+                android:paddingVertical="2dp"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                android:background="@drawable/rounded_corner_8dp"
+                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="OFF" />
+
+        </LinearLayout>
+
+        <!-- ROW 2: productType subtitle ("Food product") -->
+        <TextView
+            android:id="@+id/productType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Food product" />
+
+        <!-- ROW 3: image | details | scores -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Product image: 72x72dp, top-start -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/imageContainer"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <ImageView
+                    android:id="@+id/productImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?attr/colorSurface"
+                    android:contentDescription="@string/product_image_description"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/ic_food_placeholder" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SCORE STACK: vertical, top-end, gravity=center_horizontal.
+                 LinearLayout stacks leaf then nutriscore vertically.
+                 gravity=center_horizontal centers both children on the same axis.
+                 ScoreOverlayHelper must have imageParams.gravity=CENTER_HORIZONTAL
+                 so the sticker image centers within nutriScoreContainer. -->
+            <LinearLayout
+                android:id="@+id/scoreContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:visibility="visible">
+
+                <!-- Leaf badge: fixed 32dp square, no adjustViewBounds.
+                     LinearLayout gravity=center_horizontal centers it. -->
+                <ImageView
+                    android:id="@+id/greenScoreLeaf"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginBottom="10dp"
+                    android:contentDescription="@string/content_description_green_score"
+                    android:scaleType="fitCenter"
+                    tools:src="@drawable/greenscore_leaf_a_plus" />
+
+                <!-- NutriScore container: sticker added programmatically by delegate.
+                     wrap_content - sized by the sticker child.
+                     No minWidth, no margins: let the sticker dictate its own size. -->
+                <FrameLayout
+                    android:id="@+id/nutriScoreContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <!-- Details column: fills space between image and score stack -->
+            <LinearLayout
+                android:id="@+id/detailsColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintStart_toEndOf="@id/imageContainer"
+                app:layout_constraintEnd_toStartOf="@id/scoreContainer"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/brandName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="3dp"
+                    android:fontFamily="@font/inter"
+                    android:fontWeight="600"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="Mondelez International" />
+
+                <TextView
+                    android:id="@+id/categories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="3dp"
+                    android:fontFamily="@font/roboto_condensed"
+                    android:fontWeight="300"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="Dark chocolate bar with more than 70 cocoa" />
+
+                <TextView
+                    android:id="@+id/servingInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_condensed"
+                    android:textStyle="italic"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="285 g" />
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

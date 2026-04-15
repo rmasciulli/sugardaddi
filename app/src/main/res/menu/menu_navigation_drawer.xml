@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- menu_navigation_drawer.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <!-- Main Actions -->
+    <group android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_journal"
+            android:icon="@drawable/ic_calendar"
+            android:title="@string/menu_my_journal" />
+
+        <item
+            android:id="@+id/nav_create_meal"
+            android:icon="@android:drawable/ic_input_add"
+            android:title="@string/menu_create_meal" />
+
+        <item
+            android:id="@+id/nav_search"
+            android:icon="@drawable/ic_search"
+            android:title="@string/menu_search_food"
+            android:checked="true" />
+
+        <item
+            android:id="@+id/nav_favorites"
+            android:icon="@drawable/ic_favorite_filled"
+            android:title="@string/menu_favorites" />
+
+    </group>
+
+    <!-- Settings Section -->
+    <item android:title="@string/settings_title">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@drawable/ic_settings"
+                android:title="@string/menu_settings" />
+        </menu>
+    </item>
+
+</menu>

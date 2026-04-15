@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Identity -->
+    <string name="app_name">sugardaddi</string>
+    <string name="app_subtitle">Informations nutritionnelles</string>
+
+    <!-- Navigation & Titles -->
+    <string name="main_activity_title">Scanner alimentaire</string>
+    <string name="product_details_title">Détails du produit</string>
+    <string name="scanner_title">Scanner le code-barres</string>
+    <string name="about_title">À propos de sugardaddi</string>
+
+    <!-- Language Selector -->
+    <string name="language_selector_title">Langue</string>
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="action_language">Langue</string>
+
+    <!-- Theme Settings -->
+    <string name="theme_selector_title">Thème</string>
+    <string name="theme_system">Paramètre système par défaut</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+
+    <!-- Cache Management -->
+    <string name="cache_management_title">Gestion du cache</string>
+
+    <!-- Search -->
+    <string name="search_hint">Rechercher des produits…</string>
+    <string name="search_placeholder">Saisissez un nom d\'aliment, une marque ou un code-barres</string>
+    <string name="searching">Recherche en cours…</string>
+    <string name="results_count">%d résultats trouvés</string>
+    <string name="no_results">Aucun produit trouvé</string>
+    <string name="search_error">Erreur de recherche</string>
+    <string name="search_failed">Échec de la recherche</string>
+    <string name="loading_more_results">Chargement de plus de résultats…</string>
+
+    <!-- Enhanced Search States -->
+    <string name="search_debouncing">Traitement de la recherche…</string>
+    <string name="search_filtering">Filtrage des résultats…</string>
+    <string name="search_too_short">Saisissez au moins %d caractères</string>
+    <string name="search_results_filtered">Affichage des %d meilleurs résultats</string>
+    <string name="search_cache_hit">Résultats du cache</string>
+    <string name="search_network_result">Résultats récents du serveur</string>
+
+    <!-- Scanner -->
+    <string name="scan_product">Scanner le produit</string>
+    <string name="scan_instructions">Pointez la caméra vers le code-barres</string>
+    <string name="scan_overlay_text">Alignez le code-barres dans le cadre</string>
+    <string name="scanning_failed">Échec du scan : %1$s</string>
+    <string name="barcode_test_failed">Échec du test de code-barres</string>
+
+    <!-- Enhanced Scanner States -->
+    <string name="manual_barcode_entry">Saisir le code-barres manuellement</string>
+    <string name="barcode_hint">Saisir le code-barres du produit</string>
+    <string name="barcode_scanned_success">Code-barres scanné avec succès !</string>
+    <string name="barcode_scan_failed">Échec du scan du code-barres</string>
+    <string name="barcode_invalid_format">Format de code-barres invalide</string>
+    <string name="barcode_too_short">Code-barres trop court (minimum %d chiffres)</string>
+    <string name="barcode_too_long">Code-barres trop long (maximum %d chiffres)</string>
+    <string name="scanner_initializing">Initialisation de la caméra…</string>
+    <string name="scanner_permission_denied">Permission de caméra requise pour scanner</string>
+    <string name="scanner_camera_error">Erreur de caméra</string>
+    <string name="scanner_module_failed">Échec de l\'installation du module scanner</string>
+    <string name="scan_or_enter">Scanner le code-barres ou saisir manuellement</string>
+
+    <!-- Product Information -->
+    <string name="brand_label">Marque :</string>
+    <string name="categories_label">Catégories :</string>
+    <string name="category_label">Catégorie :</string>
+    <string name="product_code">Code : %s</string>
+    <string name="no_image">Aucune image disponible</string>
+    <string name="nutri_score">Nutri-Score</string>
+    <string name="error_no_product_id">Aucun ID de produit fourni</string>
+    <string name="unknown_product">Produit Inconnu</string>
+
+    <!-- Écran détail : section scores -->
+    <string name="scores_section_title">Scores</string>
+    <string name="green_score_label">Green-Score</string>
+    <string name="nova_group_label">Groupe Nova</string>
+    <string name="nova_group_content_description">Indicateur du niveau de transformation Nova</string>
+    <string name="score_unavailable">N/D</string>
+
+    <!-- Écran détail : attribution Ciqual -->
+    <string name="ciqual_source_info">Informations sur la source Ciqual</string>
+    <string name="ciqual_attribution_detail">Données scientifiques issues de la table Ciqual (ANSES) — table de composition nutritionnelle des aliments. Pas d\'image produit ni de scores commerciaux disponibles.</string>
+
+    <!-- Enhanced Product States (for ProductManager) -->
+    <string name="product_loading_cache">Chargement depuis le cache…</string>
+    <string name="product_loading_network">Chargement depuis le serveur…</string>
+    <string name="product_cache_outdated">Mise à jour avec des données récentes…</string>
+    <string name="product_offline_mode">Affichage de la version en cache (hors ligne)</string>
+    <string name="product_not_cached">Produit non disponible hors ligne</string>
+
+    <!-- Allergen Icon helper -->
+    <string name="allergen_contains_label">Contient</string>
+    <string name="allergen_free_label">Sans</string>
+    <string name="allergens_title">Allergènes</string>
+
+    <!-- Nutrition Facts -->
+    <string name="serving_size_100g">pour 100g/ml</string>
+    <string name="per_100g">pour 100g</string>
+    <string name="per_20g">pour 20g</string>
+    <string name="per_100ml">pour 100ml</string>
+    <string name="serving_size_portion">1 portion</string>
+    <string name="serving_size_custom">Quantité personnalisée</string>
+    <string name="custom_amount">Quantité personnalisée</string>
+    <string name="custom_amount_hint">Saisissez la quantité (%1$s)</string>
+    <string name="custom_amount_error">Veuillez saisir une quantité valide</string>
+    <string name="amount_with_serving">Quantité (%1$s)</string>
+    <string name="custom_amount_with_unit">Quantité personnalisée (%1$s)</string>
+    <string name="nutrition_per_serving">par portion (%1$s)</string>
+    <string name="custom_amount_with_serving">Quantité personnalisée (Une portion: %1$s)</string>
+    <string name="custom_amount_default">Quantité personnalisée</string>
+    <string name="nutrition_info">Informations Nutritionnelles :</string>
+
+    <!-- Enhanced Nutrition Display -->
+    <string name="nutrition_calculating">Calcul de la nutrition…</string>
+    <string name="nutrition_per_custom">pour %1$s</string>
+    <string name="nutrition_density_adjusted">Densité ajustée pour liquide</string>
+    <string name="nutrition_serving_unavailable">Taille de portion non disponible</string>
+    <string name="nutrition_incomplete">Données nutritionnelles incomplètes</string>
+
+    <!-- Nutrition Label Headers -->
+    <string name="nutrition_label_nutrient_column">Nutriment</string>
+    <string name="serving_size_with_amount">Portion : %s</string>
+    <string name="serving_size_per_100g">pour 100g</string>
+    <string name="serving_size_per_100ml">pour 100ml</string>
+    <string name="nutrition_per_100">pour 100%s</string>
+
+    <!-- Nutrition category headers -->
+    <string name="nutrition_category_macronutrients">Macronutriments</string>
+    <string name="nutrition_category_vitamins">Vitamines</string>
+    <string name="nutrition_category_minerals">Minéraux</string>
+    <string name="nutrition_category_amino_acids">Acides aminés</string>
+    <string name="nutrition_category_other">Autres composés</string>
+
+    <!-- Nutrition Label -->
+    <string name="nutrition_facts">Valeurs nutritionnelles</string>
+    <string name="serving_size_label">Portion</string>
+    <string name="servings_per_container">Portions par emballage</string>
+    <string name="amount_per_serving">Quantité par portion</string>
+    <string name="percent_daily_value_header">% AR*</string>
+    <string name="show_all_nutrients">Afficher tous les nutriments</string>
+    <string name="hide_additional_nutrients">Masquer les nutriments supplémentaires</string>
+    <string name="vitamins_and_minerals">Vitamines et minéraux</string>
+    <string name="additional_fats">Autres lipides</string>
+    <string name="nutrition_label_footer">*AR = Apports de référence pour un adulte type (8400 kJ / 2000 kcal).</string>
+    <string name="nutrient_of_which_saturated">dont saturés</string>
+    <string name="nutrient_of_which_sugars">dont sucres</string>
+
+    <!-- Category Comparison -->
+    <string name="category_comparison_title">Comparé à %1$s</string>
+    <string name="comparison_better">%1$d%% mieux</string>
+    <string name="comparison_worse">%1$d%% moins bien</string>
+    <string name="comparison_similar">Similaire</string>
+    <string name="comparison_average">Moyenne pour cette catégorie</string>
+
+    <!-- Nutrition Analysis -->
+    <string name="nutrition_available">Données nutritionnelles disponibles</string>
+    <string name="nutrition_limited">Données nutritionnelles limitées</string>
+    <string name="nutrition_highlights">Points nutritionnels</string>
+    <string name="no_nutrition_alerts">Aucune alerte nutritionnelle spéciale pour ce produit</string>
+    <string name="macro_breakdown">Répartition des macronutriments</string>
+    <string name="daily_values">Valeurs quotidiennes</string>
+
+    <!-- Nutrition Warnings -->
+    <string name="high_fat">Riche en matières grasses</string>
+    <string name="high_saturated_fat">Riche en acides gras saturés</string>
+    <string name="high_sugar">Riche en sucres</string>
+    <string name="high_salt">Riche en sel</string>
+    <string name="high_fiber">Riche en fibres</string>
+    <string name="high_protein">Riche en protéines</string>
+
+    <!-- Quick Actions -->
+    <string name="quick_amounts">Quantités rapides</string>
+    <string name="suggested_amounts">Quantités suggérées :</string>
+
+    <!-- Units -->
+    <string name="unit_g">g</string>
+    <string name="unit_ml">ml</string>
+    <string name="unit_kcal">kcal</string>
+    <string name="unit_kj">kJ</string>
+    <string name="unit_grams">g</string>
+    <string name="unit_milligrams">mg</string>
+    <string name="unit_micrograms">μg</string>
+    <string name="unit_milliliters">ml</string>
+    <string name="unit_liters">l</string>
+
+    <!-- Favorites -->
+    <string name="menu_favorites">Favoris</string>
+    <string name="add_to_favorites">Ajouter aux favoris</string>
+    <string name="remove_from_favorites">Retirer des favoris</string>
+    <string name="added_to_favorites">Ajouté aux favoris</string>
+    <string name="removed_from_favorites">Retiré des favoris</string>
+    <string name="no_favorites">Aucun favori pour le moment</string>
+    <string name="favorites_subtitle">Appuyez sur l\'icône cœur pour ajouter des éléments aux favoris</string>
+
+    <!-- Enhanced Favorites -->
+    <string name="favorite_add_failed">Échec de l\'ajout aux favoris</string>
+    <string name="favorite_remove_failed">Échec de la suppression des favoris</string>
+    <string name="favorites_sync">Synchronisation des favoris…</string>
+
+    <!-- Favorites Activity -->
+    <string name="favorites_title">Favoris</string>
+    <string name="search_favorites_hint">Rechercher dans les favoris…</string>
+    <string name="filter_all">Tout</string>
+    <string name="filter_products">Produits</string>
+    <string name="filter_recipes">Recettes</string>
+    <string name="favorites_count_format">%d favoris</string>
+    <string name="favorites_filtered_count">%1$d sur %2$d favoris</string>
+    <string name="no_favorites_match">Aucun résultat</string>
+    <string name="no_favorites_match_subtitle">Essayez une autre recherche ou un autre filtre</string>
+    <string name="favorite_time_format">%d min</string>
+    <string name="favorite_servings_format">%d portions</string>
+    <string name="clear">Effacer</string>
+
+    <!-- Menu Items -->
+    <string name="menu_scan">Scanner</string>
+    <string name="menu_search">Rechercher</string>
+    <string name="menu_clear_cache">Vider le cache</string>
+    <string name="menu_test_barcode">Tester le code-barres</string>
+    <string name="menu_share">Partager</string>
+    <string name="menu_open_web">Ouvrir dans le navigateur</string>
+    <string name="menu_about">À propos</string>
+
+    <!-- Actions -->
+    <string name="retry">Réessayer</string>
+    <string name="ok">OK</string>
+    <string name="try_again">Réessayer</string>
+    <string name="load_test_data">Charger les données de test</string>
+
+    <!-- Loading & Status -->
+    <string name="loading">Chargement…</string>
+    <string name="loading_product">Chargement des détails du produit…</string>
+
+    <!-- Empty States -->
+    <string name="empty_search_title">Aucun résultat trouvé</string>
+    <string name="empty_search_message">Essayez de rechercher un autre aliment</string>
+    <string name="empty_initial_title">Bienvenue sur sugardaddi !</string>
+    <string name="empty_initial_message">Recherchez n\'importe quel aliment pour obtenir des informations nutritionnelles détaillées</string>
+
+    <!-- Error States -->
+    <string name="error_network_title">Erreur de connexion</string>
+    <string name="error_network_message">Veuillez vérifier votre connexion Internet et réessayer</string>
+    <string name="error_general_title">Une erreur s\'est produite</string>
+    <string name="error_general_message">Une erreur inattendue s\'est produite. Veuillez réessayer.</string>
+    <string name="network_error">Erreur réseau. Veuillez vérifier votre connexion.</string>
+    <string name="product_not_found">Produit introuvable</string>
+    <string name="error_generic">Une erreur s\'est produite</string>
+    <string name="no_internet">Pas de connexion Internet</string>
+
+    <!-- Enhanced Error States -->
+    <string name="error_api_limit">Limite API atteinte. Veuillez réessayer plus tard.</string>
+    <string name="error_server_error">Erreur du serveur. Veuillez réessayer.</string>
+    <string name="error_server_unavailable">Serveur momentanément indisponible. Veuillez réessayer plus tard.</string>
+    <string name="error_timeout">Délai d\'attente dépassé. Vérifiez votre connexion.</string>
+    <string name="error_invalid_response">Réponse du serveur invalide</string>
+    <string name="error_database">Erreur de base de données</string>
+    <string name="error_cache_corrupted">Données du cache corrompues. Suppression du cache…</string>
+    <string name="error_no_product_code">Aucun code produit fourni</string>
+    <string name="error_loading_product">Erreur de chargement du produit</string>
+
+    <!-- Validation -->
+    <string name="invalid_amount">Veuillez saisir une quantité valide (0,1g - 10kg)</string>
+    <string name="invalid_number">Veuillez saisir un nombre valide</string>
+    <string name="amount_too_small">Quantité trop petite (minimum 0,1g)</string>
+    <string name="amount_too_large">Quantité trop grande (maximum 10kg)</string>
+
+    <!-- Cache and Data -->
+    <string name="cache_cleared">Cache vidé</string>
+    <string name="cache_clear_failed">Échec de la suppression du cache</string>
+    <string name="data_cached">Données sauvegardées pour une utilisation hors ligne</string>
+    <string name="offline_mode">Utilisation des données en cache (hors ligne)</string>
+    <string name="fresh_data">Mis à jour avec des données fraîches</string>
+
+    <!-- Enhanced Cache States -->
+    <string name="cache_hit_rate">Efficacité du cache : %d%%</string>
+    <string name="cache_size">Taille du cache : %d éléments</string>
+    <string name="clearing_cache">Suppression du cache…</string>
+    <string name="cache_cleared_items">Cache vidé : %d éléments supprimés</string>
+    <string name="cache_outdated">Cache obsolète, mise à jour…</string>
+    <string name="cache_maintenance">Optimisation du cache…</string>
+
+    <!-- Sharing -->
+    <string name="share_product_title">Découvrez ce produit</string>
+    <string name="share_product_prefix">Découvrez ce produit :</string>
+    <string name="brand_by">par</string>
+    <string name="share_product_subject">Produit : %1$s</string>
+    <string name="share_via">Partager via</string>
+    <string name="share_nutrition_prefix">Nutrition (pour 100g) :</string>
+    <string name="share_app_suffix">Partagé depuis l\'application sugardaddi</string>
+    <string name="shared_via_sugardaddi">Partagé via sugardaddi</string>
+
+    <!-- Enhanced Sharing -->
+    <string name="share_failed">Échec du partage du produit</string>
+    <string name="share_no_data">Aucune donnée disponible à partager</string>
+    <string name="browser_open_failed">Impossible d\'ouvrir le navigateur</string>
+
+    <!-- Accessibility - Content Descriptions -->
+    <string name="content_description_search_icon">Rechercher des produits</string>
+    <string name="content_description_clear_search">Effacer le texte de recherche</string>
+    <string name="content_description_main_content">Zone de contenu principal</string>
+    <string name="content_description_search_section">Section de recherche</string>
+    <string name="content_description_loading_progress">Chargement des résultats de recherche</string>
+    <string name="content_description_search_results">Liste des résultats de recherche</string>
+    <string name="content_description_empty_state_icon">Illustration aucun résultat</string>
+    <string name="content_description_error_icon">Illustration d\'erreur</string>
+    <string name="content_description_load_test_data">Charger des données d\'exemple pour tester</string>
+    <string name="content_description_try_again">Réessayer la recherche</string>
+    <string name="product_image_description">Image du produit</string>
+    <string name="content_description_product_image">Image du produit</string>
+    <string name="content_description_favorite_button">Ajouter aux favoris</string>
+    <string name="content_description_share_button">Partager le produit</string>
+    <string name="content_description_back_button">Retour</string>
+    <string name="content_description_search_button">Rechercher</string>
+
+    <!-- Toast Messages -->
+    <string name="coming_soon">Bientôt disponible !</string>
+
+    <!-- About -->
+    <string name="about_description">sugardaddi fournit des informations nutritionnelles détaillées sur les produits alimentaires en utilisant la base de données OpenFoodFacts. Le nom est un jeu de mots entre \"Sugar Daddy\" et la molécule de D-glucose.</string>
+    <string name="about_version">Version %s</string>
+    <string name="about_data_source">Données fournies par OpenFoodFacts.org</string>
+    <string name="about_open_source">Cette application utilise des données nutritionnelles ouvertes</string>
+
+    <!-- Permissions -->
+    <string name="permission_camera">Permission de caméra nécessaire pour scanner les codes-barres</string>
+    <string name="permission_storage">Permission de stockage nécessaire pour sauvegarder les favoris</string>
+
+    <!-- Test Data -->
+    <string name="test_data_loaded">Données de test chargées</string>
+    <string name="test_search_term">Pomme</string>
+    <string name="mock_data_prefix">[Test]</string>
+
+    <!-- Performance & Debug (user-facing) -->
+    <string name="performance_search_time">Recherche terminée en %dms</string>
+    <string name="performance_slow_connection">Connexion lente détéctée</string>
+    <string name="debug_mode_enabled">Mode débogage activé</string>
+
+    <!-- MainActivity - Missing strings -->
+    <string name="load_more_failed">Échec du chargement de plus de résultats</string>
+    <string name="long_click_hint">Appuyez longuement pour voir les détails</string>
+
+    <!-- SettingsActivity - Missing strings -->
+    <string name="cache_stats">Cache : %1$d produits, %2$d favoris</string>
+    <string name="cache_stats_failed">Échec du chargement des statistiques du cache</string>
+
+    <!-- ========== DATA SOURCE STRINGS ========== -->
+
+    <!-- Libellés UI des Sources de Données -->
+    <string name="label_data_source">Source de Données</string>
+    <string name="label_attribution">Attribution</string>
+    <string name="label_visit_website">Visiter le site web</string>
+    <string name="label_more_info">Plus d\'Informations</string>
+
+    <!-- Statut du Cache -->
+    <string name="cache_allowed">Mise en cache autorisée</string>
+    <string name="cache_not_allowed">Mise en cache non autorisée (respect des conditions d\'utilisation)</string>
+    <string name="network_required">Nécessite une connexion Internet</string>
+    <string name="offline_available">Disponible hors ligne</string>
+
+    <!-- Data Source Names -->
+    <string name="source_name_openfoodfacts">Open Food Facts</string>
+    <string name="source_name_ciqual">Ciqual</string>
+    <string name="source_name_usda">USDA FoodData</string>
+    <string name="source_name_user">Créé par l\'utilisateur</string>
+    <string name="source_name_custom">Entrée personnalisée</string>
+    <string name="source_name_imported">Import&#233;</string>
+
+    <!-- Product Type Labels (shown in search result cards) -->
+    <string name="product_type_food">Produit alimentaire</string>
+    <string name="product_type_recipe">Recette</string>
+
+    <!-- Data Source Emojis  -->
+    <string name="source_emoji_openfoodfacts">&#x1F30D;</string>
+    <string name="source_emoji_ciqual">&#x1F1EB;&#x1F1F7;</string>
+    <string name="source_emoji_usda">&#x1F1FA;&#x1F1F8;</string>
+    <string name="source_emoji_user">&#x1F464;</string>
+    <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
+    <string name="source_emoji_imported">&#x1F525;</string>
+
+    <!-- Data Source Descriptions (Short) -->
+    <string name="source_description_openfoodfacts">Base de données collaborative de produits alimentaires</string>
+    <string name="source_description_ciqual">Table de composition nutritionnelle des aliments par l\'ANSES</string>
+    <string name="source_description_usda">Base de données alimentaires du département américain de l\'Agriculture</string>
+    <string name="source_description_user">Recettes et aliments personnalisés créés par l\'utilisateur</string>
+    <string name="source_description_custom">Données alimentaires saisies manuellement</string>
+    <string name="source_description_imported">Données importées d\'autres applications</string>
+
+    <!-- Data Source Attributions (Short - for inline use) -->
+    <string name="source_attribution_openfoodfacts">Données issues d\'OpenFoodFacts.org</string>
+    <string name="source_attribution_ciqual">Données issues de l\'ANSES. 2020. Table de composition nutritionnelle des aliments Ciqual.</string>
+    <string name="source_attribution_usda">Données issues de l\'USDA FoodData Central</string>
+    <string name="source_attribution_user">Contenu créé par l\'utilisateur</string>
+    <string name="source_attribution_custom">Entrée personnalisée</string>
+    <string name="source_attribution_imported">Données importées</string>
+
+    <!-- Data Source Full Attributions (Long - for legal/about screens) -->
+    <string name="source_full_attribution_openfoodfacts">La base de données Open Food Facts est disponible sous la licence Open Database License. Les contenus individuels de la base de données sont disponibles sous la Database Contents License. Avertissement : les informations et données sont fournies à titre purement indicatif. Elles peuvent contenir des erreurs et ne doivent pas être utilisées à des fins médicales.</string>
+    <string name="source_full_attribution_ciqual">Les présentes données sont mises à la disposition du public par l\'Agence nationale de sécurité sanitaire de l\'alimentation, de l\'environnement et du travail (ANSES). Les données de la table de composition nutritionnelle des aliments Ciqual de l\'ANSES sont accessibles au public et peuvent être téléchargées gratuitement depuis leur site internet ou via la plateforme data.gouv.fr. Les données peuvent être utilisées selon les termes et conditions de la Licence Ouverte.</string>
+    <string name="source_full_attribution_usda">Département américain de l\'Agriculture, Service de recherche agricole. FoodData Central, 2019. fdc.nal.usda.gov. Les données sont fournies par l\'USDA et appartiennent au domaine public.</string>
+
+    <!-- Data Source Websites -->
+    <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
+    <string name="source_website_ciqual">https://ciqual.anses.fr/</string>
+    <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
+
+    <!-- Meal Creation -->
+    <string name="create_meal_title">Créez un nouveau repas</string>
+    <string name="select_date_time">Sélectionnez la date et l\'heure</string>
+    <string name="select_meal_type">Sélectionnez le type de repas</string>
+    <string name="button_now">MAINTENANT</string>
+    <string name="button_create_meal">CRÉEZ UN NOUVEAU REPAS</string>
+    <string name="meal_created_success">Repas créé avec succès</string>
+    <string name="meal_creation_failed">Échec de la création du repas</string>
+    <string name="close_dialog">Fermer</string>
+
+    <!-- Meal Types -->
+    <string name="meal_type_breakfast">Petit déjeuner</string>
+    <string name="meal_type_morning_snack">Collation matinale</string>
+    <string name="meal_type_lunch">Déjeuner</string>
+    <string name="meal_type_afternoon_snack">Goûter</string>
+    <string name="meal_type_dinner">Dîner</string>
+    <string name="meal_type_evening_snack">Collation du soir</string>
+    <string name="meal_type_snack">Collation</string>
+    <string name="meal_type_other">Autre</string>
+
+    <!-- Date Time Display -->
+    <string name="date_time_format">EEEE, MMMM d, yyyy | HH:mm</string>
+
+    <!-- Navigation Drawer -->
+    <string name="navigation_drawer_open">Ouvrir le menu de navigation</string>
+    <string name="navigation_drawer_close">Fermer le menu de navigation</string>
+
+    <!-- Menu Items -->
+    <string name="menu_my_journal">Mon journal</string>
+    <string name="menu_create_meal">Créer un repas</string>
+    <string name="menu_search_food">Rechercher de la nourriture</string>
+    <string name="menu_settings">Paramètres</string>
+
+    <!-- Activity Titles -->
+    <string name="journal_title">Mon Journal</string>
+    <string name="item_details_title">Product Details</string>
+    <string name="settings_title">Settings</string>
+
+    <!-- App branding (for nav header) -->
+    <string name="app_tagline">Suivez votre nutrition</string>
+    <string name="app_logo">Logo de l\'application</string>
+
+    <!-- Date indicators -->
+    <string name="today">Aujourd\'hui</string>
+    <string name="yesterday">Hier</string>
+    <string name="tomorrow">Demain</string>
+
+    <string name="new_meal_title">Nouveau Repas</string>
+    <string name="create_meal_subtitle">Créer un nouveau repas</string>
+
+    <!-- ============================================ -->
+    <!-- NUTRIENT SHORT NAMES - FRENCH (for banners, charts) -->
+    <!-- ============================================ -->
+
+    <!--
+    Noms abrégés des nutriments pour affichages compacts.
+    Style standard des applications de nutrition francophones.
+    -->
+
+    <!-- Macronutriments Principaux (Résumé Quotidien) -->
+    <string name="nutrient_energy_short">Énergie</string>
+    <string name="nutrient_carbohydrates_short">Glucides</string>
+    <string name="nutrient_proteins_short">Protéines</string>
+    <string name="nutrient_fat_short">Lipides</string>
+    <string name="nutrient_fiber_short">Fibres</string>
+
+    <!-- Sucres & Sous-catégories -->
+    <string name="nutrient_sugars_short">Sucres</string>
+    <string name="nutrient_saturated_fat_short">Lip. sat.</string>
+    <string name="nutrient_starch_short">Amidon</string>
+
+    <!-- Minéraux -->
+    <string name="nutrient_salt_short">Sel</string>
+    <string name="nutrient_sodium_short">Sodium</string>
+    <string name="nutrient_calcium_short">Calcium</string>
+    <string name="nutrient_iron_short">Fer</string>
+    <string name="nutrient_magnesium_short">Magnésium</string>
+    <string name="nutrient_phosphorus_short">Phosphore</string>
+    <string name="nutrient_potassium_short">Potassium</string>
+    <string name="nutrient_zinc_short">Zinc</string>
+    <string name="nutrient_copper_short">Cuivre</string>
+    <string name="nutrient_manganese_short">Manganèse</string>
+    <string name="nutrient_selenium_short">Sélénium</string>
+    <string name="nutrient_chloride_short">Chlorure</string>
+
+    <!-- Vitamines -->
+    <string name="nutrient_vitamin_a_short">Vit. A</string>
+    <string name="nutrient_vitamin_b1_short">Vit. B1</string>
+    <string name="nutrient_vitamin_b2_short">Vit. B2</string>
+    <string name="nutrient_vitamin_b3_short">Vit. B3</string>
+    <string name="nutrient_vitamin_b5_short">Vit. B5</string>
+    <string name="nutrient_vitamin_b6_short">Vit. B6</string>
+    <string name="nutrient_vitamin_b9_short">Vit. B9</string>
+    <string name="nutrient_vitamin_b12_short">Vit. B12</string>
+    <string name="nutrient_vitamin_c_short">Vit. C</string>
+    <string name="nutrient_vitamin_d_short">Vit. D</string>
+    <string name="nutrient_vitamin_e_short">Vit. E</string>
+    <string name="nutrient_vitamin_k_short">Vit. K</string>
+
+    <!-- Autres -->
+    <string name="nutrient_alcohol_short">Alcool</string>
+    <string name="nutrient_organic_acids_short">Ac. org.</string>
+    <string name="nutrient_polyols_short">Polyols</string>
+    <string name="nutrient_water_short">Eau</string>
+
+    <!-- Meal Details -->
+    <string name="meal_details_title">Mon repas</string>
+    <string name="summary">Résumé</string>
+    <string name="components">Composants</string>
+    <string name="nutritional_information">Informations nutritionnelles</string>
+    <string name="edit_meal">Modifier le repas</string>
+    <string name="done">Terminé</string>
+
+    <!-- Portions -->
+    <string name="no_items_in_meal">Aucun élément dans ce repas</string>
+    <string name="tap_add_item_to_start">Appuyez sur \"Ajouter un élément\" pour commencer</string>
+    <string name="add_item_to_meal">Ajouter un élément au repas</string>
+    <string name="portion_deleted">Élément supprimé</string>
+    <string name="swipe_to_delete_portions">Faites glisser les éléments pour les supprimer</string>
+
+    <!-- Actions -->
+    <string name="edit_meal_properties">Modifier les propriétés du repas</string>
+    <string name="delete_meal">Supprimer le repas</string>
+    <string name="delete_meal_title">Supprimer ce repas ?</string>
+    <string name="delete_meal_message">Cette action ne peut pas être annulée.</string>
+    <string name="cancel">Annuler</string>
+
+    <!-- Save/Unsaved Changes -->
+    <string name="meal_saved_success">Repas enregistré</string>
+    <string name="unsaved_changes_title">Modifications non enregistrées</string>
+    <string name="unsaved_changes_message">Vous avez des modifications non enregistrées. Que voulez-vous faire ?</string>
+    <string name="save">Enregistrer</string>
+    <string name="discard">Abandonner</string>
+
+    <!-- Errors -->
+    <string name="error_meal_not_found">Repas introuvable</string>
+    <string name="error_loading_meal">Échec du chargement du repas</string>
+    <string name="error_saving_meal">Échec de l\'enregistrement du repas</string>
+    <string name="error_deleting_meal">Échec de la suppression du repas</string>
+    <string name="meal_deleted_success">Repas supprimé</string>
+
+    <!-- Units -->
+    <string name="quantity">Quantité</string>
+    <string name="unit_serving">portion</string>
+    <string name="unit_piece">pièce</string>
+
+    <!-- Misc -->
+    <string name="no_items">Aucun élément</string>
+    <string name="view_details">Voir les détails</string>
+
+    <string name="delete">Supprimer</string>
+    <string name="meal">Repas</string>
+    <string name="meals">Repas</string>
+
+    <!-- Journal Activity -->
+    <string name="daily_summary">Résumé quotidien</string>
+
+    <!-- Timeline nutrient labels -->
+    <string name="nutrient_carbs_format">%1$sg glucides</string>
+    <string name="nutrient_carbs_empty">--g glucides</string>
+    <string name="nutrient_protein_format">%1$sg protéines</string>
+    <string name="nutrient_protein_empty">--g protéines</string>
+
+    <!-- Date/Time pickers -->
+    <string name="select_date">Sélectionner la date</string>
+    <string name="select_time">Sélectionner l\'heure</string>
+
+    <!-- Add Food Items Activity -->
+    <string name="add_food_items">Ajouter des aliments</string>
+    <string name="food_items">Aliments</string>
+    <string name="no_food_items_yet">Aucun aliment ajouté.\nRecherchez pour ajouter des aliments à votre repas.</string>
+    <string name="search_food_items">Rechercher des aliments</string>
+    <string name="search_food_for_meal">Rechercher des aliments pour le repas</string>
+    <string name="save_meal">Enregistrer le repas</string>
+    <string name="add_to_meal">Ajouter au repas</string>
+    <string name="added_to_meal">Ajouté au repas</string>
+    <string name="remove_item">Retirer l\'aliment</string>
+    <string name="nutrition_details">Détails nutritionnels</string>
+    <string name="tap_to_collapse">Appuyez pour réduire</string>
+
+    <!-- Nutrition shortcuts -->
+    <string name="carbs_short">glucides</string>
+    <string name="protein_short">protéines</string>
+    <string name="fat_short">lipides</string>
+
+    <!-- Validation messages -->
+    <string name="add_at_least_one_item">Veuillez ajouter au moins un aliment</string>
+    <string name="meal_saved_successfully">Repas enregistré avec succès !</string>
+
+    <!-- Unsaved changes dialog -->
+    <string name="unsaved_changes">Modifications non enregistrées</string>
+
+    <string name="adding_to_meal">Ajout en cours…</string>
+    <string name="nutrition_label_summary">Total</string>
+
+    <!-- Ouverture du site web -->
+    <string name="website_not_available">Site web non disponible pour cette source de produit</string>
+    <string name="no_browser_available">Aucun navigateur disponible</string>
+
+    <!-- Détails du repas -->
+    <string name="expand_collapse">Développer ou réduire les détails</string>
+    <string name="product_image">Image du produit</string>
+    <string name="no_nutrition_data">Aucune donnée nutritionnelle disponible</string>
+    <string name="nutrient_fats_short">Graisses</string>
+    <string name="nutrient_fibers_short">Fibres</string>
+
+    <!-- Content descriptions for scores (accessibility) -->
+    <string name="content_description_green_score">Indicateur de score environnemental</string>
+    <string name="content_description_nutri_score">Indicateur de score nutritionnel</string>
+
+    <!-- Ciqual database status (Settings) -->
+    <string name="settings_data_sources_title">Sources de données locales</string>
+    <string name="ciqual_section_title">Base de données Ciqual</string>
+    <string name="ciqual_status_not_ready">Base non initialisée — recherche via API en ligne</string>
+    <string name="ciqual_status_ready">Base locale prête — recherche hors ligne active</string>
+    <string name="ciqual_status_update_available">Mise à jour disponible</string>
+    <string name="ciqual_reimport">Réinitialiser la base de données</string>
+    <string name="ciqual_importing">Initialisation en cours…</string>
+    <string name="ciqual_import_success">Base Ciqual initialisée. La recherche hors ligne est maintenant disponible.</string>
+    <string name="ciqual_import_error">Échec de l\'initialisation</string>
+    <string name="ciqual_check_integrity">Vérifier</string>
+    <string name="ciqual_integrity_checking">Vérification…</string>
+    <string name="ciqual_integrity_products">produits</string>
+    <string name="ciqual_integrity_nutrition_records">enregistrements nutritionnels</string>
+    <string name="ciqual_integrity_empty">Base vide — réinitialisation requise</string>
+    <string name="ciqual_integrity_error">Erreur lors de la vérification</string>
+
+</resources>

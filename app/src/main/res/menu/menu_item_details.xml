@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- menu_item_details.xml - MODERNIZED VERSION -->
+<!-- 3 icons always visible: Favorite, Share, Open in Browser -->
+<!-- Uses Material Rounded icons (white on blue toolbar) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!--
+    MODERNIZATION CHANGES:
+    - Removed: Settings (already in drawer)
+    - Removed: About (will be in drawer later)
+    - Changed: showAsAction="always" (not "never" or "ifRoom")
+    - Changed: Using rounded icon variants
+    - Added: iconTint for consistent white color
+    -->
+
+    <!-- Favorite (toggles between border and filled) -->
+    <item
+        android:id="@+id/action_favorite"
+        android:icon="@drawable/ic_favorite_rounded_border"
+        android:title="@string/add_to_favorites"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+    <!-- Share -->
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/ic_share_rounded"
+        android:title="@string/menu_share"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+    <!-- Open in Browser -->
+    <item
+        android:id="@+id/action_open_web"
+        android:icon="@drawable/ic_open_in_new_rounded"
+        android:title="@string/menu_open_web"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+</menu>

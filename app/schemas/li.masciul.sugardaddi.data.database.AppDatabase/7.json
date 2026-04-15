@@ -1,0 +1,1688 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "b584627d284d965ce20514f98decf712",
+    "entities": [
+      {
+        "tableName": "food_products",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `barcode` TEXT, `originalId` TEXT, `sourceId` TEXT, `productType` TEXT, `scientific_name` TEXT, `category_code` TEXT, `name` TEXT, `genericName` TEXT, `brand` TEXT, `description` TEXT, `ingredients` TEXT, `categoriesText` TEXT, `packaging` TEXT, `origins` TEXT, `stores` TEXT, `currentLanguage` TEXT, `needsDefaultLanguageUpdate` INTEGER NOT NULL, `translations` TEXT, `searchableText` TEXT, `imageUrl` TEXT, `imageThumbnailUrl` TEXT, `nutriScore` TEXT, `ecoScore` TEXT, `novaGroup` TEXT, `quantity` TEXT, `isLiquid` INTEGER NOT NULL, `density` REAL, `isOrganic` INTEGER NOT NULL, `isVegan` INTEGER NOT NULL, `isVegetarian` INTEGER NOT NULL, `isGlutenFree` INTEGER NOT NULL, `isPalmOilFree` INTEGER NOT NULL, `isFairTrade` INTEGER NOT NULL, `allergenFlags` INTEGER NOT NULL, `servingSize` TEXT, `tags` TEXT, `dataCompleteness` REAL NOT NULL, `dataQualityScore` INTEGER NOT NULL, `isFavorite` INTEGER NOT NULL, `accessCount` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "barcode",
+            "columnName": "barcode",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "originalId",
+            "columnName": "originalId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "productType",
+            "columnName": "productType",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "scientificName",
+            "columnName": "scientific_name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "categoryCode",
+            "columnName": "category_code",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "genericName",
+            "columnName": "genericName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "brand",
+            "columnName": "brand",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ingredients",
+            "columnName": "ingredients",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "categoriesText",
+            "columnName": "categoriesText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "packaging",
+            "columnName": "packaging",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "origins",
+            "columnName": "origins",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stores",
+            "columnName": "stores",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currentLanguage",
+            "columnName": "currentLanguage",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "needsDefaultLanguageUpdate",
+            "columnName": "needsDefaultLanguageUpdate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "translations",
+            "columnName": "translations",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "searchableText",
+            "columnName": "searchableText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "imageThumbnailUrl",
+            "columnName": "imageThumbnailUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nutriScore",
+            "columnName": "nutriScore",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ecoScore",
+            "columnName": "ecoScore",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "novaGroup",
+            "columnName": "novaGroup",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isLiquid",
+            "columnName": "isLiquid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "density",
+            "columnName": "density",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isOrganic",
+            "columnName": "isOrganic",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVegan",
+            "columnName": "isVegan",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVegetarian",
+            "columnName": "isVegetarian",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isGlutenFree",
+            "columnName": "isGlutenFree",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPalmOilFree",
+            "columnName": "isPalmOilFree",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isFairTrade",
+            "columnName": "isFairTrade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allergenFlags",
+            "columnName": "allergenFlags",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "servingSize",
+            "columnName": "servingSize",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataCompleteness",
+            "columnName": "dataCompleteness",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataQualityScore",
+            "columnName": "dataQualityScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isFavorite",
+            "columnName": "isFavorite",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessCount",
+            "columnName": "accessCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_food_products_barcode",
+            "unique": true,
+            "columnNames": [
+              "barcode"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_food_products_barcode` ON `${TABLE_NAME}` (`barcode`)"
+          },
+          {
+            "name": "index_food_products_sourceId_originalId",
+            "unique": false,
+            "columnNames": [
+              "sourceId",
+              "originalId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_sourceId_originalId` ON `${TABLE_NAME}` (`sourceId`, `originalId`)"
+          },
+          {
+            "name": "index_food_products_isFavorite",
+            "unique": false,
+            "columnNames": [
+              "isFavorite"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_isFavorite` ON `${TABLE_NAME}` (`isFavorite`)"
+          },
+          {
+            "name": "index_food_products_lastUpdated",
+            "unique": false,
+            "columnNames": [
+              "lastUpdated"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_lastUpdated` ON `${TABLE_NAME}` (`lastUpdated`)"
+          },
+          {
+            "name": "index_food_products_accessCount",
+            "unique": false,
+            "columnNames": [
+              "accessCount"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_accessCount` ON `${TABLE_NAME}` (`accessCount`)"
+          },
+          {
+            "name": "index_food_products_category_code",
+            "unique": false,
+            "columnNames": [
+              "category_code"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_category_code` ON `${TABLE_NAME}` (`category_code`)"
+          },
+          {
+            "name": "index_food_products_sourceId_category_code",
+            "unique": false,
+            "columnNames": [
+              "sourceId",
+              "category_code"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_food_products_sourceId_category_code` ON `${TABLE_NAME}` (`sourceId`, `category_code`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "nutrition",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`nutritionId` TEXT NOT NULL, `sourceType` TEXT NOT NULL, `sourceId` TEXT NOT NULL, `dataSource` TEXT, `category` TEXT, `subcategory` TEXT, `measurementBasis` TEXT, `isLiquid` INTEGER NOT NULL, `energyKj` REAL, `energyKcal` REAL, `proteins` REAL, `carbohydrates` REAL, `fat` REAL, `fiber` REAL, `alcohol` REAL, `water` REAL, `ash` REAL, `sugars` REAL, `starch` REAL, `polyols` REAL, `glucose` REAL, `fructose` REAL, `sucrose` REAL, `lactose` REAL, `maltose` REAL, `galactose` REAL, `saturatedFat` REAL, `monounsaturatedFat` REAL, `polyunsaturatedFat` REAL, `transFat` REAL, `omega3` REAL, `omega6` REAL, `omega9` REAL, `linoleicAcid` REAL, `dha` REAL, `epa` REAL, `ala` REAL, `arachidonicAcid` REAL, `gammaLinolenicAcid` REAL, `conjugatedLinoleicAcid` REAL, `butyricAcid` REAL, `caproicAcid` REAL, `caprylicAcid` REAL, `capricAcid` REAL, `lauricAcid` REAL, `myristicAcid` REAL, `palmiticAcid` REAL, `stearicAcid` REAL, `cholesterol` REAL, `vitaminA` REAL, `retinol` REAL, `betaCarotene` REAL, `vitaminD` REAL, `vitaminE` REAL, `vitaminK` REAL, `vitaminK1` REAL, `vitaminK2` REAL, `vitaminB1` REAL, `vitaminB2` REAL, `vitaminB3` REAL, `vitaminB5` REAL, `vitaminB6` REAL, `vitaminB7` REAL, `vitaminB9` REAL, `folate` REAL, `vitaminB12` REAL, `vitaminC` REAL, `choline` REAL, `tryptophan` REAL, `threonine` REAL, `isoleucine` REAL, `leucine` REAL, `lysine` REAL, `methionine` REAL, `phenylalanine` REAL, `valine` REAL, `histidine` REAL, `cysteine` REAL, `tyrosine` REAL, `arginine` REAL, `alanine` REAL, `asparticAcid` REAL, `glutamicAcid` REAL, `glycine` REAL, `proline` REAL, `serine` REAL, `calcium` REAL, `phosphorus` REAL, `magnesium` REAL, `potassium` REAL, `sodium` REAL, `salt` REAL, `chloride` REAL, `iron` REAL, `zinc` REAL, `copper` REAL, `manganese` REAL, `selenium` REAL, `iodine` REAL, `chromium` REAL, `molybdenum` REAL, `fluoride` REAL, `caffeine` REAL, `theobromine` REAL, `taurine` REAL, `organicAcids` REAL, `vitaminD2` REAL, `vitaminD3` REAL, `intrinsicFolate` REAL, `folicAcid` REAL, `dataConfidenceCode` TEXT, `dataCompleteness` REAL NOT NULL, `dataQualityScore` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`nutritionId`))",
+        "fields": [
+          {
+            "fieldPath": "nutritionId",
+            "columnName": "nutritionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "sourceType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "sourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataSource",
+            "columnName": "dataSource",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "subcategory",
+            "columnName": "subcategory",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "measurementBasis",
+            "columnName": "measurementBasis",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isLiquid",
+            "columnName": "isLiquid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "energyKj",
+            "columnName": "energyKj",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "energyKcal",
+            "columnName": "energyKcal",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "proteins",
+            "columnName": "proteins",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "carbohydrates",
+            "columnName": "carbohydrates",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fat",
+            "columnName": "fat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fiber",
+            "columnName": "fiber",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "alcohol",
+            "columnName": "alcohol",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "water",
+            "columnName": "water",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ash",
+            "columnName": "ash",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sugars",
+            "columnName": "sugars",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "starch",
+            "columnName": "starch",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "polyols",
+            "columnName": "polyols",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "glucose",
+            "columnName": "glucose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fructose",
+            "columnName": "fructose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sucrose",
+            "columnName": "sucrose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lactose",
+            "columnName": "lactose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "maltose",
+            "columnName": "maltose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "galactose",
+            "columnName": "galactose",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "saturatedFat",
+            "columnName": "saturatedFat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "monounsaturatedFat",
+            "columnName": "monounsaturatedFat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "polyunsaturatedFat",
+            "columnName": "polyunsaturatedFat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "transFat",
+            "columnName": "transFat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "omega3",
+            "columnName": "omega3",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "omega6",
+            "columnName": "omega6",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "omega9",
+            "columnName": "omega9",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "linoleicAcid",
+            "columnName": "linoleicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dha",
+            "columnName": "dha",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "epa",
+            "columnName": "epa",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ala",
+            "columnName": "ala",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "arachidonicAcid",
+            "columnName": "arachidonicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gammaLinolenicAcid",
+            "columnName": "gammaLinolenicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "conjugatedLinoleicAcid",
+            "columnName": "conjugatedLinoleicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "butyricAcid",
+            "columnName": "butyricAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "caproicAcid",
+            "columnName": "caproicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "caprylicAcid",
+            "columnName": "caprylicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "capricAcid",
+            "columnName": "capricAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lauricAcid",
+            "columnName": "lauricAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "myristicAcid",
+            "columnName": "myristicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "palmiticAcid",
+            "columnName": "palmiticAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stearicAcid",
+            "columnName": "stearicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cholesterol",
+            "columnName": "cholesterol",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminA",
+            "columnName": "vitaminA",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "retinol",
+            "columnName": "retinol",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "betaCarotene",
+            "columnName": "betaCarotene",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminD",
+            "columnName": "vitaminD",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminE",
+            "columnName": "vitaminE",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminK",
+            "columnName": "vitaminK",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminK1",
+            "columnName": "vitaminK1",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminK2",
+            "columnName": "vitaminK2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB1",
+            "columnName": "vitaminB1",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB2",
+            "columnName": "vitaminB2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB3",
+            "columnName": "vitaminB3",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB5",
+            "columnName": "vitaminB5",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB6",
+            "columnName": "vitaminB6",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB7",
+            "columnName": "vitaminB7",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB9",
+            "columnName": "vitaminB9",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "folate",
+            "columnName": "folate",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminB12",
+            "columnName": "vitaminB12",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminC",
+            "columnName": "vitaminC",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "choline",
+            "columnName": "choline",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tryptophan",
+            "columnName": "tryptophan",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "threonine",
+            "columnName": "threonine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isoleucine",
+            "columnName": "isoleucine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "leucine",
+            "columnName": "leucine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lysine",
+            "columnName": "lysine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "methionine",
+            "columnName": "methionine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "phenylalanine",
+            "columnName": "phenylalanine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "valine",
+            "columnName": "valine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "histidine",
+            "columnName": "histidine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cysteine",
+            "columnName": "cysteine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tyrosine",
+            "columnName": "tyrosine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "arginine",
+            "columnName": "arginine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "alanine",
+            "columnName": "alanine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "asparticAcid",
+            "columnName": "asparticAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "glutamicAcid",
+            "columnName": "glutamicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "glycine",
+            "columnName": "glycine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "proline",
+            "columnName": "proline",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "serine",
+            "columnName": "serine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "calcium",
+            "columnName": "calcium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "phosphorus",
+            "columnName": "phosphorus",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "magnesium",
+            "columnName": "magnesium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "potassium",
+            "columnName": "potassium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sodium",
+            "columnName": "sodium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "salt",
+            "columnName": "salt",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chloride",
+            "columnName": "chloride",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "iron",
+            "columnName": "iron",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "zinc",
+            "columnName": "zinc",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "copper",
+            "columnName": "copper",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "manganese",
+            "columnName": "manganese",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "selenium",
+            "columnName": "selenium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "iodine",
+            "columnName": "iodine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chromium",
+            "columnName": "chromium",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "molybdenum",
+            "columnName": "molybdenum",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fluoride",
+            "columnName": "fluoride",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "caffeine",
+            "columnName": "caffeine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "theobromine",
+            "columnName": "theobromine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "taurine",
+            "columnName": "taurine",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "organicAcids",
+            "columnName": "organicAcids",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminD2",
+            "columnName": "vitaminD2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vitaminD3",
+            "columnName": "vitaminD3",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "intrinsicFolate",
+            "columnName": "intrinsicFolate",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "folicAcid",
+            "columnName": "folicAcid",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataConfidenceCode",
+            "columnName": "dataConfidenceCode",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataCompleteness",
+            "columnName": "dataCompleteness",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataQualityScore",
+            "columnName": "dataQualityScore",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "nutritionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_nutrition_sourceType_sourceId",
+            "unique": true,
+            "columnNames": [
+              "sourceType",
+              "sourceId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_nutrition_sourceType_sourceId` ON `${TABLE_NAME}` (`sourceType`, `sourceId`)"
+          },
+          {
+            "name": "index_nutrition_category",
+            "unique": false,
+            "columnNames": [
+              "category"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_category` ON `${TABLE_NAME}` (`category`)"
+          },
+          {
+            "name": "index_nutrition_energyKcal",
+            "unique": false,
+            "columnNames": [
+              "energyKcal"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_energyKcal` ON `${TABLE_NAME}` (`energyKcal`)"
+          },
+          {
+            "name": "index_nutrition_proteins",
+            "unique": false,
+            "columnNames": [
+              "proteins"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_proteins` ON `${TABLE_NAME}` (`proteins`)"
+          },
+          {
+            "name": "index_nutrition_carbohydrates",
+            "unique": false,
+            "columnNames": [
+              "carbohydrates"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_carbohydrates` ON `${TABLE_NAME}` (`carbohydrates`)"
+          },
+          {
+            "name": "index_nutrition_fat",
+            "unique": false,
+            "columnNames": [
+              "fat"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_fat` ON `${TABLE_NAME}` (`fat`)"
+          },
+          {
+            "name": "index_nutrition_sugars",
+            "unique": false,
+            "columnNames": [
+              "sugars"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_sugars` ON `${TABLE_NAME}` (`sugars`)"
+          },
+          {
+            "name": "index_nutrition_salt",
+            "unique": false,
+            "columnNames": [
+              "salt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_salt` ON `${TABLE_NAME}` (`salt`)"
+          },
+          {
+            "name": "index_nutrition_fiber",
+            "unique": false,
+            "columnNames": [
+              "fiber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_fiber` ON `${TABLE_NAME}` (`fiber`)"
+          },
+          {
+            "name": "index_nutrition_dataCompleteness",
+            "unique": false,
+            "columnNames": [
+              "dataCompleteness"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_dataCompleteness` ON `${TABLE_NAME}` (`dataCompleteness`)"
+          },
+          {
+            "name": "index_nutrition_lastUpdated",
+            "unique": false,
+            "columnNames": [
+              "lastUpdated"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_lastUpdated` ON `${TABLE_NAME}` (`lastUpdated`)"
+          },
+          {
+            "name": "index_nutrition_dataConfidenceCode",
+            "unique": false,
+            "columnNames": [
+              "dataConfidenceCode"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_nutrition_dataConfidenceCode` ON `${TABLE_NAME}` (`dataConfidenceCode`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "meals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `userId` TEXT, `name` TEXT, `description` TEXT, `notes` TEXT, `occasion` TEXT, `location` TEXT, `currentLanguage` TEXT, `needsDefaultLanguageUpdate` INTEGER NOT NULL, `translations` TEXT, `searchableText` TEXT, `mealType` TEXT, `mealDateTime` INTEGER NOT NULL, `isPlanned` INTEGER NOT NULL, `isTemplate` INTEGER NOT NULL, `isHomeMade` INTEGER NOT NULL, `allergenFlags` INTEGER NOT NULL, `estimatedCost` REAL, `satisfaction` REAL NOT NULL, `imageUrl` TEXT, `portionsJson` TEXT, `tagsJson` TEXT, `completenessScore` REAL NOT NULL, `accessCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "occasion",
+            "columnName": "occasion",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currentLanguage",
+            "columnName": "currentLanguage",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "needsDefaultLanguageUpdate",
+            "columnName": "needsDefaultLanguageUpdate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "translations",
+            "columnName": "translations",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "searchableText",
+            "columnName": "searchableText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mealType",
+            "columnName": "mealType",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mealDateTime",
+            "columnName": "mealDateTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPlanned",
+            "columnName": "isPlanned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTemplate",
+            "columnName": "isTemplate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isHomeMade",
+            "columnName": "isHomeMade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allergenFlags",
+            "columnName": "allergenFlags",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedCost",
+            "columnName": "estimatedCost",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "satisfaction",
+            "columnName": "satisfaction",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "portionsJson",
+            "columnName": "portionsJson",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tagsJson",
+            "columnName": "tagsJson",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "completenessScore",
+            "columnName": "completenessScore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessCount",
+            "columnName": "accessCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_meals_userId",
+            "unique": false,
+            "columnNames": [
+              "userId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_userId` ON `${TABLE_NAME}` (`userId`)"
+          },
+          {
+            "name": "index_meals_mealDateTime",
+            "unique": false,
+            "columnNames": [
+              "mealDateTime"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_mealDateTime` ON `${TABLE_NAME}` (`mealDateTime`)"
+          },
+          {
+            "name": "index_meals_mealType",
+            "unique": false,
+            "columnNames": [
+              "mealType"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_mealType` ON `${TABLE_NAME}` (`mealType`)"
+          },
+          {
+            "name": "index_meals_isTemplate",
+            "unique": false,
+            "columnNames": [
+              "isTemplate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_isTemplate` ON `${TABLE_NAME}` (`isTemplate`)"
+          },
+          {
+            "name": "index_meals_lastUpdated",
+            "unique": false,
+            "columnNames": [
+              "lastUpdated"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_meals_lastUpdated` ON `${TABLE_NAME}` (`lastUpdated`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "recipes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `authorId` TEXT, `name` TEXT, `description` TEXT, `instructions` TEXT, `cuisine` TEXT, `notes` TEXT, `yieldDescription` TEXT, `recipeSource` TEXT, `equipmentNeeded` TEXT, `cookingTips` TEXT, `stepStructure` TEXT, `stepTranslations` TEXT, `currentLanguage` TEXT, `needsDefaultLanguageUpdate` INTEGER NOT NULL, `translations` TEXT, `searchableText` TEXT, `servings` INTEGER NOT NULL, `prepTimeMinutes` INTEGER NOT NULL, `cookTimeMinutes` INTEGER NOT NULL, `difficulty` TEXT, `portionsJson` TEXT, `isVegan` INTEGER NOT NULL, `isVegetarian` INTEGER NOT NULL, `isGlutenFree` INTEGER NOT NULL, `isDairyFree` INTEGER NOT NULL, `isKeto` INTEGER NOT NULL, `isPaleo` INTEGER NOT NULL, `allergenFlags` INTEGER NOT NULL, `isPublic` INTEGER NOT NULL, `isFavorite` INTEGER NOT NULL, `isTemplate` INTEGER NOT NULL, `rating` REAL NOT NULL, `ratingCount` INTEGER NOT NULL, `imageUrl` TEXT, `tagsJson` TEXT, `completenessScore` REAL NOT NULL, `accessCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "authorId",
+            "columnName": "authorId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "instructions",
+            "columnName": "instructions",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cuisine",
+            "columnName": "cuisine",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "yieldDescription",
+            "columnName": "yieldDescription",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "recipeSource",
+            "columnName": "recipeSource",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "equipmentNeeded",
+            "columnName": "equipmentNeeded",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cookingTips",
+            "columnName": "cookingTips",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stepStructure",
+            "columnName": "stepStructure",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "stepTranslations",
+            "columnName": "stepTranslations",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currentLanguage",
+            "columnName": "currentLanguage",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "needsDefaultLanguageUpdate",
+            "columnName": "needsDefaultLanguageUpdate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "translations",
+            "columnName": "translations",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "searchableText",
+            "columnName": "searchableText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "servings",
+            "columnName": "servings",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prepTimeMinutes",
+            "columnName": "prepTimeMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cookTimeMinutes",
+            "columnName": "cookTimeMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "portionsJson",
+            "columnName": "portionsJson",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isVegan",
+            "columnName": "isVegan",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isVegetarian",
+            "columnName": "isVegetarian",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isGlutenFree",
+            "columnName": "isGlutenFree",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDairyFree",
+            "columnName": "isDairyFree",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isKeto",
+            "columnName": "isKeto",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPaleo",
+            "columnName": "isPaleo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "allergenFlags",
+            "columnName": "allergenFlags",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPublic",
+            "columnName": "isPublic",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isFavorite",
+            "columnName": "isFavorite",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTemplate",
+            "columnName": "isTemplate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rating",
+            "columnName": "rating",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ratingCount",
+            "columnName": "ratingCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageUrl",
+            "columnName": "imageUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tagsJson",
+            "columnName": "tagsJson",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "completenessScore",
+            "columnName": "completenessScore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessCount",
+            "columnName": "accessCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_recipes_authorId",
+            "unique": false,
+            "columnNames": [
+              "authorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_authorId` ON `${TABLE_NAME}` (`authorId`)"
+          },
+          {
+            "name": "index_recipes_isFavorite",
+            "unique": false,
+            "columnNames": [
+              "isFavorite"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_isFavorite` ON `${TABLE_NAME}` (`isFavorite`)"
+          },
+          {
+            "name": "index_recipes_isPublic",
+            "unique": false,
+            "columnNames": [
+              "isPublic"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_isPublic` ON `${TABLE_NAME}` (`isPublic`)"
+          },
+          {
+            "name": "index_recipes_isTemplate",
+            "unique": false,
+            "columnNames": [
+              "isTemplate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_isTemplate` ON `${TABLE_NAME}` (`isTemplate`)"
+          },
+          {
+            "name": "index_recipes_lastUpdated",
+            "unique": false,
+            "columnNames": [
+              "lastUpdated"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recipes_lastUpdated` ON `${TABLE_NAME}` (`lastUpdated`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b584627d284d965ce20514f98decf712')"
+    ]
+  }
+}

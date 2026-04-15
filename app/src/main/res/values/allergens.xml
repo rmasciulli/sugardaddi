@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- EU Regulation 1169/2011 Allergens -->
+    <string name="allergen_gluten">Gluten</string>
+    <string name="allergen_crustaceans">Crustaceans</string>
+    <string name="allergen_eggs">Eggs</string>
+    <string name="allergen_fish">Fish</string>
+    <string name="allergen_peanuts">Peanuts</string>
+    <string name="allergen_soy">Soy</string>
+    <string name="allergen_milk">Milk</string>
+    <string name="allergen_nuts">Tree nuts</string>
+    <string name="allergen_celery">Celery</string>
+    <string name="allergen_mustard">Mustard</string>
+    <string name="allergen_sesame">Sesame</string>
+    <string name="allergen_sulfites">Sulfites</string>
+    <string name="allergen_lupin">Lupin</string>
+    <string name="allergen_molluscs">Molluscs</string>
+
+    <!-- Additional strings -->
+    <string name="no_allergens">No allergens</string>
+    <string name="contains_allergens">Contains: %s</string>
+    <string name="allergen_warning">Allergen Warning</string>
+    <string name="allergen_safe">Safe for your dietary restrictions</string>
+</resources>

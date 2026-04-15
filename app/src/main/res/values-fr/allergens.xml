@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- EU Regulation 1169/2011 Allergens - French -->
+    <string name="allergen_gluten">Gluten</string>
+    <string name="allergen_crustaceans">Crustacés</string>
+    <string name="allergen_eggs">Œufs</string>
+    <string name="allergen_fish">Poisson</string>
+    <string name="allergen_peanuts">Arachides</string>
+    <string name="allergen_soy">Soja</string>
+    <string name="allergen_milk">Lait</string>
+    <string name="allergen_nuts">Fruits à coque</string>
+    <string name="allergen_celery">Céleri</string>
+    <string name="allergen_mustard">Moutarde</string>
+    <string name="allergen_sesame">Graines de sésame</string>
+    <string name="allergen_sulfites">Anhydride sulfureux et sulfites</string>
+    <string name="allergen_lupin">Lupin</string>
+    <string name="allergen_molluscs">Mollusques</string>
+
+    <!-- Additional strings -->
+    <string name="no_allergens">Sans allergènes</string>
+    <string name="contains_allergens">Contient : %s</string>
+    <string name="allergen_warning">Avertissement allergènes</string>
+    <string name="allergen_safe">Sans danger pour vos restrictions alimentaires</string>
+</resources>
