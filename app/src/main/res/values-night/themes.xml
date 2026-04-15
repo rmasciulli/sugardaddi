@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ================================================== -->
+    <!-- DARK THEME - Based on Light Theme with Dark Colors -->
+    <!-- ================================================== -->
+
+    <style name="Theme.SugarDaddi" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- ===== PRIMARY COLORS (keep blue, it works on dark) ===== -->
+        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Material 3 Primary Container -->
+        <item name="colorPrimaryContainer">@color/primary_variant</item>
+        <item name="colorOnPrimaryContainer">@color/primary_light</item>
+
+        <!-- ===== SECONDARY COLORS (same as primary) ===== -->
+        <item name="colorSecondary">@color/secondary</item>  <!-- #5DADE2 -->
+        <item name="colorSecondaryVariant">@color/secondary_variant</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Material 3 Secondary Container -->
+        <item name="colorSecondaryContainer">@color/secondary_variant</item>
+        <item name="colorOnSecondaryContainer">@color/secondary_light</item>
+
+        <!-- ===== TERTIARY COLORS (also blue for consistency) ===== -->
+        <item name="colorTertiary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">@color/primary_variant</item>
+        <item name="colorOnTertiaryContainer">@color/primary_light</item>
+
+        <!-- ===== SURFACE COLORS (DARK) ===== -->
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorSurfaceVariant">@color/surface_variant_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary_dark</item>
+
+        <!-- ===== BACKGROUND (DARK) ===== -->
+        <item name="android:colorBackground">@color/background_dark</item>
+        <item name="colorOnBackground">@color/text_primary_dark</item>
+
+        <!-- ===== STATUS COLORS ===== -->
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/white</item>
+
+        <!-- ===== STATUS BAR (DARK) ===== -->
+        <item name="android:statusBarColor">@color/primary_variant</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- ===== TEXT COLORS (LIGHT for readability on dark) ===== -->
+        <item name="android:textColorPrimary">@color/text_primary_dark</item>
+        <item name="android:textColorSecondary">@color/text_secondary_dark</item>
+        <item name="android:textColorHint">@color/text_hint_dark</item>
+
+        <!-- ===== ACCENT COLOR (legacy Android) ===== -->
+        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+
+        <!-- ===== CONTROL COLORS (buttons, checkboxes, etc) ===== -->
+        <item name="colorControlNormal">@color/text_secondary_dark</item>
+        <item name="colorControlActivated">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorControlHighlight">@color/ripple_dark</item>
+
+        <!-- ===== MATERIAL ALERT DIALOG (for pickers) ===== -->
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.SugarDaddi.MaterialAlertDialog.Dark</item>
+
+        <!-- ===== DATE PICKER THEME ===== -->
+        <item name="materialCalendarTheme">@style/ThemeOverlay.SugarDaddi.MaterialCalendar.Dark</item>
+
+        <!-- ===== TIME PICKER THEME ===== -->
+        <item name="materialTimePickerTheme">@style/ThemeOverlay.SugarDaddi.MaterialTimePicker.Dark</item>
+    </style>
+
+    <!-- ================================================== -->
+    <!-- MATERIAL ALERT DIALOG THEME OVERLAY (DARK) -->
+    <!-- ================================================== -->
+
+    <style name="ThemeOverlay.SugarDaddi.MaterialAlertDialog.Dark" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.SugarDaddi.Button.TextButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.SugarDaddi.Button.TextButton</item>
+    </style>
+
+    <!-- ================================================== -->
+    <!-- MATERIAL CALENDAR (DATE PICKER) THEME OVERLAY (DARK) -->
+    <!-- ================================================== -->
+
+    <style name="ThemeOverlay.SugarDaddi.MaterialCalendar.Dark" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+    </style>
+
+    <!-- ================================================== -->
+    <!-- MATERIAL TIME PICKER THEME OVERLAY (DARK) -->
+    <!-- ================================================== -->
+
+    <style name="ThemeOverlay.SugarDaddi.MaterialTimePicker.Dark" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+    </style>
+
+    <!-- ================================================== -->
+    <!-- BUTTON STYLES -->
+    <!-- ================================================== -->
+
+    <style name="Widget.SugarDaddi.Button.TextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/primary</item>  <!-- #5DADE2 -->
+        <item name="rippleColor">@color/ripple_primary</item>
+    </style>
+
+    <!-- ================================================== -->
+    <!-- TOOLBAR THEME OVERLAY (DARK) -->
+    <!-- ================================================== -->
+
+    <style name="ThemeOverlay.SugarDaddi.Toolbar" parent="ThemeOverlay.Material3.Toolbar.Surface">
+        <item name="colorSurface">@color/primary</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="titleTextColor">@color/white</item>
+    </style>
+</resources>

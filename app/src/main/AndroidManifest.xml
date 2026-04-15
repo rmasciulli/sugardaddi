@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Network permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+        android:name=".SugarDaddiApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SugarDaddi">
+
+        <!-- Main Activity (Launcher) -->
+        <activity
+            android:name=".ui.activities.MainActivity"
+            android:exported="true"
+            android:label="@string/main_activity_title"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.SugarDaddi">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Journal Activity -->
+        <activity
+            android:name=".ui.activities.JournalActivity"
+            android:exported="false"
+            android:label="@string/journal_title"
+            android:parentActivityName=".ui.activities.MainActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Meal Details Activity -->
+        <activity
+            android:name=".ui.activities.MealDetailsActivity"
+            android:exported="false"
+            android:label="@string/meal_details_title"
+            android:parentActivityName=".ui.activities.JournalActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Create Meal Activity -->
+        <activity
+            android:name=".ui.activities.CreateMealActivity"
+            android:exported="false"
+            android:label="@string/create_meal_title"
+            android:parentActivityName=".ui.activities.JournalActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Item Details Activity -->
+        <activity
+            android:name=".ui.activities.ItemDetailsActivity"
+            android:exported="false"
+            android:label="@string/item_details_title"
+            android:parentActivityName=".ui.activities.MainActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Barcode Scanner Activity -->
+        <activity
+            android:name=".ui.activities.BarcodeScannerActivity"
+            android:exported="false"
+            android:label="@string/scan_product"
+            android:parentActivityName=".ui.activities.MainActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Settings Activity -->
+        <activity
+            android:name=".ui.activities.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:parentActivityName=".ui.activities.MainActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Favorites Activity -->
+        <activity
+            android:name=".ui.activities.FavoritesActivity"
+            android:exported="false"
+            android:label="@string/menu_favorites"
+            android:parentActivityName=".ui.activities.MainActivity" />
+
+
+        <!-- Ciqual Import Service -->
+        <!-- Reads bundled assets and imports into Room. foregroundServiceType=dataSync -->
+        <!-- required for startForegroundService() on API 34+ -->
+        <service
+            android:name=".data.sources.ciqual.CiqualImportService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+    </application>
+
+</manifest>

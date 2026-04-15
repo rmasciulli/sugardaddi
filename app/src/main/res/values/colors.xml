@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ========================================= -->
+    <!-- PRIMARY THEME COLORS (Single Blue System) -->
+    <!-- ========================================= -->
+
+    <!-- SINGLE BLUE COLOR - Used for EVERYTHING -->
+    <color name="app_blue">#5DADE2</color>
+
+    <!-- Main Brand Colors - ALL USE THE SAME BLUE -->
+    <color name="primary">#5DADE2</color>
+    <color name="primary_variant">#4A9FD0</color>
+    <color name="primary_light">#BBDEFB</color>
+
+    <!-- Secondary Colors - ALSO USE THE SAME BLUE (no orange!) -->
+    <color name="secondary">#5DADE2</color>
+    <color name="secondary_variant">#4A9FD0</color>
+    <color name="secondary_light">#BBDEFB</color>
+
+    <!-- ========================================= -->
+    <!-- SURFACE & BACKGROUND COLORS (Light) -->
+    <!-- ========================================= -->
+
+    <color name="background_light">#F8FAFE</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="surface_variant_light">#E3F2FD</color>
+    <color name="surface_container_light">#F5F5F5</color>
+
+    <!-- Card Colors -->
+    <color name="card_background_light">#FFFFFF</color>
+    <color name="card_elevation_light">#1F000000</color>
+
+    <!-- ========================================= -->
+    <!-- TEXT COLORS (Light) -->
+    <!-- ========================================= -->
+
+    <color name="text_primary_light">#212121</color>
+    <color name="text_secondary_light">#757575</color>
+    <color name="text_hint_light">#9E9E9E</color>
+    <color name="text_disabled_light">#BDBDBD</color>
+
+    <!-- ========================================= -->
+    <!-- NUTRITION-SPECIFIC COLORS -->
+    <!-- ========================================= -->
+
+    <!-- Nutri-Score Colors -->
+    <color name="nutri_score_a">#1B7B3A</color>
+    <color name="nutri_score_b">#7FB069</color>
+    <color name="nutri_score_c">#F1C232</color>
+    <color name="nutri_score_d">#FF9900</color>
+    <color name="nutri_score_e">#E06666</color>
+    <color name="nutri_score_unknown">#9E9E9E</color>
+    <color name="nutri_score_text">#FFFFFF</color>
+
+    <!-- Nutri-Score Light Backgrounds (for cards/badges) -->
+    <color name="nutri_score_a_light">#E8F5E8</color>
+    <color name="nutri_score_b_light">#F0F8E8</color>
+    <color name="nutri_score_c_light">#FFF8E8</color>
+    <color name="nutri_score_d_light">#FFF4E8</color>
+    <color name="nutri_score_e_light">#FDEBEB</color>
+
+    <!-- Nutrition Status Colors -->
+    <color name="nutrition_available">#4CAF50</color>
+    <color name="nutrition_limited">#FF9800</color>
+    <color name="nutrition_none">#9E9E9E</color>
+
+    <!-- Nutrition Level Colors -->
+    <color name="nutrition_low">#4CAF50</color>
+    <color name="nutrition_moderate">#FF9800</color>
+    <color name="nutrition_high">#F44336</color>
+    <color name="nutrition_very_high">#D32F2F</color>
+
+    <!-- Additional Nutrition Level Colors (for CategoryColorHelper) -->
+    <color name="nutrition_level_low">#28A745</color>
+    <color name="nutrition_level_moderate">#FFC107</color>
+    <color name="nutrition_level_high">#DC3545</color>
+
+    <!-- Comparison Colors -->
+    <color name="comparison_better">#4CAF50</color>
+    <color name="comparison_worse">#F44336</color>
+    <color name="comparison_similar">#757575</color>
+
+    <!-- ========================================= -->
+    <!-- ECOSCORE-SPECIFIC COLORS -->
+    <!-- ========================================= -->
+
+    <!-- Eco-Score Colors (Normal) -->
+    <color name="ecoscore_a">#00875A</color>
+    <color name="ecoscore_b">#52B756</color>
+    <color name="ecoscore_c">#FEC809</color>
+    <color name="ecoscore_d">#F08500</color>
+    <color name="ecoscore_e">#E2001A</color>
+
+    <!-- Eco-Score Colors (Active/Highlighted) -->
+    <color name="ecoscore_a_active">#37A34A</color>
+    <color name="ecoscore_b_active">#6FD77C</color>
+    <color name="ecoscore_c_active">#FFD666</color>
+    <color name="ecoscore_d_active">#FF8844</color>
+    <color name="ecoscore_e_active">#FF3333</color>
+
+    <!-- ========================================= -->
+    <!-- SERVING SIZE COLORS -->
+    <!-- ========================================= -->
+
+    <color name="serving_100g">#5DADE2</color>  <!-- Changed to app blue -->
+    <color name="serving_portion">#5DADE2</color>  <!-- Changed to app blue -->
+    <color name="serving_custom">#9C27B0</color>
+
+    <!-- ========================================= -->
+    <!-- FOOD CATEGORY COLORS -->
+    <!-- ========================================= -->
+
+    <color name="category_fruits">#4CAF50</color>
+    <color name="category_vegetables">#8BC34A</color>
+    <color name="category_grains">#FF9800</color>
+    <color name="category_proteins">#F44336</color>
+    <color name="category_dairy">#5DADE2</color>  <!-- Changed to app blue -->
+    <color name="category_sweets">#E91E63</color>
+    <color name="category_beverages">#00BCD4</color>
+    <color name="category_snacks">#FF5722</color>
+    <color name="category_other">#9E9E9E</color>
+
+    <!-- ========================================= -->
+    <!-- STATUS & FEEDBACK COLORS -->
+    <!-- ========================================= -->
+
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="error">#F44336</color>
+    <color name="info">#5DADE2</color>  <!-- Changed to app blue -->
+    <color name="warning_color">#FF8C00</color>
+
+    <!-- ========================================= -->
+    <!-- FAVORITES & INTERACTION COLORS -->
+    <!-- ========================================= -->
+
+    <color name="favorite_active">#E91E63</color>
+    <color name="favorite_inactive">#9E9E9E</color>
+
+    <!-- ========================================= -->
+    <!-- STANDARD COLORS -->
+    <!-- ========================================= -->
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="category_header_bg">#F5F5F5</color>
+
+    <!-- ========================================= -->
+    <!-- INTERACTION COLORS -->
+    <!-- ========================================= -->
+
+    <color name="ripple_light">#1F000000</color>
+    <color name="ripple_primary">#1F5DADE2</color>  <!-- Changed to app blue -->
+    <color name="selection_light">#1F5DADE2</color>  <!-- Changed to app blue -->
+    <color name="focus_light">#5DADE2</color>  <!-- Changed to app blue -->
+
+    <!-- ========================================= -->
+    <!-- GRADIENTS & EFFECTS -->
+    <!-- ========================================= -->
+
+    <color name="gradient_start">#5DADE2</color>  <!-- Changed to app blue -->
+    <color name="gradient_end">#4A9FD0</color>
+    <color name="overlay_light">#80FFFFFF</color>
+    <color name="overlay_dark">#80000000</color>
+
+    <!-- ========================================= -->
+    <!-- THEME ALIASES (for current theme) -->
+    <!-- ========================================= -->
+
+    <color name="text_primary">@color/text_primary_light</color>
+    <color name="text_secondary">@color/text_secondary_light</color>
+    <color name="text_hint">@color/text_hint_light</color>
+    <color name="surface_main">@color/surface_light</color>
+    <color name="background_main">@color/background_light</color>
+
+    <!-- ========================================= -->
+    <!-- MEAL CREATION COLORS (explicit references) -->
+    <!-- ========================================= -->
+
+    <color name="button_selected_blue">#5DADE2</color>
+    <color name="button_border_gray">#CCCCCC</color>
+    <color name="button_disabled_gray">#E0E0E0</color>
+    <color name="button_text_selected">#FFFFFF</color>
+    <color name="button_text_normal">#000000</color>
+    <color name="button_text_disabled">#999999</color>
+
+    <!-- =============================================== -->
+    <!-- ALLERGEN COLORS (EU 14 Mandatory Allergens)   -->
+    <!-- =============================================== -->
+
+    <!-- Gluten - Golden/Wheat color -->
+    <color name="allergen_gluten">#D4A574</color>
+
+    <!-- Crustaceans - Red/Coral -->
+    <color name="allergen_crustaceans">#C94D4D</color>
+
+    <!-- Eggs - Orange -->
+    <color name="allergen_eggs">#E8A765</color>
+
+    <!-- Fish - Blue -->
+    <color name="allergen_fish">#5B9FBC</color>
+
+    <!-- Peanuts - Golden brown -->
+    <color name="allergen_peanuts">#C9A561</color>
+
+    <!-- Soy - Green -->
+    <color name="allergen_soy">#88B584</color>
+
+    <!-- Milk - Light blue -->
+    <color name="allergen_milk">#6BB8D9</color>
+
+    <!-- Tree nuts - Brown/Maroon -->
+    <color name="allergen_nuts">#8B5A5A</color>
+
+    <!-- Celery - Yellow-green -->
+    <color name="allergen_celery">#C8D96B</color>
+
+    <!-- Mustard - Orange-brown -->
+    <color name="allergen_mustard">#C88A5E</color>
+
+    <!-- Sesame - Tan/Beige -->
+    <color name="allergen_sesame">#C4A27C</color>
+
+    <!-- Sulfites - Purple/Magenta -->
+    <color name="allergen_sulfites">#B66BA7</color>
+
+    <!-- Lupin - Yellow -->
+    <color name="allergen_lupin">#D4B55E</color>
+
+    <!-- Molluscs - Teal/Cyan -->
+    <color name="allergen_molluscs">#5FC4CC</color>
+
+    <!-- =============================================== -->
+    <!-- ALLERGEN FREE COLORS                           -->
+    <!-- =============================================== -->
+
+    <!-- Free version - Dark grey/black -->
+    <color name="allergen_free">#424242</color>
+    <color name="allergen_free_light">#757575</color>
+
+    <!-- Circle stroke for free version -->
+    <color name="allergen_free_stroke">#9E9E9E</color>
+
+    <!-- =============================================== -->
+    <!-- TIMELINE COLORS                                 -->
+    <!-- =============================================== -->
+
+    <color name="timeline_line">#E0E0E0</color>     <!-- Light gray line -->
+    <color name="timeline_dot">#5DADE2</color>      <!-- Blue dots (matches your theme) -->
+    <color name="timeline_now">#FF5722</color>      <!-- Orange/red for NOW indicator -->
+
+    <color name="background">@color/background_light</color>
+    <color name="text_tertiary">#9E9E9E</color>
+    <color name="divider">#E0E0E0</color>
+    <color name="meal_card_background">#F0F6FF</color>
+
+</resources>

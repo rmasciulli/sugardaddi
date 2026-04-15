@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    nutrition_label_category_header.xml
+
+    Category header that spans the full width of the nutrition table
+    Sits between the table header and nutrient rows
+
+    Visual style:
+    - Slightly smaller than nutrient names (13sp vs 16sp)
+    - Bold, all-caps
+    - Primary color for text
+    - Subtle background color
+    - Extra top spacing to separate from previous category
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/categoryHeaderText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/nutrition_category_macronutrients"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="6dp"
+        android:textStyle="italic"
+        android:textSize="14sp"
+        android:textColor="#5DADE2"
+        android:background="@color/white"
+        android:gravity="start|center_vertical" />
+
+    <!--
+        Add these to the "categoryHeaderText" TextView
+        if you want to rollback to the previous design:
+        android:letterSpacing="0.1"
+        android:textStyle="bold"
+    -->
+
+    <!-- Blue divider line below header -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#5DADE2"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="6dp" />
+
+</LinearLayout>

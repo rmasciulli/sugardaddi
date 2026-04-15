@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Energy specific nutrients -->
+    <string name="nutrient_energy">Énergie</string>
+    <string name="nutrient_energy_kj">Énergie (kJ)</string>
+    <string name="nutrient_energy_kcal">Énergie (kcal)</string>
+
+    <!-- Macronutrients -->
+    <string name="nutrient_proteins">Protéines</string>
+    <string name="nutrient_carbohydrates">Glucides</string>
+    <string name="nutrient_fat">Lipides</string>
+    <string name="nutrient_fiber">Fibres</string>
+    <string name="nutrient_alcohol">Alcool</string>
+    <string name="nutrient_water">Eau</string>
+
+    <!-- Sugars specific nutrients -->
+    <string name="nutrient_sugars">Sucres</string>
+    <string name="nutrient_starch">Amidon</string>
+    <string name="nutrient_polyols">Polyols</string>
+    <string name="nutrient_glucose">Glucose</string>
+    <string name="nutrient_fructose">Fructose</string>
+    <string name="nutrient_sucrose">Saccharose</string>
+    <string name="nutrient_lactose">Lactose</string>
+    <string name="nutrient_maltose">Maltose</string>
+    <string name="nutrient_galactose">Galactose</string>
+
+    <!-- Fats specific nutrients -->
+    <string name="nutrient_saturated_fat">Acides gras saturés</string>
+    <string name="nutrient_monounsaturated_fat">Acides gras monoinsaturés</string>
+    <string name="nutrient_polyunsaturated_fat">Acides gras polyinsaturés</string>
+    <string name="nutrient_trans_fat">Acides gras trans</string>
+    <string name="nutrient_omega3">Oméga-3</string>
+    <string name="nutrient_omega6">Oméga-6</string>
+    <string name="nutrient_omega9">Oméga-9</string>
+    <string name="nutrient_linoleic_acid">Acide linoléique</string>
+    <string name="nutrient_dha">DHA</string>
+    <string name="nutrient_epa">EPA</string>
+    <string name="nutrient_ala">ALA</string>
+    <string name="nutrient_arachidonic_acid">Acide arachidonique</string>
+    <string name="nutrient_gamma_linolenic_acid">Acide gamma-linolénique</string>
+    <string name="nutrient_conjugated_linoleic_acid">Acide linoléique conjugué</string>
+    <string name="nutrient_butyric_acid">Acide butyrique</string>
+    <string name="nutrient_caproic_acid">Acide caproïque</string>
+    <string name="nutrient_caprylic_acid">Acide caprylique</string>
+    <string name="nutrient_capric_acid">Acide caprique</string>
+    <string name="nutrient_lauric_acid">Acide laurique</string>
+    <string name="nutrient_myristic_acid">Acide myristique</string>
+    <string name="nutrient_palmitic_acid">Acide palmitique</string>
+    <string name="nutrient_stearic_acid">Acide stéarique</string>
+
+    <!-- Vitamins specific nutrients -->
+    <string name="nutrient_vitamin_a">Vitamine A</string>
+    <string name="nutrient_retinol">Rétinol</string>
+    <string name="nutrient_beta_carotene">Bêta-carotène</string>
+    <string name="nutrient_vitamin_d">Vitamine D</string>
+    <string name="nutrient_vitamin_e">Vitamine E</string>
+    <string name="nutrient_vitamin_k">Vitamine K</string>
+    <string name="nutrient_vitamin_k1">Vitamine K1</string>
+    <string name="nutrient_vitamin_k2">Vitamine K2</string>
+    <string name="nutrient_vitamin_b1">Vitamine B1 (Thiamine)</string>
+    <string name="nutrient_vitamin_b2">Vitamine B2 (Riboflavine)</string>
+    <string name="nutrient_vitamin_b3">Vitamine B3 (Niacine)</string>
+    <string name="nutrient_vitamin_b5">Vitamine B5 (Acide pantothénique)</string>
+    <string name="nutrient_vitamin_b6">Vitamine B6 (Pyridoxine)</string>
+    <string name="nutrient_vitamin_b7">Vitamine B7 (Biotine)</string>
+    <string name="nutrient_vitamin_b9">Vitamine B9 (Folate)</string>
+    <string name="nutrient_folate">Folate</string>
+    <string name="nutrient_vitamin_b12">Vitamine B12</string>
+    <string name="nutrient_vitamin_c">Vitamine C</string>
+    <string name="nutrient_choline">Choline</string>
+
+    <!-- Amino acids specific nutrients -->
+    <string name="nutrient_tryptophan">Tryptophane</string>
+    <string name="nutrient_threonine">Thréonine</string>
+    <string name="nutrient_isoleucine">Isoleucine</string>
+    <string name="nutrient_leucine">Leucine</string>
+    <string name="nutrient_lysine">Lysine</string>
+    <string name="nutrient_methionine">Méthionine</string>
+    <string name="nutrient_cysteine">Cystéine</string>
+    <string name="nutrient_phenylalanine">Phénylalanine</string>
+    <string name="nutrient_tyrosine">Tyrosine</string>
+    <string name="nutrient_valine">Valine</string>
+    <string name="nutrient_arginine">Arginine</string>
+    <string name="nutrient_histidine">Histidine</string>
+    <string name="nutrient_alanine">Alanine</string>
+    <string name="nutrient_aspartic_acid">Acide aspartique</string>
+    <string name="nutrient_glutamic_acid">Acide glutamique</string>
+    <string name="nutrient_glycine">Glycine</string>
+    <string name="nutrient_proline">Proline</string>
+    <string name="nutrient_serine">Sérine</string>
+
+    <!-- Minerals specific nutrients -->
+    <string name="nutrient_calcium">Calcium</string>
+    <string name="nutrient_phosphorus">Phosphore</string>
+    <string name="nutrient_magnesium">Magnésium</string>
+    <string name="nutrient_potassium">Potassium</string>
+    <string name="nutrient_sodium">Sodium</string>
+    <string name="nutrient_salt">Sel</string>
+    <string name="nutrient_chloride">Chlorure</string>
+    <string name="nutrient_iron">Fer</string>
+    <string name="nutrient_zinc">Zinc</string>
+    <string name="nutrient_copper">Cuivre</string>
+    <string name="nutrient_manganese">Manganèse</string>
+    <string name="nutrient_selenium">Sélénium</string>
+    <string name="nutrient_iodine">Iode</string>
+    <string name="nutrient_chromium">Chrome</string>
+    <string name="nutrient_molybdenum">Molybdène</string>
+    <string name="nutrient_fluoride">Fluorure</string>
+
+    <!-- Other nutrients -->
+    <string name="nutrient_cholesterol">Cholestérol</string>
+    <string name="nutrient_caffeine">Caféine</string>
+    <string name="nutrient_theobromine">Théobromine</string>
+    <string name="nutrient_taurine">Taurine</string>
+    <string name="nutrient_organic_acids">Acides organiques</string>
+    <string name="nutrient_ash">Cendres</string>
+</resources>

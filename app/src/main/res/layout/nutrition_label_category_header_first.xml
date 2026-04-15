@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    nutrition_label_category_header_first.xml
+
+    First category header with REDUCED top padding (10dp instead of 16dp)
+    This keeps the first category (Macronutrients) close to the table header
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <TextView
+        android:id="@+id/categoryHeaderText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/nutrition_category_macronutrients"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="6dp"
+        android:textStyle="italic"
+        android:textSize="14sp"
+        android:textColor="#5DADE2"
+        android:background="@color/white"
+        android:gravity="start|center_vertical" />
+
+    <!-- Blue divider line below header -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#5DADE2"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="6dp" />
+
+</LinearLayout>

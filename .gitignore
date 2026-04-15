@@ -1,0 +1,48 @@
+$ cat .gitignore
+# Built outputs
+*.apk
+*.aab
+*.dex
+/build/
+app/build/
+
+# Gradle cache (but keep wrapper)
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio / IntelliJ
+*.iml
+.idea/AndroidProjectSystem.xml
+.idea/appInsightsSettings.xml
+.idea/assetWizardSettings.xml
+.idea/caches/
+.idea/compiler.xml
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/libraries/
+.idea/misc.xml
+.idea/tasks.xml
+.idea/vcs.xml
+.idea/workspace.xml
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Signing — NEVER commit
+*.jks
+*.keystore
+keystore.properties
+
+# Assets: large composition files — downloaded at runtime from source DOIs
+# Ciqual composition (69MB) — https://doi.org/10.5281/zenodo.17550133
+app/src/main/assets/compo_*.xml
+# USDA food_nutrient (450MB) — https://fdc.nal.usda.gov/download-foods.html
+app/src/main/assets/food_nutrient*.csv
+# USDA branded food (200MB) — same source
+app/src/main/assets/branded_food*.csv
+# Generic safety net for any future large file
+app/src/main/assets/*.zip
+app/src/main/assets/*.db

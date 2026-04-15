@@ -1,0 +1,47 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="135dp"
+    android:height="135dp"
+    android:viewportWidth="135"
+    android:viewportHeight="135">
+  <path
+      android:pathData="M67.5,67.5m-67.5,0a67.5,67.5 0,1 1,135 0a67.5,67.5 0,1 1,-135 0"
+      android:fillColor="#FFFFFF"/>
+  <path
+      android:pathData="M67.5,2C103.62,2 133,31.38 133,67.5C133,103.62 103.62,133 67.5,133C31.38,133 2,103.62 2,67.5C2,31.38 31.38,2 67.5,2M67.5,0C30.22,0 0,30.22 0,67.5C0,104.78 30.22,135 67.5,135S135,104.78 135,67.5C135,30.22 104.78,0 67.5,0L67.5,0z"
+      android:fillColor="#231F20"/>
+  <path
+      android:pathData="M45.02,87.04c0,-4.42 3.58,-8 8,-8s8,3.58 8,8s-3.58,8 -8,8S45.02,91.46 45.02,87.04z"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M62.02,75.04c0,-4.42 3.58,-8 8,-8s8,3.58 8,8s-3.58,8 -8,8S62.02,79.46 62.02,75.04z"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M79.02,62.04c0,-4.42 3.58,-8 8,-8s8,3.58 8,8c0,4.42 -3.58,8 -8,8S79.02,66.46 79.02,62.04z"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M43.5,100.26c0,0 -0.84,1.21 -3.43,0c-2.58,-1.21 0.62,-1.28 -3.68,-7.18c-2.18,-5.7 -3.79,-11.13 -1.25,-16.58s10.38,-8.03 10.38,-8.03s-0.94,-6.37 2.02,-10.65c2.97,-4.28 9.51,-7.39 9.51,-7.39s0,-7.09 3.33,-11.32c3.33,-4.23 7.12,-4.59 12.65,-6.2c7.53,0.4 5.66,-2.15 8.2,-0.86c2.55,1.29 -0.91,1.2 3.27,7.11c2.04,4.84 2,7.85 2,7.85"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M44.11,75.04c4.5,-3.75 11.91,-3 11.91,-3s1,-6 5,-9s11,-3 11,-3s1.69,-6.85 6.44,-10.1s9.02,-2.72 14.56,-1.9c6.96,2.11 5.99,-1.02 8,1c2.02,2.02 -1.01,0.99 1,8c0.1,6.1 -0.25,11.75 -4.5,16s-12.5,4 -12.5,4s-1.29,6.31 -5.54,9.31S68.02,90.04 68.02,90.04s-2.42,6.66 -7,9.5c-4.58,2.84 -8.25,1.88 -14,1.5c-6.93,-2.95 -6.05,0.08 -8,-2c-1.95,-2.08 0.9,-0.95 -1,-7.93C35.92,86.02 39.61,78.79 44.11,75.04z"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M64.52,47.04c0,-3.61 1.59,-7.02 8,-6.5"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+  <path
+      android:pathData="M20.25,20.25L114.63,114.63"
+      android:strokeWidth="2"
+      android:fillColor="#00000000"
+      android:strokeColor="#000000"/>
+</vector>

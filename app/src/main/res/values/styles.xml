@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ================================================== -->
+    <!-- COMPONENT STYLES - NO themes here, only styles -->
+    <!-- ================================================== -->
+
+    <!-- ========================================= -->
+    <!-- CARD STYLES -->
+    <!-- ========================================= -->
+
+    <style name="CardView.SugarDaddi" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/surface_light</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="CardView.SugarDaddi.Search" parent="CardView.SugarDaddi">
+        <item name="cardBackgroundColor">@color/surface_variant_light</item>
+        <item name="cardCornerRadius">16dp</item>
+    </style>
+
+    <!-- ========================================= -->
+    <!-- BUTTON STYLES -->
+    <!-- ========================================= -->
+
+    <style name="Button.SugarDaddi" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+
+    <style name="Button.SugarDaddi.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/primary</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+
+    <style name="Button.SugarDaddi.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="backgroundTint">@color/primary_light</item>
+        <item name="android:textColor">@color/primary</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+
+    <!-- ========================================= -->
+    <!-- TEXT INPUT STYLES -->
+    <!-- ========================================= -->
+
+    <style name="TextInputLayout.SugarDaddi" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/surface_light</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/primary</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+    </style>
+
+    <!-- ========================================= -->
+    <!-- FAB STYLES -->
+    <!-- ========================================= -->
+
+    <style name="FloatingActionButton.SugarDaddi" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="backgroundTint">@color/primary</item>
+        <item name="tint">@color/white</item>
+        <item name="elevation">6dp</item>
+        <item name="hoveredFocusedTranslationZ">8dp</item>
+        <item name="pressedTranslationZ">12dp</item>
+        <!-- Use custom shape appearance for maximum roundness -->
+        <item name="shapeAppearance">@style/ShapeAppearance.SugarDaddi.FAB.Round</item>
+    </style>
+
+    <!-- Shape Appearance for FAB (maximum Roundness) -->
+    <style name="ShapeAppearance.SugarDaddi.FAB.Round" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- ========================================= -->
+    <!-- TEXT STYLES -->
+    <!-- ========================================= -->
+
+    <style name="TextAppearance.SugarDaddi.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">@color/text_primary_light</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/text_primary_light</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">@color/text_secondary_light</item>
+    </style>
+
+    <!-- ========================================= -->
+    <!-- NUTRI-SCORE STYLES -->
+    <!-- ========================================= -->
+
+    <!-- ADD THIS - The missing style that's causing the error -->
+    <style name="NutriScore">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/nutri_score_text</item>
+    </style>
+
+    <!-- Keep this too for consistency -->
+    <style name="NutriScore.Badge">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/nutri_score_text</item>
+    </style>
+
+    <!-- Main Picker Dialog Theme -->
+    <style name="MealCreationDateTimePickerTheme" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <!-- Primary color (header background, selected items) -->
+        <item name="colorPrimary">#5DADE2</item>
+
+        <!-- Secondary color (for accents, buttons) -->
+        <item name="colorSecondary">#5DADE2</item>
+
+        <!-- Accent color (fallback for older Material components) -->
+        <item name="colorAccent">#5DADE2</item>
+
+        <!-- Text on primary color (white on blue) -->
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <!-- Surface color (dialog background) -->
+        <item name="colorSurface">@android:color/white</item>
+
+        <!-- Text on surface -->
+        <item name="colorOnSurface">@android:color/black</item>
+
+        <!-- Android system attributes (for compatibility) -->
+        <item name="android:colorAccent">#5DADE2</item>
+        <item name="android:colorPrimary">#5DADE2</item>
+
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <item name="android:textColorSecondary">#5DADE2</item>
+
+        <!-- Button text color -->
+        <item name="colorOnSurfaceVariant">#5DADE2</item>
+        <item name="colorOnSecondaryContainer">#5DADE2</item>
+    </style>
+
+    <!-- Button style for dialog buttons (OK, Cancel) -->
+    <style name="MealCreationDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">#5DADE2</item>
+        <item name="rippleColor">#305DADE2</item>
+    </style>
+
+    <!-- Calendar style -->
+    <style name="MealCreationCalendarStyle" parent="Widget.Material3.MaterialCalendar">
+        <item name="daySelectedStyle">@style/MealCreationDaySelectedStyle</item>
+        <item name="dayTodayStyle">@style/MealCreationDayTodayStyle</item>
+        <item name="yearSelectedStyle">@style/MealCreationYearSelectedStyle</item>
+    </style>
+
+    <!-- Calendar header style -->
+    <style name="MealCreationCalendarHeaderStyle" parent="Widget.Material3.MaterialCalendar.HeaderLayout">
+        <item name="backgroundTint">#5DADE2</item>
+    </style>
+
+    <!-- Selected day style -->
+    <style name="MealCreationDaySelectedStyle" parent="Widget.Material3.MaterialCalendar.Day.Selected">
+        <item name="itemFillColor">#5DADE2</item>
+        <item name="itemTextColor">@android:color/white</item>
+    </style>
+
+    <!-- Today style -->
+    <style name="MealCreationDayTodayStyle" parent="Widget.Material3.MaterialCalendar.Day.Today">
+        <item name="itemStrokeColor">#5DADE2</item>
+        <item name="itemTextColor">#5DADE2</item>
+    </style>
+
+    <!-- Selected year style -->
+    <style name="MealCreationYearSelectedStyle" parent="Widget.Material3.MaterialCalendar.Year.Selected">
+        <item name="itemFillColor">#5DADE2</item>
+        <item name="itemTextColor">@android:color/white</item>
+    </style>
+
+    <!-- Theme for Date/Time Pickers -->
+    <style name="BluePickerDialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorPrimary">#5DADE2</item>
+        <item name="colorAccent">#5DADE2</item>
+        <item name="android:colorAccent">#5DADE2</item>
+        <item name="android:textColorPrimary">#5DADE2</item>
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
+
+</resources>

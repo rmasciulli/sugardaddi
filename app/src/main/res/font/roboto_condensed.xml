@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <!-- ========== LIGHT (300) ========== -->
+    
+    <!-- Light Normal -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="300"
+        android:font="@font/roboto_condensed_light"
+        app:fontStyle="normal"
+        app:fontWeight="300"
+        app:font="@font/roboto_condensed_light" />
+    
+    <!-- Light Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="300"
+        android:font="@font/roboto_condensed_light_italic"
+        app:fontStyle="italic"
+        app:fontWeight="300"
+        app:font="@font/roboto_condensed_light_italic" />
+    
+    <!-- ========== REGULAR (400) ========== -->
+    
+    <!-- Regular Normal -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:font="@font/roboto_condensed_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400"
+        app:font="@font/roboto_condensed_regular" />
+    
+    <!-- Regular Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="400"
+        android:font="@font/roboto_condensed_italic"
+        app:fontStyle="italic"
+        app:fontWeight="400"
+        app:font="@font/roboto_condensed_italic" />
+    
+    <!-- ========== MEDIUM (500) ========== -->
+    
+    <!-- Medium Normal -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="500"
+        android:font="@font/roboto_condensed_medium"
+        app:fontStyle="normal"
+        app:fontWeight="500"
+        app:font="@font/roboto_condensed_medium" />
+    
+    <!-- Medium Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="500"
+        android:font="@font/roboto_condensed_medium_italic"
+        app:fontStyle="italic"
+        app:fontWeight="500"
+        app:font="@font/roboto_condensed_medium_italic" />
+    
+    <!-- ========== BOLD (700) ========== -->
+    
+    <!-- Bold Normal -->
+    <font
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        android:font="@font/roboto_condensed_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700"
+        app:font="@font/roboto_condensed_bold" />
+    
+    <!-- Bold Italic -->
+    <font
+        android:fontStyle="italic"
+        android:fontWeight="700"
+        android:font="@font/roboto_condensed_bold_italic"
+        app:fontStyle="italic"
+        app:fontWeight="700"
+        app:font="@font/roboto_condensed_bold_italic" />
+    
+</font-family>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- nutrition_label_row.xml - Standard nutrient row (no indentation) -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- Row Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:gravity="center_vertical"
+        android:minHeight="36dp">
+
+        <!-- Column 1: Nutrient Name (no indentation) -->
+        <TextView
+            android:id="@+id/nutrientName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurface"
+            android:paddingEnd="8dp"
+            android:text="Nutrient"/>
+
+        <!-- Column 2: Per 100g Value -->
+        <TextView
+            android:id="@+id/valuePer100g"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="end"
+            android:paddingEnd="8dp"
+            android:text="0 g"/>
+
+        <!-- Column 3: Custom Amount Value -->
+        <TextView
+            android:id="@+id/valueCustomAmount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="end"
+            android:text="0 g"/>
+
+    </LinearLayout>
+
+    <!-- Divider under row -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="?attr/colorOnSurface"
+        android:alpha="0.1"/>
+
+</LinearLayout>

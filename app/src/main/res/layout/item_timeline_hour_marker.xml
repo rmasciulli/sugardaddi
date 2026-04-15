@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- item_timeline_hour_marker.xml - Hour stays LEFT of vertical line -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:paddingStart="0dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <!-- Hour Label - positioned to LEFT of vertical line (which is at ~40dp) -->
+    <TextView
+        android:id="@+id/hourText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:fontFamily="@font/inter"
+        android:textSize="11sp"
+        android:textColor="?android:attr/textColorTertiary"
+        android:alpha="0.6"
+        tools:text="08:00" />
+
+</FrameLayout>

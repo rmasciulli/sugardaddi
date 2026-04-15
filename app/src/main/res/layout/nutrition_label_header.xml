@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- nutrition_label_header.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- Column headers row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp">
+
+        <!-- Column 1: Nutrient name -->
+        <TextView
+            android:id="@+id/headerNutrient"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="@string/nutrition_label_nutrient_column"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:paddingEnd="8dp" />
+
+        <!-- Column 2: Per 100g (EU requirement) -->
+        <TextView
+            android:id="@+id/headerPer100g"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/per_100g"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="end"
+            android:paddingEnd="8dp" />
+
+        <!-- Column 3: Custom amount -->
+        <TextView
+            android:id="@+id/headerCustomAmount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/per_20g"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="end" />
+
+    </LinearLayout>
+
+    <!-- Black divider line below header -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/black"
+        android:layout_marginLeft="0dp"
+        android:layout_marginRight="0dp" />
+
+</LinearLayout>
