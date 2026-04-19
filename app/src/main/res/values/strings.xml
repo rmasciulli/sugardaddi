@@ -83,7 +83,7 @@
 
     <!-- Detail screen: Ciqual attribution -->
     <string name="ciqual_source_info">Ciqual data source information</string>
-    <string name="ciqual_attribution_detail">Scientific data from ANSES Ciqual — French nutritional composition table. No product images or commercial scores available.</string>
+    <string name="ciqual_attribution_detail">Scientific data from ANSES Ciqual - French nutritional composition table. No product images or commercial scores available.</string>
 
     <!-- Enhanced Product States -->
     <string name="product_loading_cache">Loading from cache…</string>
@@ -630,7 +630,67 @@
     <string name="ciqual_integrity_checking">Checking…</string>
     <string name="ciqual_integrity_products">products</string>
     <string name="ciqual_integrity_nutrition_records">nutrition records</string>
-    <string name="ciqual_integrity_empty">Database empty — reinitialisation required</string>
+    <string name="ciqual_integrity_empty">Database empty - reinitialisation required</string>
     <string name="ciqual_integrity_error">Error during check</string>
+
+    <!-- DATA SOURCE CARD - generic UI strings -->
+
+    <!-- Section header shown above all data source cards -->
+    <string name="ds_section_header">Data sources</string>
+
+    <!-- Status dot labels (used as content descriptions for accessibility) -->
+    <string name="ds_status_ready">Ready</string>
+    <string name="ds_status_not_ready">Not ready</string>
+    <string name="ds_status_initialising">Initialising…</string>
+    <string name="ds_status_error">Error</string>
+    <string name="ds_status_disabled">Disabled</string>
+
+    <!-- Enable / disable toggle label -->
+    <string name="ds_enabled_label">Enabled</string>
+
+    <!-- CREDENTIAL SECTION -->
+    <string name="ds_credential_section_label">API credentials</string>
+    <string name="ds_credential_hint_api_key">API key</string>
+    <string name="ds_credential_hint_username">Username</string>
+    <string name="ds_credential_hint_password">Password</string>
+    <string name="ds_credential_hint_bearer">Bearer token</string>
+    <string name="ds_credential_save">Save</string>
+    <string name="ds_credential_saved">Saved</string>
+    <!-- Default warning shown when the pre-filled DEMO_KEY is still active -->
+    <string name="ds_credential_warning_demo">⚠ Rate limited - register for a free key for unlimited access</string>
+
+    <!-- LOCAL DATABASE SECTION -->
+    <string name="ds_db_section_label">Local database</string>
+
+    <!-- Status line below version chip -->
+    <string name="ds_db_status_ready">Local database ready - offline search active</string>
+    <string name="ds_db_status_not_ready">Not downloaded - search uses online API</string>
+    <string name="ds_db_status_stale">Update available</string>
+
+    <!-- Version chip text pattern - source fills in the version string -->
+    <!-- Usage: String.format(getString(R.string.ds_db_version_format), "2025-11-03") -->
+    <string name="ds_db_version_format">v%s</string>
+
+    <!-- Integrity check button and result -->
+    <string name="ds_db_check_integrity">Check integrity</string>
+    <string name="ds_db_checking">Checking…</string>
+    <string name="ds_db_integrity_ok">%1$d products · %2$d nutrition records</string>
+    <string name="ds_db_integrity_partial">%1$d / %2$d products · %3$d nutrition records</string>
+    <string name="ds_db_integrity_empty">Database empty - reinitialisation required</string>
+    <string name="ds_db_integrity_error">Error during integrity check</string>
+
+    <!-- Reinitialise / download button -->
+    <string name="ds_db_reinitialise">Reinitialise database</string>
+
+    <!-- Import progress phase label shown below the progress bar -->
+    <!-- The actual phase text comes from the broadcast extra, not a string resource -->
+    <string name="ds_db_importing">Initialising…</string>
+
+    <!-- Toast shown on successful import completion -->
+    <!-- Source name is inserted at runtime -->
+    <string name="ds_db_import_success">%s database initialised. Offline search is now available.</string>
+
+    <!-- Toast shown on import failure -->
+    <string name="ds_db_import_error">Initialisation failed</string>
 
 </resources>

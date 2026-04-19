@@ -6,9 +6,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import li.masciul.sugardaddi.core.logging.LogLevel;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
@@ -21,14 +19,12 @@ import li.masciul.sugardaddi.data.network.NetworkClient;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.DataSource.SearchResult;
+import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import li.masciul.sugardaddi.data.sources.ciqual.api.CiqualAPI;
 import li.masciul.sugardaddi.data.sources.ciqual.api.CiqualSearchRequest;
 import li.masciul.sugardaddi.data.sources.ciqual.api.dto.CiqualElasticsearchResponse;
 import li.masciul.sugardaddi.data.sources.ciqual.mappers.CiqualElasticsearchMapper;
 import li.masciul.sugardaddi.data.sources.ciqual.xml.CiqualCategoryLookup;
-import li.masciul.sugardaddi.data.sources.ciqual.CiqualImportService;
-import li.masciul.sugardaddi.data.sources.ciqual.xml.CiqualXmlParser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,7 +137,7 @@ public class CiqualDataSource extends BaseDataSource {
     private static final String KEY_LAST_UPDATE = "last_update";
     private static final String KEY_DB_READY = "database_ready";
 
-    // ========== PHASE 1: ELASTICSEARCH API (ACTIVE) ==========
+    // ========== ELASTICSEARCH API ==========
 
     /**
      * Elasticsearch API instance
@@ -164,30 +160,14 @@ public class CiqualDataSource extends BaseDataSource {
      */
     private final AtomicBoolean apiReady = new AtomicBoolean(false);
 
-    // ========== PHASE 2: XML DOWNLOAD (PLANNED) ==========
-
-    /**
-     * XML parser for Ciqual database files
-     * Initialized in background after API is ready
-     */
-    private CiqualXmlParser xmlParser;
+    // ========== XML DOWNLOAD ==========
 
     /**
      * Background executor for XML parsing
      */
     private final ExecutorService backgroundExecutor;
 
-    /**
-     * XML parser ready flag - tracks if parser is initialized
-     */
-    private final AtomicBoolean xmlParserReady = new AtomicBoolean(false);
-
-    /**
-     * XML parser initialization in progress
-     */
-    private final AtomicBoolean xmlParserInitializing = new AtomicBoolean(false);
-
-    // ========== PHASE 3: LOCAL DATABASE (PLANNED) ==========
+    // ========== LOCAL DATABASE ==========
 
     /**
      * Room database instance
@@ -215,18 +195,6 @@ public class CiqualDataSource extends BaseDataSource {
      * Application context
      */
     private final Context context;
-
-    // ========== LISTENERS ==========
-
-    /**
-     * Optional listener for XML parser readiness
-     */
-    public interface XmlParserListener {
-        void onXmlParserReady();
-        void onXmlParserFailed(Error error);
-    }
-
-    private XmlParserListener xmlParserListener;
 
     // ========== CONSTRUCTOR ==========
 
@@ -288,10 +256,6 @@ public class CiqualDataSource extends BaseDataSource {
             // STAGE 1: Initialize API (fast)
             initializeApi();
 
-            // STAGE 2: Initialize XML parser (slow, background)
-            // Start in background but don't wait for it
-            initializeXmlParserAsync();
-
             // STAGE 2B: Category lookup from bundled asset (fast, ~50ms, background)
             initializeCategoryLookupAsync();
 
@@ -311,35 +275,33 @@ public class CiqualDataSource extends BaseDataSource {
     // ========== ASYNC INITIALIZATION (FOR BaseDataSource v2.1) ==========
 
     /**
-     * [DONE] NEW: Async initialization with dual-stage readiness
+     * Performs Ciqual-specific initialization on a background thread.
      *
-     * STAGE 1: API Initialization (~500ms)
-     * - Creates Retrofit client
-     * - Sets up Elasticsearch API
-     * - Calls onInitialized() when ready
-     * - Source becomes available for searches
+     * STAGE 1: API initialization (~500ms)
+     * - Creates Retrofit client pointed at the Ciqual Elasticsearch endpoint
+     * - Sets up the CiqualAPI interface
+     * - Once complete, isAvailable() returns true and searches can begin
      *
-     * STAGE 2: XML Parser Initialization (~30-60s, background)
-     * - Parses XML files
-     * - Calls onXmlParserReady() when ready (if listener set)
-     * - Enables enriched lookups
+     * STAGE 2: Category lookup (~50ms, also background)
+     * - Loads alim_grp asset into CiqualCategoryLookup
+     * - Enables breadcrumb category display in search cards
+     * - Non-fatal if it fails — flat category names are used as fallback
      *
-     * This method is called by BaseDataSource on a background thread.
-     * Heavy operations are safe here.
+     * Local DB import (Phase 3) is triggered separately from
+     * MainActivity.onActivityResumed() to guarantee the app is in the
+     * foreground when startForegroundService() is called.
      */
     @Override
     protected void onInitialize(@NonNull Context context) throws Exception {
         logInfo("Starting Ciqual initialization...");
 
-        // STAGE 1: Initialize API (fast, ~500ms)
+        // STAGE 1: Elasticsearch API client (fast)
         initializeApi();
 
-        // STAGE 2: Initialize XML parser (slow, background)
-        // Start in background but don't wait for it
-        initializeXmlParserAsync();
+        // STAGE 2: Category hierarchy from bundled asset (fast, background)
+        initializeCategoryLookupAsync();
 
-        logInfo("Ciqual API initialized successfully");
-        // onInitialized() callback will fire from BaseDataSource
+        logInfo("Ciqual initialized — API ready, category lookup loading");
     }
 
     /**
@@ -374,51 +336,6 @@ public class CiqualDataSource extends BaseDataSource {
             logError("Failed to initialize Ciqual API", e);
             throw new Exception("Failed to initialize Ciqual API: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Initialize XML parser asynchronously (slow, background)
-     * Does not block API initialization
-     */
-    private void initializeXmlParserAsync() {
-        if (xmlParserInitializing.getAndSet(true)) {
-            logDebug("XML parser initialization already in progress");
-            return;
-        }
-
-        logInfo("Starting XML parser initialization in background...");
-
-        backgroundExecutor.execute(() -> {
-            try {
-                // Create XML parser (heavy operation - parses files)
-                xmlParser = new CiqualXmlParser(context);
-
-                // Mark as ready
-                xmlParserReady.set(true);
-                xmlParserInitializing.set(false);
-
-                logInfo("Ciqual XML parser initialized successfully");
-
-                // Notify listener if set
-                if (xmlParserListener != null) {
-                    executeOnMainThread(() -> xmlParserListener.onXmlParserReady());
-                }
-
-            } catch (Exception e) {
-                logError("Failed to initialize XML parser", e);
-                xmlParserInitializing.set(false);
-
-                // Create error
-                Error error = Error.fromThrowable(e, "Failed to initialize XML parser");
-
-                // Notify listener if set
-                if (xmlParserListener != null) {
-                    executeOnMainThread(() -> xmlParserListener.onXmlParserFailed(error));
-                }
-
-                // Don't throw - API is still usable without XML parser
-            }
-        });
     }
 
     /**
@@ -482,28 +399,6 @@ public class CiqualDataSource extends BaseDataSource {
         });
     }
 
-    // ========== XML PARSER LISTENER ==========
-
-    /**
-     * Set listener for XML parser readiness (optional)
-     * Useful if you want to be notified when enriched lookups become available
-     */
-    public void setXmlParserListener(XmlParserListener listener) {
-        this.xmlParserListener = listener;
-
-        // If already ready, notify immediately
-        if (xmlParserReady.get() && listener != null) {
-            listener.onXmlParserReady();
-        }
-    }
-
-    /**
-     * Check if XML parser is available
-     */
-    public boolean isXmlParserAvailable() {
-        return xmlParserReady.get();
-    }
-
     // ========== REQUIRED BASEDATASOURCE METHODS ==========
 
     @NonNull
@@ -537,6 +432,20 @@ public class CiqualDataSource extends BaseDataSource {
 
         // Check if API is ready
         return apiReady.get();
+    }
+
+    // ========== SETTINGS PROVIDER ==========
+
+    /**
+     * Returns the CiqualSettingsProvider which gives the Settings UI everything
+     * it needs to render and interact with the Ciqual card:
+     * local DB state, integrity checks, import control, and broadcast actions.
+     * Credentials are not included — Ciqual requires no API key.
+     */
+    @Override
+    @NonNull
+    public SettingsProvider getSettingsProvider() {
+        return new CiqualSettingsProvider();
     }
 
     // ========== SEARCH ==========
@@ -982,15 +891,13 @@ public class CiqualDataSource extends BaseDataSource {
         super.cleanup();
         cancelOperations();
 
-        // Shutdown executor
+        // Shutdown background executor
         if (backgroundExecutor != null && !backgroundExecutor.isShutdown()) {
             backgroundExecutor.shutdown();
         }
 
-        // Clear state
+        // Reset API readiness flag
         apiReady.set(false);
-        xmlParserReady.set(false);
-        xmlParserInitializing.set(false);
 
         logDebug("Cleanup completed");
     }

@@ -3,6 +3,9 @@ package li.masciul.sugardaddi.managers;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
@@ -11,94 +14,96 @@ import li.masciul.sugardaddi.data.sources.ciqual.CiqualConfig;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConfig;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
-import li.masciul.sugardaddi.data.sources.config.DataSourceConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * DataSourceManager - UPDATED: Async parallel initialization
+ * DataSourceManager — Singleton registry and initialisation orchestrator.
  *
- * v2.1: NON-BLOCKING INITIALIZATION
- * - Sources initialize in parallel (not sequentially)
- * - Callback when each source is ready
- * - Callback when all sources are ready
- * - No more blocking UI thread
- * - Can start using sources as soon as they're available
+ * ARCHITECTURE v3.0 — Settings refactor
+ * ======================================
+ * REMOVED: DataSourceConfig dependency.
+ *   Enabled state is now persisted by each source in its own SharedPreferences
+ *   (via BaseDataSource.isEnabled() / setEnabled()). This manager no longer
+ *   needs a shared config file to know which sources are active.
  *
- * BEFORE (Blocking):
- * ```
- * DataSourceManager manager = DataSourceManager.getInstance(context);
- * // Had to wait 5+ seconds before using any source
- * ```
+ * REMOVED: hardcoded {@code int sourceCount = 2}.
+ *   The pending-initialisation counter is now incremented dynamically each time
+ *   a source is registered for async init. Adding USDA (or any future source)
+ *   requires no change here beyond calling registerAndInit().
  *
- * AFTER (Non-blocking):
- * ```
- * DataSourceManager manager = DataSourceManager.getInstance(context);
- * manager.setInitializationListener(new InitializationListener() {
- *     @Override
- *     public void onSourceReady(String sourceId) {
- *         // This source is ready - can use it now!
- *     }
+ * ADDED: {@link #getAllSources()} — all registered sources, sorted A→Z by name.
+ *   Used by SettingsActivity to build the data-source cards in alphabetical order.
  *
- *     @Override
- *     public void onAllSourcesReady(int successCount, int failedCount) {
- *         // All sources finished initializing
- *     }
- * });
- * // Can immediately continue - sources will signal when ready
- * ```
+ * ADDED: {@link #getActiveSources()} — enabled + initialised sources, A→Z.
+ *   Used by DataSourceAggregator for parallel search. Replaces the former
+ *   getEnabledDataSources() which filtered via DataSourceConfig.
+ *
+ * ENABLE / DISABLE
+ * ================
+ * The manager delegates directly to the source:
+ *   {@code manager.setSourceEnabled(sourceId, context, enabled)}
+ *   → calls {@code source.setEnabled(context, enabled)}
+ *
+ * No config file is written by this class.
+ *
+ * ADDING A NEW SOURCE
+ * ===================
+ * Inside initializeDataSources(), call registerAndInit() once per source.
+ * That's the only change required. The pending counter is automatic.
  */
 public class DataSourceManager {
 
     private static final String TAG = "DataSourceManager";
 
-    // Singleton instance
+    // Singleton
     private static volatile DataSourceManager instance;
 
-    // Data sources registry
+    // Registry: sourceId → DataSource
     private final Map<String, DataSource> dataSources = new ConcurrentHashMap<>();
-    private final DataSourceConfig config;
+
     private final Context context;
 
-    // Initialization tracking
-    private final Set<String> initializedSources = Collections.synchronizedSet(new HashSet<>());
-    private final Set<String> failedSources = Collections.synchronizedSet(new HashSet<>());
-    private final Map<String, Error> initializationErrors = new ConcurrentHashMap<>();
+    // Initialisation tracking
+    private final Set<String>         initializedSources  = Collections.synchronizedSet(new HashSet<>());
+    private final Set<String>         failedSources       = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Error>  initializationErrors = new ConcurrentHashMap<>();
+
+    // Dynamic counter — incremented per source registered for async init
     private final AtomicInteger pendingInitializations = new AtomicInteger(0);
 
-    // Callback for initialization events
+    // Optional listener for init events
+    @Nullable
     private InitializationListener initializationListener;
 
-    /**
-     * Callback interface for initialization events
-     */
+    // =========================================================================
+    // INITIALISATION CALLBACK
+    // =========================================================================
+
     public interface InitializationListener {
-        /**
-         * Called when a specific source finishes initializing successfully
-         * @param sourceId The ID of the source that's ready
-         */
+        /** Called when a source finishes initialising successfully. */
         void onSourceReady(String sourceId);
-
-        /**
-         * Called when a source fails to initialize
-         * @param sourceId The ID of the source that failed
-         * @param error The error that occurred
-         */
+        /** Called when a source fails to initialise. */
         void onSourceFailed(String sourceId, Error error);
-
-        /**
-         * Called when all sources have completed initialization (success or failure)
-         * @param successCount Number of sources successfully initialized
-         * @param failedCount Number of sources that failed to initialize
-         */
+        /** Called once all pending sources have finished (success or failure). */
         void onAllSourcesReady(int successCount, int failedCount);
     }
 
+    // =========================================================================
+    // SINGLETON
+    // =========================================================================
+
     private DataSourceManager(Context context) {
         this.context = context.getApplicationContext();
-        this.config = new DataSourceConfig(context);
         initializeDataSources();
     }
 
@@ -113,265 +118,303 @@ public class DataSourceManager {
         return instance;
     }
 
-    /**
-     * Set listener for initialization events
-     */
-    public void setInitializationListener(InitializationListener listener) {
-        this.initializationListener = listener;
+    // =========================================================================
+    // SOURCE REGISTRATION
+    // =========================================================================
 
-        // If some sources are already initialized, notify immediately
-        synchronized (initializedSources) {
-            for (String sourceId : initializedSources) {
-                if (listener != null) {
-                    listener.onSourceReady(sourceId);
+    /**
+     * Register a source and kick off its async initialisation.
+     *
+     * Increments the pending counter BEFORE submitting init so the counter
+     * is always ≥ the number of in-flight inits. This is the only place the
+     * counter is incremented — adding a new source here is all that's needed.
+     *
+     * @param source The data source to register and initialise.
+     */
+    private void registerAndInit(@NonNull DataSource source) {
+        String sourceId = source.getSourceId();
+        dataSources.put(sourceId, source);
+
+        if (source instanceof BaseDataSource) {
+            // Increment BEFORE starting so the latch is correct
+            pendingInitializations.incrementAndGet();
+
+            ((BaseDataSource) source).initialize(context, new BaseDataSource.InitializationCallback() {
+                @Override
+                public void onInitialized() {
+                    handleSourceInitialized(sourceId);
                 }
-            }
+
+                @Override
+                public void onInitializationFailed(Error error) {
+                    handleSourceFailed(sourceId, error);
+                }
+            });
+        } else {
+            // Synchronous fallback for sources that don't extend BaseDataSource
+            source.initialize(context);
+            initializedSources.add(sourceId);
+            Log.i(TAG, "✓ " + sourceId + " initialized (sync)");
         }
 
-        // If all sources are done, notify completion
-        if (pendingInitializations.get() == 0 && !dataSources.isEmpty()) {
-            if (listener != null) {
-                listener.onAllSourcesReady(initializedSources.size(), failedSources.size());
-            }
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Registered source: " + sourceId);
         }
     }
 
     /**
-     * Initialize all data sources IN PARALLEL (non-blocking)
+     * Register a data source without initialising it.
+     * Use this for sources that self-initialise or are already ready.
+     */
+    public void registerDataSource(@NonNull DataSource source) {
+        dataSources.put(source.getSourceId(), source);
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Registered (no init): " + source.getSourceId());
+        }
+    }
+
+    // =========================================================================
+    // INITIALISE ALL SOURCES
+    // =========================================================================
+
+    /**
+     * Create and initialise all data sources in parallel.
+     *
+     * TO ADD A NEW SOURCE: add one registerAndInit() call here.
+     * No other change is required — the pending counter is dynamic.
      */
     private void initializeDataSources() {
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Starting parallel initialization of data sources...");
+            Log.d(TAG, "Starting parallel data source initialisation…");
         }
 
-        // Count how many sources we're initializing
-        int sourceCount = 2; // OFF + Ciqual
-        pendingInitializations.set(sourceCount);
+        // ── OpenFoodFacts ──────────────────────────────────────────────────
+        registerAndInit(new OpenFoodFactsDataSource(context, new OpenFoodFactsConfig()));
 
-        // Initialize OpenFoodFacts (async)
-        OpenFoodFactsConfig offConfig = new OpenFoodFactsConfig();
-        OpenFoodFactsDataSource offSource = new OpenFoodFactsDataSource(context, offConfig);
-        registerDataSource(offSource);
+        // ── Ciqual ────────────────────────────────────────────────────────
+        registerAndInit(new CiqualDataSource(context, new CiqualConfig()));
 
-        if (offSource instanceof BaseDataSource) {
-            ((BaseDataSource) offSource).initialize(context, new BaseDataSource.InitializationCallback() {
-                @Override
-                public void onInitialized() {
-                    handleSourceInitialized(offSource.getSourceId());
-                }
-
-                @Override
-                public void onInitializationFailed(Error error) {
-                    handleSourceFailed(offSource.getSourceId(), error);
-                }
-            });
-        } else {
-            // Fallback to sync init
-            offSource.initialize(context);
-            handleSourceInitialized(offSource.getSourceId());
-        }
-
-        // Initialize Ciqual (async, in parallel with OFF)
-        CiqualConfig ciqualConfig = new CiqualConfig();
-        CiqualDataSource ciqualSource = new CiqualDataSource(context, ciqualConfig);
-        registerDataSource(ciqualSource);
-
-        if (ciqualSource instanceof BaseDataSource) {
-            ((BaseDataSource) ciqualSource).initialize(context, new BaseDataSource.InitializationCallback() {
-                @Override
-                public void onInitialized() {
-                    handleSourceInitialized(ciqualSource.getSourceId());
-                }
-
-                @Override
-                public void onInitializationFailed(Error error) {
-                    handleSourceFailed(ciqualSource.getSourceId(), error);
-                }
-            });
-        } else {
-            // Fallback to sync init
-            ciqualSource.initialize(context);
-            handleSourceInitialized(ciqualSource.getSourceId());
-        }
+        // ── Future: USDA ──────────────────────────────────────────────────
+        // registerAndInit(new USDADataSource(context, new USDAConfig()));
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Triggered initialization of " + sourceCount + " data sources (async)");
+            Log.d(TAG, "Triggered async init for " + pendingInitializations.get() + " sources");
         }
     }
 
-    /**
-     * Handle successful initialization of a source
-     */
+    // =========================================================================
+    // INIT EVENT HANDLERS
+    // =========================================================================
+
     private void handleSourceInitialized(String sourceId) {
         initializedSources.add(sourceId);
         int remaining = pendingInitializations.decrementAndGet();
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "✓ Source initialized: " + sourceId +
-                    " (remaining: " + remaining + ")");
+            Log.d(TAG, "✓ " + sourceId + " ready (pending=" + remaining + ")");
         }
 
-        // Notify listener
         if (initializationListener != null) {
             initializationListener.onSourceReady(sourceId);
         }
 
-        // Check if all done
         checkAllInitialized();
     }
 
-    /**
-     * Handle failed initialization of a source
-     */
     private void handleSourceFailed(String sourceId, Error error) {
         failedSources.add(sourceId);
         initializationErrors.put(sourceId, error);
         int remaining = pendingInitializations.decrementAndGet();
 
-        Log.e(TAG, "✗ Source initialization failed: " + sourceId +
-                " - " + error.getMessage() + " (remaining: " + remaining + ")");
+        Log.e(TAG, "✗ " + sourceId + " failed: " + error.getMessage()
+                + " (pending=" + remaining + ")");
 
-        // Notify listener
         if (initializationListener != null) {
             initializationListener.onSourceFailed(sourceId, error);
         }
 
-        // Check if all done
         checkAllInitialized();
     }
 
-    /**
-     * Check if all sources have finished initializing
-     */
     private void checkAllInitialized() {
         if (pendingInitializations.get() == 0) {
-            int successCount = initializedSources.size();
-            int failedCount = failedSources.size();
-
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "All data sources initialized: " + successCount +
-                        " successful, " + failedCount + " failed");
+                Log.d(TAG, "All sources initialised — success=" + initializedSources.size()
+                        + " failed=" + failedSources.size());
             }
-
-            // Notify listener
             if (initializationListener != null) {
-                initializationListener.onAllSourcesReady(successCount, failedCount);
+                initializationListener.onAllSourcesReady(
+                        initializedSources.size(), failedSources.size());
             }
         }
     }
 
-    /**
-     * Check if a specific source is initialized and ready
-     */
-    public boolean isSourceReady(String sourceId) {
-        return initializedSources.contains(sourceId);
-    }
+    // =========================================================================
+    // LISTENER
+    // =========================================================================
 
-    /**
-     * Get number of sources that are ready
-     */
-    public int getReadySourceCount() {
-        return initializedSources.size();
-    }
+    public void setInitializationListener(@Nullable InitializationListener listener) {
+        this.initializationListener = listener;
 
-    /**
-     * Get number of sources that failed
-     */
-    public int getFailedSourceCount() {
-        return failedSources.size();
-    }
-
-    /**
-     * Check if all sources have finished initializing (success or failure)
-     */
-    public boolean isInitializationComplete() {
-        return pendingInitializations.get() == 0;
-    }
-
-    /**
-     * Get initialization error for a specific source (if any)
-     */
-    public Error getInitializationError(String sourceId) {
-        return initializationErrors.get(sourceId);
-    }
-
-    /**
-     * Register a data source
-     */
-    public void registerDataSource(DataSource dataSource) {
-        String sourceId = dataSource.getSourceId();
-        dataSources.put(sourceId, dataSource);
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Registered data source: " + sourceId);
-        }
-    }
-
-    /**
-     * Get a specific data source
-     */
-    public DataSource getDataSource(String sourceId) {
-        return dataSources.get(sourceId);
-    }
-
-    /**
-     * Get all enabled AND AVAILABLE (initialized) data sources
-     */
-    public List<DataSource> getEnabledDataSources() {
-        Set<String> enabledIds = config.getEnabledSources();
-        List<DataSource> enabledSources = new ArrayList<>();
-
-        for (String sourceId : enabledIds) {
-            DataSource source = dataSources.get(sourceId);
-            if (source != null && source.isAvailable()) {
-                enabledSources.add(source);
+        // Replay already-completed events immediately
+        synchronized (initializedSources) {
+            for (String sourceId : initializedSources) {
+                if (listener != null) listener.onSourceReady(sourceId);
             }
         }
 
-        // Sort by priority
-        enabledSources.sort((a, b) ->
-                Integer.compare(
-                        config.getSourcePriority(b.getSourceId()),
-                        config.getSourcePriority(a.getSourceId())
-                )
-        );
-
-        return enabledSources;
-    }
-
-    /**
-     * Get primary data source (highest priority enabled source)
-     */
-    public DataSource getPrimaryDataSource() {
-        List<DataSource> enabled = getEnabledDataSources();
-        return enabled.isEmpty() ? null : enabled.get(0);
-    }
-
-    public boolean isSourceEnabled(String sourceId) {
-        return config.getEnabledSources().contains(sourceId);
-    }
-
-    public void setSourceEnabled(String sourceId, boolean enabled) {
-        config.setSourceEnabled(sourceId, enabled);
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Source " + sourceId + " " + (enabled ? "enabled" : "disabled"));
+        if (pendingInitializations.get() == 0 && !dataSources.isEmpty() && listener != null) {
+            listener.onAllSourcesReady(initializedSources.size(), failedSources.size());
         }
     }
 
+    // =========================================================================
+    // SOURCE QUERIES
+    // =========================================================================
+
+    /**
+     * All registered sources, sorted A→Z by display name.
+     * Used by SettingsActivity to render cards in alphabetical order.
+     * Includes sources that are disabled or still initialising.
+     */
+    @NonNull
+    public List<DataSource> getAllSources() {
+        List<DataSource> all = new ArrayList<>(dataSources.values());
+        all.sort(Comparator.comparing(DataSource::getSourceName,
+                String.CASE_INSENSITIVE_ORDER));
+        return all;
+    }
+
+    /**
+     * Sources that are enabled AND fully initialised, sorted A→Z.
+     * Used by DataSourceAggregator to build the parallel search set.
+     *
+     * Replaces the former getEnabledDataSources() which filtered via
+     * DataSourceConfig. Now each source owns its enabled flag.
+     */
+    @NonNull
+    public List<DataSource> getActiveSources() {
+        List<DataSource> active = new ArrayList<>();
+        for (DataSource source : dataSources.values()) {
+            if (source.isEnabled() && source.isAvailable()) {
+                active.add(source);
+            }
+        }
+        active.sort(Comparator.comparing(DataSource::getSourceName,
+                String.CASE_INSENSITIVE_ORDER));
+        return active;
+    }
+
+    /**
+     * All registered sources as a raw collection (no sorting).
+     * Kept for DataSourceAggregator.cancelSearches() which iterates all sources.
+     */
+    @NonNull
     public Collection<DataSource> getAllDataSources() {
         return new ArrayList<>(dataSources.values());
     }
 
     /**
-     * Clean up all data sources
+     * Compatibility shim — ProductRepository still calls this.
+     * Delegates to getActiveSources() (enabled + initialised, A→Z).
+     *
+     * @deprecated Use getActiveSources() in new code.
      */
+    @NonNull
+    @Deprecated
+    public List<DataSource> getEnabledDataSources() {
+        return getActiveSources();
+    }
+
+    /**
+     * Compatibility shim — ProductRepository still calls this.
+     * Returns the first active source alphabetically, or null if none ready.
+     *
+     * @deprecated Use getActiveSources() and pick the first element.
+     */
+    @Nullable
+    @Deprecated
+    public DataSource getPrimaryDataSource() {
+        List<DataSource> active = getActiveSources();
+        return active.isEmpty() ? null : active.get(0);
+    }
+
+    /**
+     * Look up a specific source by ID.
+     *
+     * @param sourceId e.g. "CIQUAL", "OPENFOODFACTS"
+     * @return The source, or null if not registered
+     */
+    @Nullable
+    public DataSource getDataSource(String sourceId) {
+        return dataSources.get(sourceId);
+    }
+
+    // =========================================================================
+    // ENABLE / DISABLE  (delegates to source, no config file)
+    // =========================================================================
+
+    /**
+     * Check whether a source is enabled.
+     * Reads directly from the source's own SharedPreferences.
+     */
+    public boolean isSourceEnabled(String sourceId) {
+        DataSource source = dataSources.get(sourceId);
+        return source != null && source.isEnabled();
+    }
+
+    /**
+     * Enable or disable a source.
+     * Persists the choice via the source's own SharedPreferences.
+     * The aggregator picks up the change on the next search call.
+     *
+     * @param sourceId e.g. "CIQUAL"
+     * @param context  Application context (needed for SharedPreferences write)
+     * @param enabled  true = include in searches, false = exclude
+     */
+    public void setSourceEnabled(String sourceId,
+                                 @NonNull Context context,
+                                 boolean enabled) {
+        DataSource source = dataSources.get(sourceId);
+        if (source != null) {
+            source.setEnabled(context, enabled);
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, sourceId + (enabled ? " enabled" : " disabled"));
+            }
+        } else {
+            Log.w(TAG, "setSourceEnabled: unknown source '" + sourceId + "'");
+        }
+    }
+
+    // =========================================================================
+    // INIT STATE QUERIES
+    // =========================================================================
+
+    public boolean isSourceReady(String sourceId) {
+        return initializedSources.contains(sourceId);
+    }
+
+    public boolean isInitializationComplete() {
+        return pendingInitializations.get() == 0;
+    }
+
+    public int getReadySourceCount()  { return initializedSources.size(); }
+    public int getFailedSourceCount() { return failedSources.size(); }
+
+    @Nullable
+    public Error getInitializationError(String sourceId) {
+        return initializationErrors.get(sourceId);
+    }
+
+    // =========================================================================
+    // CLEANUP
+    // =========================================================================
+
     public void cleanup() {
         for (DataSource source : dataSources.values()) {
-            try {
-                source.cleanup();
-            } catch (Exception e) {
-                Log.e(TAG, "Error cleaning up source: " + source.getSourceId(), e);
+            try { source.cleanup(); }
+            catch (Exception e) {
+                Log.e(TAG, "Error cleaning up " + source.getSourceId(), e);
             }
         }
         dataSources.clear();
@@ -380,38 +423,36 @@ public class DataSourceManager {
         initializationErrors.clear();
     }
 
+    // =========================================================================
+    // DIAGNOSTICS
+    // =========================================================================
+
     /**
-     * Get detailed status information
+     * Human-readable status dump for debug logging.
      */
+    @NonNull
     public String getStatus() {
-        StringBuilder status = new StringBuilder();
-        status.append("DataSource Status:\n");
-        status.append("  Total sources: ").append(dataSources.size()).append("\n");
-        status.append("  Initialized: ").append(initializedSources.size()).append("\n");
-        status.append("  Failed: ").append(failedSources.size()).append("\n");
-        status.append("  Pending: ").append(pendingInitializations.get()).append("\n\n");
+        StringBuilder sb = new StringBuilder("DataSourceManager status:\n");
+        sb.append("  Registered: ").append(dataSources.size()).append("\n");
+        sb.append("  Ready:      ").append(initializedSources.size()).append("\n");
+        sb.append("  Failed:     ").append(failedSources.size()).append("\n");
+        sb.append("  Pending:    ").append(pendingInitializations.get()).append("\n\n");
 
-        for (DataSource source : dataSources.values()) {
-            String sourceId = source.getSourceId();
-            status.append("  ").append(sourceId).append(": ");
+        for (DataSource source : getAllSources()) {
+            String id = source.getSourceId();
+            sb.append("  ").append(id).append(": ");
 
-            if (initializedSources.contains(sourceId)) {
-                status.append("✓ READY");
-            } else if (failedSources.contains(sourceId)) {
-                status.append("✗ FAILED");
-                Error error = initializationErrors.get(sourceId);
-                if (error != null) {
-                    status.append(" (").append(error.getMessage()).append(")");
-                }
+            if (initializedSources.contains(id))  sb.append("✓ READY");
+            else if (failedSources.contains(id)) {
+                sb.append("✗ FAILED");
+                Error err = initializationErrors.get(id);
+                if (err != null) sb.append(" (").append(err.getMessage()).append(")");
             } else {
-                status.append("⟳ INITIALIZING");
+                sb.append("⟳ INITIALIZING");
             }
 
-            status.append(", Enabled: ").append(isSourceEnabled(sourceId));
-            status.append(", Priority: ").append(config.getSourcePriority(sourceId));
-            status.append("\n");
+            sb.append(", enabled=").append(source.isEnabled()).append("\n");
         }
-
-        return status.toString();
+        return sb.toString();
     }
 }

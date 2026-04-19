@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_datasource_card.xml
+    ========================
+    Reusable card rendered once per registered DataSource in SettingsActivity.
+    All optional sections (credentials, local DB) start GONE and are made VISIBLE
+    by DataSourceCardManager based on SettingsProvider.hasCredentials() /
+    SettingsProvider.hasLocalDatabase().
+
+    SECTION STRUCTURE
+    ─────────────────
+    1. Header row        — source name + status dot + enable/disable switch  [always visible]
+    2. Description       — one-line source description                        [always visible]
+    3. Divider                                                                 [always visible]
+    4. Credential section — API key / basic auth input                        [conditional]
+    5. Divider (after credentials)                                             [conditional]
+    6. Local DB section  — version, progress, integrity, reinitialise          [conditional]
+
+    ID NAMING CONVENTION
+    ─────────────────────
+    All IDs are generic (no source prefix). DataSourceCardManager inflates one
+    instance per source and holds direct view references — no global ID lookup.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp"
+    app:cardBackgroundColor="@color/surface_variant_light">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1 — HEADER: name left · status dot · enable switch    -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="2dp">
+
+            <!-- Source display name (set programmatically from DataSource.getSourceName()) -->
+            <TextView
+                android:id="@+id/dsSourceName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="@color/text_primary_light"
+                android:textStyle="bold"
+                tools:text="Ciqual nutritional database" />
+
+            <!-- Status dot: 10 dp coloured circle, colour set programmatically -->
+            <View
+                android:id="@+id/dsStatusDot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="@color/nutrition_none" />
+
+            <!-- Enable / disable toggle -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/dsEnableSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:contentDescription="@string/ds_enabled_label" />
+
+        </LinearLayout>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2 — DESCRIPTION                                        -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <!-- Short one-liner from strings.xml (source_description_*) -->
+        <TextView
+            android:id="@+id/dsDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_condensed"
+            android:fontWeight="300"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/text_hint_light"
+            android:layout_marginBottom="10dp"
+            tools:text="French food composition table by ANSES" />
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- DIVIDER (always visible)                                        -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <View
+            android:id="@+id/dsDividerTop"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="12dp"
+            android:background="?attr/colorOutline"
+            android:alpha="0.2" />
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 4 — CREDENTIALS (GONE by default)                     -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <LinearLayout
+            android:id="@+id/dsCredentialSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <!-- Section sub-label -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ds_credential_section_label"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Credential input field — hint set programmatically from CredentialType -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/dsCredentialInputLayout"
+                style="@style/TextInputLayout.SugarDaddi"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                app:endIconMode="clear_text">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/dsCredentialInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textVisiblePassword"
+                    android:singleLine="true"
+                    tools:hint="API key" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Rate-limit / default-key warning (GONE until default key detected) -->
+            <TextView
+                android:id="@+id/dsCredentialWarning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="#FF9800"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="⚠ Rate limited — register for a free key for unlimited access" />
+
+            <!-- Save credential button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dsCredentialSaveButton"
+                style="@style/Button.SugarDaddi.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/ds_credential_save" />
+
+        </LinearLayout>
+
+        <!-- Divider after credentials (GONE when credential section is GONE) -->
+        <View
+            android:id="@+id/dsDividerCredential"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="12dp"
+            android:background="?attr/colorOutline"
+            android:alpha="0.2"
+            android:visibility="gone" />
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 6 — LOCAL DATABASE (GONE by default)                  -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+
+        <LinearLayout
+            android:id="@+id/dsLocalDbSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <!-- Section sub-label -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ds_db_section_label"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:textAllCaps="true"
+                android:letterSpacing="0.08"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Status text: "Local database ready" / "Not downloaded" etc. -->
+            <TextView
+                android:id="@+id/dsDbStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_condensed"
+                android:fontWeight="300"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/text_secondary_light"
+                android:layout_marginBottom="2dp"
+                tools:text="Local database ready — offline search active" />
+
+            <!-- Version chip: "v2025-11-03 · 3 484 foods" (GONE until imported) -->
+            <TextView
+                android:id="@+id/dsDbVersionText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto_condensed"
+                android:fontWeight="300"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_hint_light"
+                android:layout_marginBottom="10dp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="v2025-11-03 · 3 484 foods" />
+
+            <!-- Progress row: bar + percentage (GONE when not importing) -->
+            <LinearLayout
+                android:id="@+id/dsDbProgressRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp"
+                android:visibility="gone">
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/dsDbProgressBar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:trackThickness="4dp"
+                    app:indicatorColor="?attr/colorPrimary"
+                    app:trackColor="@color/primary_light"
+                    android:indeterminate="false" />
+
+                <TextView
+                    android:id="@+id/dsDbProgressPercent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/text_secondary_light"
+                    android:minWidth="32dp"
+                    android:gravity="end"
+                    tools:text="42%" />
+
+            </LinearLayout>
+
+            <!-- Phase description shown below the bar during import -->
+            <TextView
+                android:id="@+id/dsDbPhaseText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_secondary_light"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                tools:text="Importing foods... (1 200)" />
+
+            <!-- Integrity check row: button left, result text right -->
+            <LinearLayout
+                android:id="@+id/dsDbIntegrityRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/dsDbCheckIntegrityButton"
+                    style="@style/Button.SugarDaddi.Tonal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ds_db_check_integrity" />
+
+                <!-- Result text: auto-sizes to fit available space -->
+                <TextView
+                    android:id="@+id/dsDbIntegrityResult"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:gravity="end|center_vertical"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="10sp"
+                    android:autoSizeMaxTextSize="12sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:text="3 484 products · 3 484 nutrition records"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- Reinitialise / download button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dsDbReinitialiseButton"
+                style="@style/Button.SugarDaddi.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/ds_db_reinitialise" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

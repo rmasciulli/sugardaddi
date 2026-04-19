@@ -8,6 +8,12 @@
     <group android:checkableBehavior="single">
 
         <item
+            android:id="@+id/nav_search"
+            android:icon="@drawable/ic_search"
+            android:title="@string/menu_search_food"
+            android:checked="true" />
+
+        <item
             android:id="@+id/nav_journal"
             android:icon="@drawable/ic_calendar"
             android:title="@string/menu_my_journal" />
@@ -16,12 +22,6 @@
             android:id="@+id/nav_create_meal"
             android:icon="@android:drawable/ic_input_add"
             android:title="@string/menu_create_meal" />
-
-        <item
-            android:id="@+id/nav_search"
-            android:icon="@drawable/ic_search"
-            android:title="@string/menu_search_food"
-            android:checked="true" />
 
         <item
             android:id="@+id/nav_favorites"
