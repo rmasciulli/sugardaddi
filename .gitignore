@@ -1,4 +1,3 @@
-$ cat .gitignore
 # Built outputs
 *.apk
 *.aab
@@ -36,13 +35,14 @@ Thumbs.db
 *.keystore
 keystore.properties
 
-# Assets: large composition files — downloaded at runtime from source DOIs
-# Ciqual composition (69MB) — https://doi.org/10.5281/zenodo.17550133
+# Assets: large composition files - downloaded at runtime from source DOIs
+# Ciqual composition (69MB) - https://doi.org/10.5281/zenodo.17550133
 app/src/main/assets/compo_*.xml
-# USDA food_nutrient (450MB) — https://fdc.nal.usda.gov/download-foods.html
-app/src/main/assets/food_nutrient*.csv
-# USDA branded food (200MB) — same source
-app/src/main/assets/branded_food*.csv
+# USDA Foundation Foods JSON - https://fdc.nal.usda.gov/download-datasets
+app/src/main/assets/foundation_foods*.json
+# USDA SR Legacy JSON - https://fdc.nal.usda.gov/download-datasets
+app/src/main/assets/sr_legacy*.json
+
 # Generic safety net for any future large file
 app/src/main/assets/*.zip
 app/src/main/assets/*.db

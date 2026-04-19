@@ -21,6 +21,14 @@ android {
                 arguments["room.schemaLocation"] = "$projectDir/schemas"
             }
         }
+
+        // USDA FoodData Central API key
+        // Read from local.properties → environment variable → safe fallback.
+        // Never hardcode a real key here.
+        val usdaApiKey: String = (project.findProperty("USDA_API_KEY") as String?)
+            ?: System.getenv("USDA_API_KEY")
+            ?: "DEMO_KEY"
+        buildConfigField("String", "USDA_API_KEY", "\"$usdaApiKey\"")
     }
 
     androidResources {
@@ -40,6 +48,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     packaging {
