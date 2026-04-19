@@ -1,111 +1,82 @@
 package li.masciul.sugardaddi.data.sources.openfoodfacts.api;
 
-import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousResponse;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.AutocompleteResponse;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 /**
- * SearchAliciousAPI - Retrofit interface for search-a-licious API
+ * SearchAliciousAPI - Retrofit interface for the search-a-licious API
  *
  * WHAT IS SEARCH-A-LICIOUS?
- * Official OpenFoodFacts search solution built on Elasticsearch, providing:
- * - Fast full-text search with relevance scoring
- * - Advanced filtering using Lucene query syntax
- * - Autocomplete and typeahead functionality
- * - Faceted navigation (brands, categories, nutrition)
- * - Real-time index updates
+ * OpenFoodFacts' official search backend, built on Elasticsearch.
+ * Base URL: https://search.openfoodfacts.org/
+ * Docs:     https://search.openfoodfacts.org/docs
  *
- * API DOCUMENTATION:
- * - Base URL: https://search.openfoodfacts.org/
- * - Docs: https://search.openfoodfacts.org/docs
- * - OpenAPI: https://search.openfoodfacts.org/openapi.json
- * - Version: v1.4 (stable)
+ * TWO ENDPOINTS
+ * =============
+ * 1. /search  — full-text product search returning SearchAliciousResponse (product hits)
+ *    Used by: OpenFoodFactsDataSource.search() and OpenFoodFactsDataSource.autocomplete()
  *
- * KEY FEATURES:
- * - Language-aware search (langs parameter)
- * - Field selection (fields parameter for performance)
- * - Pagination (page, page_size)
- * - Relevance scoring (_score field)
- * - Quality filtering (completeness, nutrition_grades)
+ * 2. /autocomplete — taxonomy suggestions (categories, brands, ingredients)
+ *    Returns: AutocompleteResponse (option list, NOT products)
+ *    Used by: NOT YET CALLED — infrastructure is ready, see note below.
  *
- * USAGE WITH OpenFoodFactsDataSource:
- * ```java
- * OpenFoodFactsConfig config = new OpenFoodFactsConfig();
- * Retrofit retrofit = new Retrofit.Builder()
- *     .baseUrl(config.getSearchBaseUrl())  // search.openfoodfacts.org
- *     .addConverterFactory(GsonConverterFactory.create())
- *     .client(NetworkClient.createHttpClient(config, context))
- *     .build();
- * SearchAliciousAPI api = retrofit.create(SearchAliciousAPI.class);
- * ```
+ * AUTOCOMPLETE STRATEGY
+ * =====================
+ * OpenFoodFactsDataSource.autocomplete() currently uses the /search endpoint
+ * with AUTOCOMPLETE_FIELDS and a small page_size. This mirrors how
+ * CiqualDataSource.autocomplete() reuses the Elasticsearch /search endpoint
+ * with a match_phrase_prefix query — one consistent pattern across both sources.
  *
- * @author SugarDaddi Team
- * @version 2.0 (Search-a-licious Integration)
+ * The /autocomplete endpoint (taxonomy) will be wired in a future iteration
+ * to surface "Chocolates (category)" and "Milka (brand)" suggestions alongside
+ * product-name suggestions. The DTO is ready; only the DataSource call is pending.
+ *
+ * @version 2.1 — autocomplete endpoint declared with correct DTO
  */
 public interface SearchAliciousAPI {
 
     // ========== SEARCH ENDPOINT ==========
 
     /**
-     * Search for food products using Elasticsearch
+     * Full-text product search via Elasticsearch.
      *
-     * LUCENE QUERY SYNTAX:
-     * The "q" parameter supports powerful Lucene queries:
-     * - Simple: "chocolate"
-     * - Multiple words: "dark chocolate" (searches both words)
-     * - AND operator: "chocolate AND milk"
-     * - OR operator: "milk OR cream"
-     * - Field search: "brands:milka"
-     * - Range filter: "completeness:[0.5 TO 1.0]"
-     * - Phrase: "\"dark chocolate\""
-     * - Combined: "brands:milka AND completeness:[0.7 TO 1.0]"
+     * LUCENE QUERY SYNTAX (q parameter):
+     * - Simple:   "chocolate"
+     * - AND:      "chocolate AND milk"
+     * - Field:    "brands:milka"
+     * - Range:    "completeness:[0.5 TO 1.0]"
+     * - Phrase:   "\"dark chocolate\""
      *
      * LANGUAGE HANDLING:
-     * - "langs" parameter: Comma-separated language codes (e.g., "en,fr")
-     * - Affects field selection for product_name_xx, agribalyse.name_xx
-     * - Prioritizes first language, falls back to subsequent languages
+     * "langs" is comma-separated (e.g., "en,fr"). The API prioritises the first
+     * language for product_name_xx fields and falls back to subsequent ones.
      *
-     * FIELD SELECTION (IMPORTANT):
-     * - Always provide "fields" parameter for optimal performance
-     * - Use SearchAliciousConstants field subsets (SEARCH_RESULTS_FIELDS, etc.)
-     * - Reduces response size and improves speed
-     * - Without fields, returns ALL document fields (slow, large response)
-     *
-     * PAGINATION:
-     * - page: 1-based page number (page=1 for first page)
-     * - page_size: Results per page (max 100, default 10)
-     * - Response includes: page_count (total pages), count (total results)
-     *
-     * QUALITY FILTERING:
-     * Best practice: Include completeness filter in query
-     * ```java
-     * String query = QueryBuilder.withQualityFilter("chocolate", 0.5);
-     * // Returns: "(chocolate) AND completeness:[0.5 TO 1.0]"
-     * ```
+     * FIELD SELECTION:
+     * Always pass the "fields" parameter — omitting it returns the full document
+     * (slow and large). Use SearchAliciousConstants field subsets.
      *
      * RESPONSE STRUCTURE:
-     * ```json
      * {
-     *   "hits": [...],           // Array of products (SearchAliciousHit)
-     *   "count": 1234,           // Total matching products
-     *   "page": 1,               // Current page
-     *   "page_size": 20,         // Results per page
-     *   "page_count": 62,        // Total pages
-     *   "is_count_exact": true,  // Whether count is exact
-     *   "took": 45,              // Query time in ms
-     *   "timed_out": false,      // Whether query timed out
-     *   "warnings": [...]        // Optional warnings array
+     *   "hits":         [...],   // SearchAliciousHit array
+     *   "count":        1234,    // Total matching products
+     *   "page":         1,
+     *   "page_size":    20,
+     *   "page_count":   62,
+     *   "is_count_exact": true,
+     *   "took":         45,      // ms
+     *   "timed_out":    false
      * }
-     * ```
      *
-     * @param query Search query with optional Lucene filters (required)
-     * @param langs Comma-separated language codes (e.g., "en,fr")
-     * @param pageSize Number of results per page (1-100)
-     * @param page Page number starting from 1
-     * @param fields Comma-separated field list (use Constants.SEARCH_RESULTS_FIELDS)
-     * @return Call containing SearchAliciousResponse with hits and metadata
+     * @param query     Lucene query string (required)
+     * @param langs     Comma-separated language codes, e.g. "en,fr"
+     * @param pageSize  Results per page (1–100)
+     * @param page      Page number, 1-based
+     * @param fields    Comma-separated field list (use SearchAliciousConstants)
+     * @param sortBy    Sort field (use SearchAliciousConstants.SortBy)
+     * @return Call wrapping SearchAliciousResponse
      */
     @GET("search")
     Call<SearchAliciousResponse> search(
@@ -117,52 +88,46 @@ public interface SearchAliciousAPI {
             @Query("sort_by") String sortBy
     );
 
-    // ========== AUTOCOMPLETE ENDPOINT ==========
+    // ========== AUTOCOMPLETE (TAXONOMY) ENDPOINT ==========
 
     /**
-     * Get autocomplete suggestions for taxonomy terms
+     * Taxonomy autocomplete — returns category/brand/ingredient suggestions,
+     * NOT products.
      *
-     * WHAT IT DOES:
-     * Provides fast typeahead suggestions from OpenFoodFacts taxonomies:
-     * - Categories (e.g., "bev" → "beverages", "beverage mixes")
-     * - Brands (e.g., "mil" → "milka", "milbona")
-     * - Ingredients (e.g., "cho" → "chocolate", "chocolate chips")
+     * EXAMPLE REQUEST:
+     *   GET /autocomplete?q=choc&taxonomy_names=category,brand&lang=en&size=5
      *
-     * TAXONOMY NAMES:
-     * - "category": Product categories
-     * - "brand": Brand names
-     * - "ingredient": Ingredient names
-     * - Multiple: "category,brand" (comma-separated)
+     * EXAMPLE RESPONSE:
+     * {
+     *   "options": [
+     *     {"id": "en:chocolates",    "text": "Chocolates",    "taxonomy_name": "category"},
+     *     {"id": "en:chocolate-bars","text": "Chocolate bars","taxonomy_name": "category"},
+     *     {"id": "milka",            "text": "Milka",          "taxonomy_name": "brand"}
+     *   ]
+     * }
      *
-     * LANGUAGE HANDLING:
-     * - "lang" parameter: Single language code (e.g., "en")
-     * - Returns suggestions in specified language when available
-     * - Falls back to other languages if not available
+     * TAXONOMY NAMES (taxonomy_names parameter):
+     * - "category"    — food categories from OFF taxonomy
+     * - "brand"       — brand names
+     * - "ingredient"  — ingredient names
+     * - Multiple:     "category,brand" (comma-separated)
      *
      * FUZZINESS:
-     * - null or 0: Exact prefix matching only
-     * - 1: Allow 1 character difference (typo tolerance)
-     * - 2: Allow 2 character differences (more forgiving)
+     * - null / omit — exact prefix matching only
+     * - 1           — allow 1 character difference (typo tolerance)
+     * - 2           — allow 2 character differences
      *
-     * TYPICAL USE CASE:
-     * ```java
-     * // User types "choc" in search box
-     * autocomplete("choc", "category,brand", "en", 5, null)
-     * // Returns: ["chocolate", "chocolate bars", "chocolates", "choco", "chocolatine"]
-     * ```
+     * NOTE: This endpoint is declared and the DTO is ready.
+     * OpenFoodFactsDataSource does NOT call this yet — product-name autocomplete
+     * is handled via the /search endpoint for consistency with Ciqual.
+     * Wire this when taxonomy suggestions ("Chocolates (category)") are added to the UI.
      *
-     * RESPONSE:
-     * Returns array of suggestion objects with:
-     * - Matched term
-     * - Taxonomy name
-     * - Language
-     *
-     * @param query User's partial input (e.g., "choc", "mil")
-     * @param taxonomyNames Comma-separated taxonomy names (e.g., "category,brand")
-     * @param lang Language code for suggestions (e.g., "en")
-     * @param size Maximum number of suggestions to return (default 10)
-     * @param fuzziness Typo tolerance level (null=none, 1=1 char, 2=2 chars)
-     * @return Call containing AutocompleteResponse with suggestion array
+     * @param query         Partial user input, e.g. "choc"
+     * @param taxonomyNames Comma-separated taxonomy names, e.g. "category,brand"
+     * @param lang          Single language code, e.g. "en"
+     * @param size          Max suggestions (default 10)
+     * @param fuzziness     Typo tolerance: null = none, 1 = 1 char, 2 = 2 chars
+     * @return Call wrapping AutocompleteResponse (taxonomy options, not products)
      */
     @GET("autocomplete")
     Call<AutocompleteResponse> autocomplete(
@@ -172,19 +137,4 @@ public interface SearchAliciousAPI {
             @Query("size") Integer size,
             @Query("fuzziness") Integer fuzziness
     );
-
-    // ========== DOCUMENT ENDPOINT (OPTIONAL - for future use) ==========
-
-    /**
-     * Get a single product document by barcode
-     *
-     * NOTE: This is optional - we can use OFF v2 API for product details.
-     * Included here for completeness, but OpenFoodFactsDataSource should use
-     * OpenFoodFactsAPI.getProduct() for detailed product data.
-     *
-     * @param identifier Product barcode/code
-     * @return Call containing single product document
-     */
-    // @GET("document/{identifier}")
-    // Call<JsonObject> getDocument(@Path("identifier") String identifier);
 }

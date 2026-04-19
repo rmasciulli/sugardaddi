@@ -6,263 +6,142 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AutocompleteResponse - Response from autocomplete endpoint
+ * AutocompleteResponse - Response from SearchAlicious /autocomplete taxonomy endpoint
  *
- * WHAT IS AUTOCOMPLETE?
- * The autocomplete endpoint provides fast typeahead suggestions from
- * OpenFoodFacts taxonomies (categories, brands, ingredients).
+ * WHAT THIS IS:
+ * The SearchAlicious autocomplete endpoint returns taxonomy suggestions
+ * (categories, brands, ingredients), NOT products. The response structure
+ * is completely different from SearchAliciousResponse.
+ *
+ * ENDPOINT: GET /autocomplete?q=...&taxonomy_names=category,brand&lang=en&size=5
  *
  * RESPONSE STRUCTURE:
- * The API returns an array of suggestion objects, each containing:
- * - id: Unique identifier for the term
- * - text: Display text for the suggestion
- * - taxonomy_name: Which taxonomy this belongs to
- * - Additional metadata (optional)
- *
- * TYPICAL USE CASES:
- * 1. Search box typeahead
- * 2. Category filtering dropdown
- * 3. Brand selection autocomplete
- * 4. Ingredient search suggestions
- *
- * EXAMPLE REQUEST:
- * GET /autocomplete?q=choc&taxonomy_names=category,brand&lang=en&size=5
- *
- * EXAMPLE RESPONSE:
- * ```json
  * {
  *   "options": [
- *     {"id": "en:chocolates", "text": "Chocolates", "taxonomy_name": "category"},
+ *     {"id": "en:chocolates",   "text": "Chocolates",   "taxonomy_name": "category"},
  *     {"id": "en:chocolate-bars", "text": "Chocolate bars", "taxonomy_name": "category"},
- *     {"id": "milka", "text": "Milka", "taxonomy_name": "brand"}
+ *     {"id": "milka",           "text": "Milka",         "taxonomy_name": "brand"}
  *   ]
  * }
- * ```
  *
- * @author SugarDaddi Team
- * @version 2.0 (Search-a-licious Integration)
+ * CURRENT STATUS:
+ * The Retrofit interface declares the endpoint; the DTO is compiled and ready.
+ * OpenFoodFactsDataSource does NOT call this endpoint yet — its autocomplete()
+ * method uses the /search endpoint with AUTOCOMPLETE_FIELDS for product-name
+ * suggestions, which is consistent with CiqualDataSource's pattern.
+ *
+ * FUTURE USE:
+ * This DTO enables a second autocomplete mode: taxonomy suggestions
+ * ("Chocolates (category)", "Milka (brand)") shown above product suggestions.
+ * When implemented, OpenFoodFactsDataSource.autocomplete() will call
+ * searchApi.autocomplete() alongside searchApi.search() and merge both.
  */
 public class AutocompleteResponse {
 
-    /**
-     * Array of autocomplete suggestions
-     * Each suggestion is a matched term from the requested taxonomies
-     */
+    /** Array of taxonomy suggestions returned by the endpoint */
     @SerializedName("options")
     private List<AutocompleteSuggestion> options;
 
     // ========== CONSTRUCTORS ==========
 
-    /**
-     * Default constructor required by Gson
-     */
     public AutocompleteResponse() {
         this.options = new ArrayList<>();
     }
 
-    /**
-     * Constructor with suggestions
-     *
-     * @param options List of autocomplete suggestions
-     */
     public AutocompleteResponse(List<AutocompleteSuggestion> options) {
         this.options = options != null ? options : new ArrayList<>();
     }
 
-    // ========== GETTERS ==========
+    // ========== ACCESSORS ==========
 
     public List<AutocompleteSuggestion> getOptions() {
         return options != null ? options : new ArrayList<>();
     }
 
-    // ========== SETTERS ==========
-
     public void setOptions(List<AutocompleteSuggestion> options) {
         this.options = options;
     }
 
-    // ========== HELPER METHODS ==========
-
-    /**
-     * Check if response contains suggestions
-     *
-     * @return true if options array is not empty
-     */
     public boolean hasSuggestions() {
         return options != null && !options.isEmpty();
     }
 
-    /**
-     * Check if response is empty (no suggestions)
-     *
-     * @return true if no suggestions returned
-     */
-    public boolean isEmpty() {
-        return !hasSuggestions();
-    }
-
-    /**
-     * Get number of suggestions
-     *
-     * @return Count of suggestions in response
-     */
     public int getSuggestionCount() {
         return options != null ? options.size() : 0;
     }
 
     /**
-     * Get suggestions for a specific taxonomy
-     *
-     * @param taxonomyName Taxonomy name (e.g., "category", "brand")
-     * @return Filtered list of suggestions for that taxonomy
-     */
-    public List<AutocompleteSuggestion> getSuggestionsForTaxonomy(String taxonomyName) {
-        List<AutocompleteSuggestion> filtered = new ArrayList<>();
-        for (AutocompleteSuggestion suggestion : getOptions()) {
-            if (taxonomyName.equals(suggestion.getTaxonomyName())) {
-                filtered.add(suggestion);
-            }
-        }
-        return filtered;
-    }
-
-    /**
-     * Get all suggestion texts as a simple string list
-     * Useful for simple autocomplete UI components
-     *
-     * @return List of suggestion texts
+     * Extract plain display texts from all suggestions.
+     * Useful for populating a simple string dropdown.
      */
     public List<String> getSuggestionTexts() {
         List<String> texts = new ArrayList<>();
-        for (AutocompleteSuggestion suggestion : getOptions()) {
-            texts.add(suggestion.getText());
+        for (AutocompleteSuggestion s : getOptions()) {
+            if (s.getText() != null) texts.add(s.getText());
         }
         return texts;
     }
 
-    // ========== OBJECT METHODS ==========
-
     @Override
     public String toString() {
-        return String.format("AutocompleteResponse{suggestions=%d}", getSuggestionCount());
+        return "AutocompleteResponse{suggestions=" + getSuggestionCount() + "}";
     }
 
-    // ========== NESTED CLASS: AutocompleteSuggestion ==========
+    // ========== NESTED CLASS ==========
 
     /**
-     * AutocompleteSuggestion - Individual suggestion from autocomplete
+     * AutocompleteSuggestion - One taxonomy term returned by the autocomplete endpoint.
      *
-     * Represents a single matched term from the taxonomy search.
+     * Each suggestion comes from a single taxonomy (category, brand, ingredient).
+     * The "text" field is the human-readable display string; "id" is the
+     * taxonomy key (e.g., "en:chocolates") used for filtering.
      */
     public static class AutocompleteSuggestion {
 
-        /**
-         * Unique identifier for the term
-         * Format: "taxonomy_prefix:term" (e.g., "en:chocolates")
-         */
+        /** Taxonomy key, e.g. "en:chocolates" or "milka" */
         @SerializedName("id")
         private String id;
 
-        /**
-         * Display text for the suggestion
-         * Human-readable, localized term name
-         */
+        /** Human-readable display text, e.g. "Chocolates" or "Milka" */
         @SerializedName("text")
         private String text;
 
-        /**
-         * Taxonomy this suggestion belongs to
-         * Values: "category", "brand", "ingredient", etc.
-         */
+        /** Which taxonomy this came from: "category", "brand", "ingredient" */
         @SerializedName("taxonomy_name")
         @Nullable
         private String taxonomyName;
 
         // ========== CONSTRUCTORS ==========
 
-        /**
-         * Default constructor required by Gson
-         */
-        public AutocompleteSuggestion() {
-        }
+        public AutocompleteSuggestion() {}
 
-        /**
-         * Constructor with all fields
-         *
-         * @param id Unique identifier
-         * @param text Display text
-         * @param taxonomyName Taxonomy name
-         */
         public AutocompleteSuggestion(String id, String text, @Nullable String taxonomyName) {
             this.id = id;
             this.text = text;
             this.taxonomyName = taxonomyName;
         }
 
-        // ========== GETTERS ==========
+        // ========== ACCESSORS ==========
 
-        public String getId() {
-            return id;
-        }
-
-        public String getText() {
-            return text;
-        }
-
+        public String getId()           { return id; }
+        public String getText()         { return text; }
         @Nullable
-        public String getTaxonomyName() {
-            return taxonomyName;
-        }
+        public String getTaxonomyName() { return taxonomyName; }
 
-        // ========== SETTERS ==========
+        public void setId(String id)                     { this.id = id; }
+        public void setText(String text)                 { this.text = text; }
+        public void setTaxonomyName(String taxonomyName) { this.taxonomyName = taxonomyName; }
 
-        public void setId(String id) {
-            this.id = id;
-        }
+        // ========== CONVENIENCE ==========
 
-        public void setText(String text) {
-            this.text = text;
-        }
-
-        public void setTaxonomyName(String taxonomyName) {
-            this.taxonomyName = taxonomyName;
-        }
-
-        // ========== HELPER METHODS ==========
-
-        /**
-         * Check if suggestion is from category taxonomy
-         *
-         * @return true if taxonomy_name is "category"
-         */
-        public boolean isCategory() {
-            return "category".equals(taxonomyName);
-        }
-
-        /**
-         * Check if suggestion is from brand taxonomy
-         *
-         * @return true if taxonomy_name is "brand"
-         */
-        public boolean isBrand() {
-            return "brand".equals(taxonomyName);
-        }
-
-        /**
-         * Check if suggestion is from ingredient taxonomy
-         *
-         * @return true if taxonomy_name is "ingredient"
-         */
-        public boolean isIngredient() {
-            return "ingredient".equals(taxonomyName);
-        }
-
-        // ========== OBJECT METHODS ==========
+        public boolean isCategory()   { return "category".equals(taxonomyName); }
+        public boolean isBrand()      { return "brand".equals(taxonomyName); }
+        public boolean isIngredient() { return "ingredient".equals(taxonomyName); }
 
         @Override
         public String toString() {
-            return String.format("AutocompleteSuggestion{id='%s', text='%s', taxonomy='%s'}",
-                    id, text, taxonomyName);
+            return "AutocompleteSuggestion{id='" + id + "', text='" + text
+                    + "', taxonomy='" + taxonomyName + "'}";
         }
     }
 }

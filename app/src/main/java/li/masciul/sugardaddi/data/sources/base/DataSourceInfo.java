@@ -4,39 +4,37 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * DataSourceInfo - Information and metadata about a data source
+ * DataSourceInfo — Immutable diagnostic snapshot of a data source's runtime state.
  *
- * UPDATED v2.0 (Network Refactor):
- * - Added status tracking (enabled, health, last used)
- * - Added statistics (request count, error count)
- * - Enhanced metadata (version, capabilities)
- * - Builder pattern for easy construction
+ * ARCHITECTURE v3.0 — Settings refactor
+ * ======================================
+ * REMOVED: {@code priority} field.
+ *   Priority was used by DataSourceConfig to sort search results. DataSourceConfig
+ *   is deleted. Sources are now ordered alphabetically for Settings display and
+ *   by registration order for search. There is no user-adjustable priority.
  *
- * DESIGN PHILOSOPHY:
- * - Immutable: Once created, info doesn't change (use builder for updates)
- * - Complete: All relevant metadata in one place
- * - UI-friendly: Display text, icons, attribution
- * - Debug-friendly: Stats, timestamps, health info
+ * KEPT: {@code enabled} field (as a read-only snapshot).
+ *   The live source of truth for enabled state is each source's own
+ *   SharedPreferences (read via DataSource.isEnabled()). This field captures
+ *   that value at the moment getSourceInfo() is called — useful for logging
+ *   and diagnostics. It is NOT used to make routing decisions.
  *
- * USAGE:
- * ```java
- * DataSourceInfo info = new DataSourceInfo.Builder("OPENFOODFACTS")
- *     .setName("OpenFoodFacts")
- *     .setDescription("Open database of food products")
- *     .setWebsiteUrl("https://world.openfoodfacts.org")
- *     .setRequiresAttribution(true)
- *     .setAttributionText("Data from OpenFoodFacts.org")
- *     .setPriority(100)
- *     .setEnabled(true)
- *     .build();
- * ```
+ * PURPOSE
+ * =======
+ * This object is built fresh by BaseDataSource.getSourceInfo() and is intended
+ * for diagnostics, logging, and the status summary in the settings card header.
+ * It is NOT a configuration object — nothing routes or filters based on its fields.
  *
- * @author SugarDaddi Team
- * @version 2.0 (Network Refactor)
+ * IMMUTABILITY
+ * ============
+ * All fields are final. To "update" info, call getSourceInfo() again — it builds
+ * a new snapshot from current runtime state.
  */
 public class DataSourceInfo {
 
-    // ========== CORE METADATA ==========
+    // =========================================================================
+    // CORE IDENTITY
+    // =========================================================================
 
     @NonNull
     private final String id;
@@ -50,10 +48,9 @@ public class DataSourceInfo {
     @Nullable
     private final String version;
 
-    @Nullable
-    private final String iconUrl;
-
-    // ========== ATTRIBUTION ==========
+    // =========================================================================
+    // ATTRIBUTION
+    // =========================================================================
 
     private final boolean requiresAttribution;
 
@@ -63,332 +60,234 @@ public class DataSourceInfo {
     @Nullable
     private final String websiteUrl;
 
-    // ========== CONFIGURATION ==========
+    // =========================================================================
+    // RUNTIME SNAPSHOT (not configuration)
+    // =========================================================================
 
-    private final int priority;                // For sorting/merging (0-100)
-    private final boolean enabled;             // Is this source enabled?
-    private final boolean requiresNetwork;     // Does this source need network?
+    /** Snapshot of DataSource.isEnabled() at the time this info was built. */
+    private final boolean enabled;
 
-    // ========== STATISTICS ==========
+    /** Whether this source requires a network connection. */
+    private final boolean requiresNetwork;
 
-    private final long createdAt;              // When this info was created
-    private final long lastUpdated;            // Last metadata update
-    private final long lastUsed;               // Last time source was used
-    private final int totalRequests;           // Total requests made
-    private final int errorCount;              // Number of errors
-    private final int successCount;            // Number of successes
+    // =========================================================================
+    // STATISTICS
+    // =========================================================================
 
-    // ========== HEALTH ==========
+    private final long   createdAt;
+    private final long   lastUpdated;
+    private final long   lastUsed;
+    private final int    totalRequests;
+    private final int    errorCount;
+    private final int    successCount;
+
+    // =========================================================================
+    // HEALTH
+    // =========================================================================
 
     @NonNull
     private final HealthStatus health;
 
     @Nullable
-    private final String healthMessage;        // Optional health message
+    private final String healthMessage;
 
-    // ========== CONSTRUCTOR (Use Builder) ==========
+    // =========================================================================
+    // CONSTRUCTOR (use Builder)
+    // =========================================================================
 
     private DataSourceInfo(Builder builder) {
-        this.id = builder.id;
-        this.name = builder.name;
-        this.description = builder.description;
-        this.version = builder.version;
-        this.iconUrl = builder.iconUrl;
+        this.id                  = builder.id;
+        this.name                = builder.name;
+        this.description         = builder.description;
+        this.version             = builder.version;
         this.requiresAttribution = builder.requiresAttribution;
-        this.attributionText = builder.attributionText;
-        this.websiteUrl = builder.websiteUrl;
-        this.priority = builder.priority;
-        this.enabled = builder.enabled;
-        this.requiresNetwork = builder.requiresNetwork;
-        this.createdAt = builder.createdAt;
-        this.lastUpdated = builder.lastUpdated;
-        this.lastUsed = builder.lastUsed;
-        this.totalRequests = builder.totalRequests;
-        this.errorCount = builder.errorCount;
-        this.successCount = builder.successCount;
-        this.health = builder.health;
-        this.healthMessage = builder.healthMessage;
+        this.attributionText     = builder.attributionText;
+        this.websiteUrl          = builder.websiteUrl;
+        this.enabled             = builder.enabled;
+        this.requiresNetwork     = builder.requiresNetwork;
+        this.createdAt           = builder.createdAt;
+        this.lastUpdated         = builder.lastUpdated;
+        this.lastUsed            = builder.lastUsed;
+        this.totalRequests       = builder.totalRequests;
+        this.errorCount          = builder.errorCount;
+        this.successCount        = builder.successCount;
+        this.health              = builder.health;
+        this.healthMessage       = builder.healthMessage;
     }
 
-    // ========== GETTERS ==========
+    // =========================================================================
+    // GETTERS
+    // =========================================================================
 
-    @NonNull
-    public String getId() {
-        return id;
-    }
+    @NonNull  public String getId()              { return id; }
+    @NonNull  public String getName()            { return name; }
+    @Nullable public String getDescription()     { return description; }
+    @Nullable public String getVersion()         { return version; }
+    public boolean requiresAttribution()         { return requiresAttribution; }
+    @Nullable public String getAttributionText() { return attributionText; }
+    @Nullable public String getWebsiteUrl()      { return websiteUrl; }
 
-    @NonNull
-    public String getName() {
-        return name;
-    }
+    /** Snapshot of enabled state at build time. Use DataSource.isEnabled() for live state. */
+    public boolean isEnabled()          { return enabled; }
+    public boolean requiresNetwork()    { return requiresNetwork; }
 
-    @Nullable
-    public String getDescription() {
-        return description;
-    }
+    public long getCreatedAt()          { return createdAt; }
+    public long getLastUpdated()        { return lastUpdated; }
+    public long getLastUsed()           { return lastUsed; }
+    public int  getTotalRequests()      { return totalRequests; }
+    public int  getErrorCount()         { return errorCount; }
+    public int  getSuccessCount()       { return successCount; }
 
-    @Nullable
-    public String getVersion() {
-        return version;
-    }
+    @NonNull  public HealthStatus getHealth()        { return health; }
+    @Nullable public String       getHealthMessage() { return healthMessage; }
 
-    @Nullable
-    public String getIconUrl() {
-        return iconUrl;
-    }
+    // =========================================================================
+    // COMPUTED
+    // =========================================================================
 
-    public boolean requiresAttribution() {
-        return requiresAttribution;
-    }
-
-    @Nullable
-    public String getAttributionText() {
-        return attributionText;
-    }
-
-    @Nullable
-    public String getWebsiteUrl() {
-        return websiteUrl;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public boolean requiresNetwork() {
-        return requiresNetwork;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public long getLastUpdated() {
-        return lastUpdated;
-    }
-
-    public long getLastUsed() {
-        return lastUsed;
-    }
-
-    public int getTotalRequests() {
-        return totalRequests;
-    }
-
-    public int getErrorCount() {
-        return errorCount;
-    }
-
-    public int getSuccessCount() {
-        return successCount;
-    }
-
-    @NonNull
-    public HealthStatus getHealth() {
-        return health;
-    }
-
-    @Nullable
-    public String getHealthMessage() {
-        return healthMessage;
-    }
-
-    // ========== COMPUTED PROPERTIES ==========
-
-    /**
-     * Get success rate (0.0 - 1.0)
-     */
+    /** @return Success rate 0.0–1.0 (1.0 if no requests yet). */
     public double getSuccessRate() {
-        if (totalRequests == 0) return 1.0; // No requests yet, assume healthy
+        if (totalRequests == 0) return 1.0;
         return (double) successCount / totalRequests;
     }
 
-    /**
-     * Get error rate (0.0 - 1.0)
-     */
+    /** @return Error rate 0.0–1.0 (0.0 if no requests yet). */
     public double getErrorRate() {
         if (totalRequests == 0) return 0.0;
         return (double) errorCount / totalRequests;
     }
 
-    /**
-     * Check if source was used recently (within last 24 hours)
-     */
+    /** @return True if this source was used within the last 24 hours. */
     public boolean wasUsedRecently() {
-        long dayAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000);
+        long dayAgo = System.currentTimeMillis() - (24L * 60 * 60 * 1000);
         return lastUsed > dayAgo;
     }
 
     /**
-     * Get display name with emoji (if available)
-     */
-    @NonNull
-    public String getDisplayName() {
-        // Note: Emoji is in DataSource enum, not here
-        return name;
-    }
-
-    /**
-     * Get status summary for UI
+     * One-line status suitable for a settings card subtitle.
+     * Examples: "Healthy", "Disabled", "Degraded — high error rate".
      */
     @NonNull
     public String getStatusSummary() {
-        if (!enabled) {
-            return "Disabled";
-        }
-        return health.getDisplayText() +
-                (healthMessage != null ? " - " + healthMessage : "");
+        if (!enabled) return "Disabled";
+        return health.getDisplayText()
+                + (healthMessage != null ? " — " + healthMessage : "");
     }
 
-    // ========== BUILDER ==========
+    // =========================================================================
+    // BUILDER
+    // =========================================================================
 
-    /**
-     * Builder for DataSourceInfo
-     */
     public static class Builder {
+
         // Required
         private final String id;
         private String name;
 
-        // Optional
-        private String description;
-        private String version;
-        private String iconUrl;
+        // Optional metadata
+        @Nullable private String description;
+        @Nullable private String version;
         private boolean requiresAttribution = false;
-        private String attributionText;
-        private String websiteUrl;
-        private int priority = 50; // Default medium priority
-        private boolean enabled = true;
+        @Nullable private String attributionText;
+        @Nullable private String websiteUrl;
+
+        // Runtime snapshot
+        private boolean enabled        = true;
         private boolean requiresNetwork = true;
-        private long createdAt = System.currentTimeMillis();
-        private long lastUpdated = System.currentTimeMillis();
-        private long lastUsed = 0;
-        private int totalRequests = 0;
-        private int errorCount = 0;
-        private int successCount = 0;
+
+        // Statistics
+        private long createdAt     = System.currentTimeMillis();
+        private long lastUpdated   = System.currentTimeMillis();
+        private long lastUsed      = 0;
+        private int  totalRequests = 0;
+        private int  errorCount    = 0;
+        private int  successCount  = 0;
+
+        // Health
         private HealthStatus health = HealthStatus.READY;
-        private String healthMessage;
+        @Nullable private String healthMessage;
 
         public Builder(@NonNull String id) {
-            this.id = id;
-            this.name = id; // Default name = id
+            this.id   = id;
+            this.name = id; // Fallback: use ID as name until setName() is called
         }
 
         public Builder setName(@NonNull String name) {
-            this.name = name;
-            return this;
+            this.name = name; return this;
         }
 
         public Builder setDescription(@Nullable String description) {
-            this.description = description;
-            return this;
+            this.description = description; return this;
         }
 
         public Builder setVersion(@Nullable String version) {
-            this.version = version;
-            return this;
-        }
-
-        public Builder setIconUrl(@Nullable String iconUrl) {
-            this.iconUrl = iconUrl;
-            return this;
+            this.version = version; return this;
         }
 
         public Builder setRequiresAttribution(boolean requiresAttribution) {
-            this.requiresAttribution = requiresAttribution;
-            return this;
+            this.requiresAttribution = requiresAttribution; return this;
         }
 
         public Builder setAttributionText(@Nullable String attributionText) {
-            this.attributionText = attributionText;
-            return this;
+            this.attributionText = attributionText; return this;
         }
 
         public Builder setWebsiteUrl(@Nullable String websiteUrl) {
-            this.websiteUrl = websiteUrl;
-            return this;
-        }
-
-        public Builder setPriority(int priority) {
-            this.priority = Math.max(0, Math.min(100, priority)); // Clamp 0-100
-            return this;
+            this.websiteUrl = websiteUrl; return this;
         }
 
         public Builder setEnabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
+            this.enabled = enabled; return this;
         }
 
         public Builder setRequiresNetwork(boolean requiresNetwork) {
-            this.requiresNetwork = requiresNetwork;
-            return this;
+            this.requiresNetwork = requiresNetwork; return this;
         }
 
         public Builder setLastUsed(long lastUsed) {
-            this.lastUsed = lastUsed;
-            return this;
+            this.lastUsed = lastUsed; return this;
         }
 
         public Builder setTotalRequests(int totalRequests) {
-            this.totalRequests = totalRequests;
-            return this;
+            this.totalRequests = totalRequests; return this;
         }
 
         public Builder setErrorCount(int errorCount) {
-            this.errorCount = errorCount;
-            return this;
+            this.errorCount = errorCount; return this;
         }
 
         public Builder setSuccessCount(int successCount) {
-            this.successCount = successCount;
-            return this;
+            this.successCount = successCount; return this;
         }
 
         public Builder setHealth(@NonNull HealthStatus health) {
-            this.health = health;
-            return this;
+            this.health = health; return this;
         }
 
         public Builder setHealthMessage(@Nullable String healthMessage) {
-            this.healthMessage = healthMessage;
-            return this;
+            this.healthMessage = healthMessage; return this;
         }
 
         @NonNull
         public DataSourceInfo build() {
-            if (id == null || id.trim().isEmpty()) {
+            if (id == null || id.trim().isEmpty())
                 throw new IllegalStateException("DataSource ID is required");
-            }
-            if (name == null || name.trim().isEmpty()) {
+            if (name == null || name.trim().isEmpty())
                 throw new IllegalStateException("DataSource name is required");
-            }
             return new DataSourceInfo(this);
         }
     }
 
-    // ========== HEALTH STATUS ENUM ==========
+    // =========================================================================
+    // HEALTH STATUS ENUM
+    // =========================================================================
 
-    /**
-     * Health status of data source
-     */
     public enum HealthStatus {
-        /** Source is healthy and operational */
+
         HEALTHY("Healthy"),
-
-        /** Source is operational but degraded */
         DEGRADED("Degraded"),
-
-        /** Source is experiencing issues */
         UNHEALTHY("Unhealthy"),
-
-        /** Source is ready but not yet used */
         READY("Ready"),
-
-        /** Source is unknown status */
         UNKNOWN("Unknown");
 
         private final String displayText;
@@ -402,7 +301,8 @@ public class DataSourceInfo {
         }
 
         /**
-         * Determine health from error rate
+         * Derive health from a request error rate.
+         * ≥50% errors → UNHEALTHY, ≥20% → DEGRADED, otherwise HEALTHY.
          */
         public static HealthStatus fromErrorRate(double errorRate) {
             if (errorRate >= 0.5) return UNHEALTHY;
@@ -414,8 +314,10 @@ public class DataSourceInfo {
     @Override
     @NonNull
     public String toString() {
-        return String.format("DataSourceInfo{id='%s', name='%s', enabled=%s, health=%s, " +
+        return String.format(
+                "DataSourceInfo{id='%s', name='%s', enabled=%s, health=%s, " +
                         "requests=%d, errors=%d, successRate=%.1f%%}",
-                id, name, enabled, health, totalRequests, errorCount, getSuccessRate() * 100);
+                id, name, enabled, health,
+                totalRequests, errorCount, getSuccessRate() * 100);
     }
 }

@@ -1,6 +1,7 @@
 package li.masciul.sugardaddi.data.sources.base;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -10,6 +11,7 @@ import androidx.annotation.Nullable;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
+import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,89 +20,220 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * BaseDataSource - Abstract base implementation for all data sources
+ * BaseDataSource — Abstract base implementation for all data sources.
  *
- * v2.1: ASYNCHRONOUS INITIALIZATION
- * - Non-blocking initialization with callbacks
- * - Sources can signal when they're ready
- * - UI doesn't need to wait for all sources
- * - Parallel initialization of multiple sources
+ * ARCHITECTURE v3.0 — Settings refactor
+ * ======================================
+ * Key changes vs v2.x:
  *
- * INITIALIZATION LIFECYCLE:
- * 1. CREATED → source instantiated but not initialized
- * 2. INITIALIZING → async initialization in progress
- * 3. READY → initialized and available for use
- * 4. ERROR → initialization failed
+ *   REMOVED: in-memory {@code boolean enabled} field.
+ *   The old field was never persisted — DataSourceConfig held the real state,
+ *   which caused the two to drift.  Now each source persists its own enabled
+ *   flag in a dedicated SharedPreferences file named after its source ID
+ *   ("source_prefs_CIQUAL", "source_prefs_OPENFOODFACTS", …).
+ *   isEnabled() reads from SharedPreferences; setEnabled() writes to it.
  *
- * USAGE:
- * ```java
- * source.initialize(context, new InitializationCallback() {
- *     @Override
- *     public void onInitialized() {
- *         // Source is ready - can start using it
- *     }
+ *   REMOVED: DataSourceConfig dependency.
+ *   BaseDataSource no longer imports or references DataSourceConfig.
  *
- *     @Override
- *     public void onInitializationFailed(Error error) {
- *         // Handle initialization failure
- *     }
- * });
- * ```
+ *   ADDED: default getSettingsProvider() returning null.
+ *   Subclasses that have user-configurable state override this.
+ *
+ * INITIALIZATION LIFECYCLE
+ * ========================
+ *   CREATED      → instantiated, not yet initialised
+ *   INITIALIZING → async init in progress
+ *   READY        → initialised, available for searches
+ *   ERROR        → init failed, will not retry automatically
+ *
+ * ENABLE/DISABLE PERSISTENCE
+ * ==========================
+ * SharedPreferences file: "source_prefs_{SOURCE_ID}"
+ * Key: "enabled"
+ * Default: true (enabled on first launch)
+ *
+ * This means each source independently persists its toggle state.
+ * DataSourceManager calls source.isEnabled() directly — no shared config file.
  */
 public abstract class BaseDataSource implements DataSource {
 
-    // ========== STATE ==========
+    // =========================================================================
+    // SHARED PREFS — enable/disable persistence
+    // =========================================================================
+
+    /** Prefix for each source's private SharedPreferences file. */
+    private static final String PREFS_PREFIX  = "source_prefs_";
+
+    /** Key within that file for the enabled flag. */
+    private static final String KEY_ENABLED   = "enabled";
+
+    // =========================================================================
+    // INITIALISATION STATE
+    // =========================================================================
 
     protected Context context;
     protected boolean initialized = false;
-    protected boolean enabled = true;
 
-    // Initialization state tracking
-    private final AtomicBoolean isInitializing = new AtomicBoolean(false);
+    private final AtomicBoolean isInitializing       = new AtomicBoolean(false);
     private final AtomicBoolean initializationFailed = new AtomicBoolean(false);
     private Error initializationError = null;
 
-    // ========== STATISTICS ==========
+    // =========================================================================
+    // STATISTICS  (runtime, not persisted)
+    // =========================================================================
 
-    protected int totalRequests = 0;
-    protected int successCount = 0;
-    protected int errorCount = 0;
-    protected long lastUsed = 0;
+    protected int  totalRequests = 0;
+    protected int  successCount  = 0;
+    protected int  errorCount    = 0;
+    protected long lastUsed      = 0;
 
-    // ========== THREADING ==========
+    // =========================================================================
+    // THREADING
+    // =========================================================================
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static final ExecutorService initExecutor = Executors.newCachedThreadPool();
 
-    // ========== CONSTRUCTOR ==========
+    // =========================================================================
+    // CONSTRUCTOR
+    // =========================================================================
 
     protected BaseDataSource() {
-        // Subclasses can initialize in their constructors
+        // Lightweight — heavy work goes in onInitialize()
     }
 
-    // ========== ABSTRACT METHODS ==========
+    // =========================================================================
+    // ABSTRACT CONTRACT
+    // =========================================================================
 
     /**
-     * Get network configuration (or null for local sources)
+     * HTTP network configuration, or null for local-only sources.
+     * Must be non-null for sources that use Retrofit/OkHttp.
      */
     @Nullable
     public abstract NetworkConfig getNetworkConfig();
 
     /**
-     * Perform source-specific initialization (called on background thread)
-     * Override this to do heavy initialization work like loading XML files,
-     * creating network clients, etc.
-     *
-     * DEFAULT: Does nothing (assumes source is ready immediately)
+     * Source-specific initialisation — called on a background thread by
+     * {@link #initialize(Context, InitializationCallback)}.
+     * Override to create HTTP clients, open files, warm caches, etc.
+     * Default does nothing (suitable for trivial/local sources).
      */
     protected void onInitialize(@NonNull Context context) throws Exception {
-        // Override in subclass if needed
+        // Default: no-op
     }
 
-    // ========== LIFECYCLE WITH ASYNC SUPPORT ==========
+    // =========================================================================
+    // ENABLE / DISABLE  — persisted in own SharedPreferences
+    // =========================================================================
 
     /**
-     * Callback interface for initialization
+     * Returns the SharedPreferences file private to this source.
+     * File name: "source_prefs_{SOURCE_ID}" (e.g. "source_prefs_CIQUAL").
+     * Context must be available (i.e. after initialize() has been called).
+     */
+    private SharedPreferences getSourcePrefs(@NonNull Context context) {
+        return context.getApplicationContext()
+                .getSharedPreferences(PREFS_PREFIX + getSourceId(), Context.MODE_PRIVATE);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Reads from this source's own SharedPreferences.
+     * Falls back to true (enabled) if no value has been written yet,
+     * so every source is enabled on first launch without explicit setup.
+     *
+     * If context is not yet available (called before initialize), returns true
+     * as a safe default — the aggregator will call isAvailable() anyway which
+     * also checks initialized state.
+     */
+    @Override
+    public boolean isEnabled() {
+        if (context == null) return true; // Safe default before init
+        return getSourcePrefs(context).getBoolean(KEY_ENABLED, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Persists the new enabled flag immediately.
+     * Also propagates to the NetworkConfig if one exists, so OkHttp
+     * interceptors that check config.isEnabled() stay in sync.
+     */
+    @Override
+    public void setEnabled(@NonNull Context context, boolean enabled) {
+        getSourcePrefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply();
+
+        // Keep NetworkConfig in sync so any HTTP interceptors see the same state
+        NetworkConfig config = getNetworkConfig();
+        if (config != null) {
+            if (enabled) config.enable();
+            else         config.disable();
+        }
+
+        logInfo("Source " + getSourceId() + (enabled ? " enabled" : " disabled"));
+    }
+
+    // =========================================================================
+    // AVAILABILITY & STATUS
+    // =========================================================================
+
+    @Override
+    public boolean isAvailable() {
+        if (!isEnabled()) return false;
+
+        if (!initialized || isInitializing.get()) return false;
+
+        if (initializationFailed.get()) return false;
+
+        NetworkConfig config = getNetworkConfig();
+        if (config != null && !config.isEnabled()) return false;
+
+        return true;
+    }
+
+    @NonNull
+    @Override
+    public DataSourceStatus getStatus() {
+        if (!isEnabled()) return DataSourceStatus.DISABLED;
+
+        if (initializationFailed.get()) return DataSourceStatus.ERROR;
+
+        if (!initialized || isInitializing.get()) return DataSourceStatus.INITIALIZING;
+
+        if (requiresNetwork() && !isNetworkAvailable()) return DataSourceStatus.NO_NETWORK;
+
+        // Degrade to ERROR if more than half of recent requests failed
+        if (totalRequests > 10) {
+            double errorRate = (double) errorCount / totalRequests;
+            if (errorRate > 0.5) return DataSourceStatus.ERROR;
+        }
+
+        return DataSourceStatus.READY;
+    }
+
+    // =========================================================================
+    // SETTINGS PROVIDER — default: none
+    // =========================================================================
+
+    /**
+     * Returns null by default — sources without user-configurable settings
+     * do not need to override this.  The Settings card will show only the
+     * name, status dot, and enable/disable toggle.
+     */
+    @Override
+    @Nullable
+    public SettingsProvider getSettingsProvider() {
+        return null;
+    }
+
+    // =========================================================================
+    // LIFECYCLE — async initialisation with callback
+    // =========================================================================
+
+    /**
+     * Callback interface for async initialisation results.
      */
     public interface InitializationCallback {
         void onInitialized();
@@ -108,24 +241,26 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     /**
-     * Asynchronous initialization with callback
+     * Asynchronous initialisation.  Runs {@link #onInitialize(Context)} on a
+     * background thread and delivers the result via callback on the main thread.
+     *
+     * Safe to call multiple times — subsequent calls are no-ops if the source
+     * is already initialised or initialisation is already in progress.
      */
-    public void initialize(@NonNull Context context, @NonNull InitializationCallback callback) {
+    public void initialize(@NonNull Context context,
+                           @NonNull InitializationCallback callback) {
         this.context = context.getApplicationContext();
 
-        // Check if already initialized
         if (initialized) {
             executeOnMainThread(callback::onInitialized);
             return;
         }
 
-        // Check if initialization already in progress
         if (isInitializing.getAndSet(true)) {
             logWarn("Initialization already in progress for " + getSourceId());
             return;
         }
 
-        // Check if initialization previously failed
         if (initializationFailed.get()) {
             Error error = initializationError != null
                     ? initializationError
@@ -134,125 +269,64 @@ public abstract class BaseDataSource implements DataSource {
             return;
         }
 
-        // Perform initialization on background thread
         initExecutor.execute(() -> {
             try {
-                logInfo("Starting initialization for " + getSourceId());
+                logInfo("Initializing " + getSourceId() + "…");
 
-                // Validate network config if present
                 NetworkConfig config = getNetworkConfig();
-                if (config != null) {
-                    config.validate();
-                }
+                if (config != null) config.validate();
 
-                // Call subclass-specific initialization
-                onInitialize(context);
+                onInitialize(this.context);
 
-                // Mark as initialized
                 initialized = true;
                 isInitializing.set(false);
 
-                logInfo("Initialization completed for " + getSourceId());
-
-                // Notify success on main thread
+                logInfo(getSourceId() + " initialized successfully");
                 executeOnMainThread(callback::onInitialized);
 
             } catch (Exception e) {
                 logError("Initialization failed for " + getSourceId(), e);
 
-                // Mark initialization as failed
                 initializationFailed.set(true);
                 initializationError = Error.fromThrowable(e, "Failed to initialize " + getSourceName());
                 isInitializing.set(false);
 
-                // Notify failure on main thread
-                final Error error = initializationError;
-                executeOnMainThread(() -> callback.onInitializationFailed(error));
+                final Error err = initializationError;
+                executeOnMainThread(() -> callback.onInitializationFailed(err));
             }
         });
+    }
+
+    /**
+     * Synchronous initialisation — delegates to {@link #onInitialize(Context)}.
+     * Used as a fallback when the async path is not available.
+     */
+    @Override
+    public void initialize(@NonNull Context context) {
+        if (initialized) return;
+        this.context = context.getApplicationContext();
+        try {
+            NetworkConfig config = getNetworkConfig();
+            if (config != null) config.validate();
+            onInitialize(this.context);
+            initialized = true;
+        } catch (Exception e) {
+            logError("Synchronous init failed for " + getSourceId(), e);
+            initializationFailed.set(true);
+            initializationError = Error.fromThrowable(e, "Failed to initialize " + getSourceName());
+        }
     }
 
     @Override
     public void cleanup() {
         cancelOperations();
-        this.initialized = false;
-        this.isInitializing.set(false);
+        initialized = false;
+        isInitializing.set(false);
     }
 
-    // ========== STATUS & AVAILABILITY ==========
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-
-        NetworkConfig config = getNetworkConfig();
-        if (config != null) {
-            if (enabled) {
-                config.enable();
-            } else {
-                config.disable();
-            }
-        }
-    }
-
-    @Override
-    public boolean isAvailable() {
-        if (!enabled) {
-            return false;
-        }
-
-        if (!initialized || isInitializing.get()) {
-            return false;
-        }
-
-        if (initializationFailed.get()) {
-            return false;
-        }
-
-        NetworkConfig config = getNetworkConfig();
-        if (config != null && !config.isEnabled()) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @NonNull
-    @Override
-    public DataSourceStatus getStatus() {
-        if (!enabled) {
-            return DataSourceStatus.DISABLED;
-        }
-
-        if (initializationFailed.get()) {
-            return DataSourceStatus.ERROR;
-        }
-
-        if (!initialized || isInitializing.get()) {
-            return DataSourceStatus.INITIALIZING;
-        }
-
-        if (requiresNetwork() && !isNetworkAvailable()) {
-            return DataSourceStatus.NO_NETWORK;
-        }
-
-        // Check error rate for health
-        if (totalRequests > 10) {
-            double errorRate = (double) errorCount / totalRequests;
-            if (errorRate > 0.5) {
-                return DataSourceStatus.ERROR;
-            }
-        }
-
-        return DataSourceStatus.READY;
-    }
-
-    // ========== CAPABILITIES ==========
+    // =========================================================================
+    // CAPABILITIES — sensible defaults, override as needed
+    // =========================================================================
 
     @Override
     public boolean supportsBarcodeLookup() {
@@ -261,8 +335,7 @@ public abstract class BaseDataSource implements DataSource {
 
     @Override
     public boolean requiresNetwork() {
-        NetworkConfig config = getNetworkConfig();
-        return config != null;
+        return getNetworkConfig() != null;
     }
 
     @NonNull
@@ -277,14 +350,21 @@ public abstract class BaseDataSource implements DataSource {
         return "en";
     }
 
-    // ========== INFO ==========
+    @Override
+    public void cancelOperations() {
+        logDebug("cancelOperations() called on " + getSourceId());
+    }
+
+    // =========================================================================
+    // SOURCE INFO  (diagnostic snapshot)
+    // =========================================================================
 
     @NonNull
     @Override
     public DataSourceInfo getSourceInfo() {
         return new DataSourceInfo.Builder(getSourceId())
                 .setName(getSourceName())
-                .setEnabled(enabled)
+                .setEnabled(isEnabled())
                 .setRequiresNetwork(requiresNetwork())
                 .setTotalRequests(totalRequests)
                 .setSuccessCount(successCount)
@@ -296,33 +376,33 @@ public abstract class BaseDataSource implements DataSource {
 
     @NonNull
     protected DataSourceInfo.HealthStatus getHealthStatus() {
-        if (totalRequests == 0) {
-            return DataSourceInfo.HealthStatus.READY;
-        }
-
+        if (totalRequests == 0) return DataSourceInfo.HealthStatus.READY;
         double errorRate = (double) errorCount / totalRequests;
         return DataSourceInfo.HealthStatus.fromErrorRate(errorRate);
     }
 
-    // ========== HELPER METHODS ==========
+    // =========================================================================
+    // HELPER METHODS
+    // =========================================================================
 
+    /**
+     * Check that the source is enabled and initialised before serving a request.
+     * Returns false and fires callback.onError() if the check fails.
+     */
     protected <T> boolean checkEnabled(@NonNull DataSourceCallback<T> callback) {
-        if (!enabled) {
-            Error error = Error.notFound("Data source " + getSourceId() + " is disabled");
-            handleError(error, callback);
+        if (!isEnabled()) {
+            handleError(Error.notFound("Data source " + getSourceId() + " is disabled"), callback);
             return false;
         }
-
         if (!initialized) {
-            Error error = Error.unknown("Data source " + getSourceId() + " not initialized", null);
-            handleError(error, callback);
+            handleError(Error.unknown("Data source " + getSourceId() + " not initialized", null), callback);
             return false;
         }
-
         return true;
     }
 
-    protected <T> void handleError(@NonNull Error error, @NonNull DataSourceCallback<T> callback) {
+    protected <T> void handleError(@NonNull Error error,
+                                   @NonNull DataSourceCallback<T> callback) {
         onOperationError();
         ErrorLogger.log(error, "DataSource: " + getSourceId());
         executeOnMainThread(() -> callback.onError(error));
@@ -331,14 +411,12 @@ public abstract class BaseDataSource implements DataSource {
     protected <T> void handleException(@NonNull Throwable throwable,
                                        @Nullable String userMessage,
                                        @NonNull DataSourceCallback<T> callback) {
-        Error error = Error.fromThrowable(throwable, userMessage);
-        handleError(error, callback);
+        handleError(Error.fromThrowable(throwable, userMessage), callback);
     }
 
     protected <T> void handleDataSourceException(@NonNull DataSourceException exception,
                                                  @NonNull DataSourceCallback<T> callback) {
-        Error error = exception.toError();
-        handleError(error, callback);
+        handleError(exception.toError(), callback);
     }
 
     protected void executeOnMainThread(@NonNull Runnable runnable) {
@@ -350,11 +428,13 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     protected boolean isNetworkAvailable() {
-        // TODO: Implement actual network check
+        // TODO: wire up to a real ConnectivityManager check if needed
         return true;
     }
 
-    // ========== STATISTICS ==========
+    // =========================================================================
+    // STATISTICS
+    // =========================================================================
 
     protected void onOperationStart() {
         totalRequests++;
@@ -371,11 +451,13 @@ public abstract class BaseDataSource implements DataSource {
 
     protected void resetStatistics() {
         totalRequests = 0;
-        successCount = 0;
-        errorCount = 0;
+        successCount  = 0;
+        errorCount    = 0;
     }
 
-    // ========== LOGGING ==========
+    // =========================================================================
+    // LOGGING
+    // =========================================================================
 
     @NonNull
     protected String getLogTag() {
@@ -398,23 +480,15 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     protected void logError(@NonNull String message, @Nullable Throwable throwable) {
-        if (throwable != null) {
-            android.util.Log.e(getLogTag(), message, throwable);
-        } else {
-            android.util.Log.e(getLogTag(), message);
-        }
-    }
-
-    @Override
-    public void cancelOperations() {
-        logDebug("cancelOperations() called");
+        if (throwable != null) android.util.Log.e(getLogTag(), message, throwable);
+        else                   android.util.Log.e(getLogTag(), message);
     }
 
     @Override
     @NonNull
     public String toString() {
         return String.format("%s{id=%s, enabled=%s, status=%s, requests=%d, errors=%d}",
-                getClass().getSimpleName(), getSourceId(), enabled, getStatus(),
-                totalRequests, errorCount);
+                getClass().getSimpleName(), getSourceId(),
+                isEnabled(), getStatus(), totalRequests, errorCount);
     }
 }

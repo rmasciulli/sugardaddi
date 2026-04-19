@@ -5,24 +5,25 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
-import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
+import li.masciul.sugardaddi.core.logging.ErrorLogger;
+import li.masciul.sugardaddi.core.models.Error;
+import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.network.NetworkClient;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
-import li.masciul.sugardaddi.core.models.Error;
-import li.masciul.sugardaddi.core.logging.ErrorLogger;
+import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
+import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
+import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.SearchAliciousAPI;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.OpenFoodFactsAPI;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.SearchAliciousConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousResponse;
-import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.AutocompleteResponse;
-import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.OpenFoodFactsMapper;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.SearchAliciousMapper;
 
 import java.io.IOException;
 import java.util.*;
 
-import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.OpenFoodFactsMapper;
-import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.SearchAliciousMapper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -152,6 +153,18 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
     @Override
     public String getSourceName() {
         return OpenFoodFactsConstants.SOURCE_NAME;
+    }
+
+    // ========== SETTINGS PROVIDER ==========
+
+    /**
+     * OpenFoodFacts has no credentials or local DB for the user to manage.
+     * The card shows only name, status, and the enable/disable toggle.
+     */
+    @Override
+    @NonNull
+    public SettingsProvider getSettingsProvider() {
+        return new OpenFoodFactsSettingsProvider();
     }
 
     // ========== INITIALIZATION ==========
@@ -351,6 +364,137 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
                 Log.e(TAG, "Search failed", t);
                 Error error = createNetworkError(t, "Search failed");
                 handleError(error, callback);
+            }
+        });
+    }
+
+    // ========== AUTOCOMPLETE ==========
+
+    /**
+     * Autocomplete search using SearchAlicious /search with minimal fields.
+     *
+     * STRATEGY — mirrors CiqualDataSource.autocomplete():
+     * Reuses the /search endpoint with:
+     * - AUTOCOMPLETE_FIELDS (code, product_name_xx, brands, image_small_url)
+     * - No quality filter — partial names must still match low-completeness products
+     * - Small page_size (limit parameter, typically 10)
+     * - Page 1 only — autocomplete never paginates
+     * - POPULARITY sort — most-scanned products surface first
+     *
+     * WHY NOT THE /autocomplete TAXONOMY ENDPOINT?
+     * The taxonomy endpoint returns category/brand names ("Chocolates", "Milka"),
+     * not products. That requires different UI handling and a separate result type.
+     * It will be added in a future iteration. For now, product-name suggestions
+     * from /search keep the return type consistent with Ciqual: SearchResult<FoodProduct>.
+     *
+     * ERROR HANDLING:
+     * Mirrors search() exactly: HTTP errors → handleHttpError(),
+     * network errors → createNetworkError(), cancelled calls silently ignored.
+     *
+     * @param query    Partial user input (e.g., "choco", "milka bis")
+     * @param language Language code ("en" or "fr")
+     * @param limit    Maximum suggestions to return (typically 5–10)
+     * @param callback Results callback — same DataSourceCallback<SearchResult> as search()
+     */
+    public void autocomplete(@NonNull String query, @NonNull String language, int limit,
+                             @NonNull DataSourceCallback<SearchResult> callback) {
+
+        if (!checkEnabled(callback)) return;
+
+        if (searchApi == null) {
+            handleError(Error.unknown("Search API not initialized", null), callback);
+            return;
+        }
+
+        if (query == null || query.trim().isEmpty()) {
+            handleError(Error.validation("Query cannot be empty", null), callback);
+            return;
+        }
+
+        final String targetLanguage = (language == null || language.isEmpty())
+                ? SearchAliciousConstants.Defaults.DEFAULT_LANGUAGE
+                : language;
+
+        // Build language list with fallback (same helper as search())
+        String languagesList = buildLanguagesList(targetLanguage);
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, String.format("Autocomplete: query='%s', lang=%s, limit=%d",
+                    query, targetLanguage, limit));
+        }
+
+        onOperationStart();
+
+        // Use /search with lightweight field set — no quality filter for autocomplete
+        // (a query like "choc" should match products regardless of completeness)
+        Call<SearchAliciousResponse> call = searchApi.search(
+                query.trim(),                                   // Raw query — no completeness filter
+                languagesList,
+                Math.min(limit, SearchAliciousConstants.Defaults.AUTOCOMPLETE_SIZE),
+                1,                                              // Always page 1
+                SearchAliciousConstants.AUTOCOMPLETE_FIELDS,    // Minimal fields for speed
+                SearchAliciousConstants.SortBy.POPULARITY       // Popular products first
+        );
+
+        activeCalls.add(call);
+
+        call.enqueue(new Callback<SearchAliciousResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<SearchAliciousResponse> call,
+                                   @NonNull Response<SearchAliciousResponse> response) {
+                activeCalls.remove(call);
+
+                if (!response.isSuccessful()) {
+                    handleHttpError(response.code(), "Autocomplete failed", callback);
+                    return;
+                }
+
+                SearchAliciousResponse body = response.body();
+                if (body == null || body.isEmpty()) {
+                    // Empty is not an error for autocomplete — return empty SearchResult
+                    SearchResult empty = new SearchResult(
+                            new ArrayList<>(), 0, false,
+                            query, targetLanguage, OpenFoodFactsConstants.SOURCE_ID
+                    );
+                    onOperationSuccess();
+                    executeOnMainThread(() -> callback.onSuccess(empty));
+                    return;
+                }
+
+                // Map with the same mapper used by search()
+                List<FoodProduct> products = SearchAliciousMapper.mapSearchResponse(
+                        body, targetLanguage);
+
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, String.format("Autocomplete success: %d suggestions for '%s'",
+                            products.size(), query));
+                }
+
+                SearchResult result = new SearchResult(
+                        products,
+                        body.getCount(),
+                        false,          // Autocomplete never has "more pages"
+                        query,
+                        targetLanguage,
+                        OpenFoodFactsConstants.SOURCE_ID
+                );
+
+                onOperationSuccess();
+                executeOnMainThread(() -> callback.onSuccess(result));
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<SearchAliciousResponse> call,
+                                  @NonNull Throwable t) {
+                activeCalls.remove(call);
+
+                if (call.isCanceled()) {
+                    if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Autocomplete call cancelled");
+                    return;
+                }
+
+                Log.e(TAG, "Autocomplete network error", t);
+                handleError(createNetworkError(t, "Autocomplete failed"), callback);
             }
         });
     }

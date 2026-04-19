@@ -15,13 +15,10 @@ import li.masciul.sugardaddi.data.database.AppDatabase;
 // Network imports
 import li.masciul.sugardaddi.data.network.NetworkManager;
 import li.masciul.sugardaddi.data.network.ApiConfig;
-import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.OpenFoodFactsMapper;
-import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsSearchResponse;
 
 // DataSource imports
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.DataSourceException;
 import li.masciul.sugardaddi.data.sources.aggregation.AggregatedSearchResult;
 import li.masciul.sugardaddi.data.sources.aggregation.DataSourceAggregator;
 
@@ -32,6 +29,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
 import li.masciul.sugardaddi.core.utils.SearchFilter;
 
 // Cache
@@ -40,7 +38,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -98,9 +95,6 @@ public class ProductRepository {
     private static final long DEFAULT_CACHE_VALIDITY_MS = 24 * 60 * 60 * 1000; // 24 hours
     private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days for favorites
     private long cacheValidityMs = DEFAULT_CACHE_VALIDITY_MS;
-
-    // DataSource settings
-    private boolean useDataSourceMode = true;
 
     // ========== STATE TRACKING ==========
     private String currentSearchQuery = "";
@@ -181,13 +175,6 @@ public class ProductRepository {
      * Enhanced search method with DataSource support
      */
     public void searchFood(String query, SearchCallback callback) {
-        Log.d(TAG, "========================================");
-        Log.d(TAG, "searchFood() ENTRY");
-        Log.d(TAG, "  query: '" + query + "'");
-        Log.d(TAG, "  useDataSourceMode: " + useDataSourceMode);
-        Log.d(TAG, "  dataSourceManager: " + (dataSourceManager != null ? "present" : "NULL"));
-        Log.d(TAG, "========================================");
-
         if (callback == null) {
             Log.w(TAG, "SearchCallback is null - cannot return results");
             return;
@@ -200,8 +187,10 @@ public class ProductRepository {
             return;
         }
 
-        Log.d(TAG, "Normalized query: '" + normalizedQuery + "'");
         currentSearchQuery = normalizedQuery;
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "searchFood: '" + normalizedQuery + "'");
+        }
 
         // Check cache first
         List<FoodProduct> cachedResults = searchCache.get(normalizedQuery);
@@ -221,17 +210,8 @@ public class ProductRepository {
             return;
         }
 
-        // Use DataSource mode or legacy mode
-        Log.d(TAG, "Cache miss - choosing search mode...");
-        if (useDataSourceMode) {
-            Log.d(TAG, ">>> CALLING performDataSourceSearch()");
-            performDataSourceSearch(normalizedQuery, callback);
-        } else {
-            Log.d(TAG, ">>> CALLING performNetworkSearch()");
-            performNetworkSearch(normalizedQuery, callback);
-        }
-
-        Log.d(TAG, "searchFood() EXIT");
+        // All searches go through the DataSource aggregator
+        performDataSourceSearch(normalizedQuery, callback);
     }
 
 
@@ -250,18 +230,14 @@ public class ProductRepository {
      * - Detailed source statistics
      */
     private void performDataSourceSearch(String query, SearchCallback callback) {
-        Log.d(TAG, "===========================================");
-        Log.d(TAG, "performDataSourceSearch() ENTRY - MULTI-SOURCE MODE");
-        Log.d(TAG, "===========================================");
-
         try {
             callback.onLoading();
             isSearchInProgress = true;
 
-            // Get ALL enabled data sources (not just primary)
-            Log.d(TAG, "Getting ALL enabled data sources...");
             List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
-            Log.d(TAG, "Found " + enabledSources.size() + " enabled sources");
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "performDataSourceSearch: " + enabledSources.size() + " source(s)");
+            }
 
             if (enabledSources.isEmpty()) {
                 Log.e(TAG, "NO ENABLED SOURCES!");
@@ -278,8 +254,7 @@ public class ProductRepository {
                 }
             }
 
-            // Use aggregator to search ALL sources in parallel
-            Log.d(TAG, "Starting parallel search across all enabled sources...");
+            // Search all active sources in parallel via aggregator
             aggregator.searchAll(query, new DataSourceAggregator.AggregatorCallback() {
 
                 @Override
@@ -292,9 +267,13 @@ public class ProductRepository {
                     for (DataSource.SearchResult r : partialResults) {
                         partialItems.addAll(r.items);
                     }
+
                     List<FoodProduct> filtered = SearchFilter.filterAndSort(partialItems, query);
                     if (!filtered.isEmpty()) {
-                        Log.d(TAG, "Partial results from " + sourceId + ": " + filtered.size());
+                        if (ApiConfig.DEBUG_LOGGING) {
+                            Log.d(TAG, "Partial results from " + sourceId + ": " + filtered.size());
+                        }
+
                         // Enrich partial results from DB before showing.
                         // onPartialResult fires on main thread (via mainHandler.post),
                         // so we must enrich on a background thread then post back.
@@ -365,7 +344,6 @@ public class ProductRepository {
                 }
             });
 
-            Log.d(TAG, "Aggregator.searchAll() called successfully - waiting for results...");
         } catch (Exception e) {
             Log.e(TAG, "EXCEPTION in performDataSourceSearch()", e);
             isSearchInProgress = false;
@@ -433,17 +411,11 @@ public class ProductRepository {
             return;
         }
 
-        Log.d(TAG, "searchFoodAdvanced: query='" + normalizedQuery + "', page=" + page);
-
-        callback.onLoading();
-
-        if (useDataSourceMode) {
-            // Use DataSource mode with pagination (consistent with initial search)
-            performDataSourceSearchWithPagination(normalizedQuery, page, callback);
-        } else {
-            // Legacy mode (deprecated - kept for fallback)
-            performNetworkSearchPaginated(normalizedQuery, page, callback);
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "searchFoodAdvanced: query='" + normalizedQuery + "', page=" + page);
         }
+        callback.onLoading();
+        performDataSourceSearchWithPagination(normalizedQuery, page, callback);
     }
 
     /**
@@ -456,8 +428,6 @@ public class ProductRepository {
      * - Multi-source support
      */
     private void performDataSourceSearchWithPagination(String query, int page, SearchCallback callback) {
-        Log.d(TAG, "performDataSourceSearchWithPagination: page=" + page);
-
         try {
             // Get enabled data sources
             List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
@@ -503,48 +473,6 @@ public class ProductRepository {
             callback.onError(Error.fromThrowable(e, "Pagination failed"));
         }
     }
-
-    /**
-     * Perform paginated search using NetworkManager (LEGACY)
-     *
-     * @deprecated Use performDataSourceSearchWithPagination instead
-     * Kept for fallback compatibility only
-     */
-    @Deprecated
-    private void performNetworkSearchPaginated(String query, int page, SearchCallback callback) {
-        final OpenFoodFactsMapper offMapper = new OpenFoodFactsMapper();
-        final String language = getCurrentLanguageCode();
-
-        networkManager.searchProductsPaginated(
-                query,
-                page,
-                ApiConfig.API_PAGE_SIZE,
-                new NetworkManager.NetworkCallback<OpenFoodFactsSearchResponse>() {
-                    @Override
-                    public void onSuccess(OpenFoodFactsSearchResponse offSearchResponse) {
-                        if (offSearchResponse == null || !offSearchResponse.hasResults()) {
-                            callback.onError(Error.noData("No results found for: " + query));
-                            return;
-                        }
-
-                        List<FoodProduct> products = offMapper.mapSearchResponse(offSearchResponse, language);
-                        List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(products, query);
-
-                        if (filteredProducts.isEmpty()) {
-                            callback.onError(Error.noData("No results found for: " + query));
-                        } else {
-                            callback.onSuccess(filteredProducts);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(String error) {
-                        callback.onError(Error.noData("No results found for: " + query));
-                    }
-                }
-        );
-    }
-
 
     /**
      * Lightweight autocomplete search for dropdown suggestions
@@ -609,29 +537,37 @@ public class ProductRepository {
             return;
         }
 
-        // ========== NETWORK SEARCH ==========
-
-        // No loading indicator for autocomplete (too fast, would flicker)
-        // Cache miss - perform lightweight network search
-
-        if (useDataSourceMode) {
-            // Use DataSource mode with limited results
-            performAutocompleteDataSourceSearch(normalizedQuery, callback);
-        } else {
-            // Use legacy network mode with pagination (page 1, limit 10)
-            performAutocompleteLegacySearch(normalizedQuery, callback);
-        }
+        performAutocompleteDataSourceSearch(normalizedQuery, callback);
     }
 
     /**
-     * Perform autocomplete using DataSource mode (limited results)
+     * Perform autocomplete across all enabled sources that support it.
      *
-     * UPDATED: Now uses dedicated autocomplete method for Ciqual with
-     * match_phrase_prefix query for partial word matching.
+     * ARCHITECTURE — mirrors the Ciqual pattern now extended to OFF:
+     * Both CiqualDataSource and OpenFoodFactsDataSource expose a public
+     * autocomplete(query, language, limit, callback) method that returns
+     * SearchResult<FoodProduct>. This method calls all enabled sources
+     * that implement autocomplete and merges results, deduplicating by
+     * searchableId so the same product never appears twice.
+     *
+     * SOURCE PRIORITY:
+     * - Ciqual autocomplete uses match_phrase_prefix (partial-word ES query)
+     *   → best for raw ingredient names ("potat" → "Potato", "Boiled potato")
+     * - OFF autocomplete uses SearchAlicious /search with AUTOCOMPLETE_FIELDS
+     *   → best for branded products ("milka" → "Milka Oreo", "Milka Daim")
+     * Both run in parallel; results are merged with Ciqual first so that
+     * scientific names appear before branded duplicates.
+     *
+     * FALLBACK:
+     * If no source-specific autocomplete is available, falls back to the
+     * DataSourceAggregator regular search with a small limit.
+     *
+     * SILENT FAILURE:
+     * Individual source failures are logged but do not propagate — the
+     * callback always receives a result (possibly empty).
      */
     private void performAutocompleteDataSourceSearch(String query, SearchCallback callback) {
         try {
-            // Get enabled sources
             List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
 
             if (enabledSources.isEmpty()) {
@@ -639,151 +575,133 @@ public class ProductRepository {
                 return;
             }
 
-            // Get current language
-            String language = LanguageManager.getCurrentLanguage(context).getCode();
+            final String language = LanguageManager.getCurrentLanguage(context).getCode();
+            final int limit = 10;
 
-            // For now, use Ciqual directly with dedicated autocomplete method
-            // TODO: Add OpenFoodFacts autocomplete when ready
-            DataSource ciqualSource = null;
+            // Identify sources that have a dedicated autocomplete method.
+            // We check by type rather than by source ID so that adding a new source
+            // (e.g., USDA) with an autocomplete() method is automatically picked up.
+            final List<CiqualDataSource>       ciqualSources = new ArrayList<>();
+            final List<OpenFoodFactsDataSource> offSources    = new ArrayList<>();
+
             for (DataSource source : enabledSources) {
-                if ("CIQUAL".equals(source.getSourceId())) {
-                    ciqualSource = source;
-                    break;
+                if (source instanceof CiqualDataSource) {
+                    ciqualSources.add((CiqualDataSource) source);
+                } else if (source instanceof OpenFoodFactsDataSource) {
+                    offSources.add((OpenFoodFactsDataSource) source);
                 }
             }
 
-            if (ciqualSource != null && ciqualSource instanceof CiqualDataSource) {
-                CiqualDataSource ciqual = (CiqualDataSource) ciqualSource;
-
-                // Use dedicated autocomplete method (not regular search!)
-                ciqual.autocomplete(query, language, 10, new DataSourceCallback<DataSource.SearchResult>() {
-                    @Override
-                    public void onSuccess(DataSource.SearchResult result) {
-                        List<FoodProduct> products = new ArrayList<>(result.items);
-
-                        // Apply filtering
-                        List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(products, query);
-
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete (Ciqual): " + filteredProducts.size() +
-                                    " suggestions for '" + query + "'");
-                        }
-
-                        // Don't cache autocomplete results (they're partial)
-                        callback.onSuccess(filteredProducts);
-                    }
-
-                    @Override
-                    public void onError(Error error) {
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete error (silent): " + error.getMessage());
-                        }
-                        // Silent failure for autocomplete - return empty list
-                        callback.onSuccess(new ArrayList<>());
-                    }
-
-                    @Override
-                    public void onLoading() {
-                        // No progress tracking for autocomplete
-                    }
-                });
-            } else {
-                // Fallback: Use aggregator with regular search if Ciqual not available
-                // (This is the old behavior, kept as fallback)
+            // If neither source type is available, fall back to aggregator regular search.
+            if (ciqualSources.isEmpty() && offSources.isEmpty()) {
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Autocomplete: no dedicated sources available, using aggregator fallback");
+                }
                 aggregator.searchAll(query, new DataSourceAggregator.AggregatorCallback() {
                     @Override
                     public void onSearchComplete(AggregatedSearchResult result) {
-                        List<FoodProduct> allProducts = new ArrayList<>(result.getItems());
-
-                        // Apply filtering
-                        List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(allProducts, query);
-
-                        // Limit to 10 results for autocomplete
-                        int limit = Math.min(10, filteredProducts.size());
-                        List<FoodProduct> limitedResults = limit > 0 ?
-                                filteredProducts.subList(0, limit) : filteredProducts;
-
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete (DataSource fallback): " + limitedResults.size() +
-                                    " suggestions for '" + query + "'");
-                        }
-
-                        // Don't cache autocomplete results (they're partial)
-                        callback.onSuccess(limitedResults);
+                        List<FoodProduct> all = new ArrayList<>(result.getItems());
+                        List<FoodProduct> filtered = SearchFilter.filterAndSort(all, query);
+                        int cap = Math.min(limit, filtered.size());
+                        callback.onSuccess(cap > 0 ? filtered.subList(0, cap) : filtered);
                     }
-
                     @Override
                     public void onSearchError(String error) {
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete error (silent): " + error);
-                        }
-                        // Silent failure for autocomplete - return empty list
+                        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Autocomplete aggregator error: " + error);
                         callback.onSuccess(new ArrayList<>());
                     }
-
                     @Override
-                    public void onSearchProgress(String sourceId, int completed, int total) {
-                        // No progress tracking for autocomplete
-                    }
+                    public void onSearchProgress(String sourceId, int completed, int total) {}
                 });
+                return;
             }
+
+            // Parallel execution: track how many sources have responded.
+            // Uses AtomicInteger as a countdown latch — thread-safe without locking.
+            int totalSources = ciqualSources.size() + offSources.size();
+            java.util.concurrent.atomic.AtomicInteger remaining =
+                    new java.util.concurrent.atomic.AtomicInteger(totalSources);
+
+            // Accumulator for merged results — synchronised to handle parallel writes.
+            // LinkedHashMap preserves insertion order (Ciqual first, then OFF).
+            final java.util.Map<String, FoodProduct> merged =
+                    java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>());
+
+            // Called by each source when it finishes (success or error).
+            Runnable onSourceDone = () -> {
+                if (remaining.decrementAndGet() == 0) {
+                    // All sources have responded — deliver merged results.
+                    List<FoodProduct> results = new ArrayList<>(merged.values());
+                    if (ApiConfig.DEBUG_LOGGING) {
+                        Log.d(TAG, "Autocomplete complete: " + results.size()
+                                + " merged suggestions for '" + query + "'");
+                    }
+                    callback.onSuccess(results);
+                }
+            };
+
+            // ── Ciqual (match_phrase_prefix, great for ingredient names) ─────
+            for (CiqualDataSource ciqual : ciqualSources) {
+                ciqual.autocomplete(query, language, limit,
+                        new DataSourceCallback<DataSource.SearchResult>() {
+                            @Override
+                            public void onSuccess(DataSource.SearchResult result) {
+                                List<FoodProduct> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
+                                for (FoodProduct p : filtered) {
+                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                }
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete Ciqual: " + filtered.size() + " results");
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override
+                            public void onError(Error error) {
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete Ciqual error (silent): " + error.getMessage());
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override
+                            public void onLoading() {}
+                        });
+            }
+
+            // ── OpenFoodFacts (SearchAlicious /search, great for branded products) ──
+            for (OpenFoodFactsDataSource off : offSources) {
+                off.autocomplete(query, language, limit,
+                        new DataSourceCallback<DataSource.SearchResult>() {
+                            @Override
+                            public void onSuccess(DataSource.SearchResult result) {
+                                List<FoodProduct> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
+                                for (FoodProduct p : filtered) {
+                                    // putIfAbsent: Ciqual result wins if same product already present
+                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                }
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete OFF: " + filtered.size() + " results");
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override
+                            public void onError(Error error) {
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete OFF error (silent): " + error.getMessage());
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override
+                            public void onLoading() {}
+                        });
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "Autocomplete exception", e);
-            // Silent failure - return empty list
-            callback.onSuccess(new ArrayList<>());
+            callback.onSuccess(new ArrayList<>()); // Silent failure
         }
     }
-
-    /**
-     * Perform autocomplete using legacy network mode (paginated with limit)
-     */
-    private void performAutocompleteLegacySearch(String query, SearchCallback callback) {
-        // Initialize mapper
-        final OpenFoodFactsMapper offMapper = new OpenFoodFactsMapper();
-        final String language = getCurrentLanguageCode();
-
-        // Use paginated search with page 1 and small limit
-        networkManager.searchProductsPaginated(
-                query,
-                1,              // Page 1
-                10,             // Limit to 10 results for autocomplete
-                new NetworkManager.NetworkCallback<OpenFoodFactsSearchResponse>() {
-                    @Override
-                    public void onSuccess(OpenFoodFactsSearchResponse offSearchResponse) {
-                        if (offSearchResponse == null || !offSearchResponse.hasResults()) {
-                            // No results - return empty list (silent failure for autocomplete)
-                            callback.onSuccess(new ArrayList<>());
-                            return;
-                        }
-
-                        List<FoodProduct> products = offMapper.mapSearchResponse(offSearchResponse, language);
-                        List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(products, query);
-
-                        // Already limited by API, but ensure we don't exceed 10
-                        int limit = Math.min(10, filteredProducts.size());
-                        List<FoodProduct> limitedResults = limit > 0 ?
-                                filteredProducts.subList(0, limit) : filteredProducts;
-
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete (Legacy): " + limitedResults.size() +
-                                    " suggestions for '" + query + "'");
-                        }
-
-                        callback.onSuccess(limitedResults);
-                    }
-
-                    @Override
-                    public void onFailure(String error) {
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Autocomplete network error (silent): " + error);
-                        }
-                        // Silent failure - return empty list for better UX
-                        callback.onSuccess(new ArrayList<>());
-                    }
-                }
-        );
-    }
-
 
     // ========== INDIVIDUAL PRODUCT OPERATIONS ==========
 
@@ -971,50 +889,33 @@ public class ProductRepository {
 
         callback.onLoading();
 
-        if (useDataSourceMode) {
-            DataSource primarySource = dataSourceManager.getPrimaryDataSource();
-            if (primarySource == null) {
-                callback.onError(Error.network("No data sources available", null));
-                return;
-            }
-
-            String language = LanguageManager.getCurrentLanguage(context).getCode();
-
-            primarySource.getProductByBarcode(barcode, language,
-                    new DataSourceCallback<FoodProduct>() {
-                        @Override
-                        public void onSuccess(FoodProduct foodProduct) {
-                            // Save to database as well
-                            saveProductToDatabase(foodProduct, false);
-                            callback.onSuccess(foodProduct);
-                        }
-
-                        @Override
-                        public void onError(Error error) {
-                            callback.onError(error);
-                        }
-
-                        @Override
-                        public void onLoading() {
-                            // Already handled
-                        }
-                    });
-        } else {
-            // Legacy mode - use NetworkManager directly
-            networkManager.getProduct(barcode, new NetworkManager.NetworkCallback<FoodProduct>() {
-                @Override
-                public void onSuccess(FoodProduct product) {
-                    // Save to database as well
-                    saveProductToDatabase(product, false);
-                    callback.onSuccess(product);
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    callback.onError(Error.network(error, null));
-                }
-            });
+        DataSource primarySource = dataSourceManager.getPrimaryDataSource();
+        if (primarySource == null) {
+            callback.onError(Error.network("No data sources available", null));
+            return;
         }
+
+        String language = LanguageManager.getCurrentLanguage(context).getCode();
+        primarySource.getProductByBarcode(barcode, language,
+            new DataSourceCallback<FoodProduct>() {
+                @Override
+                public void onSuccess(FoodProduct foodProduct) {
+                    // Save to database as well
+                    saveProductToDatabase(foodProduct, false);
+                    callback.onSuccess(foodProduct);
+                }
+
+                @Override
+                public void onError(Error error) {
+                    callback.onError(error);
+                }
+
+                @Override
+                public void onLoading() {
+                    // Already handled
+                }
+            }
+        );
     }
 
     /**
@@ -1109,16 +1010,6 @@ public class ProductRepository {
     }
 
     // ========== DATASOURCE MANAGEMENT ==========
-
-    /**
-     * Enable or disable DataSource mode
-     */
-    public void setDataSourceMode(boolean enabled) {
-        this.useDataSourceMode = enabled;
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "DataSource mode " + (enabled ? "enabled" : "disabled"));
-        }
-    }
 
     /**
      * Get available data sources
@@ -1354,79 +1245,6 @@ public class ProductRepository {
     }
 
     /**
-     * Use language-aware network search
-     */
-    private void performNetworkSearch(String query, SearchCallback callback) {
-        callback.onLoading();
-        isSearchInProgress = true;
-
-        // Initialize mapper
-        final OpenFoodFactsMapper offMapper = new OpenFoodFactsMapper();
-        final String language = getCurrentLanguageCode();
-
-        // Use language-aware search
-        networkManager.searchProducts(query, new NetworkManager.NetworkCallback<OpenFoodFactsSearchResponse>() {
-            @Override
-            public void onSuccess(OpenFoodFactsSearchResponse offSearchResponse) {
-                isSearchInProgress = false;
-
-                if (offSearchResponse == null || !offSearchResponse.hasResults()) {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Search returned no results for: '" + query + "'");
-                    }
-                    callback.onError(Error.noData("No results found for: " + query));
-                    return;
-                }
-
-                // Apply intelligent filtering and ranking
-                List<FoodProduct> allProducts = offMapper.mapSearchResponse(offSearchResponse, language);
-                List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(allProducts, query);
-
-                if (filteredProducts.isEmpty()) {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "All products filtered out for query: '" + query +
-                                "' (started with " + allProducts.size() + " products)");
-                    }
-                    callback.onError(Error.noData("No results found for: " + query));
-                    return;
-                }
-
-                // Enrich from DB cache before storing (same logic as DataSource mode)
-                enrichSearchResultsFromDatabase(filteredProducts);
-
-                // Cache the enriched results for future use
-                searchCache.put(query, filteredProducts);
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, String.format("Search completed: %d filtered results from %d total for '%s'",
-                            filteredProducts.size(), allProducts.size(), query));
-                }
-
-                callback.onSuccess(filteredProducts);
-            }
-
-            @Override
-            public void onFailure(String error) {
-                isSearchInProgress = false;
-
-                Log.e(TAG, "Network search failed for '" + query + "': " + error);
-
-                // Convert generic error string to structured Error
-                Error apiError;
-                if (error.toLowerCase().contains("network") || error.toLowerCase().contains("connection")) {
-                    apiError = Error.network(error, null);
-                } else if (error.toLowerCase().contains("timeout")) {
-                    apiError = Error.network("Request timed out. Please try again.", null);
-                } else {
-                    apiError = Error.unknown(error, null);
-                }
-
-                callback.onError(apiError);
-            }
-        });
-    }
-
-    /**
      * Fetch product from network using NetworkManager
      */
     private void fetchFromNetwork(String barcode, ProductCallback callback) {
@@ -1623,13 +1441,13 @@ public class ProductRepository {
             String savedLanguage = prefs.getString("selected_language", null);
 
             if (savedLanguage != null) {
-                Log.d(TAG, "Language from prefs: " + savedLanguage);
+                if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Language from prefs: " + savedLanguage);
                 return savedLanguage;
             }
 
             // Fallback to LanguageManager
             LanguageManager.SupportedLanguage currentLang = LanguageManager.getCurrentLanguage(context);
-            Log.d(TAG, "Language from manager: " + currentLang.getCode());
+            if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Language from manager: " + currentLang.getCode());
             return currentLang.getCode();
         } catch (Exception e) {
             Log.e(TAG, "Failed to get language code, using default", e);
