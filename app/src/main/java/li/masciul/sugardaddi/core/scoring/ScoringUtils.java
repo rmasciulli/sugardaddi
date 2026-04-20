@@ -1,4 +1,4 @@
-package li.masciul.sugardaddi.core.utils;
+package li.masciul.sugardaddi.core.scoring;
 
 import li.masciul.sugardaddi.data.network.ApiConfig;
 

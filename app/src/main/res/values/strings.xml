@@ -634,11 +634,11 @@
     <string name="ciqual_integrity_error">Error during check</string>
 
     <!-- DATA SOURCE CARD - generic UI strings -->
-
     <!-- Section header shown above all data source cards -->
     <string name="ds_section_header">Data sources</string>
 
     <!-- Status dot labels (used as content descriptions for accessibility) -->
+    <string name="ds_status_label">Status</string>
     <string name="ds_status_ready">Ready</string>
     <string name="ds_status_not_ready">Not ready</string>
     <string name="ds_status_initialising">Initialising…</string>

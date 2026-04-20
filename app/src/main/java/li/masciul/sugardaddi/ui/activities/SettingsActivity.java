@@ -112,6 +112,13 @@ public class SettingsActivity extends BaseActivity
         super.onActivityResumed();
         loadCurrentSettings();
 
+        if (navigationView != null) {
+            MenuItem settingsItem = navigationView.getMenu().findItem(R.id.nav_settings);
+            if (settingsItem != null) {
+                settingsItem.setChecked(true);
+            }
+        }
+
         // Resume each card manager — registers its BroadcastReceiver
         // and refreshes status dot / version chip from current prefs.
         for (DataSourceCardManager manager : cardManagers) {

@@ -1,11 +1,13 @@
 package li.masciul.sugardaddi.core.utils;
 
+import li.masciul.sugardaddi.core.scoring.CiqualScorer;
+import li.masciul.sugardaddi.core.scoring.OpenFoodFactsScorer;
+import li.masciul.sugardaddi.core.scoring.USDAScorer;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.SourceSpecificScorer;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
 import android.util.Log;
 
@@ -168,8 +170,7 @@ public class SearchFilter {
             case CIQUAL:
                 return CiqualScorer.getInstance();
             case USDA:
-                // USDA can use OpenFoodFacts scorer as they're similar
-                return OpenFoodFactsScorer.getInstance();
+                return USDAScorer.getInstance();
             default:
                 // Fallback to OpenFoodFacts scorer for unknown sources
                 return OpenFoodFactsScorer.getInstance();

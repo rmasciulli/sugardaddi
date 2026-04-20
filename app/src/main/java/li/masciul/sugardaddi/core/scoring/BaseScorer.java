@@ -1,10 +1,11 @@
-package li.masciul.sugardaddi.core.utils;
+package li.masciul.sugardaddi.core.scoring;
 
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.SourceSpecificScorer;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
+import li.masciul.sugardaddi.core.utils.SearchFilter;
 
 /**
  * BaseScorer - Abstract base class for source-specific scorers

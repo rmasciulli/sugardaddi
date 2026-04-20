@@ -1,9 +1,10 @@
-package li.masciul.sugardaddi.core.utils;
+package li.masciul.sugardaddi.core.scoring;
 
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.core.utils.SearchFilter;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 import java.util.List;

@@ -171,8 +171,13 @@ public class JournalActivity extends BaseActivity implements
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onActivityResumed() {
+        super.onActivityResumed();
+
+        // Update checked item in drawer
+        if (navigationView != null) {
+            navigationView.setCheckedItem(R.id.nav_journal);
+        }
 
         // Refresh data when returning from other activities
         loadMealsForDate(currentDate);

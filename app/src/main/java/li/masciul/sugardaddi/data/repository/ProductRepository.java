@@ -30,6 +30,7 @@ import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
+import li.masciul.sugardaddi.data.sources.usda.USDADataSource;
 import li.masciul.sugardaddi.core.utils.SearchFilter;
 
 // Cache
@@ -234,7 +235,7 @@ public class ProductRepository {
             callback.onLoading();
             isSearchInProgress = true;
 
-            List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
+            List<DataSource> enabledSources = dataSourceManager.getActiveSources();
             if (ApiConfig.DEBUG_LOGGING) {
                 Log.d(TAG, "performDataSourceSearch: " + enabledSources.size() + " source(s)");
             }
@@ -430,7 +431,7 @@ public class ProductRepository {
     private void performDataSourceSearchWithPagination(String query, int page, SearchCallback callback) {
         try {
             // Get enabled data sources
-            List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
+            List<DataSource> enabledSources = dataSourceManager.getActiveSources();
 
             if (enabledSources.isEmpty()) {
                 callback.onError(Error.network("No data sources available", null));
@@ -568,7 +569,7 @@ public class ProductRepository {
      */
     private void performAutocompleteDataSourceSearch(String query, SearchCallback callback) {
         try {
-            List<DataSource> enabledSources = dataSourceManager.getEnabledDataSources();
+            List<DataSource> enabledSources = dataSourceManager.getActiveSources();
 
             if (enabledSources.isEmpty()) {
                 callback.onError(Error.network("No data sources available", null));
@@ -578,22 +579,22 @@ public class ProductRepository {
             final String language = LanguageManager.getCurrentLanguage(context).getCode();
             final int limit = 10;
 
-            // Identify sources that have a dedicated autocomplete method.
-            // We check by type rather than by source ID so that adding a new source
-            // (e.g., USDA) with an autocomplete() method is automatically picked up.
-            final List<CiqualDataSource>       ciqualSources = new ArrayList<>();
+            final List<CiqualDataSource>        ciqualSources = new ArrayList<>();
             final List<OpenFoodFactsDataSource> offSources    = new ArrayList<>();
+            final List<USDADataSource>          usdaSources   = new ArrayList<>();
 
             for (DataSource source : enabledSources) {
                 if (source instanceof CiqualDataSource) {
                     ciqualSources.add((CiqualDataSource) source);
                 } else if (source instanceof OpenFoodFactsDataSource) {
                     offSources.add((OpenFoodFactsDataSource) source);
+                } else if (source instanceof USDADataSource) {
+                    usdaSources.add((USDADataSource) source);
                 }
             }
 
-            // If neither source type is available, fall back to aggregator regular search.
-            if (ciqualSources.isEmpty() && offSources.isEmpty()) {
+            // If no dedicated source is available, fall back to aggregator regular search.
+            if (ciqualSources.isEmpty() && offSources.isEmpty() && usdaSources.isEmpty()) {
                 if (ApiConfig.DEBUG_LOGGING) {
                     Log.d(TAG, "Autocomplete: no dedicated sources available, using aggregator fallback");
                 }
@@ -616,21 +617,17 @@ public class ProductRepository {
                 return;
             }
 
-            // Parallel execution: track how many sources have responded.
-            // Uses AtomicInteger as a countdown latch — thread-safe without locking.
-            int totalSources = ciqualSources.size() + offSources.size();
+            int totalSources = ciqualSources.size() + offSources.size() + usdaSources.size();
             java.util.concurrent.atomic.AtomicInteger remaining =
                     new java.util.concurrent.atomic.AtomicInteger(totalSources);
 
-            // Accumulator for merged results — synchronised to handle parallel writes.
-            // LinkedHashMap preserves insertion order (Ciqual first, then OFF).
+            // LinkedHashMap preserves insertion order: Ciqual first, then OFF, then USDA.
+            // putIfAbsent ensures the first source to provide a result wins on collision.
             final java.util.Map<String, FoodProduct> merged =
                     java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
-            // Called by each source when it finishes (success or error).
             Runnable onSourceDone = () -> {
                 if (remaining.decrementAndGet() == 0) {
-                    // All sources have responded — deliver merged results.
                     List<FoodProduct> results = new ArrayList<>(merged.values());
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "Autocomplete complete: " + results.size()
@@ -640,7 +637,7 @@ public class ProductRepository {
                 }
             };
 
-            // ── Ciqual (match_phrase_prefix, great for ingredient names) ─────
+            // ── Ciqual (match_phrase_prefix, great for ingredient names) ──────────
             for (CiqualDataSource ciqual : ciqualSources) {
                 ciqual.autocomplete(query, language, limit,
                         new DataSourceCallback<DataSource.SearchResult>() {
@@ -663,12 +660,11 @@ public class ProductRepository {
                                 }
                                 onSourceDone.run();
                             }
-                            @Override
-                            public void onLoading() {}
+                            @Override public void onLoading() {}
                         });
             }
 
-            // ── OpenFoodFacts (SearchAlicious /search, great for branded products) ──
+            // ── OpenFoodFacts (SearchAlicious /search, great for branded products) ─
             for (OpenFoodFactsDataSource off : offSources) {
                 off.autocomplete(query, language, limit,
                         new DataSourceCallback<DataSource.SearchResult>() {
@@ -677,7 +673,6 @@ public class ProductRepository {
                                 List<FoodProduct> filtered =
                                         SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
                                 for (FoodProduct p : filtered) {
-                                    // putIfAbsent: Ciqual result wins if same product already present
                                     merged.putIfAbsent(p.getSearchableId(), p);
                                 }
                                 if (ApiConfig.DEBUG_LOGGING) {
@@ -692,14 +687,40 @@ public class ProductRepository {
                                 }
                                 onSourceDone.run();
                             }
+                            @Override public void onLoading() {}
+                        });
+            }
+
+            // ── USDA (FDC /foods/search, great for raw agricultural commodities) ──
+            for (USDADataSource usda : usdaSources) {
+                usda.autocomplete(query, language, limit,
+                        new DataSourceCallback<DataSource.SearchResult>() {
                             @Override
-                            public void onLoading() {}
+                            public void onSuccess(DataSource.SearchResult result) {
+                                List<FoodProduct> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
+                                for (FoodProduct p : filtered) {
+                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                }
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete USDA: " + filtered.size() + " results");
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override
+                            public void onError(Error error) {
+                                if (ApiConfig.DEBUG_LOGGING) {
+                                    Log.d(TAG, "Autocomplete USDA error (silent): " + error.getMessage());
+                                }
+                                onSourceDone.run();
+                            }
+                            @Override public void onLoading() {}
                         });
             }
 
         } catch (Exception e) {
             Log.e(TAG, "Autocomplete exception", e);
-            callback.onSuccess(new ArrayList<>()); // Silent failure
+            callback.onSuccess(new ArrayList<>());
         }
     }
 
@@ -889,11 +910,12 @@ public class ProductRepository {
 
         callback.onLoading();
 
-        DataSource primarySource = dataSourceManager.getPrimaryDataSource();
-        if (primarySource == null) {
+        List<DataSource> activeSources = dataSourceManager.getActiveSources();
+        if (activeSources.isEmpty()) {
             callback.onError(Error.network("No data sources available", null));
             return;
         }
+        DataSource primarySource = activeSources.get(0);
 
         String language = LanguageManager.getCurrentLanguage(context).getCode();
         primarySource.getProductByBarcode(barcode, language,
@@ -1015,7 +1037,7 @@ public class ProductRepository {
      * Get available data sources
      */
     public List<DataSource> getAvailableDataSources() {
-        return dataSourceManager.getEnabledDataSources();
+        return dataSourceManager.getActiveSources();
     }
 
     // ========== CACHE MANAGEMENT ==========
