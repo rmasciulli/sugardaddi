@@ -97,8 +97,7 @@ public class DataSourceCardManager {
     private LinearProgressIndicator   dbProgressBar;
     private TextView                  dbProgressPercent;
     private TextView                  dbPhaseText;
-    private View                      dbIntegrityRow;
-    private MaterialButton            dbCheckIntegrityButton;
+    private TextView                  dbCheckIntegrityButton;
     private TextView                  dbIntegrityResult;
     private MaterialButton            dbReinitialiseButton;
 
@@ -164,16 +163,6 @@ public class DataSourceCardManager {
         bgExecutor.shutdown();
     }
 
-    /**
-     * Called by SettingsActivity after a cache clear to reset this source's
-     * import state prefs. No-op for sources without a local database.
-     */
-    public void resetSourceDatabaseState(@NonNull Context context) {
-        if (settings != null) {
-            settings.resetDatabaseState(context);
-        }
-    }
-
     // =========================================================================
     // BIND VIEWS
     // =========================================================================
@@ -201,10 +190,12 @@ public class DataSourceCardManager {
         dbProgressBar          = cardView.findViewById(R.id.dsDbProgressBar);
         dbProgressPercent      = cardView.findViewById(R.id.dsDbProgressPercent);
         dbPhaseText            = cardView.findViewById(R.id.dsDbPhaseText);
-        dbIntegrityRow         = cardView.findViewById(R.id.dsDbIntegrityRow);
         dbCheckIntegrityButton = cardView.findViewById(R.id.dsDbCheckIntegrityButton);
         dbIntegrityResult      = cardView.findViewById(R.id.dsDbIntegrityResult);
         dbReinitialiseButton   = cardView.findViewById(R.id.dsDbReinitialiseButton);
+
+        // Apply underline to text-link views (cannot be done in XML)
+        underline(dbCheckIntegrityButton);
     }
 
     // =========================================================================
@@ -417,6 +408,23 @@ public class DataSourceCardManager {
                 source.setEnabled(context, checked);
                 updateStatusDot();
             });
+        }
+    }
+
+    // =========================================================================
+    // CACHE CLEAR SUPPORT
+    // =========================================================================
+
+    /**
+     * Called by SettingsActivity after clearing the database cache.
+     * Resets this source's import SharedPreferences so isDatabaseReady()
+     * returns false, then refreshes the card UI to reflect the empty state.
+     * No-op for sources without a local database (e.g. OpenFoodFacts).
+     */
+    public void resetSourceDatabaseState(@NonNull Context context) {
+        if (settings != null && settings.hasLocalDatabase()) {
+            settings.resetDatabaseState(context.getApplicationContext());
+            refresh();
         }
     }
 
@@ -656,6 +664,15 @@ public class DataSourceCardManager {
     private void postToMain(@NonNull Runnable r) {
         if (cardView != null) {
             cardView.post(r);
+        }
+    }
+
+    /**
+     * Apply underline paint flag to a TextView programmatically.
+     */
+    private static void underline(@Nullable TextView view) {
+        if (view != null) {
+            view.setPaintFlags(view.getPaintFlags() | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
         }
     }
 

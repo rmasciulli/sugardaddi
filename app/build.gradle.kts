@@ -1,7 +1,13 @@
-import com.android.build.api.dsl.Packaging
+import java.util.Properties;
 
 plugins {
     alias(libs.plugins.android.application)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
@@ -23,9 +29,9 @@ android {
         }
 
         // USDA FoodData Central API key
-        // Read from local.properties → environment variable → safe fallback.
+        // Reads from local.properties → env var → DEMO_KEY fallback.
         // Never hardcode a real key here.
-        val usdaApiKey: String = (project.findProperty("USDA_API_KEY") as String?)
+        val usdaApiKey: String = localProperties.getProperty("USDA_API_KEY")
             ?: System.getenv("USDA_API_KEY")
             ?: "DEMO_KEY"
         buildConfigField("String", "USDA_API_KEY", "\"$usdaApiKey\"")

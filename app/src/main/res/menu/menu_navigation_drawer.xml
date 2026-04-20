@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- menu_navigation_drawer.xml -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <!-- Main Actions -->
-    <group android:checkableBehavior="single">
+    <!-- Main navigation actions -->
+    <group
+        android:id="@+id/group_main"
+        android:checkableBehavior="single">
 
         <item
             android:id="@+id/nav_search"
             android:icon="@drawable/ic_search"
-            android:title="@string/menu_search_food"
-            android:checked="true" />
+            android:title="@string/menu_search_food" />
 
         <item
             android:id="@+id/nav_journal"
@@ -30,14 +30,16 @@
 
     </group>
 
-    <!-- Settings Section -->
-    <item android:title="@string/settings_title">
-        <menu>
-            <item
-                android:id="@+id/nav_settings"
-                android:icon="@drawable/ic_settings"
-                android:title="@string/menu_settings" />
-        </menu>
-    </item>
+    <!-- Settings — separate group so a divider line appears automatically -->
+    <group
+        android:id="@+id/group_settings"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/menu_settings" />
+
+    </group>
 
 </menu>

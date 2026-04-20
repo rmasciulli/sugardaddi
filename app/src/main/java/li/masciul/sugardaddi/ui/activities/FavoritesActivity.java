@@ -145,6 +145,7 @@ public class FavoritesActivity extends BaseActivity
     @Override
     protected void onResume() {
         super.onResume();
+
         // Refresh on resume: the user may have toggled a favorite in ItemDetailsActivity
         loadFavorites();
     }

@@ -86,11 +86,16 @@
             android:parentActivityName=".ui.activities.MainActivity" />
 
 
-        <!-- Ciqual Import Service -->
+        <!-- Import Service -->
         <!-- Reads bundled assets and imports into Room. foregroundServiceType=dataSync -->
         <!-- required for startForegroundService() on API 34+ -->
         <service
             android:name=".data.sources.ciqual.CiqualImportService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name=".data.sources.usda.USDAImportService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 

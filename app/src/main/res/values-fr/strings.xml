@@ -635,6 +635,7 @@
 
     <!-- DATA SOURCE CARD - générique -->
     <string name="ds_section_header">Sources de données</string>
+    <string name="ds_status_label">Statut</string>
     <string name="ds_status_ready">Disponible</string>
     <string name="ds_status_not_ready">Non disponible</string>
     <string name="ds_status_initialising">Initialisation…</string>

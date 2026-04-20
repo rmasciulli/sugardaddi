@@ -14,6 +14,8 @@ import li.masciul.sugardaddi.data.sources.ciqual.CiqualConfig;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConfig;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
+import li.masciul.sugardaddi.data.sources.usda.USDAConfig;
+import li.masciul.sugardaddi.data.sources.usda.USDADataSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,7 +197,7 @@ public class DataSourceManager {
         registerAndInit(new CiqualDataSource(context, new CiqualConfig()));
 
         // ── Future: USDA ──────────────────────────────────────────────────
-        // registerAndInit(new USDADataSource(context, new USDAConfig()));
+        registerAndInit(new USDADataSource(context, new USDAConfig()));
 
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "Triggered async init for " + pendingInitializations.get() + " sources");
@@ -312,31 +314,6 @@ public class DataSourceManager {
     @NonNull
     public Collection<DataSource> getAllDataSources() {
         return new ArrayList<>(dataSources.values());
-    }
-
-    /**
-     * Compatibility shim — ProductRepository still calls this.
-     * Delegates to getActiveSources() (enabled + initialised, A→Z).
-     *
-     * @deprecated Use getActiveSources() in new code.
-     */
-    @NonNull
-    @Deprecated
-    public List<DataSource> getEnabledDataSources() {
-        return getActiveSources();
-    }
-
-    /**
-     * Compatibility shim — ProductRepository still calls this.
-     * Returns the first active source alphabetically, or null if none ready.
-     *
-     * @deprecated Use getActiveSources() and pick the first element.
-     */
-    @Nullable
-    @Deprecated
-    public DataSource getPrimaryDataSource() {
-        List<DataSource> active = getActiveSources();
-        return active.isEmpty() ? null : active.get(0);
     }
 
     /**
