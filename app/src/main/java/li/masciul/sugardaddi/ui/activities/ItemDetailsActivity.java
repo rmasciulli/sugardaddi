@@ -33,6 +33,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.OffProductDetailRenderer;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
+import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
 
 /**
  * ItemDetailsActivity - REFACTORED THIN SHELL (v5.1)
@@ -159,6 +160,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
         rendererRegistry = new DetailRendererRegistry();
         rendererRegistry.register(new OffProductDetailRenderer(this));
         rendererRegistry.register(new CiqualProductDetailRenderer(this));
+        rendererRegistry.register(new USDAProductDetailRenderer(this));
         rendererRegistry.register(new DefaultProductDetailRenderer(this));  // must be last
         logDebug("Renderer registry initialized with " + rendererRegistry.size() + " renderers");
     }

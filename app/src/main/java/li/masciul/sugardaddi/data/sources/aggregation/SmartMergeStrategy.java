@@ -191,6 +191,12 @@ public class SmartMergeStrategy implements MergeStrategy {
      * Fuzzy matching logic
      */
     private boolean fuzzyMatch(FoodProduct item1, FoodProduct item2) {
+        String raw1 = item1.getDisplayName("en");
+        String raw2 = item2.getDisplayName("en");
+
+        // Null name means incomplete data — can't fuzzy match, assume not duplicate
+        if (raw1 == null || raw2 == null) return false;
+
         // Get names in same language
         String name1 = item1.getDisplayName("en").toLowerCase();
         String name2 = item2.getDisplayName("en").toLowerCase();
@@ -319,23 +325,22 @@ public class SmartMergeStrategy implements MergeStrategy {
      */
     private void sortByRelevance(List<FoodProduct> items) {
         items.sort((a, b) -> {
-            // Sort by data completeness (descending)
             int completenessCompare = Float.compare(
-                    b.getDataCompleteness(),
-                    a.getDataCompleteness()
-            );
-
+                    b.getDataCompleteness(), a.getDataCompleteness());
             if (completenessCompare != 0) return completenessCompare;
 
-            // Then by whether they have barcodes
             boolean aHasBarcode = a.getBarcode() != null && !a.getBarcode().isEmpty();
             boolean bHasBarcode = b.getBarcode() != null && !b.getBarcode().isEmpty();
-
             if (aHasBarcode && !bHasBarcode) return -1;
             if (!aHasBarcode && bHasBarcode) return 1;
 
-            // Then by name
-            return a.getDisplayName("en").compareTo(b.getDisplayName("en"));
+            // Null-safe comparison
+            String nameA = a.getDisplayName("en");
+            String nameB = b.getDisplayName("en");
+            if (nameA == null && nameB == null) return 0;
+            if (nameA == null) return 1;
+            if (nameB == null) return -1;
+            return nameA.compareTo(nameB);
         });
     }
 }
