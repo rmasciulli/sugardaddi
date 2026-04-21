@@ -3,9 +3,12 @@ package li.masciul.sugardaddi.data.sources.usda.api;
 import java.util.List;
 
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCFoodDetail;
+import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchRequest;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -42,13 +45,24 @@ public interface FoodDataCentralAPI {
     // =========================================================================
 
     /**
-     * Full-text food search.
+     * Full-text food search via POST request.
      *
-     * EXAMPLE REQUEST:
-     *   GET /foods/search?api_key=DEMO_KEY&query=broccoli
-     *       &dataType=Foundation,SR Legacy,Survey (FNDDS)
-     *       &pageSize=25&pageNumber=1
-     *       &sortBy=score&sortOrder=desc
+     * Using POST instead of GET avoids URL encoding issues with the
+     * "Survey (FNDDS)" dataType value, whose parentheses cause HTTP 400
+     * errors when passed as repeated query parameters.
+     *
+     * The api_key remains a query parameter (not in the body) — this is
+     * how USDA authenticates POST requests.
+     *
+     * EXAMPLE REQUEST BODY:
+     * {
+     *   "query":      "broccoli",
+     *   "dataType":   ["Foundation", "SR Legacy", "Survey (FNDDS)"],
+     *   "pageSize":   25,
+     *   "pageNumber": 1,
+     *   "sortBy":     "score",
+     *   "sortOrder":  "desc"
+     * }
      *
      * EXAMPLE RESPONSE (abbreviated):
      * {
@@ -74,29 +88,14 @@ public interface FoodDataCentralAPI {
      *   ]
      * }
      *
-     * NUTRIENT DATA IN SEARCH RESULTS:
-     * The search endpoint returns a subset of nutrient data per food — enough
-     * for list display (energy, protein, fat, carbs). For full nutrient profiles,
-     * use getFood().
-     *
-     * @param query       Full-text search term (required)
-     * @param apiKey      FDC API key (use BuildConfig.USDA_API_KEY)
-     * @param dataType    Comma-separated data type filter (use USDAConstants.API_DATA_TYPES)
-     * @param pageSize    Results per page (1–200, default 25)
-     * @param pageNumber  Page number, 1-based
-     * @param sortBy      Sort field: "score", "description", "dataType", "publishedDate", "fdcId"
-     * @param sortOrder   Sort direction: "asc" or "desc"
+     * @param apiKey  FDC API key (use BuildConfig.USDA_API_KEY)
+     * @param body    Search criteria including query, dataType filter, pagination and sort
      * @return Call wrapping FDCSearchResponse
      */
-    @GET("foods/search")
+    @POST("foods/search")
     Call<FDCSearchResponse> searchFoods(
-            @Query("query")      String query,
-            @Query("api_key")    String apiKey,
-            @Query("dataType")   List<String> dataType,
-            @Query("pageSize")   int pageSize,
-            @Query("pageNumber") int pageNumber,
-            @Query("sortBy")     String sortBy,
-            @Query("sortOrder")  String sortOrder
+            @Query("api_key") String apiKey,
+            @Body FDCSearchRequest body
     );
 
     // =========================================================================

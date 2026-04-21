@@ -30,6 +30,7 @@ import li.masciul.sugardaddi.data.sources.base.DataSource.SearchResult;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import li.masciul.sugardaddi.data.sources.usda.api.FoodDataCentralAPI;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCFoodDetail;
+import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchRequest;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
 import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;
 
@@ -272,15 +273,15 @@ public class USDADataSource extends BaseDataSource {
                            @NonNull DataSourceCallback<SearchResult> callback) {
         String apiKey = getActiveApiKey();
 
-        Call<FDCSearchResponse> call = api.searchFoods(
+        FDCSearchRequest request = new FDCSearchRequest(
                 query,
-                apiKey,
                 java.util.Arrays.asList("Foundation", "SR Legacy", "Survey (FNDDS)"),
                 Math.min(limit, USDAConstants.MAX_PAGE_SIZE),
                 page,
                 USDAConstants.DEFAULT_SORT_BY,
-                USDAConstants.DEFAULT_SORT_ORDER
-        );
+                USDAConstants.DEFAULT_SORT_ORDER);
+
+        Call<FDCSearchResponse> call = api.searchFoods(apiKey, request);
 
         activeCalls.add(call);
 
@@ -454,15 +455,15 @@ public class USDADataSource extends BaseDataSource {
         String apiKey = getActiveApiKey();
         onOperationStart();
 
-        Call<FDCSearchResponse> call = api.searchFoods(
+        FDCSearchRequest request = new FDCSearchRequest(
                 query,
-                apiKey,
                 java.util.Arrays.asList("Foundation", "SR Legacy", "Survey (FNDDS)"),
-                Math.min(limit, USDAConstants.DEFAULT_PAGE_SIZE),
-                1,                                  // Always page 1 for autocomplete
+                Math.min(limit, USDAConstants.MAX_PAGE_SIZE),
+                1, // Page number always set to 1 for autocomplete
                 USDAConstants.DEFAULT_SORT_BY,
-                USDAConstants.DEFAULT_SORT_ORDER
-        );
+                USDAConstants.DEFAULT_SORT_ORDER);
+
+        Call<FDCSearchResponse> call = api.searchFoods(apiKey, request);
 
         activeCalls.add(call);
 

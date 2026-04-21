@@ -22,6 +22,7 @@ import li.masciul.sugardaddi.ui.delegates.search.CiqualProductSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.DefaultProductSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.OffProductSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.RecipeSearchDelegate;
+import li.masciul.sugardaddi.ui.delegates.search.USDAProductSearchDelegate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.registry = new DelegateRegistry();
         registry.register(new OffProductSearchDelegate(context));
         registry.register(new CiqualProductSearchDelegate(context));
+        registry.register(new USDAProductSearchDelegate(context));
         registry.register(new DefaultProductSearchDelegate(context));
         registry.register(new RecipeSearchDelegate(context));
         registry.register(new FooterDelegate(context));

@@ -424,7 +424,8 @@ public class DataSourceCardManager {
     public void resetSourceDatabaseState(@NonNull Context context) {
         if (settings != null && settings.hasLocalDatabase()) {
             settings.resetDatabaseState(context.getApplicationContext());
-            refresh();
+            // refresh() touches views — must run on main thread
+            postToMain(this::refresh);
         }
     }
 
