@@ -18,10 +18,10 @@ The project is still in alpha (core architecture complete), it's actively develo
 ## Screenshots
 
 <p float="left">
-  <img src="https://github.com/user-attachments/assets/4066d38b-dd40-4fb1-a21e-47fb887798fe" width="200" />
-  <img src="https://github.com/user-attachments/assets/4dee32af-0945-427f-bd96-312ba89b4370" width="200" />
-  <img src="https://github.com/user-attachments/assets/95657de8-4772-4891-9457-a0ad793d1e06" width="200" />
-  <img src="https://github.com/user-attachments/assets/3f74286f-4108-4430-9e0f-ff3c12e18372" width="200" />
+  <img src="https://github.com/user-attachments/assets/8f87a34c-0a86-4f3a-b47c-8d6992582300" width="200" />
+  <img src="https://github.com/user-attachments/assets/4fc891b5-4da1-42c9-9686-e62ebea748fb" width="200" />
+  <img src="https://github.com/user-attachments/assets/7ebe1ddb-614d-428d-b937-fae340011b05" width="200" />
+  <img src="https://github.com/user-attachments/assets/387b3524-0914-41b1-8e56-3d36acc66937" width="200" />
 </p>
 
 ## Key design patterns
