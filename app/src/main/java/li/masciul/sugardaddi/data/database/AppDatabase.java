@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import java.util.concurrent.Executors;
 
 /**
- * AppDatabase - Main Room database configuration (v7.0 - Extended nutrition fields + Ciqual import support)
+ * AppDatabase - Main Room database configuration (v8.0 - DataConfidence enum)
  *
  * ARCHITECTURE UPDATE v6.0:
  * - Added allergenFlags persistence to FoodProductEntity, RecipeEntity, MealEntity
@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class                 // Recipe storage (v3.0 - hybrid translation + split steps + allergens)
 
         },
-        version = 7,  // v7: new columns on FoodProductEntity (scientific_name, category_code) + NutritionEntity (vitaminD2/D3, intrinsicFolate, folicAcid, dataConfidenceCode)
+        version = 8,  // Rename dataConfidenceCode → data_confidence
         exportSchema = true
 )
 @TypeConverters({
@@ -63,10 +63,12 @@ import java.util.concurrent.Executors;
 
         // v5.0: Recipe step converters
         RecipeStepMetadataListConverter.class,
-        RecipeStepTranslationListConverter.class
+        RecipeStepTranslationListConverter.class,
 
-        // REMOVED: LocalizedContentMapConverter (obsolete)
+        // v8.0 DataConfidenceCode to DataConfidence
+        DataConfidenceConverter.class
 })
+
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String TAG = ApiConfig.DATABASE_LOG_TAG;
@@ -83,7 +85,6 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract MealDao mealDao();
     public abstract RecipeDao recipeDao();
 
-
     // ========== SINGLETON PATTERN ==========
 
     public static AppDatabase getInstance(@NonNull Context context) {
@@ -91,7 +92,10 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (LOCK) {
                 if (INSTANCE == null) {
                     if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Creating new database instance (v7)");
+                        Log.d(TAG, "Creating new database instance (v8)");
+                        Log.d(TAG, "Database created (v8)");
+                        Log.d(TAG, "Database opened (v8)");
+
                     }
 
                     INSTANCE = buildDatabase(context.getApplicationContext());
@@ -110,14 +114,8 @@ public abstract class AppDatabase extends RoomDatabase {
                         context,
                         AppDatabase.class,
                         DATABASE_NAME)
-                // MIGRATION STRATEGY:
-                // For development: Use fallbackToDestructiveMigration (data loss acceptable)
-                // For production: Implement proper migrations
+                .addMigrations(MIGRATION_4_5, MIGRATION_7_8)
                 .fallbackToDestructiveMigration()
-
-                // Uncomment for production when ready:
-                // .addMigrations(MIGRATION_4_5)
-
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
                 .setTransactionExecutor(Executors.newSingleThreadExecutor())
@@ -233,6 +231,27 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            // Rename dataConfidenceCode → data_confidence
+            // SQLite doesn't support DROP COLUMN directly, so we rename via
+            // a new column + copy + drop old column approach isn't available
+            // before SQLite 3.35. Instead we add the new column and migrate data.
+            database.execSQL(
+                    "ALTER TABLE nutrition ADD COLUMN dataConfidence TEXT");
+            database.execSQL(
+                    "UPDATE nutrition SET dataConfidence = CASE " +
+                            "  WHEN dataConfidenceCode IN ('A','B') THEN 'SCIENTIFIC' " +
+                            "  WHEN dataConfidenceCode IN ('C','D') THEN 'ESTIMATED' " +
+                            "  ELSE NULL " +
+                            "END");
+            // Note: old dataConfidenceCode column stays — SQLite can't drop columns
+            // before 3.35 (Android 12+). It becomes unused dead weight but causes
+            // no harm. Room ignores undeclared columns.
+        }
+    };
+
     // ========== UTILITY METHODS ==========
 
     /**
@@ -261,7 +280,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * Get database version
      */
     public static int getDatabaseVersion() {
-        return 7;
+        return 8;
     }
 
     /**

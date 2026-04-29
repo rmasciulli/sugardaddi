@@ -153,8 +153,7 @@
         android:elevation="8dp"
         android:orientation="vertical"
         android:padding="12dp"
-        android:visibility="gone"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:visibility="gone">
 
         <Button
             android:id="@+id/btnAddToMeal"

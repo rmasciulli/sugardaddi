@@ -2,6 +2,7 @@ package li.masciul.sugardaddi.data.sources.openfoodfacts.mappers;
 
 import android.util.Log;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
@@ -624,6 +625,7 @@ public class OpenFoodFactsMapper {
 
         // Set data source and calculate completeness
         nutrition.setDataSource("OpenFoodFacts");
+        nutrition.setDataConfidence(DataConfidence.DECLARED);
         nutrition.calculateCompleteness();
 
         product.setNutrition(nutrition);

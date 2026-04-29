@@ -5,6 +5,7 @@ import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.models.Nutrition;
 
 /**
@@ -30,7 +31,7 @@ import li.masciul.sugardaddi.core.models.Nutrition;
                 @Index(value = {"fiber"}),
                 @Index(value = {"dataCompleteness"}),
                 @Index(value = {"lastUpdated"}),
-                @Index(value = {"dataConfidenceCode"})
+                @Index(value = {"dataConfidence"})
         }
 )
 public class NutritionEntity {
@@ -206,8 +207,8 @@ public class NutritionEntity {
     private Double intrinsicFolate; // µg/100g - Natural folate
     private Double folicAcid;       // µg/100g - Fortification folate
 
-    // ========== DATA QUALITY TIER (v7) ==========
-    private String dataConfidenceCode; // Ciqual A/B/C/D or null
+    // ========== DATA QUALITY TIER (v8) ==========
+    private DataConfidence dataConfidence;
 
     // ========== QUALITY METRICS ==========
     private float dataCompleteness = 0.0f;  // % of fields with data
@@ -747,7 +748,7 @@ public class NutritionEntity {
         nutrition.setFolicAcid(this.folicAcid);
 
         // Data quality (v7)
-        nutrition.setDataConfidenceCode(this.dataConfidenceCode);
+        nutrition.setDataConfidence(this.dataConfidence);
 
         // Metadata
         nutrition.setDataSource(this.dataSource);
@@ -901,8 +902,8 @@ public class NutritionEntity {
             entity.setIntrinsicFolate(nutrition.getIntrinsicFolate());
             entity.setFolicAcid(nutrition.getFolicAcid());
 
-            // Data quality (v7)
-            entity.setDataConfidenceCode(nutrition.getDataConfidenceCode());
+            // Data quality (v8)
+            entity.setDataConfidence(nutrition.getDataConfidence());
 
             // Metadata
             entity.setDataSource(nutrition.getDataSource());
@@ -924,9 +925,7 @@ public class NutritionEntity {
     public Double getFolicAcid() { return folicAcid; }
     public void setFolicAcid(Double v) { this.folicAcid = v; }
 
-    // ===== DATA QUALITY TIER (v7) =====
-    public String getDataConfidenceCode() { return dataConfidenceCode; }
-    public void setDataConfidenceCode(String v) { this.dataConfidenceCode = v; }
-
-
+    // ===== DATA QUALITY TIER (v8) =====
+    public DataConfidence getDataConfidence() { return dataConfidence; }
+    public void setDataConfidence(DataConfidence v) { this.dataConfidence = v; }
 }

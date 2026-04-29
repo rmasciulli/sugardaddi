@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 
 
 /**
@@ -179,13 +180,7 @@ public class Nutrition {
     private Double folicAcid;       // µg per 100g/ml - Fortification folate (added)
 
     // ========== DATA QUALITY ==========
-    /**
-     * Source-specific data quality tier.
-     * Ciqual: "A" (representative French data, highest) to "D" (data > 10 years old).
-     * USDA: equivalent quality tiers can be mapped here.
-     * OFF: null (no equivalent confidence system).
-     */
-    private String dataConfidenceCode; // "A", "B", "C", "D", or null
+    private DataConfidence dataConfidence;
 
     // ========== METADATA ==========
     private String dataSource;        // "OFF", "ciqual", "usda", etc.
@@ -2192,10 +2187,8 @@ public class Nutrition {
     public void setFolicAcid(Double folicAcid) { this.folicAcid = folicAcid; }
 
     // ========== DATA QUALITY ==========
-    public String getDataConfidenceCode() { return dataConfidenceCode; }
-    public void setDataConfidenceCode(String dataConfidenceCode) {
-        this.dataConfidenceCode = dataConfidenceCode;
+    public DataConfidence getDataConfidence() { return dataConfidence; }
+    public void setDataConfidence(DataConfidence dataConfidence) {
+        this.dataConfidence = dataConfidence;
     }
-
-
 }
