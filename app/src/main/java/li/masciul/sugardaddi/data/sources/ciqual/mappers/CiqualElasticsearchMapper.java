@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.Log;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.models.Category;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -103,7 +104,7 @@ public class CiqualElasticsearchMapper {
 
     // Macronutrients
     private static final Pattern PATTERN_PROTEIN = Pattern.compile(
-            "prot[Ã©e]ines|protein",
+            "protéines|protein",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_CARBS = Pattern.compile(
@@ -125,19 +126,19 @@ public class CiqualElasticsearchMapper {
 
     // Specific fats
     private static final Pattern PATTERN_SATURATED_FAT = Pattern.compile(
-            "ag satur[Ã©e]s|saturated",
+            "ag saturés|saturated",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_MONOUNSAT_FAT = Pattern.compile(
-            "ag monoinsatur[Ã©e]s|monounsaturated",
+            "ag monoinsaturés|monounsaturated",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_POLYUNSAT_FAT = Pattern.compile(
-            "ag polyinsatur[Ã©e]s|polyunsaturated",
+            "ag polyinsaturés|polyunsaturated",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_CHOLESTEROL = Pattern.compile(
-            "cholest[Ã©e]rol|cholesterol",
+            "cholestérol|cholesterol",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -155,7 +156,7 @@ public class CiqualElasticsearchMapper {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_MAGNESIUM = Pattern.compile(
-            "magn[Ã©e]sium|magnesium",
+            "magnésium|magnesium",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_PHOSPHORUS = Pattern.compile(
@@ -193,7 +194,7 @@ public class CiqualElasticsearchMapper {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_B5 = Pattern.compile(
-            "vitamine b5|vitamin b5|pantoth[Ã©e]nique|pantothenic",
+            "vitamine b5|vitamin b5|pantothénique|pantothenic",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_B6 = Pattern.compile(
@@ -209,7 +210,7 @@ public class CiqualElasticsearchMapper {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_A = Pattern.compile(
-            "vitamine a|vitamin a|r[Ã©e]tinol|retinol",
+            "vitamine a|vitamin a|rétinol|retinol",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_D = Pattern.compile(
@@ -217,7 +218,7 @@ public class CiqualElasticsearchMapper {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_E = Pattern.compile(
-            "vitamine e|vitamin e|tocoph[Ã©e]rol|tocopherol",
+            "vitamine e|vitamin e|tocophérol|tocopherol",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern PATTERN_VITAMIN_K = Pattern.compile(
@@ -688,6 +689,7 @@ public class CiqualElasticsearchMapper {
 
         // Return nutrition object only if we matched at least some basic nutrients
         if (matchedCount > 0) {
+            nutrition.setDataConfidence(DataConfidence.SCIENTIFIC);
             return nutrition;
         }
 

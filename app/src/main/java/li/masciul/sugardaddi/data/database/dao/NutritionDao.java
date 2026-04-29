@@ -4,6 +4,7 @@ import androidx.room.*;
 import androidx.lifecycle.LiveData;
 import java.util.List;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 
@@ -301,12 +302,13 @@ public interface NutritionDao {
             double maxCalories, double maxSugars, double maxSatFat, int limit);
 
     /**
-     * Filter by data quality confidence code.
-     * "A"/"B" = high confidence Ciqual data; "C"/"D" = lower confidence.
+     * Filter by data confidence level.
+     * SCIENTIFIC = lab-measured (Ciqual A/B, USDA)
+     * DECLARED   = manufacturer label (OpenFoodFacts)
+     * COMPUTED   = calculated from ingredients (recipes)
+     * ESTIMATED  = lower confidence (Ciqual C/D, fuzzy match)
+     * USER       = manually entered
      */
-    @Query("SELECT * FROM nutrition WHERE dataConfidenceCode = :confidenceCode " +
-            "ORDER BY dataCompleteness DESC")
-    List<NutritionEntity> getByConfidenceCode(String confidenceCode);
-
-
+    @Query("SELECT * FROM nutrition WHERE dataConfidence = :confidence")
+    List<NutritionEntity> getByConfidence(DataConfidence confidence);
 }

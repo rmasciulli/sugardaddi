@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ProductTranslation;
 import li.masciul.sugardaddi.data.database.AppDatabase;
@@ -71,7 +72,7 @@ public class CiqualImportService extends Service {
     private static final String TAG = "CiqualImportService";
 
     // ===== BROADCASTS =====
-    public static final String BROADCAST_PROGRESS = "li.masciul.sugardaddi.ciqual.PROGRESS";
+    public static final String BROADCAST_PROGRESS  = "li.masciul.sugardaddi.ciqual.PROGRESS";
     public static final String BROADCAST_COMPLETE  = "li.masciul.sugardaddi.ciqual.COMPLETE";
     public static final String BROADCAST_ERROR     = "li.masciul.sugardaddi.ciqual.ERROR";
     public static final String EXTRA_PHASE         = "phase";
@@ -448,18 +449,29 @@ public class CiqualImportService extends Service {
         for (Map.Entry<Integer, String> entry : codeToEntityId.entrySet()) {
             int code = entry.getKey();
             String entityId = entry.getValue();
+
             Nutrition n = accumulator.getOrDefault(code, new Nutrition());
             n.setDataSource(CiqualConstants.SOURCE_ID);
             n.calculateCompleteness();
+
+            // Derive overall DataConfidence from the per-nutrient confidence codes.
+            // conf.get(code) holds a frequency map e.g. {"A":12, "B":3, "C":1}.
+            // We take the WORST (lowest confidence) code present — even one C or D
+            // nutrient lowers the overall product confidence to ESTIMATED.
+            Map<String, Integer> codeCounts = conf.get(code);
+            DataConfidence confidence = DataConfidence.SCIENTIFIC; // optimistic default
+
+            if (codeCounts != null) {
+                for (String ciqualCode : codeCounts.keySet()) {
+                    confidence = confidence.lowest(DataConfidence.fromCiqualCode(ciqualCode));
+                }
+            }
+            n.setDataConfidence(confidence);
+
             NutritionEntity ne = NutritionEntity.fromNutrition(n, "product", entityId);
             ne.setDataSource(CiqualConstants.SOURCE_ID);
-            Map<String, Integer> counts = conf.get(code);
-            if (counts != null) {
-                String best = null; int max = 0;
-                for (Map.Entry<String, Integer> ce : counts.entrySet()) { if (ce.getValue() > max) { max = ce.getValue(); best = ce.getKey(); } }
-                ne.setDataConfidenceCode(best);
-            }
             batch.add(ne);
+
             if (batch.size() >= BATCH_SIZE) {
                 dao.insertNutritionBatch(batch); saved += batch.size(); batch.clear();
                 broadcastProgress("Saving nutrition... (" + saved + "/" + total + ")", 92 + Math.min(6, saved * 6 / total));

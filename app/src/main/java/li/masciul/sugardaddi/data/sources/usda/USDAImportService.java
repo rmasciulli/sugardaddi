@@ -32,6 +32,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
@@ -404,6 +405,8 @@ public class USDAImportService extends Service {
                 nutrition.setSalt(nutrition.getSodium() * 2.5);
             }
 
+            // Set confidence before creating the entity
+            nutrition.setDataConfidence(DataConfidence.SCIENTIFIC);
             NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
                     nutrition, "product", entityId);
             nutritionEntity.setDataSource(USDAConstants.SOURCE_ID);

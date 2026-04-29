@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
@@ -200,6 +201,7 @@ public final class USDAMapper {
         n.setProteins(prot);
         n.setFat(fat);
         n.setCarbohydrates(carbs);
+        n.setDataConfidence(DataConfidence.SCIENTIFIC);
         return n;
     }
 
@@ -220,6 +222,9 @@ public final class USDAMapper {
             mapNutrientById(n, id, val);
         }
 
+        // All USDA FDC data types (Foundation, SR Legacy, Survey) are lab-measured
+        // by USDA nutritionists — SCIENTIFIC confidence for all.
+        n.setDataConfidence(DataConfidence.SCIENTIFIC);
         return n;
     }
 
