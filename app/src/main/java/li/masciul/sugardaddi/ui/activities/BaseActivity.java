@@ -98,8 +98,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void changeTheme(ThemeManager.Theme newTheme) {
         ThemeManager.Theme currentTheme = getCurrentTheme();
         if (!currentTheme.equals(newTheme)) {
+            // Suppress language-triggered recreation during theme change
+            creationLanguage = LanguageManager.getCurrentLanguage(this);
             ThemeManager.setTheme(this, newTheme);
-            // Theme changes are handled automatically by AppCompatDelegate
         }
     }
 
