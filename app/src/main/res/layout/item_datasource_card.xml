@@ -29,7 +29,7 @@
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
     app:strokeWidth="0dp"
-    app:cardBackgroundColor="@color/surface_variant_light">
+    app:cardBackgroundColor="?attr/colorSurfaceVariant">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -55,7 +55,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
-                android:textColor="@color/text_primary_light"
+                android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold"
                 tools:text="Ciqual" />
 
@@ -75,8 +75,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/ds_status_label"
-                    android:textSize="9sp"
-                    android:textColor="@color/text_hint_light"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textAllCaps="true"
                     android:letterSpacing="0.05"
                     android:layout_marginEnd="4dp" />
@@ -109,7 +109,7 @@
             android:fontFamily="@font/roboto_condensed"
             android:fontWeight="300"
             android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="@color/text_hint_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="10dp"
             tools:text="French food composition table by ANSES" />
 
@@ -167,7 +167,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="#FF9800"
+                android:textColor="@color/warning"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone"
                 tools:visibility="visible"
@@ -226,7 +226,7 @@
                 android:fontFamily="@font/roboto_condensed"
                 android:fontWeight="300"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/text_secondary_light"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="2dp"
                 tools:text="Local database ready — offline search active" />
 
@@ -237,7 +237,7 @@
                 android:fontFamily="@font/roboto_condensed"
                 android:fontWeight="300"
                 android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/text_hint_light"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="10dp"
                 android:visibility="gone"
                 tools:visibility="visible"
@@ -261,7 +261,7 @@
                     android:layout_marginEnd="8dp"
                     app:trackThickness="4dp"
                     app:indicatorColor="?attr/colorPrimary"
-                    app:trackColor="@color/primary_light"
+                    app:trackColor="@color/md_theme_primaryFixed"
                     android:indeterminate="false" />
 
                 <TextView
@@ -269,7 +269,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="@color/text_secondary_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:minWidth="32dp"
                     android:gravity="end"
                     tools:text="42%" />
@@ -281,7 +281,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/text_secondary_light"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone"
                 tools:text="Importing foods... (1 200)" />
@@ -311,7 +311,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:layout_marginBottom="8dp"
-                android:textSize="12sp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:maxLines="2"
                 android:breakStrategy="balanced"

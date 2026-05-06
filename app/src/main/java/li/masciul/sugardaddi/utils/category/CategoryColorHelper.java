@@ -1,9 +1,9 @@
 package li.masciul.sugardaddi.utils.category;
 
+import com.google.android.material.color.MaterialColors;
 import android.content.Context;
 import androidx.core.content.ContextCompat;
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.managers.ThemeManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +50,9 @@ public class CategoryColorHelper {
 
     public static int getCategoryColor(Context context, String category) {
         if (category == null) {
-            return ContextCompat.getColor(context, R.color.primary);
+            return MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorPrimary,
+                    ContextCompat.getColor(context, R.color.md_theme_primary));
         }
 
         String lowerCategory = category.toLowerCase().trim();
@@ -67,7 +69,9 @@ public class CategoryColorHelper {
             }
         }
 
-        return ContextCompat.getColor(context, R.color.primary);
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorPrimary,
+                ContextCompat.getColor(context, R.color.md_theme_primary));
     }
 
     // ========================
@@ -76,7 +80,9 @@ public class CategoryColorHelper {
 
     public static int getNutriScoreColor(Context context, String grade) {
         if (grade == null || grade.isEmpty()) {
-            return ContextCompat.getColor(context, R.color.text_secondary);
+            return MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant));
         }
 
         switch (grade.toLowerCase()) {
@@ -97,22 +103,26 @@ public class CategoryColorHelper {
 
     public static int getNutriScoreBackgroundColor(Context context, String grade) {
         if (grade == null || grade.isEmpty()) {
-            return ContextCompat.getColor(context, R.color.surface_variant_light);
+            return MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorSurfaceVariant,
+                    ContextCompat.getColor(context, R.color.md_theme_surfaceVariant));
         }
 
         switch (grade.toLowerCase()) {
             case "a":
-                return ContextCompat.getColor(context, R.color.nutri_score_a_light);
+                return ContextCompat.getColor(context, R.color.nutri_score_a_container);
             case "b":
-                return ContextCompat.getColor(context, R.color.nutri_score_b_light);
+                return ContextCompat.getColor(context, R.color.nutri_score_b_container);
             case "c":
-                return ContextCompat.getColor(context, R.color.nutri_score_c_light);
+                return ContextCompat.getColor(context, R.color.nutri_score_c_container);
             case "d":
-                return ContextCompat.getColor(context, R.color.nutri_score_d_light);
+                return ContextCompat.getColor(context, R.color.nutri_score_d_container);
             case "e":
-                return ContextCompat.getColor(context, R.color.nutri_score_e_light);
+                return ContextCompat.getColor(context, R.color.nutri_score_e_container);
             default:
-                return ContextCompat.getColor(context, R.color.surface_variant_light);
+                return MaterialColors.getColor(context,
+                        com.google.android.material.R.attr.colorSurfaceVariant,
+                        ContextCompat.getColor(context, R.color.md_theme_surfaceVariant));
         }
     }
 
@@ -122,7 +132,9 @@ public class CategoryColorHelper {
 
     public static int getNutritionLevelColor(Context context, String level) {
         if (level == null) {
-            return ContextCompat.getColor(context, R.color.text_primary);
+            return MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorOnSurface,
+                    ContextCompat.getColor(context, R.color.md_theme_onSurface));
         }
 
         switch (level.toLowerCase()) {
@@ -136,7 +148,9 @@ public class CategoryColorHelper {
             case "élevé":
                 return ContextCompat.getColor(context, R.color.nutrition_level_high);
             default:
-                return ContextCompat.getColor(context, R.color.text_primary);
+                return MaterialColors.getColor(context,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        ContextCompat.getColor(context, R.color.md_theme_onSurface));
         }
     }
 
@@ -152,15 +166,22 @@ public class CategoryColorHelper {
                 return ContextCompat.getColor(context, R.color.success);
             case "error":
             case "failed":
-                return ContextCompat.getColor(context, R.color.error);
+                // error is an M3 theme role — resolve via theme attr, not named color
+                return MaterialColors.getColor(context,
+                        com.google.android.material.R.attr.colorError,
+                        ContextCompat.getColor(context, R.color.md_theme_error));
             case "warning":
             case "outdated":
                 return ContextCompat.getColor(context, R.color.warning);
             case "loading":
             case "searching":
-                return ContextCompat.getColor(context, R.color.secondary);
+                return MaterialColors.getColor(context,
+                        com.google.android.material.R.attr.colorSecondary,
+                        ContextCompat.getColor(context, R.color.md_theme_secondary));
             default:
-                return ContextCompat.getColor(context, R.color.text_primary);
+                return MaterialColors.getColor(context,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        ContextCompat.getColor(context, R.color.md_theme_onSurface));
         }
     }
 
@@ -169,31 +190,39 @@ public class CategoryColorHelper {
     // ========================
 
     public static int getCardBackgroundColor(Context context) {
-        if (ThemeManager.isDarkModeActive(context)) {
-            return ContextCompat.getColor(context, R.color.card_background_dark);
-        } else {
-            return ContextCompat.getColor(context, R.color.card_background_light);
-        }
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorSurfaceContainerLow,
+                ContextCompat.getColor(context, R.color.md_theme_surfaceContainerLow));
     }
 
     public static int getTextPrimaryColor(Context context) {
-        return ContextCompat.getColor(context, R.color.text_primary);
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurface,
+                ContextCompat.getColor(context, R.color.md_theme_onSurface));
     }
 
     public static int getTextSecondaryColor(Context context) {
-        return ContextCompat.getColor(context, R.color.text_secondary);
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurfaceVariant,
+                ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant));
     }
 
     public static int getButtonColor(Context context) {
-        return ContextCompat.getColor(context, R.color.primary);
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorPrimary,
+                ContextCompat.getColor(context, R.color.md_theme_primary));
     }
 
     public static int getBackgroundColor(Context context) {
-        return ContextCompat.getColor(context, R.color.background_main);
+        return MaterialColors.getColor(context,
+                android.R.attr.colorBackground,
+                ContextCompat.getColor(context, R.color.md_theme_background));
     }
 
     public static int getSurfaceColor(Context context) {
-        return ContextCompat.getColor(context, R.color.surface_main);
+        return MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorSurface,
+                ContextCompat.getColor(context, R.color.md_theme_surface));
     }
 
     public static int getFavoriteActiveColor(Context context) {
@@ -207,13 +236,6 @@ public class CategoryColorHelper {
     // ========================
     // UTILITY METHODS
     // ========================
-
-    /**
-     * Check if current theme is dark mode
-     */
-    public static boolean isDarkTheme(Context context) {
-        return ThemeManager.isDarkModeActive(context);
-    }
 
     /**
      * Get contrasting text color for any background

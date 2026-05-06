@@ -168,7 +168,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@string/custom_amount_default"
-                            app:boxBackgroundColor="@android:color/white"
+                            app:boxBackgroundColor="?attr/colorSurface"
                             app:boxStrokeColor="@android:color/transparent"
                             app:boxStrokeWidthFocused="0dp"
                             app:boxCornerRadiusTopStart="7dp"
@@ -180,7 +180,7 @@
                                 android:id="@+id/customAmountEditText"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:background="@android:color/white"
+                                android:background="?attr/colorSurface"
                                 android:inputType="numberDecimal"
                                 android:maxLines="1"
                                 android:paddingTop="8dp"
@@ -206,7 +206,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
-                            android:background="@android:color/white" />
+                            android:background="?attr/colorSurface" />
 
                     </LinearLayout>
 
@@ -225,10 +225,10 @@
             android:layout_marginBottom="16dp"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="#FFF9C4"
+            app:cardBackgroundColor="?attr/colorAttributionCardAmberContainer"
             app:cardCornerRadius="12dp"
             app:cardElevation="1dp"
-            app:strokeColor="#FFEA30">
+            app:strokeColor="?attr/colorAttributionCardAmber">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -241,7 +241,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceLabelMedium"
-                    android:textColor="?attr/colorOnSurface"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="bold"
                     tools:text="Ciqual" />
 
@@ -251,7 +251,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurface"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="italic"
                     tools:text="Anses. 2025. Ciqual French food composition table." />
 
@@ -261,7 +261,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     tools:text="French food composition table by Anses" />
 
                 <TextView

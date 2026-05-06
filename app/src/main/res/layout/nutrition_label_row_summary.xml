@@ -1,55 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- nutrition_label_row_summary.xml - SUMMARY mode row (no indentation) -->
+<!--
+    nutrition_label_row_summary_indented.xml — SUMMARY mode indented row (level 1, 2 columns).
+
+    TYPOGRAPHY: textAppearanceBodySmall (12sp) for name and value.
+    Same indentation rules as detailed mode.
+    DARK MODE: ?attr/colorSurface background.
+-->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
-    <!-- Row Content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp"
         android:paddingStart="6dp"
         android:paddingEnd="6dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:gravity="center_vertical"
-        android:minHeight="36dp">
+        android:minHeight="32dp">
 
-        <!-- Column 1: Nutrient Name (no indentation) -->
+        <!-- Column 1: Indented nutrient name -->
         <TextView
             android:id="@+id/nutrientName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:textSize="14sp"
-            android:textColor="?attr/colorOnSurface"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:paddingStart="16dp"
             android:paddingEnd="8dp"
-            android:text="Nutrient"/>
+            android:text="  of which saturated" />
 
-        <!-- Column 2: Total Value -->
+        <!-- Column 2: Value -->
         <TextView
             android:id="@+id/nutrientTotal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="14sp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:gravity="end"
-            android:text="0 g"/>
+            android:text="0 g" />
 
     </LinearLayout>
 
-    <!-- Divider under row -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="24dp"
         android:layout_marginEnd="8dp"
         android:background="?attr/colorOnSurface"
-        android:alpha="0.1"/>
+        android:alpha="0.1" />
 
 </LinearLayout>

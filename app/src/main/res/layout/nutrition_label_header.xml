@@ -1,77 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- nutrition_label_header.xml -->
+<!--
+    nutrition_label_header.xml — Column header for DETAILED mode (3 columns).
+
+    TYPOGRAPHY:
+      textAppearanceLabelMedium (12sp, medium weight) for all header columns.
+      Header labels should be smaller/lighter than the data rows below them —
+      LabelMedium is the correct token for table column headings.
+
+    DARK MODE:
+      Background uses ?attr/colorSurface (resolves to surface_dark in night).
+      Text uses ?attr/colorOnSurface.
+      Divider uses ?attr/colorOnSurface at 20% alpha.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
     <!-- Column headers row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
         android:paddingTop="12dp"
-        android:paddingBottom="8dp"
-        android:paddingLeft="6dp"
-        android:paddingRight="6dp">
+        android:paddingBottom="8dp">
 
-        <!-- Column 1: Nutrient name -->
+        <!-- Column 1: Nutrient name header -->
         <TextView
             android:id="@+id/headerNutrient"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:text="@string/nutrition_label_nutrient_column"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"
-            android:textSize="14sp"
-            android:textColor="@android:color/black"
-            android:paddingEnd="8dp" />
+            android:paddingEnd="8dp"
+            android:text="@string/nutrition_label_nutrient_column" />
 
-        <!-- Column 2: Per 100g (EU requirement) -->
+        <!-- Column 2: Per 100g — EU mandatory column, always visible.
+             autoSizeTextType adapts if the unit string "pour 100ml" is long. -->
         <TextView
             android:id="@+id/headerPer100g"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/per_100g"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="12sp"
-            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="12sp"
             android:autoSizeStepGranularity="1sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"
             android:gravity="end"
-            android:paddingEnd="8dp" />
+            android:paddingEnd="8dp"
+            android:text="@string/per_100g" />
 
-        <!-- Column 3: Custom amount -->
+        <!-- Column 3: Custom amount — updated dynamically by NutritionLabelManager -->
         <TextView
             android:id="@+id/headerCustomAmount"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/per_20g"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="12sp"
-            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="12sp"
             android:autoSizeStepGranularity="1sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"
-            android:gravity="end" />
+            android:gravity="end"
+            android:text="@string/per_20g" />
 
     </LinearLayout>
 
-    <!-- Black divider line below header -->
+    <!-- Separator line: full-opacity primary color marks the boundary between
+         header and data rows — visually anchors the table. -->
     <View
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@android:color/black"
-        android:layout_marginLeft="0dp"
-        android:layout_marginRight="0dp" />
+        android:background="?attr/colorOnSurface" />
 
 </LinearLayout>

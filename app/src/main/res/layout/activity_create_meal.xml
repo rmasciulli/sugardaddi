@@ -15,7 +15,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary"
+            android:background="@color/md_theme_primary"
             app:title="@string/new_meal_title"
             app:titleTextColor="@android:color/white"
             app:navigationIcon="@drawable/ic_arrow_back"
@@ -27,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:background="@android:color/white">
+        android:background="?android:attr/colorBackground">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -41,9 +41,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/create_meal_subtitle"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="24dp"/>
 
             <!-- Date and Time Section -->
@@ -52,8 +51,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/select_date_time"
-                android:textSize="16sp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="12dp"/>
 
             <!-- Date/Time Buttons -->
@@ -69,7 +68,7 @@
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:text="@string/button_now"
-                    android:textColor="@color/button_text_normal"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:background="@drawable/selector_date_time_button"
@@ -86,7 +85,9 @@
                     android:scaleType="center"
                     android:contentDescription="@string/select_date_time"
                     android:stateListAnimator="@null"
-                    android:elevation="0dp"/>
+                    android:elevation="0dp"
+                    android:theme="@style/ThemeOverlay.Material3.Button" />
+
             </LinearLayout>
 
             <!-- Display selected date/time -->
@@ -95,8 +96,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tuesday, November 25, 2025 | 12:28"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:layout_marginBottom="24dp"
                 android:layout_gravity="center_horizontal"/>
 
@@ -104,7 +104,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="@color/button_border_gray"
+                android:background="@color/md_theme_outline"
                 android:layout_marginBottom="24dp"/>
 
             <!-- Meal Type Section -->
@@ -113,8 +113,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/select_meal_type"
-                android:textSize="16sp"
-                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="12dp"/>
 
             <!-- Meal Type Grid (2x2) -->
@@ -133,7 +133,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:text="@string/meal_type_breakfast"
-                    android:textColor="@color/button_text_normal"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:background="@drawable/selector_meal_type_button"
                     android:stateListAnimator="@null"
@@ -146,7 +146,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:text="@string/meal_type_lunch"
-                    android:textColor="@color/button_text_normal"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:background="@drawable/selector_meal_type_button"
                     android:stateListAnimator="@null"
@@ -159,7 +159,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:text="@string/meal_type_dinner"
-                    android:textColor="@color/button_text_normal"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:background="@drawable/selector_meal_type_button"
                     android:stateListAnimator="@null"
@@ -172,7 +172,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     android:text="@string/meal_type_snack"
-                    android:textColor="@color/button_text_normal"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:background="@drawable/selector_meal_type_button"
                     android:stateListAnimator="@null"
@@ -185,7 +185,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:text="@string/button_create_meal"
-                android:textColor="@android:color/white"
+                android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:background="@drawable/bg_button_create_meal"

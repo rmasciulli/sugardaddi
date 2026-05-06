@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+        TYPE SCALE — SugarDaddi font assignments
+        ════════════════════════════════════════
+        Display + Headline  →  Roboto Condensed (space-efficient at large sizes)
+        Title               →  Inter SemiBold   (card titles, dialog headers)
+        Body                →  Inter Regular    (all readable content)
+        Label               →  Inter Medium     (badges, chips, table headers)
+
+        These styles are wired into Theme.SugarDaddi via textAppearance* items
+        in themes.xml. Any view using ?attr/textAppearanceBodyMedium etc. will
+        automatically use Inter Regular without needing android:fontFamily set.
+    -->
+
+    <!-- ===== DISPLAY — Roboto Condensed ===== -->
+
+    <style name="TextAppearance.SugarDaddi.DisplayLarge"
+        parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.DisplayMedium"
+        parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.DisplaySmall"
+        parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+
+    <!-- ===== HEADLINE — Roboto Condensed ===== -->
+
+    <style name="TextAppearance.SugarDaddi.HeadlineLarge"
+        parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.HeadlineMedium"
+        parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.HeadlineSmall"
+        parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/roboto_condensed</item>
+    </style>
+
+
+    <!-- ===== TITLE — Inter SemiBold ===== -->
+
+    <style name="TextAppearance.SugarDaddi.TitleLarge"
+        parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/inter_semibold</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.TitleMedium"
+        parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/inter_semibold</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.TitleSmall"
+        parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/inter_medium</item>
+    </style>
+
+
+    <!-- ===== BODY — Inter Regular ===== -->
+
+    <style name="TextAppearance.SugarDaddi.BodyLarge"
+        parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/inter_regular</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.BodyMedium"
+        parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/inter_regular</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.BodySmall"
+        parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/inter_regular</item>
+    </style>
+
+
+    <!-- ===== LABEL — Inter Medium ===== -->
+
+    <style name="TextAppearance.SugarDaddi.LabelLarge"
+        parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/inter_medium</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.LabelMedium"
+        parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/inter_medium</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.LabelSmall"
+        parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/inter_regular</item>
+    </style>
+
+</resources>

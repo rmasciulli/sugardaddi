@@ -1,135 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ================================================== -->
-    <!-- MAIN APP THEME - Single Blue (#5DADE2) Everywhere -->
-    <!-- ================================================== -->
 
-    <style name="Theme.SugarDaddi" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- ===== PRIMARY COLORS ===== -->
-        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorPrimaryVariant">@color/primary_variant</item>
-        <item name="colorOnPrimary">@color/white</item>
+    <!-- =====================================================================
+         MAIN APP THEME — LIGHT
+         Parent: Theme.Material3.Light.NoActionBar
+         Colors come from values/colors.xml (md_theme_* names).
+         values-night/colors.xml overrides the same names for dark mode.
+         ===================================================================== -->
 
-        <!-- Material 3 Primary Container -->
-        <item name="colorPrimaryContainer">@color/primary_light</item>
-        <item name="colorOnPrimaryContainer">@color/primary_variant</item>
+    <style name="Theme.SugarDaddi" parent="Theme.Material3.Light.NoActionBar">
 
-        <!-- ===== SECONDARY COLORS (same as primary) ===== -->
-        <item name="colorSecondary">@color/secondary</item>  <!-- #5DADE2 -->
-        <item name="colorSecondaryVariant">@color/secondary_variant</item>
-        <item name="colorOnSecondary">@color/white</item>
+        <!-- ===== M3 COLOR ROLES — from Material Theme Builder export ===== -->
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/md_theme_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/md_theme_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_onTertiaryContainer</item>
+        <item name="colorError">@color/md_theme_error</item>
+        <item name="colorOnError">@color/md_theme_onError</item>
+        <item name="colorErrorContainer">@color/md_theme_errorContainer</item>
+        <item name="colorOnErrorContainer">@color/md_theme_onErrorContainer</item>
+        <item name="android:colorBackground">@color/md_theme_background</item>
+        <item name="colorOnBackground">@color/md_theme_onBackground</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant</item>
+        <item name="colorOutline">@color/md_theme_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_outlineVariant</item>
+        <item name="colorSurfaceInverse">@color/md_theme_inverseSurface</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_inverseOnSurface</item>
+        <item name="colorPrimaryInverse">@color/md_theme_inversePrimary</item>
+        <item name="colorPrimaryFixed">@color/md_theme_primaryFixed</item>
+        <item name="colorOnPrimaryFixed">@color/md_theme_onPrimaryFixed</item>
+        <item name="colorPrimaryFixedDim">@color/md_theme_primaryFixedDim</item>
+        <item name="colorOnPrimaryFixedVariant">@color/md_theme_onPrimaryFixedVariant</item>
+        <item name="colorSecondaryFixed">@color/md_theme_secondaryFixed</item>
+        <item name="colorOnSecondaryFixed">@color/md_theme_onSecondaryFixed</item>
+        <item name="colorSecondaryFixedDim">@color/md_theme_secondaryFixedDim</item>
+        <item name="colorOnSecondaryFixedVariant">@color/md_theme_onSecondaryFixedVariant</item>
+        <item name="colorTertiaryFixed">@color/md_theme_tertiaryFixed</item>
+        <item name="colorOnTertiaryFixed">@color/md_theme_onTertiaryFixed</item>
+        <item name="colorTertiaryFixedDim">@color/md_theme_tertiaryFixedDim</item>
+        <item name="colorOnTertiaryFixedVariant">@color/md_theme_onTertiaryFixedVariant</item>
+        <item name="colorSurfaceDim">@color/md_theme_surfaceDim</item>
+        <item name="colorSurfaceBright">@color/md_theme_surfaceBright</item>
+        <item name="colorSurfaceContainerLowest">@color/md_theme_surfaceContainerLowest</item>
+        <item name="colorSurfaceContainerLow">@color/md_theme_surfaceContainerLow</item>
+        <item name="colorSurfaceContainer">@color/md_theme_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/md_theme_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/md_theme_surfaceContainerHighest</item>
 
-        <!-- Material 3 Secondary Container -->
-        <item name="colorSecondaryContainer">@color/secondary_light</item>
-        <item name="colorOnSecondaryContainer">@color/secondary_variant</item>
+        <!-- ===== CUSTOM ATTRIBUTION AMBER ROLE ===== -->
+        <item name="colorAttributionCardAmber">@color/colorAttributionCardAmber</item>
+        <item name="colorOnAttributionCardAmber">@color/colorOnAttributionCardAmber</item>
+        <item name="colorAttributionCardAmberContainer">@color/colorAttributionCardAmberContainer</item>
+        <item name="colorOnAttributionCardAmberContainer">@color/colorOnAttributionCardAmberContainer</item>
 
-        <!-- ===== TERTIARY COLORS (also blue for consistency) ===== -->
-        <item name="colorTertiary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorOnTertiary">@color/white</item>
-        <item name="colorTertiaryContainer">@color/primary_light</item>
-        <item name="colorOnTertiaryContainer">@color/primary_variant</item>
-
-        <!-- ===== SURFACE COLORS ===== -->
-        <item name="colorSurface">@color/surface_light</item>
-        <item name="colorSurfaceVariant">@color/surface_variant_light</item>
-        <item name="colorOnSurface">@color/text_primary_light</item>
-        <item name="colorOnSurfaceVariant">@color/text_secondary_light</item>
-
-        <!-- ===== BACKGROUND ===== -->
-        <item name="android:colorBackground">@color/background_light</item>
-        <item name="colorOnBackground">@color/text_primary_light</item>
-
-        <!-- ===== STATUS COLORS ===== -->
-        <item name="colorError">@color/error</item>
-        <item name="colorOnError">@color/white</item>
+        <!-- ===== LEGACY ACCENT (AppCompat compatibility) ===== -->
+        <item name="android:colorAccent">@color/md_theme_primary</item>
+        <item name="colorAccent">@color/md_theme_primary</item>
 
         <!-- ===== STATUS BAR ===== -->
-        <item name="android:statusBarColor">@color/primary</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/md_theme_primaryContainer</item>
+        <item name="android:windowLightStatusBar">true</item>
 
-        <!-- ===== TEXT COLORS ===== -->
-        <item name="android:textColorPrimary">@color/text_primary_light</item>
-        <item name="android:textColorSecondary">@color/text_secondary_light</item>
-        <item name="android:textColorHint">@color/text_hint_light</item>
-
-        <!-- ===== ACCENT COLOR (legacy Android) ===== -->
-        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
-
-        <!-- ===== CONTROL COLORS (buttons, checkboxes, etc) ===== -->
-        <item name="colorControlNormal">@color/text_secondary_light</item>
-        <item name="colorControlActivated">@color/primary</item>  <!-- #5DADE2 -->
+        <!-- ===== CONTROL COLORS ===== -->
+        <item name="colorControlNormal">@color/md_theme_onSurfaceVariant</item>
+        <item name="colorControlActivated">@color/md_theme_primary</item>
         <item name="colorControlHighlight">@color/ripple_primary</item>
 
-        <!-- ===== MATERIAL ALERT DIALOG (for pickers) ===== -->
+        <!-- ===== TYPE SCALE — Inter + Roboto Condensed ===== -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.SugarDaddi.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.SugarDaddi.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.SugarDaddi.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.SugarDaddi.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.SugarDaddi.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.SugarDaddi.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.SugarDaddi.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.SugarDaddi.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.SugarDaddi.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.SugarDaddi.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.SugarDaddi.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.SugarDaddi.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.SugarDaddi.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.SugarDaddi.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.SugarDaddi.LabelSmall</item>
+
+        <!-- ===== DIALOG / PICKER OVERLAYS ===== -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.SugarDaddi.MaterialAlertDialog</item>
-
-        <!-- ===== DATE PICKER THEME ===== -->
         <item name="materialCalendarTheme">@style/ThemeOverlay.SugarDaddi.MaterialCalendar</item>
-
-        <!-- ===== TIME PICKER THEME ===== -->
         <item name="materialTimePickerTheme">@style/ThemeOverlay.SugarDaddi.MaterialTimePicker</item>
+
     </style>
 
-    <!-- ================================================== -->
-    <!-- MATERIAL ALERT DIALOG THEME OVERLAY -->
-    <!-- ================================================== -->
 
-    <style name="ThemeOverlay.SugarDaddi.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+    <!-- =====================================================================
+         DIALOG / PICKER OVERLAY STYLES
+         Use md_theme_* color references so they adapt to light/dark.
+         ===================================================================== -->
+
+    <style name="ThemeOverlay.SugarDaddi.MaterialAlertDialog"
+        parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
         <item name="buttonBarPositiveButtonStyle">@style/Widget.SugarDaddi.Button.TextButton</item>
         <item name="buttonBarNegativeButtonStyle">@style/Widget.SugarDaddi.Button.TextButton</item>
     </style>
 
-    <!-- ================================================== -->
-    <!-- MATERIAL CALENDAR (DATE PICKER) THEME OVERLAY -->
-    <!-- ================================================== -->
-
-    <style name="ThemeOverlay.SugarDaddi.MaterialCalendar" parent="ThemeOverlay.Material3.MaterialCalendar">
-        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">@color/white</item>
-        <item name="colorOnSurface">@color/text_primary_light</item>
-        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+    <style name="ThemeOverlay.SugarDaddi.MaterialCalendar"
+        parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
     </style>
 
-    <!-- ================================================== -->
-    <!-- MATERIAL TIME PICKER THEME OVERLAY -->
-    <!-- ================================================== -->
-
-    <style name="ThemeOverlay.SugarDaddi.MaterialTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
-        <item name="colorPrimary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorSecondary">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">@color/white</item>
-        <item name="colorOnSurface">@color/text_primary_light</item>
-        <item name="colorAccent">@color/primary</item>  <!-- #5DADE2 -->
-        <item name="android:colorAccent">@color/primary</item>  <!-- #5DADE2 -->
+    <style name="ThemeOverlay.SugarDaddi.MaterialTimePicker"
+        parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimary">@color/md_theme_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
+        <item name="colorSurface">@color/md_theme_surface</item>
+        <item name="colorOnSurface">@color/md_theme_onSurface</item>
     </style>
 
-    <!-- ================================================== -->
-    <!-- BUTTON STYLES -->
-    <!-- ================================================== -->
 
-    <style name="Widget.SugarDaddi.Button.TextButton" parent="Widget.Material3.Button.TextButton">
-        <item name="android:textColor">@color/primary</item>  <!-- #5DADE2 -->
+    <!-- =====================================================================
+         COMPONENT STYLES
+         ===================================================================== -->
+
+    <style name="Widget.SugarDaddi.Button.TextButton"
+        parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/md_theme_primary</item>
         <item name="rippleColor">@color/ripple_primary</item>
     </style>
 
-    <!-- ================================================== -->
-    <!-- TOOLBAR THEME OVERLAY -->
-    <!-- ================================================== -->
-
-    <style name="ThemeOverlay.SugarDaddi.Toolbar" parent="ThemeOverlay.Material3.Toolbar.Surface">
-        <item name="colorSurface">@color/primary</item>
-        <item name="colorOnSurface">@color/white</item>
-        <item name="titleTextColor">@color/white</item>
+    <style name="ThemeOverlay.SugarDaddi.Toolbar"
+        parent="ThemeOverlay.Material3.Toolbar.Surface">
+        <item name="colorSurface">@color/md_theme_primary</item>
+        <item name="colorOnSurface">@color/md_theme_onPrimary</item>
+        <item name="titleTextColor">@color/md_theme_onPrimary</item>
     </style>
+
 </resources>

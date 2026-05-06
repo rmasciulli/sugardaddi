@@ -234,21 +234,24 @@ public abstract class AppDatabase extends RoomDatabase {
     static final Migration MIGRATION_7_8 = new Migration(7, 8) {
         @Override
         public void migrate(@NonNull SupportSQLiteDatabase database) {
-            // Rename dataConfidenceCode → data_confidence
-            // SQLite doesn't support DROP COLUMN directly, so we rename via
-            // a new column + copy + drop old column approach isn't available
-            // before SQLite 3.35. Instead we add the new column and migrate data.
+            // Add the new typed column
             database.execSQL(
                     "ALTER TABLE nutrition ADD COLUMN dataConfidence TEXT");
+
+            // Migrate data from the old string code to the new enum string
             database.execSQL(
                     "UPDATE nutrition SET dataConfidence = CASE " +
                             "  WHEN dataConfidenceCode IN ('A','B') THEN 'SCIENTIFIC' " +
                             "  WHEN dataConfidenceCode IN ('C','D') THEN 'ESTIMATED' " +
                             "  ELSE NULL " +
                             "END");
-            // Note: old dataConfidenceCode column stays — SQLite can't drop columns
-            // before 3.35 (Android 12+). It becomes unused dead weight but causes
-            // no harm. Room ignores undeclared columns.
+
+            // Drop the old index — SQLite supports DROP INDEX even on older versions.
+            // The dataConfidenceCode column itself cannot be dropped (requires SQLite 3.35
+            // / Android 12+) so it stays as unused dead weight, which Room tolerates
+            // for undeclared columns. Indexes however ARE validated by Room's schema
+            // checker, so this drop is required.
+            database.execSQL("DROP INDEX IF EXISTS index_nutrition_dataConfidenceCode");
         }
     };
 

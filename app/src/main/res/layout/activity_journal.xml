@@ -116,7 +116,7 @@
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="@font/inter"
                                 android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="12sp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
                                 tools:text="Today" />
 
                         </LinearLayout>
@@ -158,9 +158,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/daily_summary"
-                        android:fontFamily="@font/inter_semibold"
-                        android:textSize="16sp"
-                        android:textColor="?android:attr/textColorPrimary"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
                         android:layout_marginBottom="12dp" />
 
                     <!-- Nutrient Banners (Full Width, Evenly Distributed) -->
@@ -194,7 +192,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/meals"
                         android:fontFamily="@font/inter_semibold"
-                        android:textSize="16sp"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textColor="?android:attr/textColorPrimary"
                         android:layout_marginBottom="12dp" />
 
@@ -245,7 +243,7 @@
                             android:layout_height="wrap_content"
                             android:text="No meals today"
                             android:fontFamily="@font/inter_medium"
-                            android:textSize="14sp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?android:attr/textColorSecondary" />
 
                     </LinearLayout>

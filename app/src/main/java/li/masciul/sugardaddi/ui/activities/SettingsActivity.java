@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -181,7 +182,7 @@ public class SettingsActivity extends BaseActivity
 
         // White hamburger icon to match the primary-colour toolbar
         drawerToggle.getDrawerArrowDrawable()
-                .setColor(getResources().getColor(android.R.color.white, null));
+                .setColor(ContextCompat.getColor(this, R.color.white));
 
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.setCheckedItem(R.id.nav_settings);

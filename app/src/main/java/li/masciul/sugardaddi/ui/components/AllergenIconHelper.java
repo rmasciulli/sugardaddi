@@ -19,6 +19,8 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.color.MaterialColors;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -176,7 +178,9 @@ public class AllergenIconHelper {
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         label.setTypeface(null, Typeface.NORMAL);
         label.setGravity(Gravity.CENTER);
-        label.setTextColor(ContextCompat.getColor(context, android.R.color.black));
+        label.setTextColor(MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurface,
+                ContextCompat.getColor(context, R.color.md_theme_onSurface)));
         label.setMaxLines(2);
         label.setEllipsize(android.text.TextUtils.TruncateAt.END);
         container.addView(label);

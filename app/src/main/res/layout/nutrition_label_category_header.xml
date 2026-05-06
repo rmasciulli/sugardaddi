@@ -1,53 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_category_header.xml
+    nutrition_label_category_header.xml — Section divider between nutrient categories
+    (e.g. "Macronutrients", "Vitamins", "Minerals").
 
-    Category header that spans the full width of the nutrition table
-    Sits between the table header and nutrient rows
+    TYPOGRAPHY:
+      textAppearanceLabelMedium (12sp medium) + italic.
+      Category headers label a group — they should be the same size or smaller
+      than top-level nutrient names (14sp BodyMedium), never larger.
 
-    Visual style:
-    - Slightly smaller than nutrient names (13sp vs 16sp)
-    - Bold, all-caps
-    - Primary color for text
-    - Subtle background color
-    - Extra top spacing to separate from previous category
+    DARK MODE:
+      Background ?attr/colorSurface. Text ?attr/colorPrimary (brand blue, works on
+      both light and dark surfaces). Divider ?attr/colorPrimary at 40% alpha.
+
+    SPACING:
+      paddingTop="20dp" creates visual breathing room between categories.
+      For the FIRST category header use nutrition_label_category_header_first.xml
+      which has tighter top padding (10dp) to sit close to the table header.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
-    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    <TextView
         android:id="@+id/categoryHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/nutrition_category_macronutrients"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="italic"
         android:paddingStart="6dp"
         android:paddingEnd="6dp"
         android:paddingTop="20dp"
         android:paddingBottom="6dp"
-        android:textStyle="italic"
-        android:textSize="14sp"
-        android:textColor="#5DADE2"
-        android:background="@color/white"
-        android:gravity="start|center_vertical" />
+        android:gravity="start|center_vertical"
+        android:text="@string/nutrition_category_macronutrients" />
 
-    <!--
-        Add these to the "categoryHeaderText" TextView
-        if you want to rollback to the previous design:
-        android:letterSpacing="0.1"
-        android:textStyle="bold"
-    -->
-
-    <!-- Blue divider line below header -->
+    <!-- Thin primary-color line visually connects the header to its nutrient group -->
     <View
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#5DADE2"
-        android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp" />
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:background="?attr/colorPrimary"
+        android:alpha="0.4" />
 
 </LinearLayout>

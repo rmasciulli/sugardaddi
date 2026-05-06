@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.models.Nutrition;
@@ -249,9 +248,7 @@ public class NutritionAdapter extends RecyclerView.Adapter<NutritionAdapter.Nutr
             switch (item.getType()) {
                 case HEADER:
                     nutritionName.setTextSize(18f);
-                    nutritionName.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
                     nutritionValue.setTextSize(14f);
-                    nutritionValue.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
                     nutritionUnit.setVisibility(View.GONE);
                     divider.setVisibility(View.VISIBLE);
                     itemView.setPadding(0, 16, 0, 8);
@@ -259,9 +256,7 @@ public class NutritionAdapter extends RecyclerView.Adapter<NutritionAdapter.Nutr
 
                 case MAJOR_NUTRIENT:
                     nutritionName.setTextSize(16f);
-                    nutritionName.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
                     nutritionValue.setTextSize(16f);
-                    nutritionValue.setTextColor(ContextCompat.getColor(context, R.color.text_primary));
                     nutritionUnit.setVisibility(View.VISIBLE);
                     nutritionUnit.setTextSize(14f);
                     divider.setVisibility(View.GONE);
@@ -270,9 +265,7 @@ public class NutritionAdapter extends RecyclerView.Adapter<NutritionAdapter.Nutr
 
                 case SUB_NUTRIENT:
                     nutritionName.setTextSize(14f);
-                    nutritionName.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
                     nutritionValue.setTextSize(14f);
-                    nutritionValue.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
                     nutritionUnit.setVisibility(View.VISIBLE);
                     nutritionUnit.setTextSize(12f);
                     divider.setVisibility(View.GONE);

@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.ui.activities;
 
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -9,7 +9,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
 
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
@@ -101,6 +104,7 @@ public class CreateMealActivity extends BaseActivity {
         // Date/Time buttons
         btnNow = findViewById(R.id.btnNow);
         btnCalendar = findViewById(R.id.btnCalendar);
+        btnCalendar.setBackgroundTintList(null);
         tvDateTime = findViewById(R.id.tvDateTime);
 
         // Meal type buttons
@@ -226,20 +230,21 @@ public class CreateMealActivity extends BaseActivity {
     }
 
     private void updateDateTimeButtonStates() {
+        int white = ContextCompat.getColor(this, R.color.white);
+        int onSurface = MaterialColors.getColor(this,
+                com.google.android.material.R.attr.colorOnSurface,
+                ContextCompat.getColor(this, R.color.md_theme_onSurface));
+
         if (dateTimeSource == DateTimeSource.NOW) {
-            // NOW is selected (blue)
             btnNow.setSelected(true);
-            btnNow.setTextColor(Color.WHITE);
-
-            // Calendar is not selected (white with border)
+            btnNow.setTextColor(white);
             btnCalendar.setSelected(false);
+            btnCalendar.setColorFilter(onSurface);
         } else {
-            // NOW is not selected
             btnNow.setSelected(false);
-            btnNow.setTextColor(Color.BLACK);
-
-            // Calendar is selected (blue)
+            btnNow.setTextColor(onSurface);
             btnCalendar.setSelected(true);
+            btnCalendar.setColorFilter(white);
         }
     }
 
@@ -267,7 +272,10 @@ public class CreateMealActivity extends BaseActivity {
     private void updateMealTypeButton(Button button, MealType mealType) {
         boolean isSelected = (selectedMealType == mealType);
         button.setSelected(isSelected);
-        button.setTextColor(isSelected ? Color.WHITE : Color.BLACK);
+        button.setTextColor(isSelected ? ContextCompat.getColor(this, R.color.white)
+                : MaterialColors.getColor(this,
+                com.google.android.material.R.attr.colorOnSurface,
+                ContextCompat.getColor(this, R.color.md_theme_onSurface)));
     }
 
     // ========== VALIDATION ==========

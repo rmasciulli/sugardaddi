@@ -7,6 +7,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.color.MaterialColors;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -200,7 +204,9 @@ public class NutritionLabelManager {
         LinearLayout subContainer = new LinearLayout(context);
         subContainer.setOrientation(LinearLayout.VERTICAL);
 
-        int categoryBgColor = context.getResources().getColor(R.color.white);
+        int categoryBgColor = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorSurface,
+                ContextCompat.getColor(context, R.color.md_theme_surface));
         subContainer.setBackgroundColor(categoryBgColor);
 
         int paddingPx = (int) (6 * context.getResources().getDisplayMetrics().density);
@@ -560,23 +566,33 @@ public class NutritionLabelManager {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-
         params.setMargins(24, 24, 24, 24);
         toggleButton.setLayoutParams(params);
 
-        // FDA-compliant design: black text, white background, black border
-        toggleButton.setTextColor(0xFF000000);  // Black text
-        toggleButton.setAllCaps(false);  // Lowercase (no ALL_CAPS)
+        // Resolve colors from the current theme — adapts automatically to light/dark mode
+        int textColor = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurface,
+                ContextCompat.getColor(context, R.color.md_theme_onSurface));
+        int bgColor = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorSurface,
+                ContextCompat.getColor(context, R.color.md_theme_surface));
+        int strokeColor = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOutline,
+                ContextCompat.getColor(context, R.color.md_theme_outline));
+
+        toggleButton.setTextColor(textColor);
+        toggleButton.setAllCaps(false);
         toggleButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14);
 
-        // Create outline border (black stroke, white fill)
+        // Convert 2dp stroke width to pixels for density-correct rendering
+        int strokeWidthPx = (int) (2 * context.getResources().getDisplayMetrics().density);
+
         android.graphics.drawable.GradientDrawable shape =
                 new android.graphics.drawable.GradientDrawable();
         shape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        shape.setColor(0xFFFFFFFF);  // White background
-        shape.setStroke(2, 0xFF000000);  // Black 2dp border
-        shape.setCornerRadius(8f);  // Subtle rounded corners
-
+        shape.setColor(bgColor);
+        shape.setStroke(strokeWidthPx, strokeColor);
+        shape.setCornerRadius(8f);
         toggleButton.setBackground(shape);
 
         container.addView(toggleButton);

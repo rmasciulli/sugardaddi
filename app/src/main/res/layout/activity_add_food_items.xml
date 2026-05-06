@@ -93,8 +93,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Breakfast"
-                                android:textSize="20sp"
-                                android:textStyle="bold"
+                                android:textAppearance="?attr/textAppearanceTitleSmall"
                                 android:textColor="?attr/colorOnSurface"
                                 tools:ignore="HardcodedText" />
 
@@ -104,7 +103,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Thursday, January 22, 2026 ⏰ 08:30"
-                                android:textSize="14sp"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:layout_marginTop="2dp"
                                 tools:ignore="HardcodedText" />
@@ -138,8 +137,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0 kcal"
-                                android:textSize="14sp"
-                                android:textStyle="bold"
+                                android:textAppearance="?attr/textAppearanceLabelLarge"
                                 android:textColor="?attr/colorPrimary"
                                 tools:ignore="HardcodedText" />
                         </LinearLayout>
@@ -157,7 +155,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0g carbs"
-                                android:textSize="12sp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 tools:ignore="HardcodedText" />
                         </LinearLayout>
@@ -175,7 +173,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0g protein"
-                                android:textSize="12sp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 tools:ignore="HardcodedText" />
                         </LinearLayout>
@@ -193,7 +191,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="0g fat"
-                                android:textSize="12sp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 tools:ignore="HardcodedText" />
                         </LinearLayout>
@@ -206,7 +204,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/food_items"
-                android:textSize="18sp"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="8dp"
@@ -246,7 +244,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/no_food_items_yet"
-                    android:textSize="16sp"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textAlignment="center"
                     android:layout_marginTop="16dp"

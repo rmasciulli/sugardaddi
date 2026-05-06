@@ -185,10 +185,10 @@
             android:layout_marginBottom="16dp"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="#FFF9C4"
+            app:cardBackgroundColor="?attr/colorAttributionCardAmberContainer"
             app:cardCornerRadius="12dp"
             app:cardElevation="1dp"
-            app:strokeColor="#FFEA30">
+            app:strokeColor="?attr/colorAttributionCardAmber">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -201,7 +201,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceLabelMedium"
-                    android:textColor="?attr/colorOnSurface"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="bold"
                     tools:text="🇺🇸 USDA FoodData" />
 
@@ -211,7 +211,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurface"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="italic"
                     tools:text="U.S. Department of Agriculture, Agricultural Research Service. FoodData Central. fdc.nal.usda.gov" />
 
@@ -221,7 +221,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     tools:text="US Department of Agriculture food database" />
 
                 <TextView

@@ -39,7 +39,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="#EBF5FB"
+                android:background="@color/md_theme_surfaceContainerLow"
                 android:theme="@style/ThemeOverlay.Material3.Toolbar.Surface"
                 app:titleTextColor="?attr/colorOnSurface"
                 app:popupTheme="@style/ThemeOverlay.Material3.Light" />
@@ -60,7 +60,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#EBF5FB"
+                android:background="@color/md_theme_surfaceContainerLow"
                 android:contentDescription="@string/content_description_search_section"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -106,7 +106,7 @@
                             android:imeOptions="actionSearch"
                             android:inputType="text"
                             android:maxLines="1"
-                            android:textSize="16sp"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
                             android:textColor="?attr/colorOnSurface"
                             android:importantForAccessibility="yes"
                             android:popupBackground="?attr/colorSurface"
@@ -271,8 +271,6 @@
             android:src="@drawable/ic_barcode_scanner"
             android:contentDescription="@string/scan_product"
             app:fabSize="normal"
-            app:backgroundTint="?attr/colorPrimary"
-            app:tint="?attr/colorOnPrimary"
             app:elevation="6dp" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

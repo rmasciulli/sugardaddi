@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.color.MaterialColors;
+
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.ui.adapters.TimelineAdapter;
 
@@ -82,7 +84,8 @@ public class TimelineDecoration extends RecyclerView.ItemDecoration {
 
         // Get colors
         int lineColor = ContextCompat.getColor(context, R.color.timeline_line);
-        int dotColor = ContextCompat.getColor(context, R.color.timeline_dot);
+        int dotColor = MaterialColors.getColor(context, com.google.android.material.R.attr.colorPrimary,
+                ContextCompat.getColor(context, R.color.md_theme_primary));
         int nowColor = ContextCompat.getColor(context, R.color.timeline_now);
         int horizontalLineColor = 0x20000000; // 12.5% black
 

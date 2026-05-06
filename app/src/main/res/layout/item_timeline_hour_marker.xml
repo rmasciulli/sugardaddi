@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
         android:fontFamily="@font/inter"
-        android:textSize="11sp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?android:attr/textColorTertiary"
         android:alpha="0.6"
         tools:text="08:00" />

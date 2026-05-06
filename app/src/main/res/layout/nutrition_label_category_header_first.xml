@@ -1,39 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_category_header_first.xml
+    nutrition_label_category_header_first.xml — First category header (reduced top padding).
 
-    First category header with REDUCED top padding (10dp instead of 16dp)
-    This keeps the first category (Macronutrients) close to the table header
+    Identical to nutrition_label_category_header.xml except paddingTop is 10dp
+    instead of 20dp, so the first category (Macronutrients) sits closer to the
+    table header divider rather than floating away from it.
+
+    NutritionLabelManager selects this variant for the first category group only.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorSurface">
 
     <TextView
         android:id="@+id/categoryHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/nutrition_category_macronutrients"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="italic"
         android:paddingStart="6dp"
         android:paddingEnd="6dp"
         android:paddingTop="10dp"
         android:paddingBottom="6dp"
-        android:textStyle="italic"
-        android:textSize="14sp"
-        android:textColor="#5DADE2"
-        android:background="@color/white"
-        android:gravity="start|center_vertical" />
+        android:gravity="start|center_vertical"
+        android:text="@string/nutrition_category_macronutrients" />
 
-    <!-- Blue divider line below header -->
     <View
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#5DADE2"
-        android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp" />
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:background="?attr/colorPrimary"
+        android:alpha="0.4" />
 
 </LinearLayout>

@@ -747,7 +747,7 @@ public class NutritionEntity {
         nutrition.setIntrinsicFolate(this.intrinsicFolate);
         nutrition.setFolicAcid(this.folicAcid);
 
-        // Data quality (v7)
+        // Data quality (v8)
         nutrition.setDataConfidence(this.dataConfidence);
 
         // Metadata
