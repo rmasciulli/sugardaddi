@@ -110,8 +110,8 @@ public class SettingsActivity extends BaseActivity
      */
     @Override
     protected void onActivityResumed() {
-        super.onActivityResumed();
         loadCurrentSettings();
+        super.onActivityResumed();
 
         if (navigationView != null) {
             MenuItem settingsItem = navigationView.getMenu().findItem(R.id.nav_settings);
@@ -232,22 +232,33 @@ public class SettingsActivity extends BaseActivity
     }
 
     private void loadLanguageSettings() {
+        // Disable listener to prevent it firing during programmatic check
+        languageRadioGroup.setOnCheckedChangeListener(null);
+
         LanguageManager.SupportedLanguage lang = getCurrentLanguage();
         if (lang == LanguageManager.SupportedLanguage.FRENCH) {
             languageRadioGroup.check(R.id.radioFrench);
         } else {
             languageRadioGroup.check(R.id.radioEnglish);
         }
+
+        // Re-enable listener after setting value
+        setupLanguageListener();
         logDebug("Language loaded: " + lang.getDisplayName());
     }
 
     private void loadThemeSettings() {
+        themeRadioGroup.setOnCheckedChangeListener(null);
+
         ThemeManager.Theme theme = getCurrentTheme();
         switch (theme) {
             case LIGHT:  themeRadioGroup.check(R.id.radioLightTheme);  break;
             case DARK:   themeRadioGroup.check(R.id.radioDarkTheme);   break;
             default:     themeRadioGroup.check(R.id.radioSystemTheme); break;
         }
+
+        // Re-enable listener after setting value
+        setupThemeListener();
         logDebug("Theme loaded: " + theme.getValue());
     }
 

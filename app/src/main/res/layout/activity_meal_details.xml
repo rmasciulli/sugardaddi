@@ -138,14 +138,7 @@
                         android:layout_height="wrap_content"
                         android:nestedScrollingEnabled="false"
                         tools:listitem="@layout/item_meal_portion"
-                        tools:itemCount="3" >
-
-                        <TextView
-                            android:id="@+id/textView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyLarge" />
-                    </androidx.recyclerview.widget.RecyclerView>
+                        tools:itemCount="3" />
 
                     <!-- Empty State -->
                     <LinearLayout

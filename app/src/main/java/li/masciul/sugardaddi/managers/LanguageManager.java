@@ -126,7 +126,11 @@ public class LanguageManager {
      * @return Currently selected supported language
      */
     public static SupportedLanguage getCurrentLanguage(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        if (context == null) return SupportedLanguage.ENGLISH;
+        Context appContext = context.getApplicationContext();
+
+        if (appContext == null) appContext = context;
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String savedLanguage = prefs.getString(KEY_LANGUAGE, null);
 
         if (savedLanguage != null) {
@@ -152,13 +156,19 @@ public class LanguageManager {
      * @param language The language to set
      */
     public static void setLanguage(Context context, SupportedLanguage language) {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putString(KEY_LANGUAGE, language.getCode()).apply();
+        if (context == null) return;
+
+        // Use application context to ensure consistent SharedPreferences
+        Context appContext = context.getApplicationContext();
+
+        if (appContext == null) appContext = context;
+        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_LANGUAGE, language.getCode()).commit();
 
         Locale.setDefault(new Locale(language.getCode()));
-
         // Update configuration
         Configuration config = context.getResources().getConfiguration();
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             config.setLocale(new Locale(language.getCode()));
         } else {
@@ -166,17 +176,6 @@ public class LanguageManager {
         }
         context.getResources().updateConfiguration(config,
                 context.getResources().getDisplayMetrics());
-
-        // Restart the app properly
-        if (context instanceof Activity) {
-            Activity activity = (Activity) context;
-            Intent intent = activity.getPackageManager()
-                    .getLaunchIntentForPackage(activity.getPackageName());
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            activity.startActivity(intent);
-            activity.finish();
-        }
 
         Log.d(TAG, "Language set to: " + language.getDisplayName());
     }

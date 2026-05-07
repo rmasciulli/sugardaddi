@@ -69,7 +69,7 @@
         <item name="colorAccent">@color/md_theme_primary</item>
 
         <!-- ===== STATUS BAR ===== -->
-        <item name="android:statusBarColor">@color/md_theme_primaryContainer</item>
+        <item name="android:statusBarColor">@color/md_theme_primary</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- ===== CONTROL COLORS ===== -->

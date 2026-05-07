@@ -1,6 +1,7 @@
 package li.masciul.sugardaddi.ui.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -47,15 +48,12 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        // Check if language changed while activity was in background
         LanguageManager.SupportedLanguage currentLanguage = LanguageManager.getCurrentLanguage(this);
         if (creationLanguage != null && !creationLanguage.equals(currentLanguage)) {
             logDebug("Language changed while in background - recreating");
             recreate();
             return;
         }
-
         onActivityResumed();
     }
 
@@ -65,13 +63,8 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
-        // Reapply language context if needed
-        LanguageManager.SupportedLanguage currentLanguage = LanguageManager.getCurrentLanguage(this);
-        if (creationLanguage != null && !creationLanguage.equals(currentLanguage)) {
-            logDebug("Configuration changed - language mismatch detected");
-            recreate();
-        }
+        // uiMode changes (theme switching) are handled by AppCompatDelegate.
+        // Language changes don't trigger onConfigurationChanged, it uses recreate().
     }
 
     /**
@@ -79,16 +72,18 @@ public abstract class BaseActivity extends AppCompatActivity {
      */
     protected void changeLanguage(LanguageManager.SupportedLanguage newLanguage) {
         LanguageManager.SupportedLanguage currentLang = getCurrentLanguage();
-
         if (!currentLang.equals(newLanguage)) {
-            logDebug("Changing language: " + currentLang.getDisplayName() +
-                    " -> " + newLanguage.getDisplayName());
-
-            // Save the new language preference
             LanguageManager.setLanguage(this, newLanguage);
 
-            // Recreate current activity
-            recreate();
+            // Restart the entire process to ensure language applies cleanly
+            Intent intent = new Intent(this, SettingsActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            finish();
+
+            // Kill the process so Application.attachBaseContext runs fresh
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
     }
 
@@ -98,9 +93,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void changeTheme(ThemeManager.Theme newTheme) {
         ThemeManager.Theme currentTheme = getCurrentTheme();
         if (!currentTheme.equals(newTheme)) {
-            // Suppress language-triggered recreation during theme change
-            creationLanguage = LanguageManager.getCurrentLanguage(this);
             ThemeManager.setTheme(this, newTheme);
+            // Recreate with fade to apply theme visually, no flash
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            recreate();
         }
     }
 

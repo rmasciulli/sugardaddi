@@ -71,7 +71,7 @@
         <item name="colorAccent">@color/md_theme_primary</item>
 
         <!-- ===== STATUS BAR — dark variant uses primary container ===== -->
-        <item name="android:statusBarColor">@color/md_theme_primaryContainer</item>
+        <item name="android:statusBarColor">@color/md_theme_primary</item>
         <item name="android:windowLightStatusBar">false</item>
 
         <!-- ===== CONTROL COLORS ===== -->
