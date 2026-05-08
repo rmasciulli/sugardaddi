@@ -58,6 +58,7 @@ public class SettingsActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "SettingsActivity";
+    private boolean isLoadingSettings = false;
 
     // =========================================================================
     // NAVIGATION DRAWER
@@ -97,11 +98,18 @@ public class SettingsActivity extends BaseActivity
         setupToolbar();
         setupNavigationDrawer();
         initializeViews();
-        loadCurrentSettings();
         setupListeners();
+        loadCurrentSettings();
         setupDataSourceCards();
 
         logDebug("SettingsActivity v4.0 initialised");
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        // Do not restore radio group state from bundle — we always load
+        // fresh from SharedPreferences in loadCurrentSettings() to avoid
+        // triggering theme/language change listeners with stale state.
     }
 
     /**
@@ -110,8 +118,8 @@ public class SettingsActivity extends BaseActivity
      */
     @Override
     protected void onActivityResumed() {
-        loadCurrentSettings();
         super.onActivityResumed();
+        loadCurrentSettings(); // refresh radio buttons silently via flag
 
         if (navigationView != null) {
             MenuItem settingsItem = navigationView.getMenu().findItem(R.id.nav_settings);
@@ -120,8 +128,6 @@ public class SettingsActivity extends BaseActivity
             }
         }
 
-        // Resume each card manager — registers its BroadcastReceiver
-        // and refreshes status dot / version chip from current prefs.
         for (DataSourceCardManager manager : cardManagers) {
             manager.onResume();
         }
@@ -232,34 +238,25 @@ public class SettingsActivity extends BaseActivity
     }
 
     private void loadLanguageSettings() {
-        // Disable listener to prevent it firing during programmatic check
-        languageRadioGroup.setOnCheckedChangeListener(null);
-
+        isLoadingSettings = true;
         LanguageManager.SupportedLanguage lang = getCurrentLanguage();
         if (lang == LanguageManager.SupportedLanguage.FRENCH) {
             languageRadioGroup.check(R.id.radioFrench);
         } else {
             languageRadioGroup.check(R.id.radioEnglish);
         }
-
-        // Re-enable listener after setting value
-        setupLanguageListener();
-        logDebug("Language loaded: " + lang.getDisplayName());
+        isLoadingSettings = false;
     }
 
     private void loadThemeSettings() {
-        themeRadioGroup.setOnCheckedChangeListener(null);
-
+        isLoadingSettings = true;
         ThemeManager.Theme theme = getCurrentTheme();
         switch (theme) {
             case LIGHT:  themeRadioGroup.check(R.id.radioLightTheme);  break;
             case DARK:   themeRadioGroup.check(R.id.radioDarkTheme);   break;
             default:     themeRadioGroup.check(R.id.radioSystemTheme); break;
         }
-
-        // Re-enable listener after setting value
-        setupThemeListener();
-        logDebug("Theme loaded: " + theme.getValue());
+        isLoadingSettings = false;
     }
 
     // =========================================================================
@@ -274,11 +271,10 @@ public class SettingsActivity extends BaseActivity
 
     private void setupLanguageListener() {
         languageRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            LanguageManager.SupportedLanguage newLang =
-                    (checkedId == R.id.radioFrench)
-                            ? LanguageManager.SupportedLanguage.FRENCH
-                            : LanguageManager.SupportedLanguage.ENGLISH;
-
+            if (isLoadingSettings) return;
+            LanguageManager.SupportedLanguage newLang = (checkedId == R.id.radioFrench)
+                    ? LanguageManager.SupportedLanguage.FRENCH
+                    : LanguageManager.SupportedLanguage.ENGLISH;
             LanguageManager.SupportedLanguage cur = getCurrentLanguage();
             if (!cur.equals(newLang)) {
                 logDebug("Language: " + cur.getDisplayName() + " → " + newLang.getDisplayName());
@@ -289,11 +285,11 @@ public class SettingsActivity extends BaseActivity
 
     private void setupThemeListener() {
         themeRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (isLoadingSettings) return;
             ThemeManager.Theme newTheme;
-            if      (checkedId == R.id.radioLightTheme) newTheme = ThemeManager.Theme.LIGHT;
-            else if (checkedId == R.id.radioDarkTheme)  newTheme = ThemeManager.Theme.DARK;
+            if      (checkedId == R.id.radioLightTheme)  newTheme = ThemeManager.Theme.LIGHT;
+            else if (checkedId == R.id.radioDarkTheme)   newTheme = ThemeManager.Theme.DARK;
             else                                         newTheme = ThemeManager.Theme.SYSTEM;
-
             ThemeManager.Theme cur = getCurrentTheme();
             if (!cur.equals(newTheme)) {
                 logDebug("Theme: " + cur.getValue() + " → " + newTheme.getValue());

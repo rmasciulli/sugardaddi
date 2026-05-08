@@ -34,8 +34,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Initialize theme before super.onCreate()
-        ThemeManager.initializeTheme(this);
         super.onCreate(savedInstanceState);
 
         // Store creation language for later comparison
@@ -48,9 +46,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        android.util.Log.d("THEME_DEBUG", "onResume: " + getClass().getSimpleName() + " creationLang=" + creationLanguage);
         LanguageManager.SupportedLanguage currentLanguage = LanguageManager.getCurrentLanguage(this);
         if (creationLanguage != null && !creationLanguage.equals(currentLanguage)) {
-            logDebug("Language changed while in background - recreating");
+            android.util.Log.d("THEME_DEBUG", "RECREATING due to language mismatch");
             recreate();
             return;
         }
@@ -92,11 +91,9 @@ public abstract class BaseActivity extends AppCompatActivity {
      */
     protected void changeTheme(ThemeManager.Theme newTheme) {
         ThemeManager.Theme currentTheme = getCurrentTheme();
+        android.util.Log.d("THEME_DEBUG", "changeTheme called: " + currentTheme + " -> " + newTheme);
         if (!currentTheme.equals(newTheme)) {
             ThemeManager.setTheme(this, newTheme);
-            // Recreate with fade to apply theme visually, no flash
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-            recreate();
         }
     }
 
