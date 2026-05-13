@@ -3,7 +3,6 @@ package li.masciul.sugardaddi.data.database.entities;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
-import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
@@ -13,7 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ProductTranslation;
@@ -185,7 +184,7 @@ public class FoodProductEntity {
         // Set data source
         if (sourceId != null) {
             try {
-                product.setDataSource(DataSource.fromString(sourceId));
+                product.setDataSource(DataSourceType.fromString(sourceId));
             } catch (Exception e) {
                 if (ApiConfig.DEBUG_LOGGING) {
                     Log.w(TAG, "Unknown data source: " + sourceId);

@@ -367,6 +367,7 @@
     <string name="source_name_user">Créé par l\'utilisateur</string>
     <string name="source_name_custom">Entrée personnalisée</string>
     <string name="source_name_imported">Import&#233;</string>
+    <string name="source_name_themealdb">The MealDB</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Produit alimentaire</string>
@@ -379,6 +380,7 @@
     <string name="source_emoji_user">&#x1F464;</string>
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
+    <string name="source_emoji_themealdb">&#x1F373;</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Base de données collaborative de produits alimentaires</string>
@@ -387,6 +389,7 @@
     <string name="source_description_user">Recettes et aliments personnalisés créés par l\'utilisateur</string>
     <string name="source_description_custom">Données alimentaires saisies manuellement</string>
     <string name="source_description_imported">Données importées d\'autres applications</string>
+    <string name="source_description_themealdb">Base de données de recettes ouverte</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Données issues d\'OpenFoodFacts.org</string>
@@ -395,16 +398,19 @@
     <string name="source_attribution_user">Contenu créé par l\'utilisateur</string>
     <string name="source_attribution_custom">Entrée personnalisée</string>
     <string name="source_attribution_imported">Données importées</string>
+    <string name="source_attribution_themealdb">Données fournies par The MealDB</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">La base de données Open Food Facts est disponible sous la licence Open Database License. Les contenus individuels de la base de données sont disponibles sous la Database Contents License. Avertissement : les informations et données sont fournies à titre purement indicatif. Elles peuvent contenir des erreurs et ne doivent pas être utilisées à des fins médicales.</string>
     <string name="source_full_attribution_ciqual">Les présentes données sont mises à la disposition du public par l\'Agence nationale de sécurité sanitaire de l\'alimentation, de l\'environnement et du travail (ANSES). Les données de la table de composition nutritionnelle des aliments Ciqual de l\'ANSES sont accessibles au public et peuvent être téléchargées gratuitement depuis leur site internet ou via la plateforme data.gouv.fr. Les données peuvent être utilisées selon les termes et conditions de la Licence Ouverte.</string>
     <string name="source_full_attribution_usda">Département américain de l\'Agriculture, Service de recherche agricole. FoodData Central, 2019. fdc.nal.usda.gov. Les données sont fournies par l\'USDA et appartiennent au domaine public.</string>
+    <string name="source_full_attribution_themealdb">Données de recettes fournies par TheMealDB (themealdb.com). Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
     <string name="source_website_ciqual">https://ciqual.anses.fr/</string>
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
+    <string name="source_website_themealdb">https://www.themealdb.com</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Créez un nouveau repas</string>

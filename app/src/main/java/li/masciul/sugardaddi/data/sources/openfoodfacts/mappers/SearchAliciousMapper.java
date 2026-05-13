@@ -2,13 +2,11 @@ package li.masciul.sugardaddi.data.sources.openfoodfacts.mappers;
 
 import android.util.Log;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousHit;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousResponse;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.Category;
-import li.masciul.sugardaddi.core.models.ProductTranslation;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
 
@@ -113,7 +111,7 @@ public class SearchAliciousMapper {
 
         // Create product with unified source identifier
         FoodProduct product = new FoodProduct(OpenFoodFactsConstants.SOURCE_ID, hit.getCode());
-        product.setDataSource(DataSource.fromString(OpenFoodFactsConstants.SOURCE_ID));
+        product.setDataSource(DataSourceType.fromString(OpenFoodFactsConstants.SOURCE_ID));
         product.setBarcode(hit.getCode());
 
         mapProductInfo(product, hit, language);

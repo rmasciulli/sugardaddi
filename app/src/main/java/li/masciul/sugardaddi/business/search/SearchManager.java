@@ -312,21 +312,18 @@ public class SearchManager {
 
         productRepository.searchFoodAdvanced(currentQuery, currentPage, new ProductRepository.SearchCallback() {
             @Override
-            public void onSuccess(List<FoodProduct> items) {
+            public void onSuccess(List<Searchable> items) {
                 isPaginationActive = false;
-
                 if (items.isEmpty()) {
                     hasMorePages = false;
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "No more results available for: '" + currentQuery + "'");
                     }
                 } else {
-                    List<Searchable> searchableItems = new ArrayList<>(items);
-
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "Loaded " + items.size() + " more results for page " + currentPage);
                     }
-                    notifyMoreResults(searchableItems);
+                    notifyMoreResults(new ArrayList<>(items));
                 }
             }
 
@@ -496,13 +493,13 @@ public class SearchManager {
         // Use lightweight autocomplete API from ProductRepository
         productRepository.autocomplete(query, new ProductRepository.SearchCallback() {
             @Override
-            public void onSuccess(List<FoodProduct> items) {
+            public void onSuccess(List<Searchable> items) {
                 isAutocompleteActive = false;
 
-                // Extract product names for suggestions
+                // Extract display names for suggestions — works for both FoodProduct and Recipe
                 List<String> suggestions = new ArrayList<>();
-                for (FoodProduct product : items) {
-                    String name = product.getDisplayName(currentLanguage);
+                for (Searchable item : items) {
+                    String name = item.getDisplayName(currentLanguage);
                     if (name != null && !name.trim().isEmpty()) {
                         suggestions.add(name);
                     }
@@ -539,19 +536,15 @@ public class SearchManager {
     private void performProductSearch(String query) {
         productRepository.searchFood(query, new ProductRepository.SearchCallback() {
             @Override
-            public void onSuccess(List<FoodProduct> items) {
+            public void onSuccess(List<Searchable> items) {
                 isSearchActive = false;
-
                 if (query.equals(currentQuery)) {
                     lastSuccessfulQuery = query;
-                    List<Searchable> searchableItems = new ArrayList<>(items);
-
                     if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Product search successful: '" + query + "' returned " +
-                                items.size() + " results");
+                        Log.d(TAG, "Product search successful: '" + query + "' returned "
+                                + items.size() + " results");
                     }
-
-                    notifySearchResults(searchableItems);
+                    notifySearchResults(new ArrayList<>(items));
                 } else {
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "Ignoring outdated search results for: '" + query + "'");
@@ -649,12 +642,12 @@ public class SearchManager {
         // Launch product search
         productRepository.searchFood(query, new ProductRepository.SearchCallback() {
             @Override
-            public void onSuccess(List<FoodProduct> items) {
+            public void onSuccess(List<Searchable> items) {
                 synchronized (parallelCombinedResults) {
                     parallelCombinedResults.addAll(items);
 
                     if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Products found in parallel search: " + items.size());
+                        Log.d(TAG, "Items found in parallel search: " + items.size());
                     }
 
                     checkParallelSearchCompletion(query);

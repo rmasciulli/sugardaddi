@@ -1,6 +1,6 @@
 package li.masciul.sugardaddi.core.scoring;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
@@ -93,8 +93,8 @@ public class RecipeScorer extends BaseScorer<Recipe> {
     // ========== INTERFACE IMPLEMENTATION ==========
 
     @Override
-    public DataSource getDataSource() {
-        return DataSource.USER; // User-created recipes
+    public DataSourceType getDataSource() {
+        return DataSourceType.USER; // User-created recipes
     }
 
     @Override

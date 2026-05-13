@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
@@ -19,7 +20,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * ======================================
  * Three additions vs v2.0:
  *
- *   1. {@link #isEnabled()} / {@link #setEnabled(boolean)}
+ *   1. {@link #isEnabled()} / {@link #setEnabled(Context, boolean)}
  *      Operational enable/disable persisted by each source in its own
  *      SharedPreferences.  Replaces the former DataSourceConfig class which
  *      kept a single cross-source enabled-set — a design that required every
@@ -242,8 +243,14 @@ public interface DataSource {
      */
     class SearchResult {
 
+        /**
+         * Items returned by this source.
+         * Food sources (Ciqual, OFF, USDA) return FoodProduct instances.
+         * Recipe sources (TheMealDB) return Recipe instances.
+         * Use {@code item.getProductType()} or {@code instanceof} to discriminate.
+         */
         @NonNull
-        public final List<FoodProduct> items;
+        public final List<Searchable> items;
 
         /** Total results available server-side (may exceed items.size()). */
         public final int totalCount;
@@ -255,7 +262,7 @@ public interface DataSource {
         public final String language;
         public final String sourceId;
 
-        public SearchResult(@NonNull List<FoodProduct> items,
+        public SearchResult(@NonNull List<Searchable> items,
                             int totalCount,
                             boolean hasMore,
                             String query,

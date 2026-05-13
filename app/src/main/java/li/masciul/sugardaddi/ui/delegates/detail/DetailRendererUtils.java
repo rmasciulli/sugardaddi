@@ -10,7 +10,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 
 /**
@@ -72,7 +72,7 @@ public final class DetailRendererUtils {
         View panel = view.findViewById(R.id.attributionPanel);
         if (panel == null) return; // Layout doesn't have the panel (shouldn't happen)
 
-        DataSource source = product.getDataSource();
+        DataSourceType source = product.getDataSource();
         if (source == null) {
             panel.setVisibility(View.GONE);
             return;

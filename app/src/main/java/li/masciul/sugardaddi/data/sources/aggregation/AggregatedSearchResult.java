@@ -1,5 +1,6 @@
 package li.masciul.sugardaddi.data.sources.aggregation;
 
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import java.util.*;
 
@@ -8,7 +9,7 @@ import java.util.*;
  */
 public class AggregatedSearchResult {
 
-    private final List<FoodProduct> items;
+    private final List<Searchable> items;
     private final Map<String, SourceStats> sourceStats;
     private final String query;
     private final String language;
@@ -16,7 +17,7 @@ public class AggregatedSearchResult {
     private final int duplicatesFound;
     private final int totalItemsBeforeMerge;
 
-    public AggregatedSearchResult(List<FoodProduct> items,
+    public AggregatedSearchResult(List<Searchable> items,
                                   Map<String, SourceStats> sourceStats,
                                   String query,
                                   String language,
@@ -33,7 +34,7 @@ public class AggregatedSearchResult {
     }
 
     // Getters
-    public List<FoodProduct> getItems() { return items; }
+    public List<Searchable> getItems() { return items; }
     public Map<String, SourceStats> getSourceStats() { return sourceStats; }
     public String getQuery() { return query; }
     public String getLanguage() { return language; }
@@ -42,12 +43,14 @@ public class AggregatedSearchResult {
     public int getTotalItemsBeforeMerge() { return totalItemsBeforeMerge; }
 
     /**
-     * Get items from a specific source
+     * Get items from a specific source.
+     * Works for both FoodProduct and Recipe items via getDataSource().
      */
-    public List<FoodProduct> getItemsFromSource(String sourceId) {
-        List<FoodProduct> sourceItems = new ArrayList<>();
-        for (FoodProduct item : items) {
-            if (sourceId.equals(item.getSourceIdentifier().getSourceId())) {
+    public List<Searchable> getItemsFromSource(String sourceId) {
+        List<Searchable> sourceItems = new ArrayList<>();
+        for (Searchable item : items) {
+            if (item.getDataSource() != null
+                    && sourceId.equals(item.getDataSource().getId())) {
                 sourceItems.add(item);
             }
         }

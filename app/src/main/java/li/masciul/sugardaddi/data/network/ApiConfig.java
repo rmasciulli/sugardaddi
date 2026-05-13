@@ -55,6 +55,20 @@ public final class ApiConfig {
     public static final int MAX_RESULTS = 20;           // Maximum results per search
 
     /**
+     * Minimum data completeness score [0.0–1.0] for a FoodProduct to appear
+     * in search results. Products below this threshold are dropped before scoring.
+     *
+     * 0.1 is intentionally permissive — completeness scoring already deprioritises
+     * incomplete products. This gate only removes truly empty entries (no name,
+     * no data). Source-specific scorers handle quality discrimination above this floor.
+     *
+     * Note: OFF's SearchAlicious query applies its own server-side completeness
+     * filter (0.5 minimum) before results even reach this class. This constant
+     * is a local safety net for results from all sources.
+     */
+    public static final float MIN_DATA_COMPLETENESS = 0.1f;
+
+    /**
      * Scoring configuration for search results
      * Centralized scoring weights for consistency and easy tuning
      */

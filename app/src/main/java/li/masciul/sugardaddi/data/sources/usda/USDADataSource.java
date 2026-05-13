@@ -237,7 +237,7 @@ public class USDADataSource extends BaseDataSource {
                         }
 
                         SearchResult result = new SearchResult(
-                                products, products.size(), products.size() >= limit,
+                                new ArrayList<>(products), products.size(), products.size() >= limit,
                                 query, language, USDAConstants.SOURCE_ID);
 
                         onOperationSuccess();
@@ -314,7 +314,7 @@ public class USDADataSource extends BaseDataSource {
                 }
 
                 SearchResult result = new SearchResult(
-                        products,
+                        new ArrayList<>(products),
                         body.getTotalHits(),
                         body.hasMorePages(),
                         query,
@@ -491,7 +491,7 @@ public class USDADataSource extends BaseDataSource {
                 }
 
                 SearchResult result = new SearchResult(
-                        products, products.size(), false,
+                        new ArrayList<>(products), products.size(), false,
                         query, language, USDAConstants.SOURCE_ID);
 
                 onOperationSuccess();

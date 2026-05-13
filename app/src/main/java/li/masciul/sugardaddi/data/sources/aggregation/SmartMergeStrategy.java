@@ -2,6 +2,7 @@ package li.masciul.sugardaddi.data.sources.aggregation;
 
 import android.util.Log;
 
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -22,7 +23,9 @@ public class SmartMergeStrategy implements MergeStrategy {
         long startTime = System.currentTimeMillis();
 
         // Collect all items with source tracking
-        Map<FoodProduct, String> itemToSource = new HashMap<>();
+        Map<FoodProduct, String> foodItemToSource = new HashMap<>();
+        List<Searchable> passthroughItems = new ArrayList<>();
+
         Map<String, AggregatedSearchResult.SourceStats> sourceStats = new HashMap<>();
         int totalItemsBeforeMerge = 0;
 
@@ -32,8 +35,16 @@ public class SmartMergeStrategy implements MergeStrategy {
             DataSource.SearchResult result = entry.getValue();
 
             if (result != null && result.items != null) {
-                for (FoodProduct item : result.items) {
-                    itemToSource.put(item, sourceId);
+                for (Searchable item : result.items) {
+                    if (item instanceof FoodProduct) {
+                        // FoodProduct items go through deduplication
+                        foodItemToSource.put((FoodProduct) item, sourceId);
+                    } else {
+                        // Recipe and other Searchable types pass through without deduplication.
+                        // Cross-source merging is only meaningful for FoodProduct items
+                        // (barcode/sourceIdentifier matching). Recipes have no equivalent.
+                        passthroughItems.add(item);
+                    }
                     totalItemsBeforeMerge++;
                 }
 
@@ -47,30 +58,24 @@ public class SmartMergeStrategy implements MergeStrategy {
 
         // Group equivalent items
         List<List<FoodProduct>> itemGroups = groupEquivalentItems(
-                new ArrayList<>(itemToSource.keySet())
+                new ArrayList<>(foodItemToSource.keySet())
         );
-
         // Merge each group
-        List<FoodProduct> mergedItems = new ArrayList<>();
+        List<Searchable> mergedItems = new ArrayList<>();
         int duplicatesFound = 0;
 
         for (List<FoodProduct> group : itemGroups) {
             if (group.size() == 1) {
-                // No duplicates
                 mergedItems.add(group.get(0));
             } else {
-                // Merge duplicates
                 duplicatesFound += group.size() - 1;
-                FoodProduct merged = mergeGroup(group, itemToSource, sourcePriorities);
+                FoodProduct merged = mergeGroup(group, foodItemToSource, sourcePriorities);
                 mergedItems.add(merged);
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, String.format("Merged %d items into one: %s",
-                            group.size(), merged.getDisplayName("en")));
-                }
             }
         }
 
+        // Append passthrough items (Recipe etc.) — no deduplication applied
+        mergedItems.addAll(passthroughItems);
         // Sort by relevance/quality
         sortByRelevance(mergedItems);
 
@@ -323,24 +328,39 @@ public class SmartMergeStrategy implements MergeStrategy {
     /**
      * Sort items by relevance and quality
      */
-    private void sortByRelevance(List<FoodProduct> items) {
+    private void sortByRelevance(List<Searchable> items) {
         items.sort((a, b) -> {
-            int completenessCompare = Float.compare(
-                    b.getDataCompleteness(), a.getDataCompleteness());
-            if (completenessCompare != 0) return completenessCompare;
+            // FoodProduct items sort before Recipe items by default
+            if (a instanceof FoodProduct && !(b instanceof FoodProduct)) return -1;
+            if (!(a instanceof FoodProduct) && b instanceof FoodProduct) return 1;
 
-            boolean aHasBarcode = a.getBarcode() != null && !a.getBarcode().isEmpty();
-            boolean bHasBarcode = b.getBarcode() != null && !b.getBarcode().isEmpty();
-            if (aHasBarcode && !bHasBarcode) return -1;
-            if (!aHasBarcode && bHasBarcode) return 1;
+            // Both FoodProduct — preserve existing three-tier logic
+            if (a instanceof FoodProduct && b instanceof FoodProduct) {
+                FoodProduct fa = (FoodProduct) a;
+                FoodProduct fb = (FoodProduct) b;
 
-            // Null-safe comparison
-            String nameA = a.getDisplayName("en");
-            String nameB = b.getDisplayName("en");
-            if (nameA == null && nameB == null) return 0;
-            if (nameA == null) return 1;
-            if (nameB == null) return -1;
-            return nameA.compareTo(nameB);
+                // Tier 1: data completeness (higher is better)
+                int completenessCompare = Float.compare(
+                        fb.getDataCompleteness(), fa.getDataCompleteness());
+                if (completenessCompare != 0) return completenessCompare;
+
+                // Tier 2: barcode presence (products with barcodes ranked higher)
+                boolean aHasBarcode = fa.getBarcode() != null && !fa.getBarcode().isEmpty();
+                boolean bHasBarcode = fb.getBarcode() != null && !fb.getBarcode().isEmpty();
+                if (aHasBarcode && !bHasBarcode) return -1;
+                if (!aHasBarcode && bHasBarcode) return 1;
+
+                // Tier 3: alphabetical by display name (null-safe)
+                String nameA = fa.getDisplayName("en");
+                String nameB = fb.getDisplayName("en");
+                if (nameA == null && nameB == null) return 0;
+                if (nameA == null) return 1;
+                if (nameB == null) return -1;
+                return nameA.compareTo(nameB);
+            }
+
+            // Both Recipe or other Searchable types — preserve insertion order
+            return 0;
         });
     }
 }

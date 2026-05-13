@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 import android.util.Log;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.Category;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
@@ -355,7 +355,7 @@ public class CiqualElasticsearchMapper {
         }
 
         // Set data source
-        product.setDataSource(DataSource.fromString(CiqualConstants.SOURCE_ID));
+        product.setDataSource(DataSourceType.fromString(CiqualConstants.SOURCE_ID));
 
         // Set source identifier
         product.setSourceIdentifier(new SourceIdentifier(CiqualConstants.SOURCE_ID, food.getCode()));

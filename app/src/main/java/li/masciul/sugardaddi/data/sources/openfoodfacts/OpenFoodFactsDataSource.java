@@ -338,7 +338,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
 
                 // Create SearchResult container
                 SearchResult result = new SearchResult(
-                        products,
+                        new ArrayList<>(products),
                         searchResponse.getCount(),
                         products.size() < searchResponse.getCount(),  // hasMore
                         query,
@@ -471,7 +471,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
                 }
 
                 SearchResult result = new SearchResult(
-                        products,
+                        new ArrayList<>(products),
                         body.getCount(),
                         false,          // Autocomplete never has "more pages"
                         query,

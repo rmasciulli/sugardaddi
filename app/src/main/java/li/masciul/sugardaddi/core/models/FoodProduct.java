@@ -1,8 +1,7 @@
 package li.masciul.sugardaddi.core.models;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
-import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.Categorizable;
@@ -89,7 +88,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
      */
     private String categoryCode;
 
-    private DataSource dataSource = null;       // Data source (set by mappers)
+    private DataSourceType dataSource = null;       // Data source (set by mappers)
     private long lastUpdated;
     private long createdAt;
 
@@ -195,7 +194,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         this.originalId = originalId;
     }
 
-    public FoodProduct(DataSource dataSource, String originalId) {
+    public FoodProduct(DataSourceType dataSource, String originalId) {
         this();
         this.dataSource = dataSource;
         this.originalId = originalId;
@@ -825,7 +824,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     }
 
     @Override
-    public DataSource getDataSource() {
+    public DataSourceType getDataSource() {
         return dataSource;
     }
 
@@ -940,7 +939,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         this.productType = productType;
     }
 
-    public void setDataSource(DataSource dataSource) {
+    public void setDataSource(DataSourceType dataSource) {
         this.dataSource = dataSource;
     }
 

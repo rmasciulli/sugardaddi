@@ -1,15 +1,16 @@
 package li.masciul.sugardaddi.core.models;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.enums.ProductType;
-import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.Categorizable;
 import li.masciul.sugardaddi.core.interfaces.AllergenAware;
 import li.masciul.sugardaddi.core.utils.AllergenUtils;
 import android.content.Context;
+
+import androidx.annotation.NonNull;
 
 import java.util.*;
 
@@ -48,13 +49,22 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private String originalId;
     private SourceIdentifier sourceIdentifier;
     private ProductType productType = ProductType.RECIPE;
+
+    /**
+     * Data source for this recipe. Defaults to USER for user-created recipes.
+     * Set by source mappers for externally sourced recipes (e.g. THEMEALDB).
+     * This allows the diversity strategy and delegate system to correctly
+     * identify and route recipes from different sources.
+     */
+    private DataSourceType dataSource = DataSourceType.USER;
+
     private long lastUpdated;
     private long createdAt;
 
     // ========== PRIMARY CONTENT (in currentLanguage) ==========
     private String name;
     private String description;
-    private String instructions;                    // Full text (optional)
+    private String instructions; // Full text (optional)
     private String cuisine;
     private String notes;
     private List<String> equipmentNeeded;
@@ -1070,8 +1080,20 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     }
 
     @Override
-    public DataSource getDataSource() {
-        return DataSource.USER;  // Recipes are always user-created
+    public DataSourceType getDataSource() {
+        return dataSource;
+    }
+
+    /**
+     * Set the data source for this recipe.
+     * Should only be called by source mappers for externally sourced recipes.
+     * User-created recipes always retain the default value of DataSource.USER.
+     *
+     * @param dataSource The source that provided this recipe
+     */
+    public void setDataSource(@NonNull DataSourceType dataSource) {
+        this.dataSource = dataSource;
+        touch();
     }
 
     // ========== CATEGORIZABLE INTERFACE ==========

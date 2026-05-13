@@ -17,7 +17,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -82,7 +82,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
     @Override
     public boolean supports(@NonNull Searchable item) {
         return item.getProductType() == ProductType.FOOD
-                && item.getDataSource() == DataSource.OPENFOODFACTS;
+                && item.getDataSource() == DataSourceType.OPENFOODFACTS;
     }
 
     @NonNull

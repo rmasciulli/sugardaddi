@@ -1,6 +1,6 @@
 package li.masciul.sugardaddi.core.interfaces;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
 
 /**
@@ -106,7 +106,7 @@ public interface SourceSpecificScorer<T extends Searchable> {
      *
      * @return The data source this scorer is designed for
      */
-    DataSource getDataSource();
+    DataSourceType getDataSource();
 
     /**
      * Get maximum possible score for this source

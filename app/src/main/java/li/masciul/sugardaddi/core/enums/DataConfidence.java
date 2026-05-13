@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
  *   USDA Survey (FNDDS)         → SCIENTIFIC  (measured composite dishes)
  *   OpenFoodFacts               → DECLARED    (manufacturer label)
  *   Computed from ingredients   → COMPUTED    (recipe engine)
+ *   TheMealDB                   → COMPUTED    (no direct data; derived from ingredient resolution)
  *   Fuzzy ingredient match      → ESTIMATED   (unresolved match)
  *   Manual user input           → USER
  *
@@ -36,7 +37,7 @@ import androidx.annotation.Nullable;
  *   A — Representative French data, recent measurement → SCIENTIFIC
  *   B — Data from other EU countries, well-documented  → SCIENTIFIC
  *   C — Data from literature, calculation              → ESTIMATED
- *   D — Data older than 10 years, low confidence      → ESTIMATED
+ *   D — Data older than 10 years, low confidence       → ESTIMATED
  *
  * This mapping is applied in CiqualMapper per nutrient.
  * The Nutrition object carries the lowest confidence code across all nutrients.
@@ -168,7 +169,7 @@ public enum DataConfidence {
      * @param source The data source that provided the nutrition data.
      * @return Most appropriate DataConfidence for that source.
      */
-    public static DataConfidence fromDataSource(@androidx.annotation.Nullable DataSource source) {
+    public static DataConfidence fromDataSource(@Nullable DataSourceType source) {
         if (source == null) return ESTIMATED;
         switch (source) {
             case CIQUAL:
@@ -179,6 +180,14 @@ public enum DataConfidence {
             case USER:
             case CUSTOM:
                 return USER;
+            case THEMEALDB:
+                // TheMealDB provides no nutrition data directly.
+                // Any nutrition attached to a MealDB recipe is calculated by the
+                // recipe engine from its resolved ingredients — that is COMPUTED,
+                // not declared or measured. ESTIMATED would apply only at the
+                // individual ingredient level if resolution is fuzzy, which the
+                // engine handles via lowest() propagation — not here.
+                return COMPUTED;
             default:
                 return ESTIMATED;
         }
@@ -192,7 +201,7 @@ public enum DataConfidence {
      * @param value Stored enum name, e.g. "SCIENTIFIC"
      * @return Corresponding DataConfidence, or ESTIMATED if unrecognised.
      */
-    public static DataConfidence fromString(@androidx.annotation.Nullable String value) {
+    public static DataConfidence fromString(@Nullable String value) {
         if (value == null || value.trim().isEmpty()) return ESTIMATED;
         try {
             return DataConfidence.valueOf(value.trim().toUpperCase());

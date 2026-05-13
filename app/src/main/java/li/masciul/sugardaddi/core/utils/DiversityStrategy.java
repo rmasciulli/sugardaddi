@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.core.utils;
 
-import android.util.Log;
-
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
 
@@ -88,7 +86,7 @@ public class DiversityStrategy {
      * @return Diverse, quality-prioritized result list
      */
     public static List<Searchable> applyDiversity(
-            Map<DataSource, List<ScoredProduct>> scoredBySource,
+            Map<DataSourceType, List<ScoredProduct>> scoredBySource,
             int minPerSource,
             int maxTotal) {
 
@@ -98,7 +96,7 @@ public class DiversityStrategy {
         // ========== PHASE 1: MINIMUM GUARANTEE ==========
         // Take minimum N from each source to ensure diversity
 
-        for (Map.Entry<DataSource, List<ScoredProduct>> entry : scoredBySource.entrySet()) {
+        for (Map.Entry<DataSourceType, List<ScoredProduct>> entry : scoredBySource.entrySet()) {
             List<ScoredProduct> sourceProducts = entry.getValue();
 
             // How many to take from this source (minimum guarantee)
@@ -157,7 +155,7 @@ public class DiversityStrategy {
             int maxTotal) {
 
         // Group by source
-        Map<DataSource, List<ScoredProduct>> bySource = groupBySource(scoredProducts);
+        Map<DataSourceType, List<ScoredProduct>> bySource = groupBySource(scoredProducts);
 
         // Apply diversity strategy
         return applyDiversity(bySource, minPerSource, maxTotal);
@@ -171,12 +169,12 @@ public class DiversityStrategy {
      * @param scoredProducts All scored products
      * @return Map of DataSource to sorted list of products
      */
-    public static Map<DataSource, List<ScoredProduct>> groupBySource(List<ScoredProduct> scoredProducts) {
-        Map<DataSource, List<ScoredProduct>> grouped = new HashMap<>();
+    public static Map<DataSourceType, List<ScoredProduct>> groupBySource(List<ScoredProduct> scoredProducts) {
+        Map<DataSourceType, List<ScoredProduct>> grouped = new HashMap<>();
 
         // Group products by source
         for (ScoredProduct scored : scoredProducts) {
-            DataSource source = scored.getSource();
+            DataSourceType source = scored.getSource();
 
             if (!grouped.containsKey(source)) {
                 grouped.put(source, new ArrayList<>());
@@ -207,11 +205,11 @@ public class DiversityStrategy {
      * @param results Final result list
      * @return Map of DataSource to count
      */
-    public static Map<DataSource, Integer> getDiversityStats(List<Searchable> results) {
-        Map<DataSource, Integer> stats = new HashMap<>();
+    public static Map<DataSourceType, Integer> getDiversityStats(List<Searchable> results) {
+        Map<DataSourceType, Integer> stats = new HashMap<>();
 
         for (Searchable item : results) {
-            DataSource source = item.getDataSource();
+            DataSourceType source = item.getDataSource();
             stats.put(source, stats.getOrDefault(source, 0) + 1);
         }
 
@@ -225,12 +223,12 @@ public class DiversityStrategy {
      * @return Formatted string (e.g., "OFF:10, Ciqual:6, Recipes:4")
      */
     public static String formatDiversityStats(List<Searchable> results) {
-        Map<DataSource, Integer> stats = getDiversityStats(results);
+        Map<DataSourceType, Integer> stats = getDiversityStats(results);
 
         StringBuilder sb = new StringBuilder();
 
         boolean first = true;
-        for (Map.Entry<DataSource, Integer> entry : stats.entrySet()) {
+        for (Map.Entry<DataSourceType, Integer> entry : stats.entrySet()) {
             if (!first) sb.append(", ");
 
             sb.append(entry.getKey().getId()).append(":").append(entry.getValue());

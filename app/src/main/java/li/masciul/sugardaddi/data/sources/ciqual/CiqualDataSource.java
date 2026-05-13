@@ -489,7 +489,7 @@ public class CiqualDataSource extends BaseDataSource {
                         }
 
                         SearchResult result = new SearchResult(
-                                products, products.size(), products.size() >= limit,
+                                new ArrayList<>(products), products.size(), products.size() >= limit,
                                 query, effectiveLanguage, CiqualConstants.SOURCE_ID);
 
                         onOperationSuccess();
@@ -538,7 +538,7 @@ public class CiqualDataSource extends BaseDataSource {
                             List<FoodProduct> products = CiqualElasticsearchMapper
                                     .mapSearchResponse(r, effectiveLanguage);
                             SearchResult result = new SearchResult(
-                                    products, r.getHits().size(), products.size() >= limit,
+                                    new ArrayList<>(products), r.getHits().size(), products.size() >= limit,
                                     query, effectiveLanguage, CiqualConstants.SOURCE_ID);
                             onOperationSuccess();
                             executeOnMainThread(() -> callback.onSuccess(result));
@@ -775,7 +775,7 @@ public class CiqualDataSource extends BaseDataSource {
 
                             // Create SearchResult with metadata
                             SearchResult result = new SearchResult(
-                                    products,
+                                    new ArrayList<>(products),
                                     apiResponse.getHits().size(),
                                     products.size() >= limit,
                                     query,

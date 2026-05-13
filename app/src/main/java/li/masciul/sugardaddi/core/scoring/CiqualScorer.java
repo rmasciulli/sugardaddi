@@ -1,6 +1,6 @@
 package li.masciul.sugardaddi.core.scoring;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.utils.SearchFilter;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -85,8 +85,8 @@ public class CiqualScorer extends BaseScorer<FoodProduct> {
     // ========== INTERFACE IMPLEMENTATION ==========
 
     @Override
-    public DataSource getDataSource() {
-        return DataSource.CIQUAL;
+    public DataSourceType getDataSource() {
+        return DataSourceType.CIQUAL;
     }
 
     @Override

@@ -10,13 +10,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -76,7 +75,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
     @Override
     public boolean supports(@NonNull Searchable item) {
         return item.getProductType() == ProductType.FOOD
-                && item.getDataSource() == DataSource.USDA;
+                && item.getDataSource() == DataSourceType.USDA;
     }
 
     @NonNull

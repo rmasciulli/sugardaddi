@@ -33,12 +33,7 @@ import java.util.zip.ZipInputStream;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
-import li.masciul.sugardaddi.core.enums.DataSource;
-import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.AppDatabase;
-import li.masciul.sugardaddi.data.database.dao.FoodProductDao;
-import li.masciul.sugardaddi.data.database.dao.NutritionDao;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;

@@ -1,17 +1,20 @@
 package li.masciul.sugardaddi.data.database.entities;
 
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.Index;
 import androidx.room.TypeConverters;
 import androidx.annotation.NonNull;
 
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeTranslation;
 import li.masciul.sugardaddi.core.models.RecipeStepMetadata;
 import li.masciul.sugardaddi.core.models.RecipeStepTranslation;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.enums.Difficulty;
+import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.converters.GeneralConverters;
 import li.masciul.sugardaddi.data.database.converters.RecipeTranslationMapConverter;
 import li.masciul.sugardaddi.data.database.converters.RecipeStepMetadataListConverter;
@@ -35,6 +38,7 @@ import java.util.*;
         tableName = "recipes",
         indices = {
                 @Index(value = {"authorId"}),
+                @Index(value = {"dataSource"}),
                 @Index(value = {"isFavorite"}),
                 @Index(value = {"isPublic"}),
                 @Index(value = {"isTemplate"}),
@@ -49,6 +53,33 @@ public class RecipeEntity {
 
     // ========== IDENTIFICATION ==========
     private String authorId;                        // User who created this recipe
+
+    // ========== SOURCE IDENTIFICATION ==========
+
+    /**
+     * Data source that provided this recipe.
+     * Stored as DataSource.getId() string — e.g. "USER", "THEMEALDB".
+     * Defaults to "USER" for user-created recipes and for all pre-migration rows.
+     * NOT NULL to allow efficient indexed queries by source.
+     */
+    private String dataSource = "USER";
+
+    /**
+     * Original ID from the external source.
+     * TheMealDB: strIdMeal (e.g. "52772")
+     * User recipes: null (they use the local UUID as their only ID)
+     * Used to refresh or deep-link to the external source after persistence.
+     */
+    @Nullable
+    private String originalId;
+
+    /**
+     * Source ID string — mirrors DataSource.getId() for DAO query convenience.
+     * Redundant with dataSource but consistent with FoodProductEntity schema.
+     * e.g. "THEMEALDB", "USER"
+     */
+    @Nullable
+    private String sourceId;
 
     // ========== PRIMARY CONTENT (in currentLanguage) ==========
     private String name;
@@ -213,6 +244,17 @@ public class RecipeEntity {
         // Set media
         recipe.setImageUrl(this.imageUrl);
 
+        // Restore source identification
+        recipe.setOriginalId(this.originalId);
+
+        if (this.sourceId != null && this.originalId != null) {
+            recipe.setSourceIdentifier(new SourceIdentifier(this.sourceId, this.originalId));
+        }
+
+        // Restore data source — null-safe, defaults to USER for pre-migration rows
+        DataSourceType ds = DataSourceType.fromString(this.dataSource);
+        recipe.setDataSource(ds != null ? ds : DataSourceType.USER);
+
         // Convert portions from JSON
         if (portionsJson != null) {
             try {
@@ -316,6 +358,19 @@ public class RecipeEntity {
         // Set media
         entity.setImageUrl(recipe.getImageUrl());
 
+        // Persist source identification
+        entity.setOriginalId(recipe.getOriginalId());
+
+        if (recipe.getSourceIdentifier() != null) {
+            entity.setSourceId(recipe.getSourceIdentifier().getSourceId());
+        } else if (recipe.getDataSource() != null) {
+            entity.setSourceId(recipe.getDataSource().getId());
+        }
+
+        entity.setDataSource(recipe.getDataSource() != null
+                ? recipe.getDataSource().getId()
+                : "USER");
+
         // Convert portions to JSON
         List<FoodPortion> portions = recipe.getPortions();
         if (portions != null && !portions.isEmpty()) {
@@ -348,6 +403,18 @@ public class RecipeEntity {
 
     public String getAuthorId() { return authorId; }
     public void setAuthorId(String authorId) { this.authorId = authorId; }
+
+    // Source identification
+    public String getDataSource() { return dataSource; }
+    public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+
+    @Nullable
+    public String getOriginalId() { return originalId; }
+    public void setOriginalId(@Nullable String originalId) { this.originalId = originalId; }
+
+    @Nullable
+    public String getSourceId() { return sourceId; }
+    public void setSourceId(@Nullable String sourceId) { this.sourceId = sourceId; }
 
     // Primary content
     public String getName() { return name; }

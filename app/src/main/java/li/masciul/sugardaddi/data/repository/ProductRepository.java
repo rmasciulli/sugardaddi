@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 // Database imports
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
@@ -87,7 +88,7 @@ public class ProductRepository {
     private final AppDatabase database;
 
     // ========== SEARCH INFRASTRUCTURE ==========
-    private final FoodSearchCache searchCache;
+    private final SearchResultCache searchCache;
     private final DataSourceManager dataSourceManager;
     private final DataSourceAggregator aggregator;
 
@@ -105,10 +106,11 @@ public class ProductRepository {
     // ========== CALLBACK INTERFACES ==========
 
     /**
-     * Callback interface for search operations (from FoodRepository)
+     * Called with search results. Items are FoodProduct for food sources,
+     * Recipe for recipe sources (TheMealDB). Use instanceof to discriminate.
      */
     public interface SearchCallback {
-        void onSuccess(List<FoodProduct> products);
+        void onSuccess(List<Searchable> items);
         void onError(Error error);
         void onLoading();
     }
@@ -161,7 +163,7 @@ public class ProductRepository {
         this.database = AppDatabase.getInstance(context);
 
         // Initialize search infrastructure (from FoodRepository)
-        this.searchCache = new FoodSearchCache();
+        this.searchCache = new SearchResultCache();
         this.dataSourceManager = DataSourceManager.getInstance(context);
         this.aggregator = new DataSourceAggregator(context);
 
@@ -194,16 +196,12 @@ public class ProductRepository {
         }
 
         // Check cache first
-        List<FoodProduct> cachedResults = searchCache.get(normalizedQuery);
+        List<Searchable> cachedResults = searchCache.get(normalizedQuery);
         if (cachedResults != null) {
             if (ApiConfig.DEBUG_LOGGING) {
                 Log.d(TAG, "Returning cached search results for: '" + normalizedQuery +
                         "' (" + cachedResults.size() + " items)");
             }
-            // Enrich even on cache hit: the user may have opened a product detail
-            // since this query was cached, adding richer OFF v2 data to the DB.
-            // This is cheap (one batch DB query) and runs on the caller's thread —
-            // the search cache path is already on a background-compatible path.
             backgroundExecutor.execute(() -> {
                 enrichSearchResultsFromDatabase(cachedResults);
                 runOnMainThread(() -> callback.onSuccess(cachedResults));
@@ -264,21 +262,14 @@ public class ProductRepository {
                     // A single source finished — show its results immediately.
                     // The user sees OFF results ~500ms in; Ciqual arrives and merges later.
                     if (partialResults.isEmpty()) return;
-                    List<FoodProduct> partialItems = new ArrayList<>();
+                    List<Searchable> partialItems = new ArrayList<>();
                     for (DataSource.SearchResult r : partialResults) {
                         partialItems.addAll(r.items);
                     }
-
-                    List<FoodProduct> filtered = SearchFilter.filterAndSort(partialItems, query);
+                    List<Searchable> filtered = SearchFilter.filterAndSort(partialItems, query,
+                            LanguageManager.getCurrentLanguage(context).getCode());
                     if (!filtered.isEmpty()) {
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Partial results from " + sourceId + ": " + filtered.size());
-                        }
-
-                        // Enrich partial results from DB before showing.
-                        // onPartialResult fires on main thread (via mainHandler.post),
-                        // so we must enrich on a background thread then post back.
-                        final List<FoodProduct> toShow = filtered;
+                        final List<Searchable> toShow = filtered;
                         backgroundExecutor.execute(() -> {
                             enrichSearchResultsFromDatabase(toShow);
                             runOnMainThread(() -> callback.onSuccess(toShow));
@@ -291,12 +282,13 @@ public class ProductRepository {
                     isSearchInProgress = false;
 
                     // Extract all items from aggregated result
-                    List<FoodProduct> foodProducts = new ArrayList<>(result.getItems());
+                    List<Searchable> allItems = new ArrayList<>(result.getItems());
 
                     // Apply existing filtering and sorting
-                    List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(foodProducts, query);
+                    List<Searchable> filteredItems = SearchFilter.filterAndSort(allItems, query,
+                            LanguageManager.getCurrentLanguage(context).getCode());
 
-                    if (filteredProducts.isEmpty()) {
+                    if (filteredItems.isEmpty()) {
                         Log.w(TAG, "All results filtered out for query: '" + query + "'");
                         callback.onError(Error.noData("No results found for: " + query));
                         return;
@@ -306,17 +298,17 @@ public class ProductRepository {
                     // If the user previously opened a product, its full OFF v2 data is
                     // in the Room DB and is richer than the Searchalicious lightweight version.
                     // This is source-agnostic: quality signals (dataCompleteness) drive the merge.
-                    enrichSearchResultsFromDatabase(filteredProducts);
+                    enrichSearchResultsFromDatabase(filteredItems);
 
                     // Cache the enriched results
-                    searchCache.put(query, filteredProducts);
+                    searchCache.put(query, filteredItems);
 
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "===========================================");
                         Log.d(TAG, "Multi-source search completed:");
                         Log.d(TAG, "  Query: '" + query + "'");
-                        Log.d(TAG, "  Total results: " + foodProducts.size());
-                        Log.d(TAG, "  After filtering: " + filteredProducts.size());
+                        Log.d(TAG, "  Total results: " + allItems.size());
+                        Log.d(TAG, "  After filtering: " + filteredItems.size());
                         Log.d(TAG, "  Sources used: " + result.getSourceStats().size());
                         Log.d(TAG, "  Duplicates merged: " + result.getDuplicatesFound());
                         Log.d(TAG, "  Search duration: " + result.getSearchDurationMs() + "ms");
@@ -326,7 +318,7 @@ public class ProductRepository {
                     }
 
                     // Final callback replaces the partial results with full merged set
-                    callback.onSuccess(filteredProducts);
+                    callback.onSuccess(filteredItems);
                 }
 
                 @Override
@@ -350,49 +342,6 @@ public class ProductRepository {
             isSearchInProgress = false;
             callback.onError(Error.network("Search failed: " + e.getMessage(), e.getClass().getSimpleName()));
         }
-    }
-
-    /**
-     * Search using aggregator (multiple sources)
-     */
-    public void searchFoodMultiSource(String query, SearchCallback callback) {
-        String normalizedQuery = normalizeQuery(query);
-        if (normalizedQuery == null) {
-            callback.onError(Error.network("Invalid search query", null));
-            return;
-        }
-
-        callback.onLoading();
-
-        aggregator.searchAll(normalizedQuery, new DataSourceAggregator.AggregatorCallback() {
-            @Override
-            public void onSearchComplete(AggregatedSearchResult result) {
-                List<FoodProduct> foodProducts = new ArrayList<>();
-
-                for (FoodProduct product : result.getItems()) {
-                    foodProducts.add(product);
-                }
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Multi-source search complete:\n" + result.getSummary());
-                }
-
-                callback.onSuccess(foodProducts);
-            }
-
-            @Override
-            public void onSearchError(String error) {
-                callback.onError(Error.network(error, null));
-            }
-
-            @Override
-            public void onSearchProgress(String sourceId, int completed, int total) {
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, String.format("Search progress: %s completed (%d/%d)",
-                            sourceId, completed, total));
-                }
-            }
-        });
     }
 
     /**
@@ -442,18 +391,19 @@ public class ProductRepository {
             aggregator.searchAll(query, ApiConfig.API_PAGE_SIZE, page, new DataSourceAggregator.AggregatorCallback() {
                 @Override
                 public void onSearchComplete(AggregatedSearchResult result) {
-                    List<FoodProduct> allProducts = new ArrayList<>(result.getItems());
+                    List<Searchable> allItems = new ArrayList<>(result.getItems());
 
                     // Apply filtering (same as initial search)
-                    List<FoodProduct> filteredProducts = SearchFilter.filterAndSort(allProducts, query);
+                    List<Searchable> filteredItems = SearchFilter.filterAndSort(allItems, query,
+                            LanguageManager.getCurrentLanguage(context).getCode());
 
-                    if (filteredProducts.isEmpty()) {
+                    if (filteredItems.isEmpty()) {
                         callback.onError(Error.noData("No more results found for: " + query));
                     } else {
                         if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Pagination page " + page + ": " + filteredProducts.size() + " results");
+                            Log.d(TAG, "Pagination page " + page + ": " + filteredItems.size() + " results");
                         }
-                        callback.onSuccess(filteredProducts);
+                        callback.onSuccess(filteredItems);
                     }
                 }
 
@@ -523,18 +473,10 @@ public class ProductRepository {
         // ========== CACHE CHECK ==========
 
         // Check if we have cached results for this query
-        List<FoodProduct> cachedResults = searchCache.get(normalizedQuery);
+        List<Searchable> cachedResults = searchCache.get(normalizedQuery);
         if (cachedResults != null && !cachedResults.isEmpty()) {
-            // Return first 10 items from cache for fast autocomplete
             int limit = Math.min(10, cachedResults.size());
-            List<FoodProduct> limitedResults = cachedResults.subList(0, limit);
-
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Autocomplete: returning " + limitedResults.size() +
-                        " cached suggestions for '" + normalizedQuery + "'");
-            }
-
-            callback.onSuccess(limitedResults);
+            callback.onSuccess(cachedResults.subList(0, limit));
             return;
         }
 
@@ -601,8 +543,8 @@ public class ProductRepository {
                 aggregator.searchAll(query, new DataSourceAggregator.AggregatorCallback() {
                     @Override
                     public void onSearchComplete(AggregatedSearchResult result) {
-                        List<FoodProduct> all = new ArrayList<>(result.getItems());
-                        List<FoodProduct> filtered = SearchFilter.filterAndSort(all, query);
+                        List<Searchable> all = new ArrayList<>(result.getItems());
+                        List<Searchable> filtered = SearchFilter.filterAndSort(all, query, language);
                         int cap = Math.min(limit, filtered.size());
                         callback.onSuccess(cap > 0 ? filtered.subList(0, cap) : filtered);
                     }
@@ -623,12 +565,12 @@ public class ProductRepository {
 
             // LinkedHashMap preserves insertion order: Ciqual first, then OFF, then USDA.
             // putIfAbsent ensures the first source to provide a result wins on collision.
-            final java.util.Map<String, FoodProduct> merged =
+            final java.util.Map<String, Searchable> merged =
                     java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
             Runnable onSourceDone = () -> {
                 if (remaining.decrementAndGet() == 0) {
-                    List<FoodProduct> results = new ArrayList<>(merged.values());
+                    List<Searchable> results = new ArrayList<>(merged.values());
                     if (ApiConfig.DEBUG_LOGGING) {
                         Log.d(TAG, "Autocomplete complete: " + results.size()
                                 + " merged suggestions for '" + query + "'");
@@ -643,10 +585,10 @@ public class ProductRepository {
                         new DataSourceCallback<DataSource.SearchResult>() {
                             @Override
                             public void onSuccess(DataSource.SearchResult result) {
-                                List<FoodProduct> filtered =
-                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
-                                for (FoodProduct p : filtered) {
-                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                List<Searchable> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query, language);
+                                for (Searchable item : filtered) {
+                                    merged.putIfAbsent(item.getSearchableId(), item);
                                 }
                                 if (ApiConfig.DEBUG_LOGGING) {
                                     Log.d(TAG, "Autocomplete Ciqual: " + filtered.size() + " results");
@@ -670,10 +612,10 @@ public class ProductRepository {
                         new DataSourceCallback<DataSource.SearchResult>() {
                             @Override
                             public void onSuccess(DataSource.SearchResult result) {
-                                List<FoodProduct> filtered =
-                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
-                                for (FoodProduct p : filtered) {
-                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                List<Searchable> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query, language);
+                                for (Searchable item : filtered) {
+                                    merged.putIfAbsent(item.getSearchableId(), item);
                                 }
                                 if (ApiConfig.DEBUG_LOGGING) {
                                     Log.d(TAG, "Autocomplete OFF: " + filtered.size() + " results");
@@ -697,10 +639,13 @@ public class ProductRepository {
                         new DataSourceCallback<DataSource.SearchResult>() {
                             @Override
                             public void onSuccess(DataSource.SearchResult result) {
-                                List<FoodProduct> filtered =
-                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query);
-                                for (FoodProduct p : filtered) {
-                                    merged.putIfAbsent(p.getSearchableId(), p);
+                                List<Searchable> filtered =
+                                        SearchFilter.filterAndSort(new ArrayList<>(result.items), query, language);
+                                for (Searchable item : filtered) {
+                                    if (item instanceof FoodProduct) {
+                                        FoodProduct p = (FoodProduct) item;
+                                        merged.putIfAbsent(p.getSearchableId(), p);
+                                    }
                                 }
                                 if (ApiConfig.DEBUG_LOGGING) {
                                     Log.d(TAG, "Autocomplete USDA: " + filtered.size() + " results");
@@ -1331,10 +1276,21 @@ public class ProductRepository {
      * - Two batch DB queries regardless of result set size (not N individual queries)
      * - Modifies the list in-place before searchCache.put() — cache already holds enriched data
      *
-     * @param products Search result products to potentially enrich (modified in-place)
+     * @param items Search result products to potentially enrich (modified in-place)
      */
-    public void enrichSearchResultsFromDatabase(List<FoodProduct> products) {
-        if (products == null || products.isEmpty()) return;
+    public void enrichSearchResultsFromDatabase(List<Searchable> items) {
+        if (items == null || items.isEmpty()) return;
+
+        // Extract FoodProduct items only — Recipe items have no FoodProductEntity
+        // representation and cannot be enriched from the Room product tables.
+        List<FoodProduct> products = new ArrayList<>();
+        for (Searchable item : items) {
+            if (item instanceof FoodProduct) {
+                products.add((FoodProduct) item);
+            }
+        }
+
+        if (products.isEmpty()) return;
 
         try {
             // Separate barcoded products from non-barcoded (e.g. Ciqual)

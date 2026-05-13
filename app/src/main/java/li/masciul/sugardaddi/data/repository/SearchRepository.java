@@ -5,11 +5,9 @@ import android.util.Log;
 
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
-import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.enums.ProductType;
-import li.masciul.sugardaddi.core.enums.DataSource;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.managers.LanguageManager;
 
@@ -292,24 +290,16 @@ public class SearchRepository {
 
         productRepository.searchFood(query, new ProductRepository.SearchCallback() {
             @Override
-            public void onSuccess(List<FoodProduct> products) {
-                List<Searchable> searchableItems = new ArrayList<>();
-
-                // FoodProducts already implement Searchable
-                for (FoodProduct product : products) {
-                    searchableItems.add(product);
-                }
-
-                // Limit results
-                if (searchableItems.size() > maxResultsPerType) {
-                    searchableItems = searchableItems.subList(0, maxResultsPerType);
-                }
+            public void onSuccess(List<Searchable> items) {
+                List<Searchable> results = items.size() > maxResultsPerType
+                        ? new ArrayList<>(items.subList(0, maxResultsPerType))
+                        : new ArrayList<>(items);
 
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Food search returned " + searchableItems.size() + " results");
+                    Log.d(TAG, "Food search returned " + results.size() + " results");
                 }
 
-                future.complete(searchableItems);
+                future.complete(results);
             }
 
             @Override

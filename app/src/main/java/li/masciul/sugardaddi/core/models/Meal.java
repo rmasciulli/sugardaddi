@@ -1,6 +1,6 @@
 package li.masciul.sugardaddi.core.models;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.enums.Unit;
@@ -97,7 +97,7 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         this.createdAt = currentTime;
         this.lastUpdated = currentTime;
         this.startTime = LocalDateTime.now();
-        this.sourceIdentifier = new SourceIdentifier(DataSource.USER.getId(), this.id);
+        this.sourceIdentifier = new SourceIdentifier(DataSourceType.USER.getId(), this.id);
     }
 
     public Meal(MealType mealType, LocalDateTime startTime) {
@@ -631,8 +631,8 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     }
 
     @Override
-    public DataSource getDataSource() {
-        return DataSource.USER;
+    public DataSourceType getDataSource() {
+        return DataSourceType.USER;
     }
 
     @Override

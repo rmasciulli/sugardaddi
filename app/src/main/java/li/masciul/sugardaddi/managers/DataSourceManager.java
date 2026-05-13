@@ -14,6 +14,8 @@ import li.masciul.sugardaddi.data.sources.ciqual.CiqualConfig;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConfig;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
+import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConfig;
+import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbDataSource;
 import li.masciul.sugardaddi.data.sources.usda.USDAConfig;
 import li.masciul.sugardaddi.data.sources.usda.USDADataSource;
 
@@ -196,8 +198,11 @@ public class DataSourceManager {
         // ── Ciqual ────────────────────────────────────────────────────────
         registerAndInit(new CiqualDataSource(context, new CiqualConfig()));
 
-        // ── Future: USDA ──────────────────────────────────────────────────
+        // ── USDA ──────────────────────────────────────────────────────────
         registerAndInit(new USDADataSource(context, new USDAConfig()));
+
+        // ── TheMealDB ────────────────────────────────────────────────────
+        registerAndInit(new TheMealDbDataSource(context, new TheMealDbConfig(context)));
 
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "Triggered async init for " + pendingInitializations.get() + " sources");

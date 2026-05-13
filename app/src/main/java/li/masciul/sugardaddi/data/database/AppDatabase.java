@@ -42,13 +42,13 @@ import java.util.concurrent.Executors;
 @Database(
         entities = {
                 // ===== EXISTING ENTITIES =====
-                FoodProductEntity.class,          // Product metadata (v3.0 - hybrid translation + allergens)
+                FoodProductEntity.class,           // Product metadata (v3.0 - hybrid translation + allergens)
                 NutritionEntity.class,             // Separated nutrition storage
                 MealEntity.class,                  // Meal tracking (v3.0 - hybrid translation + allergens)
                 RecipeEntity.class                 // Recipe storage (v3.0 - hybrid translation + split steps + allergens)
 
         },
-        version = 8,  // Rename dataConfidenceCode → data_confidence
+        version = 9,  // Add source identification columns to recipes table
         exportSchema = true
 )
 @TypeConverters({
@@ -92,9 +92,9 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (LOCK) {
                 if (INSTANCE == null) {
                     if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Creating new database instance (v8)");
-                        Log.d(TAG, "Database created (v8)");
-                        Log.d(TAG, "Database opened (v8)");
+                        Log.d(TAG, "Creating new database instance (v9)");
+                        Log.d(TAG, "Database created (v9)");
+                        Log.d(TAG, "Database opened (v9)");
 
                     }
 
@@ -114,7 +114,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context,
                         AppDatabase.class,
                         DATABASE_NAME)
-                .addMigrations(MIGRATION_4_5, MIGRATION_7_8)
+                .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9)
                 .fallbackToDestructiveMigration()
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
@@ -255,6 +255,43 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from v8 to v9: Recipe source identification
+     *
+     * CHANGES:
+     * - recipes: Add dataSource TEXT NOT NULL DEFAULT 'USER'
+     * - recipes: Add originalId TEXT (nullable)
+     * - recipes: Add sourceId TEXT (nullable)
+     * - recipes: Add index on dataSource for efficient source-filtered queries
+     *
+     * DEFAULT 'USER' ensures all existing user-created recipes retain correct
+     * source attribution after migration — no data loss, no manual fixup needed.
+     */
+    static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            Log.i(TAG, "Migrating database from v8 to v9 (recipe source identification)");
+
+            // Add source identification columns
+            database.execSQL(
+                    "ALTER TABLE recipes ADD COLUMN dataSource TEXT NOT NULL DEFAULT 'USER'"
+            );
+            database.execSQL(
+                    "ALTER TABLE recipes ADD COLUMN originalId TEXT"
+            );
+            database.execSQL(
+                    "ALTER TABLE recipes ADD COLUMN sourceId TEXT"
+            );
+
+            // Index on dataSource — used by getByDataSource() DAO query
+            database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_recipes_dataSource ON recipes(dataSource)"
+            );
+
+            Log.i(TAG, "Migration v8→v9 complete: source identification added to recipes");
+        }
+    };
+
     // ========== UTILITY METHODS ==========
 
     /**
@@ -283,7 +320,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * Get database version
      */
     public static int getDatabaseVersion() {
-        return 8;
+        return 9;
     }
 
     /**

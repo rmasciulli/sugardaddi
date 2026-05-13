@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.R;
  * - Network requirement detection
  * - UI display (localized names and descriptions)
  */
-public enum DataSource {
+public enum DataSourceType {
 
     /**
      * OpenFoodFacts - Collaborative open database
@@ -74,7 +74,16 @@ public enum DataSource {
      * - Requires network: No
      * - Data quality: N/A
      */
-    API_CACHE("CACHE", true, false);
+    API_CACHE("CACHE", true, false),
+
+    /**
+     * TheMealDB — Open recipe database (themealdb.com)
+     * - Allows caching: No (public release requires Patreon subscription per ToS;
+     *                       development key "1" is free but not for distribution)
+     * - Requires network: Yes (no local bundle — recipes are fetched on demand)
+     * - Data quality: Good for recipe structure; NO nutrition data provided
+     */
+    THEMEALDB("THEMEALDB", false, true);
 
     // ========== ENUM FIELDS ==========
 
@@ -89,7 +98,7 @@ public enum DataSource {
      * @param allowsCaching Whether this source's data can be cached
      * @param requiresNetwork Whether this source requires network access
      */
-    DataSource(String id, boolean allowsCaching, boolean requiresNetwork) {
+    DataSourceType(String id, boolean allowsCaching, boolean requiresNetwork) {
         this.id = id;
         this.allowsCaching = allowsCaching;
         this.requiresNetwork = requiresNetwork;
@@ -239,6 +248,7 @@ public enum DataSource {
             case USER: return R.string.source_name_user;
             case CUSTOM: return R.string.source_name_custom;
             case IMPORTED: return R.string.source_name_imported;
+            case THEMEALDB: return R.string.source_name_themealdb;
             default: return 0;
         }
     }
@@ -254,6 +264,7 @@ public enum DataSource {
             case USER: return R.string.source_description_user;
             case CUSTOM: return R.string.source_description_custom;
             case IMPORTED: return R.string.source_description_imported;
+            case THEMEALDB: return R.string.source_description_themealdb;
             default: return 0;
         }
     }
@@ -269,6 +280,7 @@ public enum DataSource {
             case USER: return R.string.source_attribution_user;
             case CUSTOM: return R.string.source_attribution_custom;
             case IMPORTED: return R.string.source_attribution_imported;
+            case THEMEALDB: return R.string.source_attribution_themealdb;
             default: return 0;
         }
     }
@@ -281,6 +293,7 @@ public enum DataSource {
             case OPENFOODFACTS: return R.string.source_full_attribution_openfoodfacts;
             case CIQUAL: return R.string.source_full_attribution_ciqual;
             case USDA: return R.string.source_full_attribution_usda;
+            case THEMEALDB: return R.string.source_full_attribution_themealdb;
             default: return 0; // User content doesn't need full attribution
         }
     }
@@ -293,6 +306,7 @@ public enum DataSource {
             case OPENFOODFACTS: return R.string.source_website_openfoodfacts;
             case CIQUAL: return R.string.source_website_ciqual;
             case USDA: return R.string.source_website_usda;
+            case THEMEALDB: return R.string.source_website_themealdb;
             default: return 0;
         }
     }
@@ -308,6 +322,7 @@ public enum DataSource {
             case USER: return R.string.source_emoji_user;
             case CUSTOM: return R.string.source_emoji_custom;
             case IMPORTED: return R.string.source_emoji_imported;
+            case THEMEALDB: return R.string.source_emoji_themealdb;
             default: return 0;
         }
     }
@@ -317,10 +332,10 @@ public enum DataSource {
     /**
      * Get DataSource from string ID
      */
-    public static DataSource fromString(String id) {
+    public static DataSourceType fromString(String id) {
         if (id == null) return null;
 
-        for (DataSource source : values()) {
+        for (DataSourceType source : values()) {
             if (source.id.equalsIgnoreCase(id)) {
                 return source;
             }
@@ -332,7 +347,7 @@ public enum DataSource {
      * Check if this is a public/open data source
      */
     public boolean isPublic() {
-        return this == OPENFOODFACTS || this == CIQUAL || this == USDA;
+        return this == OPENFOODFACTS || this == CIQUAL || this == USDA || this == THEMEALDB;
     }
 
     /**

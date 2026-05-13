@@ -3,8 +3,7 @@ package li.masciul.sugardaddi.data.sources.openfoodfacts.mappers;
 import android.util.Log;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
-import li.masciul.sugardaddi.core.enums.DataSource;
-import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsProduct;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsNutriments;
@@ -12,7 +11,6 @@ import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsSea
 
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
-import li.masciul.sugardaddi.core.models.Category;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.AllergenUtils;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -79,7 +77,7 @@ public class OpenFoodFactsMapper {
         FoodProduct product = new FoodProduct(OpenFoodFactsConstants.SOURCE_ID, offProduct.getCode());
 
         // Set data source
-        product.setDataSource(DataSource.fromString(OpenFoodFactsConstants.SOURCE_ID));
+        product.setDataSource(DataSourceType.fromString(OpenFoodFactsConstants.SOURCE_ID));
 
         // Set barcode (OFF always has this)
         product.setBarcode(offProduct.getCode());

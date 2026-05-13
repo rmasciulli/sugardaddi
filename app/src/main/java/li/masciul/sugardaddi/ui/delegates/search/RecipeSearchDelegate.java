@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Recipe;
@@ -49,10 +50,23 @@ public class RecipeSearchDelegate implements ItemViewDelegate<RecipeSearchDelega
         return R.layout.item_search_recipe;
     }
 
+    // Temporary override of the canHandle Method. Used to avoid any crash
+    // when using TheMealDB datasource because the MealDbRecipeSearchDelegate
+    // isn't created yet. TO-DO: Create the needed files.
     @Override
     public boolean canHandle(@NonNull Searchable item) {
         return item.getProductType() == ProductType.RECIPE;
     }
+
+    /**
+     *  @Override
+     *  public boolean canHandle(@NonNull Searchable item) {
+     *      // Only handle user-created recipes (stored in Room via RecipeEntity).
+     *      // TheMealDB recipes are handled by MealDbRecipeSearchDelegate instead.
+     *      return item.getProductType() == ProductType.RECIPE
+     *          && item.getDataSource() == DataSourceType.USER;
+        }
+    */
 
     @NonNull
     @Override
@@ -93,7 +107,9 @@ public class RecipeSearchDelegate implements ItemViewDelegate<RecipeSearchDelega
     }
 
     private void bindTime(ViewHolder holder, Recipe recipe) {
-        int totalTime = recipe.getPrepTimeMinutes() + recipe.getCookTimeMinutes();
+        Integer prep = recipe.getPrepTimeMinutes();
+        Integer cook = recipe.getCookTimeMinutes();
+        int totalTime = (prep != null ? prep : 0) + (cook != null ? cook : 0);
         if (totalTime > 0) {
             holder.recipeTime.setText(
                     context.getString(R.string.favorite_time_format, totalTime));
@@ -104,8 +120,8 @@ public class RecipeSearchDelegate implements ItemViewDelegate<RecipeSearchDelega
     }
 
     private void bindServings(ViewHolder holder, Recipe recipe) {
-        int servings = recipe.getServings();
-        if (servings > 0) {
+        Integer servings = recipe.getServings();
+        if (servings != null && servings > 0) {
             holder.recipeServings.setText(
                     context.getString(R.string.favorite_servings_format, servings));
             holder.recipeServings.setVisibility(View.VISIBLE);

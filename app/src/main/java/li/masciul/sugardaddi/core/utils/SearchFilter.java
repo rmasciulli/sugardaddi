@@ -1,295 +1,245 @@
 package li.masciul.sugardaddi.core.utils;
 
-import li.masciul.sugardaddi.core.scoring.CiqualScorer;
-import li.masciul.sugardaddi.core.scoring.OpenFoodFactsScorer;
-import li.masciul.sugardaddi.core.scoring.USDAScorer;
-import li.masciul.sugardaddi.data.network.ApiConfig;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.SourceSpecificScorer;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
-import android.util.Log;
+import li.masciul.sugardaddi.core.scoring.CiqualScorer;
+import li.masciul.sugardaddi.core.scoring.OpenFoodFactsScorer;
+import li.masciul.sugardaddi.core.scoring.RecipeScorer;
+import li.masciul.sugardaddi.core.scoring.USDAScorer;
+import li.masciul.sugardaddi.data.network.ApiConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
- * SearchFilter - Advanced search result filtering and ranking system
+ * SearchFilter — Filters and ranks search results using source-specific scoring
+ * and a diversity strategy that ensures fair representation across all sources.
  *
- * REFACTORED v2.0 - Source-Specific Scoring with Diversity Strategy
+ * ARCHITECTURE
+ * ============
+ * Operates on {@link Searchable} items, which may be {@link FoodProduct} or
+ * {@link Recipe} instances. Each type is routed to its own scorer:
+ *   - FoodProduct → source-specific scorer (Ciqual, OFF, USDA)
+ *   - Recipe      → RecipeScorer (regardless of recipe's DataSource)
  *
- * This class filters and ranks search results using source-specific scoring
- * algorithms that value each data source's unique strengths, then applies
- * a diversity strategy to ensure fair representation from all sources.
+ * The pipeline:
+ *   1. Quality filtering   — remove items that don't meet minimum display requirements
+ *   2. Source-specific scoring — each item scored by the scorer suited to its type/source
+ *   3. Diversity enforcement  — ensure all sources are represented (min guarantee + fill)
+ *   4. Result capping         — trim to ApiConfig.MAX_RESULTS
  *
- * KEY FEATURES:
- * - Source-specific scoring (OpenFoodFacts, Ciqual, Recipes)
- * - Diversity strategy (minimum guarantee + quality fill)
- * - Configurable behavior via ApiConfig
- * - Language-aware filtering
- * - Quality requirements checking
+ * LANGUAGE
+ * ========
+ * Language must always be passed explicitly. There is no language inference fallback —
+ * callers are responsible for providing the user's current language via LanguageManager.
  *
- * ARCHITECTURE:
- * 1. Quality filtering (remove low-quality products)
- * 2. Source-specific scoring (each source scored fairly)
- * 3. Diversity enforcement (ensure all sources represented)
- * 4. Quality prioritization (fill remaining slots with top scores)
- *
- * @version 2.0 (Source-Specific Scoring)
+ * THREAD SAFETY
+ * =============
+ * All methods are stateless and safe to call from any thread.
  */
 public class SearchFilter {
 
     private static final String TAG = ApiConfig.SEARCH_LOG_TAG;
 
+    // =========================================================================
+    // MAIN FILTER + SORT
+    // =========================================================================
+
     /**
-     * Main filtering method - now with source-specific scoring and diversity
+     * Filter and rank a mixed list of {@link Searchable} items.
      *
-     * @param products Raw products from API response
-     * @param query Original search query from user
-     * @param language Language to use for filtering (e.g., "en", "fr")
-     * @return Filtered and sorted list of most relevant products
+     * Routes each item to the appropriate scorer based on runtime type:
+     * - {@link FoodProduct} → source-specific scorer via {@link #getScorer(DataSourceType)}
+     * - {@link Recipe}      → {@link RecipeScorer#getInstance()}
+     *
+     * Items that fail quality requirements are dropped before scoring.
+     * The diversity strategy then ensures all sources are represented in the output.
+     *
+     * @param items    Raw items from the aggregated search result. May be empty, not null.
+     * @param query    Original search query as typed by the user.
+     * @param language BCP-47 language code for name/category matching (e.g. "en", "fr").
+     *                 Must be supplied by the caller — use LanguageManager.getCurrentLanguage().
+     * @return Filtered, scored, and diversity-balanced list. Never null, may be empty.
      */
-    public static List<FoodProduct> filterAndSort(List<FoodProduct> products, String query, String language) {
-        if (products == null || products.isEmpty()) {
-            Log.d(TAG, "No products to filter");
+    @NonNull
+    public static List<Searchable> filterAndSort(@NonNull List<Searchable> items,
+                                                 @NonNull String query,
+                                                 @NonNull String language) {
+        if (items.isEmpty()) {
+            Log.d(TAG, "filterAndSort: empty input — nothing to filter");
             return new ArrayList<>();
         }
 
-        Log.d(TAG, "Filtering " + products.size() + " products for query: '" + query + "' in language: " + language);
+        Log.d(TAG, String.format("filterAndSort: %d items, query='%s', lang=%s",
+                items.size(), query, language));
 
-        // Normalize the search query for consistent matching
         String normalizedQuery = normalizeSearchTerm(query);
-
-        // Score each product with source-specific scorers
         List<ScoredProduct> scoredProducts = new ArrayList<>();
 
-        for (FoodProduct product : products) {
-            // Skip products that don't meet basic quality requirements
-            if (!meetsQualityRequirements(product, language)) {
-                continue;
-            }
+        for (Searchable item : items) {
+            if (item instanceof FoodProduct) {
+                FoodProduct product = (FoodProduct) item;
 
-            // Get appropriate scorer for this product's data source
-            DataSource source = product.getDataSource();
-            SourceSpecificScorer<FoodProduct> scorer = getScorer(source);
+                // Drop products that don't meet basic display requirements
+                if (!meetsQualityRequirements(product, language)) continue;
 
-            // Score the product
-            ScoredProduct scoredProduct = scorer.scoreProduct(product, normalizedQuery, language);
+                SourceSpecificScorer<FoodProduct> scorer = getScorer(product.getDataSource());
+                ScoredProduct scored = scorer.scoreProduct(product, normalizedQuery, language);
 
-            // Only include products above minimum score threshold
-            if (scoredProduct.getScore() >= scorer.getMinimumScore()) {
-                scoredProducts.add(scoredProduct);
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, String.format("Product '%s' scored %d: %s",
-                            product.getDisplayName(language),
-                            scoredProduct.getScore(),
-                            scoredProduct.getScoreBreakdown()));
+                if (scored.getScore() >= scorer.getMinimumScore()) {
+                    scoredProducts.add(scored);
+                    if (ApiConfig.DEBUG_LOGGING) {
+                        Log.d(TAG, String.format("  FoodProduct '%s' [%s] → %d (%s)",
+                                product.getDisplayName(language),
+                                product.getDataSource(),
+                                scored.getScore(),
+                                scored.getScoreBreakdown()));
+                    }
                 }
+
+            } else if (item instanceof Recipe) {
+                Recipe recipe = (Recipe) item;
+
+                // Minimum gate — recipe must have a displayable name
+                String displayName = recipe.getDisplayName(language);
+                if (displayName == null || displayName.trim().isEmpty()) continue;
+
+                RecipeScorer scorer = RecipeScorer.getInstance();
+                ScoredProduct scored = scorer.scoreProduct(recipe, normalizedQuery, language);
+
+                if (scored.getScore() >= scorer.getMinimumScore()) {
+                    scoredProducts.add(scored);
+                    if (ApiConfig.DEBUG_LOGGING) {
+                        Log.d(TAG, String.format("  Recipe '%s' [%s] → %d (%s)",
+                                displayName,
+                                recipe.getDataSource(),
+                                scored.getScore(),
+                                scored.getScoreBreakdown()));
+                    }
+                }
+
             }
+            // Additional Searchable types (Meal etc.) — extend here when needed
         }
 
-        // Apply diversity strategy if enabled
-        List<Searchable> diverseResults;
+        // Apply diversity strategy or plain score sort
+        List<Searchable> result;
         if (ApiConfig.SourceDiversity.ENFORCE_SOURCE_DIVERSITY) {
-            diverseResults = DiversityStrategy.applyDiversity(
+            result = DiversityStrategy.applyDiversity(
                     scoredProducts,
                     ApiConfig.SourceDiversity.MIN_RESULTS_PER_SOURCE,
                     ApiConfig.MAX_RESULTS
             );
-
             if (ApiConfig.DEBUG_LOGGING) {
-                String stats = DiversityStrategy.formatDiversityStats(diverseResults);
-                Log.d(TAG, "Diversity stats: " + stats);
+                Log.d(TAG, "Diversity stats: "
+                        + DiversityStrategy.formatDiversityStats(result));
             }
         } else {
-            // Legacy behavior: global top N
-            Collections.sort(scoredProducts, new Comparator<ScoredProduct>() {
-                @Override
-                public int compare(ScoredProduct a, ScoredProduct b) {
-                    return Integer.compare(b.getScore(), a.getScore());
-                }
-            });
-
-            diverseResults = new ArrayList<>();
-            int maxResults = Math.min(scoredProducts.size(), ApiConfig.MAX_RESULTS);
-            for (int i = 0; i < maxResults; i++) {
-                diverseResults.add(scoredProducts.get(i).getItem());
+            scoredProducts.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
+            result = new ArrayList<>();
+            int cap = Math.min(scoredProducts.size(), ApiConfig.MAX_RESULTS);
+            for (int i = 0; i < cap; i++) {
+                result.add(scoredProducts.get(i).getItem());
             }
         }
 
-        // Convert Searchable back to FoodProduct
-        List<FoodProduct> result = new ArrayList<>();
-        for (Searchable item : diverseResults) {
-            if (item instanceof FoodProduct) {
-                result.add((FoodProduct) item);
-            }
-        }
-
-        Log.d(TAG, String.format("Filtered to %d relevant products (from %d total)",
-                result.size(), products.size()));
+        Log.d(TAG, String.format("filterAndSort: %d → %d items after filter",
+                items.size(), result.size()));
 
         return result;
     }
 
+    // =========================================================================
+    // QUALITY REQUIREMENTS — FoodProduct only
+    // =========================================================================
+
     /**
-     * Overloaded method for backward compatibility - uses product's primary language
+     * Returns true if a {@link FoodProduct} meets the minimum requirements
+     * to be displayed in search results.
+     *
+     * A product is dropped if:
+     * - It has no display name in the requested language
+     * - Its data completeness score is below the configured minimum
+     *
+     * These checks are FoodProduct-specific. Recipe quality is handled
+     * separately in the main scoring loop (name presence only).
+     *
+     * @param product  Product to evaluate
+     * @param language Language for name lookup
+     * @return True if the product should proceed to scoring
      */
-    public static List<FoodProduct> filterAndSort(List<FoodProduct> products, String query) {
-        if (products == null || products.isEmpty()) {
-            return new ArrayList<>();
-        }
+    private static boolean meetsQualityRequirements(@NonNull FoodProduct product,
+                                                    @NonNull String language) {
+        // Must have a display name
+        String name = product.getDisplayName(language);
+        if (name == null || name.trim().isEmpty()) return false;
 
-        // Use the first product's primary language as default
-        String defaultLanguage = products.get(0).getCurrentLanguage();
-        if (defaultLanguage == null) {
-            defaultLanguage = "en"; // Fallback to English
-        }
+        // Must meet minimum data completeness
+        if (product.getDataCompleteness() < ApiConfig.MIN_DATA_COMPLETENESS) return false;
 
-        return filterAndSort(products, query, defaultLanguage);
+        return true;
     }
 
+    // =========================================================================
+    // SCORER LOOKUP — FoodProduct sources only
+    // =========================================================================
+
     /**
-     * Get appropriate scorer for a data source
-     * Uses singleton instances for efficiency (Android optimization)
+     * Returns the appropriate {@link SourceSpecificScorer} for a given data source.
      *
-     * @param source Data source to get scorer for
-     * @return Source-specific scorer instance
+     * This method is only called for {@link FoodProduct} items. {@link Recipe} items
+     * always use {@link RecipeScorer} directly in the main scoring loop above,
+     * regardless of their {@link DataSourceType}.
+     *
+     * @param source The item's data source. Null-safe — falls back to OFF scorer.
+     * @return Scorer instance. Never null.
      */
-    private static SourceSpecificScorer<FoodProduct> getScorer(DataSource source) {
-        if (source == null) {
-            return OpenFoodFactsScorer.getInstance(); // Default fallback
-        }
+    @NonNull
+    private static SourceSpecificScorer<FoodProduct> getScorer(DataSourceType source) {
+        if (source == null) return OpenFoodFactsScorer.getInstance();
 
         switch (source) {
-            case OPENFOODFACTS:
-                return OpenFoodFactsScorer.getInstance();
             case CIQUAL:
                 return CiqualScorer.getInstance();
             case USDA:
                 return USDAScorer.getInstance();
+            case OPENFOODFACTS:
+                return OpenFoodFactsScorer.getInstance();
+            case THEMEALDB:
+                // TheMealDB produces Recipe objects — they never reach this method.
+                // This case is a safety net only.
+                return OpenFoodFactsScorer.getInstance();
             default:
-                // Fallback to OpenFoodFacts scorer for unknown sources
+                // USER, CUSTOM, IMPORTED, API_CACHE, etc.
                 return OpenFoodFactsScorer.getInstance();
         }
     }
 
-    /**
-     * Check if product meets minimum quality requirements
-     * Now checks LocalizedContent for the specified language
-     */
-    private static boolean meetsQualityRequirements(FoodProduct product, String language) {
-        // Must have a valid product ID
-        if (product.getSearchableId() == null || product.getSearchableId().trim().isEmpty()) {
-            return false;
-        }
-
-        // Must have at least a product name or brand
-        String productName = product.getName(language);
-        String brand = product.getBrand(language);
-
-        // Fallback to other language if primary language returns null/empty
-        if (productName == null || productName.trim().isEmpty()) {
-            String fallbackLang = language.equals("fr") ? "en" : "fr";
-            productName = product.getName(fallbackLang);
-
-            if (ApiConfig.DEBUG_LOGGING && productName != null && !productName.trim().isEmpty()) {
-                Log.d(TAG, "Using fallback language '" + fallbackLang + "' for product: " +
-                        product.getSearchableId() + " (name: " + productName + ")");
-            }
-        }
-
-        // Check brand with same fallback logic
-        if (brand == null || brand.trim().isEmpty()) {
-            String fallbackLang = language.equals("fr") ? "en" : "fr";
-            brand = product.getBrand(fallbackLang);
-        }
-
-        boolean hasName = productName != null && !productName.trim().isEmpty();
-        boolean hasBrand = brand != null && !brand.trim().isEmpty();
-
-        if (!hasName && !hasBrand) {
-            return false;
-        }
-
-        // Product name shouldn't be just generic terms
-        if (hasName && isGenericProductName(productName)) {
-            return false;
-        }
-
-        // If it has a barcode, that's a good sign of real product
-        if (product.getBarcode() != null && !product.getBarcode().trim().isEmpty()) {
-            return true;
-        }
-
-        return true;
-    }
+    // =========================================================================
+    // QUERY NORMALISATION
+    // =========================================================================
 
     /**
-     * Check if all words from the query appear in the text (order doesn't matter)
-     * Used by scoring utilities
-     */
-    public static boolean allWordsMatch(String text, String query) {
-        if (text == null || query == null) return false;
-
-        String[] queryWords = query.split("\\s+");
-        for (String word : queryWords) {
-            if (!text.contains(word)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Normalize search terms for consistent matching
-     * Handles case, accents, and common variations
+     * Normalise a search query for consistent matching across scorers.
      *
-     * NOW PUBLIC - Used by source-specific scorers and scoring utilities
+     * Trims whitespace, converts to lowercase, and collapses multiple
+     * spaces into one. Diacritics are preserved — scorers handle
+     * language-specific normalisation internally.
+     *
+     * @param query Raw query from the user. Null-safe — returns "" for null.
+     * @return Normalised query string. Never null.
      */
-    public static String normalizeSearchTerm(String term) {
-        if (term == null) return null;
-
-        return term.toLowerCase()
-                .trim()
-                .replaceAll("\\s+", " ") // Normalize whitespace
-                .replaceAll("[àáâãäå]", "a") // Handle accents
-                .replaceAll("[èéêë]", "e")
-                .replaceAll("[ìíîï]", "i")
-                .replaceAll("[òóôõö]", "o")
-                .replaceAll("[ùúûü]", "u")
-                .replaceAll("[ç]", "c")
-                .replaceAll("[ñ]", "n");
-    }
-
-    /**
-     * Check if product name is too generic to be useful
-     */
-    private static boolean isGenericProductName(String productName) {
-        if (productName == null) return true;
-
-        String normalized = productName.toLowerCase().trim();
-
-        // List of overly generic product names
-        String[] genericTerms = {
-                "", "product", "item", "food", "unknown", "n/a", "na", "null", "undefined",
-                "test", "sample", "example", "placeholder", "temp", "temporary"
-        };
-
-        for (String generic : genericTerms) {
-            if (normalized.equals(generic)) {
-                return true;
-            }
-        }
-
-        // Too short to be meaningful
-        if (normalized.length() < 2) {
-            return true;
-        }
-
-        return false;
+    @NonNull
+    public static String normalizeSearchTerm(String query) {
+        if (query == null) return "";
+        return query.trim().toLowerCase().replaceAll("\\s+", " ");
     }
 }

@@ -5,11 +5,10 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -66,7 +65,7 @@ public class USDAProductSearchDelegate
     @Override
     public boolean canHandle(@NonNull Searchable item) {
         return item.getProductType() == ProductType.FOOD
-                && item.getDataSource() == DataSource.USDA;
+                && item.getDataSource() == DataSourceType.USDA;
     }
 
     @NonNull

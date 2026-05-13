@@ -367,6 +367,7 @@
     <string name="source_name_user">User Created</string>
     <string name="source_name_custom">Custom Entry</string>
     <string name="source_name_imported">Imported</string>
+    <string name="source_name_themealdb">TheMealDB</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Food product</string>
@@ -379,6 +380,7 @@
     <string name="source_emoji_user">&#x1F464;</string>
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
+    <string name="source_emoji_themealdb">&#x1F373;</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Open database of food products</string>
@@ -387,6 +389,7 @@
     <string name="source_description_user">User-created recipes and custom foods</string>
     <string name="source_description_custom">Manually entered food data</string>
     <string name="source_description_imported">Data imported from other apps</string>
+    <string name="source_description_themealdb">Open recipe database</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Data from OpenFoodFacts.org</string>
@@ -395,16 +398,19 @@
     <string name="source_attribution_user">User-created content</string>
     <string name="source_attribution_custom">Custom entry</string>
     <string name="source_attribution_imported">Imported data</string>
+    <string name="source_attribution_themealdb">Data from TheMealDB</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">The Open Food Facts database is available under the Open Database License. The individual contents of the database are available under the Database Contents License. Warning: the information and data is provided only for indicative information. It can contain errors and must not be used for medical purposes.</string>
     <string name="source_full_attribution_ciqual">The present data is made available to the public by the French Agency for Food, Environmental and Occupational Health &amp; Safety (ANSES). The data in the ANSES-CIQUAL food composition table is available to the public and may be downloaded free of charge from their website or via the data.gouv.fr platform. Data may be used under the terms and conditions of the Open Licence.</string>
     <string name="source_full_attribution_usda">U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. The data is provided by USDA and is in the public domain.</string>
+    <string name="source_full_attribution_themealdb">Recipe data provided by TheMealDB (themealdb.com). Free for development use. Public release requires a Patreon subscription.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
     <string name="source_website_ciqual">https://ciqual.anses.fr/</string>
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
+    <string name="source_website_themealdb">https://www.themealdb.com</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Create a new meal</string>
@@ -462,7 +468,7 @@
 
     <!--
     These are abbreviated nutrient names for compact displays.
-    Standard nutrition app abbreviations (MyFitnessPal, Cronometer style)
+    Standard nutrition app abbreviations.
     -->
 
     <!-- Main Macronutrients (Daily Summary) -->

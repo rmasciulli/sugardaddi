@@ -35,6 +35,26 @@ android {
             ?: System.getenv("USDA_API_KEY")
             ?: "DEMO_KEY"
         buildConfigField("String", "USDA_API_KEY", "\"$usdaApiKey\"")
+
+        // TheMealDB API key
+        // Free development key is "1" (TheMealDB's own public test key).
+        // Premium Patreon key replaces "1" in the API path: /api/json/v1/{key}/
+        // Open-source contributors use "1" by default — no signup needed for dev.
+        // See: https://www.themealdb.com/api.php
+        val mealDbApiKey: String = localProperties.getProperty("THEMEALDB_API_KEY")
+            ?: System.getenv("THEMEALDB_API_KEY")
+            ?: "1"
+        buildConfigField("String", "THEMEALDB_API_KEY", "\"$mealDbApiKey\"")
+
+        // TheCocktailDB API key
+        // Free development key is "1" (same platform/convention as TheMealDB).
+        // Premium Patreon key replaces "1" in the API path: /api/json/v1/{key}/
+        // Open-source contributors use "1" by default — no signup needed for dev.
+        // See: https://www.thecocktaildb.com/api.php
+        val cocktailDbApiKey: String = localProperties.getProperty("THECOCKTAILDB_API_KEY")
+            ?: System.getenv("THECOCKTAILDB_API_KEY")
+            ?: "1"
+        buildConfigField("String", "THECOCKTAILDB_API_KEY", "\"$cocktailDbApiKey\"")
     }
 
     androidResources {

@@ -43,6 +43,9 @@ public final class ViewType {
     /** Recipe — name, description, time, servings, difficulty */
     public static final int RECIPE = 20;
 
+    /** TheMealDB recipe — external recipe fetched on demand, no local storage */
+    public static final int RECIPE_MEALDB = 21;
+
     // ========== SPECIAL VIEW TYPES ==========
 
     /** Loading footer for pagination */

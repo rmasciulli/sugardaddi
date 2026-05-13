@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
@@ -104,7 +104,7 @@ public final class USDAMapper {
         String fdcIdStr = String.valueOf(food.getFdcId());
         product.setOriginalId(fdcIdStr);
         product.setSourceIdentifier(new SourceIdentifier(USDAConstants.SOURCE_ID, fdcIdStr));
-        product.setDataSource(DataSource.USDA);
+        product.setDataSource(DataSourceType.USDA);
 
         // ── Name (sentence-case the USDA ALL-CAPS descriptions) ───────────────
         // USDA descriptions are written in ALL CAPS (e.g., "BROCCOLI, RAW").
@@ -156,7 +156,7 @@ public final class USDAMapper {
         String fdcIdStr = String.valueOf(detail.getFdcId());
         product.setOriginalId(fdcIdStr);
         product.setSourceIdentifier(new SourceIdentifier(USDAConstants.SOURCE_ID, fdcIdStr));
-        product.setDataSource(DataSource.USDA);
+        product.setDataSource(DataSourceType.USDA);
 
         // ── Name ──────────────────────────────────────────────────────────────
         product.setName(toSentenceCase(detail.getDescription().trim()), language);

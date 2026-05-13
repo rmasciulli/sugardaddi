@@ -1,5 +1,6 @@
 package li.masciul.sugardaddi.data.database.dao;
 
+import androidx.annotation.Nullable;
 import androidx.room.*;
 import androidx.lifecycle.LiveData;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
@@ -41,6 +42,15 @@ public interface RecipeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long[] insertAll(List<RecipeEntity> recipes);
+
+    /**
+     * Insert a recipe, ignoring the operation if a row with the same
+     * primary key already exists. Preserves existing user-set fields
+     * (isFavorite, accessCount) on recipes already cached in Room.
+     * Used by saveRecipesToDatabase() for auto-save after search.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    void insertIfNotExists(RecipeEntity entity);
 
     @Update
     int update(RecipeEntity recipe);
@@ -130,6 +140,36 @@ public interface RecipeDao {
             "ORDER BY accessCount DESC, lastUpdated DESC " +
             "LIMIT :limit")
     List<RecipeWithNutrition> searchWithNutrition(String query, int limit);
+
+    // ========== SOURCE-SPECIFIC RETRIEVAL ==========
+
+    /**
+     * Get all recipes from a specific data source.
+     *
+     * Used to separate user recipes from externally-sourced ones.
+     * Example: getByDataSource("USER") returns only user-created recipes.
+     *          getByDataSource("THEMEALDB") returns cached TheMealDB recipes.
+     *
+     * @param dataSource DataSource ID string (e.g. "USER", "THEMEALDB")
+     * @return All recipes from that source, newest first
+     */
+    @Query("SELECT * FROM recipes WHERE dataSource = :dataSource ORDER BY lastUpdated DESC")
+    List<RecipeEntity> getByDataSource(String dataSource);
+
+    /**
+     * Look up a cached external recipe by its source and original ID.
+     *
+     * Used by RecipeRepository.getCachedExternalRecipe() to check Room before
+     * hitting the network. Returns null if the recipe has not been cached yet
+     * (i.e. the user hasn't interacted with it before).
+     *
+     * @param sourceId   DataSource ID (e.g. "THEMEALDB")
+     * @param originalId External recipe ID (e.g. "52772" for TheMealDB)
+     * @return Matching entity, or null if not found
+     */
+    @Nullable
+    @Query("SELECT * FROM recipes WHERE sourceId = :sourceId AND originalId = :originalId LIMIT 1")
+    RecipeEntity getBySourceAndOriginalId(String sourceId, String originalId);
 
     // ========== AUTHOR/USER QUERIES ==========
 

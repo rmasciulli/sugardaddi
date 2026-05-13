@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.core.interfaces;
 
 import li.masciul.sugardaddi.core.enums.ProductType;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 
 import java.util.Set;
 
@@ -45,7 +45,7 @@ public interface Searchable {
      * Get data source information
      * @return DataSource that provided this item
      */
-    DataSource getDataSource();
+    DataSourceType getDataSource();
 
     /**
      * Get search tags for enhanced matching
@@ -96,17 +96,20 @@ public interface Searchable {
         }
 
         // Boost score based on data source reliability
-        DataSource source = getDataSource();
+        DataSourceType source = getDataSource();
         if (source != null) {
             switch (source) {
                 case OPENFOODFACTS:
                     score += 10; // Reliable public data
                     break;
                 case USER:
-                    score += 5; // User-created content
+                    score += 5;  // User-created content
                     break;
                 case CIQUAL:
                     score += 15; // High-quality scientific data
+                    break;
+                case THEMEALDB:
+                    score += 8;  // Good recipe coverage, no nutrition data
                     break;
             }
         }

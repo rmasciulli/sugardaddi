@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.data.repository;
 
 import android.util.Log;
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
@@ -40,7 +40,7 @@ import java.util.Map;
  * - Fast lookup (HashMap O(1))
  * - Automatic cleanup of expired entries
  *
- * @see DataSource#allowsCaching()
+ * @see DataSourceType#allowsCaching()
  */
 public class ProductDetailsCache {
 
@@ -60,7 +60,7 @@ public class ProductDetailsCache {
     private static class CacheEntry {
         final FoodProduct product;
         final long timestamp;
-        final DataSource source;
+        final DataSourceType source;
 
         CacheEntry(FoodProduct product) {
             this.product = product;
@@ -172,7 +172,7 @@ public class ProductDetailsCache {
         }
 
         String normalizedId = identifier.trim();
-        DataSource source = product.getDataSource();
+        DataSourceType source = product.getDataSource();
 
         // CRITICAL: Check if this source allows caching
         if (source != null && !source.allowsCaching()) {

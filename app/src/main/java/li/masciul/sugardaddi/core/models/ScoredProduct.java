@@ -1,6 +1,6 @@
 package li.masciul.sugardaddi.core.models;
 
-import li.masciul.sugardaddi.core.enums.DataSource;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 
 /**
@@ -63,7 +63,7 @@ public class ScoredProduct {
      * Data source this item came from
      * Used for diversity strategy and debugging
      */
-    private final DataSource source;
+    private final DataSourceType source;
 
     // ========== CONSTRUCTOR ==========
 
@@ -75,7 +75,7 @@ public class ScoredProduct {
      * @param scoreBreakdown Human-readable score explanation
      * @param source Data source the item came from
      */
-    public ScoredProduct(Searchable item, int score, String scoreBreakdown, DataSource source) {
+    public ScoredProduct(Searchable item, int score, String scoreBreakdown, DataSourceType source) {
         this.item = item;
         this.score = score;
         this.scoreBreakdown = scoreBreakdown;
@@ -128,7 +128,7 @@ public class ScoredProduct {
         return scoreBreakdown;
     }
 
-    public DataSource getSource() {
+    public DataSourceType getSource() {
         return source;
     }
 
