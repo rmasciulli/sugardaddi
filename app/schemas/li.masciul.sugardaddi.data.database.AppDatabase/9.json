@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "87adcbcd5d16920411e7b5a3a1a2c679",
+    "identityHash": "c289a947ce87f1d35029b44bc561f6b9",
     "entities": [
       {
         "tableName": "food_products",
@@ -1380,7 +1380,7 @@
       },
       {
         "tableName": "recipes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `authorId` TEXT, `dataSource` TEXT, `originalId` TEXT, `sourceId` TEXT, `name` TEXT, `description` TEXT, `instructions` TEXT, `cuisine` TEXT, `notes` TEXT, `yieldDescription` TEXT, `recipeSource` TEXT, `equipmentNeeded` TEXT, `cookingTips` TEXT, `stepStructure` TEXT, `stepTranslations` TEXT, `currentLanguage` TEXT, `needsDefaultLanguageUpdate` INTEGER NOT NULL, `translations` TEXT, `searchableText` TEXT, `servings` INTEGER NOT NULL, `prepTimeMinutes` INTEGER NOT NULL, `cookTimeMinutes` INTEGER NOT NULL, `difficulty` TEXT, `portionsJson` TEXT, `isVegan` INTEGER NOT NULL, `isVegetarian` INTEGER NOT NULL, `isGlutenFree` INTEGER NOT NULL, `isDairyFree` INTEGER NOT NULL, `isKeto` INTEGER NOT NULL, `isPaleo` INTEGER NOT NULL, `allergenFlags` INTEGER NOT NULL, `isPublic` INTEGER NOT NULL, `isFavorite` INTEGER NOT NULL, `isTemplate` INTEGER NOT NULL, `rating` REAL NOT NULL, `ratingCount` INTEGER NOT NULL, `imageUrl` TEXT, `tagsJson` TEXT, `completenessScore` REAL NOT NULL, `accessCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `authorId` TEXT, `dataSource` TEXT NOT NULL, `originalId` TEXT, `sourceId` TEXT, `name` TEXT, `description` TEXT, `instructions` TEXT, `cuisine` TEXT, `notes` TEXT, `yieldDescription` TEXT, `recipeSource` TEXT, `equipmentNeeded` TEXT, `cookingTips` TEXT, `stepStructure` TEXT, `stepTranslations` TEXT, `currentLanguage` TEXT, `needsDefaultLanguageUpdate` INTEGER NOT NULL, `translations` TEXT, `searchableText` TEXT, `servings` INTEGER NOT NULL, `prepTimeMinutes` INTEGER NOT NULL, `cookTimeMinutes` INTEGER NOT NULL, `difficulty` TEXT, `portionsJson` TEXT, `isVegan` INTEGER NOT NULL, `isVegetarian` INTEGER NOT NULL, `isGlutenFree` INTEGER NOT NULL, `isDairyFree` INTEGER NOT NULL, `isKeto` INTEGER NOT NULL, `isPaleo` INTEGER NOT NULL, `allergenFlags` INTEGER NOT NULL, `isPublic` INTEGER NOT NULL, `isFavorite` INTEGER NOT NULL, `isTemplate` INTEGER NOT NULL, `rating` REAL NOT NULL, `ratingCount` INTEGER NOT NULL, `imageUrl` TEXT, `tagsJson` TEXT, `completenessScore` REAL NOT NULL, `accessCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1398,7 +1398,7 @@
             "fieldPath": "dataSource",
             "columnName": "dataSource",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "originalId",
@@ -1709,7 +1709,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '87adcbcd5d16920411e7b5a3a1a2c679')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c289a947ce87f1d35029b44bc561f6b9')"
     ]
   }
 }

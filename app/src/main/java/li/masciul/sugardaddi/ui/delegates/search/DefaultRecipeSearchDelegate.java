@@ -16,7 +16,7 @@ import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
 
 /**
- * RecipeSearchDelegate - Search result rendering for recipes
+ * DefaultRecipeSearchDelegate - Search result rendering for recipes
  *
  * DISPLAYS:
  * - Recipe name
@@ -30,11 +30,11 @@ import li.masciul.sugardaddi.ui.delegates.ViewType;
  *
  * @version 1.0
  */
-public class RecipeSearchDelegate implements ItemViewDelegate<RecipeSearchDelegate.ViewHolder> {
+public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultRecipeSearchDelegate.ViewHolder> {
 
     private final Context context;
 
-    public RecipeSearchDelegate(@NonNull Context context) {
+    public DefaultRecipeSearchDelegate(@NonNull Context context) {
         this.context = context;
     }
 
@@ -50,23 +50,14 @@ public class RecipeSearchDelegate implements ItemViewDelegate<RecipeSearchDelega
         return R.layout.item_search_recipe;
     }
 
-    // Temporary override of the canHandle Method. Used to avoid any crash
-    // when using TheMealDB datasource because the MealDbRecipeSearchDelegate
-    // isn't created yet. TO-DO: Create the needed files.
+
     @Override
     public boolean canHandle(@NonNull Searchable item) {
-        return item.getProductType() == ProductType.RECIPE;
+        // Only handle user-created recipes (stored in Room via RecipeEntity).
+        // TheMealDB recipes are handled by MealDbRecipeSearchDelegate instead.
+        return item.getProductType() == ProductType.RECIPE
+                && item.getDataSource() == DataSourceType.USER;
     }
-
-    /**
-     *  @Override
-     *  public boolean canHandle(@NonNull Searchable item) {
-     *      // Only handle user-created recipes (stored in Room via RecipeEntity).
-     *      // TheMealDB recipes are handled by MealDbRecipeSearchDelegate instead.
-     *      return item.getProductType() == ProductType.RECIPE
-     *          && item.getDataSource() == DataSourceType.USER;
-        }
-    */
 
     @NonNull
     @Override

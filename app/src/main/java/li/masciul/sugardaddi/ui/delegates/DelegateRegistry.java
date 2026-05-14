@@ -21,7 +21,7 @@ import java.util.List;
  *   1. OffProductSearchDelegate     (matches FoodProduct + OPENFOODFACTS)
  *   2. CiqualProductSearchDelegate  (matches FoodProduct + CIQUAL)
  *   3. DefaultProductSearchDelegate (matches any FoodProduct — fallback)
- *   4. RecipeSearchDelegate         (matches Recipe)
+ *   4. DefaultRecipeSearchDelegate         (matches Recipe)
  *   5. FooterDelegate               (matches nothing in canHandle — special case)
  *
  * DUAL LOOKUP:

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    chip_tag_compact.xml
+    Compact read-only chip for tag display in search cards.
+    Inflated programmatically by MealDbRecipeSearchDelegate.bindTags().
+
+    Uses Widget.Material3.Chip.Filter style — confirmed present in the project
+    (used in activity_favorites.xml). Reduced text size via textAppearanceLabelSmall.
+-->
+<com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Material3.Chip.Filter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textAppearance="?attr/textAppearanceLabelSmall"
+    app:chipStartPadding="6dp"
+    app:chipEndPadding="6dp"
+    app:textStartPadding="0dp"
+    app:textEndPadding="0dp"
+    app:ensureMinTouchTargetSize="false"
+    android:clickable="false"
+    android:focusable="false"
+    tools:text="Chocolate" />

@@ -10,18 +10,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.ui.delegates.DelegateRegistry;
+import li.masciul.sugardaddi.ui.delegates.search.DefaultRecipeSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.FooterDelegate;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
 import li.masciul.sugardaddi.ui.delegates.search.CiqualProductSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.DefaultProductSearchDelegate;
+import li.masciul.sugardaddi.ui.delegates.search.MealDbRecipeSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.OffProductSearchDelegate;
-import li.masciul.sugardaddi.ui.delegates.search.RecipeSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.USDAProductSearchDelegate;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import java.util.List;
  *   1. OffProductSearchDelegate     -- FoodProduct from OPENFOODFACTS
  *   2. CiqualProductSearchDelegate  -- FoodProduct from CIQUAL
  *   3. DefaultProductSearchDelegate -- any other FoodProduct (fallback)
- *   4. RecipeSearchDelegate         -- Recipe items
+ *   4. DefaultRecipeSearchDelegate         -- Recipe items
  *   Footer is a special case at position items.size(), not resolved via registry.
  *
  * PAGINATION:
@@ -83,7 +83,9 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         registry.register(new CiqualProductSearchDelegate(context));
         registry.register(new USDAProductSearchDelegate(context));
         registry.register(new DefaultProductSearchDelegate(context));
-        registry.register(new RecipeSearchDelegate(context));
+
+        registry.register(new MealDbRecipeSearchDelegate(context));
+        registry.register(new DefaultRecipeSearchDelegate(context));
         registry.register(new FooterDelegate(context));
 
         setHasStableIds(true);

@@ -372,6 +372,7 @@
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Food product</string>
     <string name="product_type_recipe">Recipe</string>
+    <string name="product_type_recipe_with_video">Recipe with video</string>
 
     <!-- Data Source Emojis  -->
     <string name="source_emoji_openfoodfacts">&#x1F30D;</string>
@@ -698,5 +699,10 @@
 
     <!-- Toast shown on import failure -->
     <string name="ds_db_import_error">Initialisation failed</string>
+
+    <!-- TheMealDB recipe card -->
+    <string name="recipe_ingredient_count">%d ingredients</string>
+    <string name="recipe_has_video">▶ Recipe with video</string>
+    <string name="recipe_source_themealdb">TheMealDB</string>
 
 </resources>

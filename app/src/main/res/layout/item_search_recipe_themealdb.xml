@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_search_product_default.xml
-    Fallback search result card for products from sources without a dedicated
-    delegate: USDA, USER, CUSTOM, IMPORTED, or null source.
+    item_search_recipe_themealdb.xml
+    Search result card for TheMealDB recipes.
 
     STRUCTURE:
-    [Product name]                         [Source badge]
-    Food product                           <- subtitle, always below title
-    ─────────────────────────────────────────────────────
-    [72x72 image]  Brand name
-                   Category description
-                   100 g
+    ┌───────────────────────────────────────────────────┐
+    │ [Recipe name (bold, 2 lines)]   [TheMealDB badge] │
+    │ Recipe                                            │
+    │ ───────────────────────────────────────────────── │
+    │ [72x72     ]  Japanese · Chicken                  │
+    │ [thumbnail ]  8 ingredients        ▶ Video        │
+    │ [          ]  [Meat] [Casserole]                  │
+    └───────────────────────────────────────────────────┘
 
-    Mirrors OFF layout exactly, minus the score stack.
-    productType subtitle is in the same position as OFF and Ciqual.
+    Notes:
+    - Ingredient count and video indicator on the same line
+    - Tag chips on the third metadata line (below ingredient row)
+    - Chips are compact — Widget.Material3.Chip.Filter style
+    - Video indicator only shown when strYoutube is set
+    - Tags ChipGroup hidden when no displayable tags
 
-    Used by: DefaultProductSearchDelegate
+    Used by: MealDbRecipeSearchDelegate
 -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -38,7 +43,7 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- ROW 1: product name + source badge -->
+        <!-- ROW 1: Recipe name + source badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,7 +52,7 @@
             android:layout_marginBottom="2dp">
 
             <TextView
-                android:id="@+id/productName"
+                android:id="@+id/recipeName"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -56,7 +61,7 @@
                 android:textColor="?attr/colorOnSurface"
                 android:maxLines="1"
                 android:ellipsize="end"
-                tools:text="Generic Food Product Name" />
+                tools:text="Chocolate Gateau" />
 
             <TextView
                 android:id="@+id/sourceBadge"
@@ -66,111 +71,105 @@
                 android:paddingHorizontal="7dp"
                 android:paddingVertical="2dp"
                 android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:textColor="?attr/colorSecondary"
+                android:textColor="?attr/colorPrimary"
                 android:background="@drawable/rounded_corner_8dp"
-                android:backgroundTint="?attr/colorPrimary"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="USDA" />
+                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:text="@string/recipe_source_themealdb" />
 
         </LinearLayout>
 
-        <!-- ROW 2: productType subtitle ("Food product" or "Recipe").
-             Identical position and style as OFF and Ciqual layouts. -->
+        <!-- ROW 2: productType label ("Recipe") -->
         <TextView
             android:id="@+id/productType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="Food product" />
+            android:text="@string/product_type_recipe"
+            android:visibility="visible" />
 
-        <!-- ROW 3: image + details (no score stack for default source) -->
+        <!-- ROW 3: thumbnail + metadata column -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Product image: 72x72dp -->
+            <!-- Thumbnail: 72x72dp — identical to OFF cards -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/imageContainer"
                 android:layout_width="72dp"
                 android:layout_height="72dp"
-                android:layout_marginEnd="12dp"
-                app:cardCornerRadius="12dp"
+                android:layout_marginEnd="10dp"
+                app:cardCornerRadius="10dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
                 app:strokeColor="?attr/colorOutlineVariant">
 
                 <ImageView
-                    android:id="@+id/productImage"
+                    android:id="@+id/recipeImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="?attr/colorSurface"
+                    android:background="?attr/colorSurfaceVariant"
                     android:scaleType="centerCrop"
                     android:contentDescription="@string/product_image_description"
                     tools:src="@drawable/ic_food_placeholder" />
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Details column: fills remaining width -->
+            <!-- Metadata column: description, ingredient+video row, chips -->
             <LinearLayout
-                android:id="@+id/detailsColumn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:gravity="center_vertical">
 
-                <!-- Brand: Inter semi-bold, primary color -->
+                <!-- Area · Category e.g. "Japanese · Chicken" -->
                 <TextView
-                    android:id="@+id/brandName"
+                    android:id="@+id/recipeDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="3dp"
-                    android:fontFamily="@font/inter"
-                    android:fontWeight="600"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorPrimary"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="1"
                     android:ellipsize="end"
                     android:visibility="gone"
                     tools:visibility="visible"
-                    tools:text="Brand Name" />
+                    tools:text="Japanese · Chicken" />
 
-                <!-- Category: Roboto Condensed light, 2 lines, sentence case -->
+                <!-- Ingredient count -->
                 <TextView
-                    android:id="@+id/categories"
+                    android:id="@+id/ingredientCount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="3dp"
-                    android:fontFamily="@font/roboto_condensed"
-                    android:fontWeight="300"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:maxLines="2"
-                    android:ellipsize="end"
                     android:visibility="gone"
                     tools:visibility="visible"
-                    tools:text="Cereals and cereal products" />
+                    tools:text="8 ingredients" />
 
-                <!-- Serving/weight: Roboto Condensed italic, muted -->
-                <TextView
-                    android:id="@+id/servingInfo"
+                <!-- Tag chips — compact, on the third metadata line -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/tagsChipGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_condensed"
-                    android:textStyle="italic"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:maxLines="1"
-                    android:ellipsize="end"
+                    android:layout_marginTop="2dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="0dp"
+                    app:chipSpacingHorizontal="4dp"
+                    app:singleLine="true"
                     android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:text="100 g" />
+                    tools:visibility="visible">
+
+                    <!-- Chips added programmatically by MealDbRecipeSearchDelegate -->
+                    <include layout="@layout/chip_tag_compact" />
+
+                </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>
 

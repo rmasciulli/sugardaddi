@@ -62,6 +62,7 @@ public class RecipeEntity {
      * Defaults to "USER" for user-created recipes and for all pre-migration rows.
      * NOT NULL to allow efficient indexed queries by source.
      */
+    @NonNull
     private String dataSource = "USER";
 
     /**

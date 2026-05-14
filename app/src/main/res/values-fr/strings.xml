@@ -372,6 +372,7 @@
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Produit alimentaire</string>
     <string name="product_type_recipe">Recette</string>
+    <string name="product_type_recipe_with_video">Recette avec vidéo</string>
 
     <!-- Data Source Emojis  -->
     <string name="source_emoji_openfoodfacts">&#x1F30D;</string>
@@ -675,5 +676,10 @@
     <string name="ds_db_importing">Initialisation en cours…</string>
     <string name="ds_db_import_success">Base %s initialisée. La recherche hors ligne est disponible.</string>
     <string name="ds_db_import_error">Échec de l\'initialisation</string>
+
+    <!-- TheMealDB recipe card -->
+    <string name="recipe_ingredient_count">%d ingrédients</string>
+    <string name="recipe_has_video">▶ Recette avec vidéo</string>
+    <string name="recipe_source_themealdb">TheMealDB</string>
 
 </resources>

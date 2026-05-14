@@ -325,6 +325,10 @@ public class TheMealDbMapper {
             tags.add(meal.getStrArea().trim().toLowerCase());
         }
 
+        if (meal.getStrYoutube() != null && !meal.getStrYoutube().trim().isEmpty()) {
+            tags.add("has_video");
+        }
+
         if (!tags.isEmpty()) {
             recipe.setTags(tags);
         }
