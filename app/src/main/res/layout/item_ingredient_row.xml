@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_ingredient_row.xml — Single ingredient row for recipe detail screens.
+
+    Two-column layout: ingredient name (left, fills space) + measure (right, wrap).
+    Used by both MealDbRecipeDetailRenderer and DefaultRecipeDetailRenderer.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- Ingredient name — left, shrinks to content but capped at 60% -->
+    <TextView
+        android:id="@+id/ingredientName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="Single Cream" />
+
+    <!-- Dot leader — stretches to fill space between name and measure -->
+    <li.masciul.sugardaddi.ui.views.DotLeaderView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:minWidth="16dp" />
+
+    <!-- Measure — right, wraps to content -->
+    <TextView
+        android:id="@+id/ingredientMeasure"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:gravity="end"
+        android:maxLines="1"
+        tools:text="142ml" />
+
+</LinearLayout>

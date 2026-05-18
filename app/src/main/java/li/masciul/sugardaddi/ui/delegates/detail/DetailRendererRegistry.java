@@ -16,7 +16,7 @@ import java.util.List;
  * ARCHITECTURE:
  * This is the detail-screen parallel to DelegateRegistry (which handles search result cards).
  * Where DelegateRegistry drives a RecyclerView, DetailRendererRegistry drives a single-item
- * full-screen display inside ItemDetailsActivity.
+ * full-screen display inside ProductDetailsActivity.
  *
  * RESOLUTION ORDER (register specific before generic):
  *   1. OffProductDetailRenderer     — FoodProduct + DataSource.OPENFOODFACTS
@@ -24,7 +24,7 @@ import java.util.List;
  *   3. DefaultProductDetailRenderer — FoodProduct (any remaining source — catch-all)
  *   (Future: RecipeDetailRenderer, etc.)
  *
- * USAGE IN ItemDetailsActivity:
+ * USAGE IN ProductDetailsActivity:
  * <pre>
  *   DetailRendererRegistry registry = new DetailRendererRegistry();
  *   registry.register(new OffProductDetailRenderer(context));

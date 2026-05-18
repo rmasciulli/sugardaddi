@@ -233,6 +233,7 @@
     <!-- Loading & Status -->
     <string name="loading">Loading…</string>
     <string name="loading_product">Loading product details…</string>
+    <string name="loading_recipe">Loading recipe details…</string>
 
     <!-- Empty States -->
     <string name="empty_search_title">No results found</string>
@@ -381,7 +382,7 @@
     <string name="source_emoji_user">&#x1F464;</string>
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
-    <string name="source_emoji_themealdb">&#x1F373;</string>
+    <string name="source_emoji_themealdb">&#x1F4D6;</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Open database of food products</string>
@@ -390,7 +391,7 @@
     <string name="source_description_user">User-created recipes and custom foods</string>
     <string name="source_description_custom">Manually entered food data</string>
     <string name="source_description_imported">Data imported from other apps</string>
-    <string name="source_description_themealdb">Open recipe database</string>
+    <string name="source_description_themealdb">Open recipe database. Free for development use. Public release requires a Patreon subscription.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Data from OpenFoodFacts.org</string>
@@ -405,7 +406,7 @@
     <string name="source_full_attribution_openfoodfacts">The Open Food Facts database is available under the Open Database License. The individual contents of the database are available under the Database Contents License. Warning: the information and data is provided only for indicative information. It can contain errors and must not be used for medical purposes.</string>
     <string name="source_full_attribution_ciqual">The present data is made available to the public by the French Agency for Food, Environmental and Occupational Health &amp; Safety (ANSES). The data in the ANSES-CIQUAL food composition table is available to the public and may be downloaded free of charge from their website or via the data.gouv.fr platform. Data may be used under the terms and conditions of the Open Licence.</string>
     <string name="source_full_attribution_usda">U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. The data is provided by USDA and is in the public domain.</string>
-    <string name="source_full_attribution_themealdb">Recipe data provided by TheMealDB (themealdb.com). Free for development use. Public release requires a Patreon subscription.</string>
+    <string name="source_full_attribution_themealdb">TheMealDB is an open, collaborative database that brings together recipes from around the world. It offers a free, easy-to-use recipe API for developers and cooking enthusiasts. You can also purchase a license to support the project and gain access to additional premium features.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
@@ -448,7 +449,6 @@
 
     <!-- Activity Titles -->
     <string name="journal_title">My Journal</string>
-    <string name="item_details_title">Product Details</string>
     <string name="settings_title">Settings</string>
 
     <!-- App branding (for nav header) -->
@@ -704,5 +704,19 @@
     <string name="recipe_ingredient_count">%d ingredients</string>
     <string name="recipe_has_video">▶ Recipe with video</string>
     <string name="recipe_source_themealdb">TheMealDB</string>
+
+    <!-- RecipeDetailsActivity -->
+    <string name="recipe_details_title">Recipe</string>
+    <string name="error_no_recipe_id">No recipe identifier provided</string>
+    <string name="recipe_not_found">Recipe not found</string>
+    <string name="error_loading_recipe">Could not load recipe</string>
+    <string name="menu_watch_video">Watch video</string>
+    <string name="share_recipe_source_prefix">via</string>
+    <string name="share_recipe_subject">%s — SugarDaddi recipe</string>
+    <string name="recipe_section_ingredients">Ingredients</string>
+    <string name="recipe_section_instructions">Instructions</string>
+    <string name="recipe_section_notes">Notes</string>
+    <string name="recipe_no_nutrition_data">No nutrition data available for this recipe.</string>
+    <string name="recipe_image_content_description">Recipe photo</string>
 
 </resources>

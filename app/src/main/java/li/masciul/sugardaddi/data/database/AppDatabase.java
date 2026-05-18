@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import java.util.concurrent.Executors;
 
 /**
- * AppDatabase - Main Room database configuration (v8.0 - DataConfidence enum)
+ * AppDatabase - Main Room database configuration (v10.0 - Recipe videoUrl)
  *
  * ARCHITECTURE UPDATE v6.0:
  * - Added allergenFlags persistence to FoodProductEntity, RecipeEntity, MealEntity
@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class                 // Recipe storage (v3.0 - hybrid translation + split steps + allergens)
 
         },
-        version = 9,  // Add source identification columns to recipes table
+        version = 10, // Add videoUrl column to recipes table
         exportSchema = true
 )
 @TypeConverters({
@@ -92,9 +92,9 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (LOCK) {
                 if (INSTANCE == null) {
                     if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Creating new database instance (v9)");
-                        Log.d(TAG, "Database created (v9)");
-                        Log.d(TAG, "Database opened (v9)");
+                        Log.d(TAG, "Creating new database instance (v10)");
+                        Log.d(TAG, "Database created (v10)");
+                        Log.d(TAG, "Database opened (v10)");
 
                     }
 
@@ -114,7 +114,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context,
                         AppDatabase.class,
                         DATABASE_NAME)
-                .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .fallbackToDestructiveMigration()
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
@@ -124,7 +124,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     public void onCreate(@NonNull SupportSQLiteDatabase db) {
                         super.onCreate(db);
                         if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Database created (v7)");
+                            Log.d(TAG, "Database created (v10)");
                         }
                     }
 
@@ -132,7 +132,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     public void onOpen(@NonNull SupportSQLiteDatabase db) {
                         super.onOpen(db);
                         if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Database opened (v7)");
+                            Log.d(TAG, "Database opened (v10)");
                         }
                     }
                 })
@@ -292,6 +292,28 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from v9 to v10: Recipe video URL
+     *
+     * CHANGES:
+     * - recipes: Add videoUrl TEXT (nullable)
+     *
+     * Stores the external video link for a recipe (e.g. YouTube URL from TheMealDB).
+     * NULL for user-created recipes and any external recipe that has no video.
+     */
+    static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            Log.i(TAG, "Migrating database from v9 to v10 (recipe videoUrl)");
+
+            database.execSQL(
+                    "ALTER TABLE recipes ADD COLUMN videoUrl TEXT"
+            );
+
+            Log.i(TAG, "Migration v9→v10 complete: videoUrl added to recipes");
+        }
+    };
+
     // ========== UTILITY METHODS ==========
 
     /**
@@ -320,7 +342,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * Get database version
      */
     public static int getDatabaseVersion() {
-        return 9;
+        return 10;
     }
 
     /**

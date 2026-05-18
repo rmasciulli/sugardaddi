@@ -6,7 +6,7 @@
     - Product thumbnail with image loading
     - Expandable nutrition details
     - Tap card to expand/collapse
-    - Tap image to open ItemDetailsActivity
+    - Tap image to open ProductDetailsActivity
     - Smooth animations
 -->
 <com.google.android.material.card.MaterialCardView
@@ -38,7 +38,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Product Image (clickable for ItemDetailsActivity) -->
+            <!-- Product Image (clickable for ProductDetailsActivity) -->
             <ImageView
                 android:id="@+id/productImage"
                 android:layout_width="56dp"

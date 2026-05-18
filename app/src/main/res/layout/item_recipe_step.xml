@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_recipe_step.xml — Single structured step row for DefaultRecipeDetailRenderer.
+
+    Shows step number (circle badge), instruction text, and optional
+    duration and equipment metadata below the instruction.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingBottom="12dp">
+
+    <!-- Step number badge -->
+    <TextView
+        android:id="@+id/stepNumber"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:background="@drawable/bg_step_number_circle"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnPrimary"
+        tools:text="1" />
+
+    <!-- Step content: instruction + optional metadata -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/stepInstruction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingMultiplier="1.5"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Heat oil in a large pan over medium heat." />
+
+        <TextView
+            android:id="@+id/stepDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:text="5 min"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/stepEquipment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:text="Large pan"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</LinearLayout>

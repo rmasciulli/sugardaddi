@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 // Database imports
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
@@ -281,10 +282,9 @@ public class ProductRepository {
                 public void onSearchComplete(AggregatedSearchResult result) {
                     isSearchInProgress = false;
 
-                    // Extract all items from aggregated result
                     List<Searchable> allItems = new ArrayList<>(result.getItems());
 
-                    // Apply existing filtering and sorting
+                    // Apply filtering (same as initial search)
                     List<Searchable> filteredItems = SearchFilter.filterAndSort(allItems, query,
                             LanguageManager.getCurrentLanguage(context).getCode());
 

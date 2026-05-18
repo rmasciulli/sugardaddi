@@ -185,8 +185,8 @@ public class MealDetailsActivity extends BaseActivity {
             public void onPortionClicked(FoodPortion portion) {
                 String itemId = portion.getItemId();  // Get the persisted searchable ID
                 if (itemId != null && !itemId.isEmpty()) {
-                    Intent intent = new Intent(MealDetailsActivity.this, ItemDetailsActivity.class);
-                    intent.putExtra(ItemDetailsActivity.EXTRA_FOOD_ITEM, itemId);
+                    Intent intent = new Intent(MealDetailsActivity.this, ProductDetailsActivity.class);
+                    intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, itemId);
                     startActivity(intent);
                 } else {
                     Toast.makeText(MealDetailsActivity.this,

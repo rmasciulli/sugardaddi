@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    bg_step_number_circle.xml — Circular badge for recipe step numbers.
+
+    Used by item_recipe_step.xml in DefaultRecipeDetailRenderer.
+    Solid primary colour circle — text uses colorOnPrimary to contrast.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorPrimary" />
+</shape>

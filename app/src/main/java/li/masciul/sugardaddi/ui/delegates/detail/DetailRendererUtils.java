@@ -45,56 +45,36 @@ public final class DetailRendererUtils {
     private DetailRendererUtils() {}
 
     /**
-     * Populate the data source attribution panel in a renderer's inflated view.
+     * Populate the attribution panel by DataSourceType directly.
      *
-     * This method handles ALL attribution panel state:
-     *   - If the product's data source is not public (user-created content),
-     *     the panel is hidden entirely.
-     *   - If the source has a website URL, the card is made tappable and opens
-     *     the URL in an external browser.
-     *   - If the source has no website (e.g. CUSTOM), the card is shown but
-     *     not tappable (no "visit website" hint is shown).
+     * Used by all detail renderers (food products, recipes, and future item types).
+     * Callers pass their item's DataSourceType directly via item.getDataSource().
      *
-     * Expected view IDs in the renderer layout:
-     *   R.id.attributionPanel              — MaterialCardView root
-     *   R.id.attributionSourceName         — Source name with emoji
-     *   R.id.attributionLegalText          — Short attribution (italic)
-     *   R.id.attributionSourceDescription  — Source description
-     *
-     * @param context  Android context (used for string resolution and Intent)
-     * @param view     The root view inflated by the renderer
-     * @param product  The FoodProduct being displayed
+     * @param context  Android context
+     * @param view     Root view inflated by the renderer
+     * @param source   The DataSourceType to attribute
      */
     public static void populateAttribution(@NonNull Context context,
                                            @NonNull View view,
-                                           @NonNull FoodProduct product) {
-
+                                           @NonNull DataSourceType source) {
         View panel = view.findViewById(R.id.attributionPanel);
-        if (panel == null) return; // Layout doesn't have the panel (shouldn't happen)
+        if (panel == null) return;
 
-        DataSourceType source = product.getDataSource();
-        if (source == null) {
-            panel.setVisibility(View.GONE);
-            return;
-        }
-
-        // Hide panel entirely for user-generated content — there's no third-party to attribute
+        // Hide panel for user-generated content — no third-party to attribute
         if (!source.isPublic()) {
             panel.setVisibility(View.GONE);
             return;
         }
 
-        // Show panel and populate all fields
         panel.setVisibility(View.VISIBLE);
 
-        // "🌍 Open Food Facts" — emoji prefix + display name
+        // "🍳 TheMealDB", "🌍 Open Food Facts", etc.
         TextView nameView = view.findViewById(R.id.attributionSourceName);
         if (nameView != null) {
             nameView.setText(source.getDisplayWithEmoji(context));
         }
 
         // Full legal attribution text (italic)
-        // e.g. full ODbL license paragraph for OFF, full ANSES/Etalab text for Ciqual
         TextView legalView = view.findViewById(R.id.attributionLegalText);
         if (legalView != null) {
             String attribution = source.getFullAttribution(context);
@@ -106,8 +86,7 @@ public final class DetailRendererUtils {
             }
         }
 
-        // One-line description of what this source is
-        // e.g. "French food composition table by Anses"
+        // One-line source description
         TextView descView = view.findViewById(R.id.attributionSourceDescription);
         if (descView != null) {
             String description = source.getDescription(context);
@@ -119,10 +98,9 @@ public final class DetailRendererUtils {
             }
         }
 
-        // Website tap handler
+        // Make card tappable if a website URL is available
         String websiteUrl = source.getWebsiteUrl(context);
         if (websiteUrl != null && !websiteUrl.trim().isEmpty()) {
-            // Card is tappable — open website in browser
             panel.setOnClickListener(v -> {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl));
@@ -133,11 +111,7 @@ public final class DetailRendererUtils {
                             Toast.LENGTH_SHORT).show();
                 }
             });
-            // Ensure the "Visit website" hint TextView is visible
-            // It is a static TextView in the layout with no id — always shown
-            // when the panel is visible and source has a URL. No action needed.
         } else {
-            // No website — remove the ripple/click feedback so it doesn't look interactive
             panel.setOnClickListener(null);
             panel.setClickable(false);
             panel.setFocusable(false);

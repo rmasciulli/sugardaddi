@@ -103,25 +103,21 @@ public abstract class CombinedProductDao {
      * Used by Ciqual and other data sources for filtered searches
      */
     @Transaction
-    @Query("SELECT * FROM food_products p " +
-            "LEFT JOIN nutrition n ON p.id = n.sourceId " +
-            "WHERE p.sourceId = :sourceId AND " +
-            "(p.name LIKE '%' || :query || '%' OR " +
-            "p.brand LIKE '%' || :query || '%' OR " +
-            "p.categoriesText LIKE '%' || :query || '%' OR " +
-            "p.searchableText LIKE '%' || :query || '%') " +
+    @Query("SELECT * FROM food_products " +
+            "WHERE sourceId = :sourceId AND " +
+            "(name LIKE '%' || :query || '%' OR " +
+            "brand LIKE '%' || :query || '%' OR " +
+            "categoriesText LIKE '%' || :query || '%' OR " +
+            "searchableText LIKE '%' || :query || '%') " +
             "LIMIT :limit")
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     public abstract List<FoodProductWithNutrition> searchBySource(String sourceId, String query, int limit);
 
     /**
      * Get Ciqual product by original code
      */
     @Transaction
-    @Query("SELECT * FROM food_products p " +
-            "LEFT JOIN nutrition n ON p.id = n.sourceId " +
-            "WHERE p.sourceId = 'CIQUAL' AND p.originalId = :code")
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+    @Query("SELECT * FROM food_products " +
+            "WHERE sourceId = 'CIQUAL' AND originalId = :code")
     public abstract FoodProductWithNutrition getCiqualProduct(String code);
 
     /**
@@ -282,6 +278,7 @@ public abstract class CombinedProductDao {
      * Search products with comprehensive nutrition filters
      * All parameters are optional (use null to ignore)
      */
+    @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query("SELECT p.* FROM food_products p " +
             "INNER JOIN nutrition n ON n.sourceId = p.id " +
@@ -310,6 +307,7 @@ public abstract class CombinedProductDao {
     /**
      * Find products in same category with better nutrition
      */
+    @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query("SELECT p.* FROM food_products p " +
             "INNER JOIN nutrition n ON n.sourceId = p.id " +
@@ -329,7 +327,7 @@ public abstract class CombinedProductDao {
      * Find similar products by nutrition profile
      * Uses euclidean distance on normalized macros
      */
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+    @RewriteQueriesToDropUnusedColumns
     @Transaction
     @Query("SELECT p.*, " +
             "ABS(n.energyKcal - :targetCalories) + " +

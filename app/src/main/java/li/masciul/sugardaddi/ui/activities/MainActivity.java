@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.ui.activities;
 
 import android.content.Intent;
-import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
+
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualImportService;
 import android.os.Bundle;
 import android.text.Editable;
@@ -11,7 +11,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
@@ -21,7 +20,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -46,7 +44,6 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.network.NetworkManager;
 import li.masciul.sugardaddi.data.repository.ProductRepository;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
-import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.ui.adapters.AutocompleteAdapter;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
 
@@ -567,8 +564,8 @@ public class MainActivity extends BaseActivity implements
         // Polymorphic navigation based on item type
         if (item instanceof FoodProduct) {
             // Open product details
-            Intent intent = new Intent(this, ItemDetailsActivity.class);
-            intent.putExtra(ItemDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
+            Intent intent = new Intent(this, ProductDetailsActivity.class);
+            intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
 
             // Pass meal context if present
             if (returnToMealId != null) {
@@ -579,12 +576,12 @@ public class MainActivity extends BaseActivity implements
 
             logDebug("Opening product details: " + item.getDisplayName(language));
         } else if (item instanceof Recipe) {
-            // TODO: Open recipe details when RecipeDetailsActivity is implemented
-            Toast.makeText(this,
-                    "Recipe details coming soon: " + item.getDisplayName(language),
-                    Toast.LENGTH_SHORT).show();
+            // Open recipe details
+            Intent intent = new Intent(this, RecipeDetailsActivity.class);
+            intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, item.getSearchableId());
 
-            logDebug("Recipe clicked (details not yet implemented): " + item.getDisplayName(language));
+            startActivity(intent);
+            logDebug("Opening recipe details: " + item.getDisplayName(language));
         } else {
             Log.w(TAG, "Unknown item type clicked: " + item.getClass().getSimpleName());
         }

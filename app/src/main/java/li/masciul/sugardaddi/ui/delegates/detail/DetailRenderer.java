@@ -13,7 +13,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
  * DetailRenderer - Core contract for detail screen content rendering
  *
  * Each renderer handles one combination of (ProductType, DataSource).
- * ItemDetailsActivity asks each renderer "can you display this?" and
+ * ProductDetailsActivity asks each renderer "can you display this?" and
  * the first one that says yes inflates its layout and populates it.
  *
  * RENDERER LIFECYCLE:
@@ -25,7 +25,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
  *
  * SEPARATION OF CONCERNS:
  * - The renderer owns the layout and data binding for its content area
- * - ItemDetailsActivity owns the toolbar, menu, favorites, share, navigation
+ * - ProductDetailsActivity owns the toolbar, menu, favorites, share, navigation
  * - NutritionLabelManager is used by renderers that need nutrition display
  *
  * RESOLUTION ORDER (same as delegates):
@@ -50,10 +50,10 @@ public interface DetailRenderer {
      * Inflate the detail layout into the container.
      *
      * Called once when the item is first displayed. The inflated view is
-     * added to the container by the caller (ItemDetailsActivity).
+     * added to the container by the caller (ProductDetailsActivity).
      *
      * @param inflater Layout inflater
-     * @param container The parent container (FrameLayout in activity_item_details)
+     * @param container The parent container (FrameLayout in activity_product_details)
      * @return The inflated content view
      */
     @NonNull

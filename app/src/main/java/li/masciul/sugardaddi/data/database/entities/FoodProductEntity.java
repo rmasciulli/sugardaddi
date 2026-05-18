@@ -269,6 +269,11 @@ public class FoodProductEntity {
                     ", nutrition must be loaded separately)");
         }
 
+        // Recalculate completeness from current field state rather than relying
+        // on the stored value — ensures correctness regardless of when/how the
+        // entity was originally created (XML importer, API mapper, etc.)
+        product.calculateCompleteness();
+
         return product;
     }
 

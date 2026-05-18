@@ -3,7 +3,6 @@ package li.masciul.sugardaddi.ui.activities;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -36,7 +35,7 @@ import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
 
 /**
- * ItemDetailsActivity - REFACTORED THIN SHELL (v5.1)
+ * ProductDetailsActivity - REFACTORED THIN SHELL (v5.1)
  *
  * ARCHITECTURE CHANGE (v4.0 → v5.0):
  * This activity no longer contains any product display logic.
@@ -72,7 +71,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
  *
  * @version 5.1 — added search-result fallback extras
  */
-public class ItemDetailsActivity extends BaseActivity implements ProductManager.ProductListener {
+public class ProductDetailsActivity extends BaseActivity implements ProductManager.ProductListener {
 
     public static final String EXTRA_FOOD_ITEM = "extra_food_item";
 
@@ -87,7 +86,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
     public static final String EXTRA_FALLBACK_NUTRISCORE  = "extra_fallback_nutriscore";
     public static final String EXTRA_FALLBACK_ECOSCORE    = "extra_fallback_ecoscore";
 
-    private static final String TAG = "ItemDetailsActivity";
+    private static final String TAG = "ProductDetailsActivity";
 
     // ========== RENDERER INFRASTRUCTURE ==========
 
@@ -133,7 +132,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
 
     @Override
     protected void onBaseActivityCreated(Bundle savedInstanceState) {
-        setContentView(R.layout.activity_item_details);
+        setContentView(R.layout.activity_product_details);
 
         setupToolbar();
         initializeRendererRegistry();
@@ -149,7 +148,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
             showError(Error.network(getSafeString(R.string.error_no_product_id), null));
         }
 
-        logDebug("ItemDetailsActivity v5.1 initialized with DetailRendererRegistry");
+        logDebug("ProductDetailsActivity v5.1 initialized with DetailRendererRegistry");
     }
 
     /**
@@ -233,7 +232,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
             productManager.cancelOperations();
         }
 
-        logDebug("ItemDetailsActivity destroyed, renderer cleaned up");
+        logDebug("ProductDetailsActivity destroyed, renderer cleaned up");
     }
 
     @Override
@@ -595,9 +594,9 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
                     @Override
                     public void onSuccess(li.masciul.sugardaddi.core.models.Meal savedMeal) {
                         runOnUiThread(() -> {
-                            Toast.makeText(ItemDetailsActivity.this,
+                            Toast.makeText(ProductDetailsActivity.this,
                                     R.string.added_to_meal, Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(ItemDetailsActivity.this,
+                            Intent intent = new Intent(ProductDetailsActivity.this,
                                     MealDetailsActivity.class);
                             intent.putExtra("extra_meal_id", returnToMealId);
                             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -610,7 +609,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
                     @Override
                     public void onError(String error) {
                         runOnUiThread(() -> {
-                            Toast.makeText(ItemDetailsActivity.this,
+                            Toast.makeText(ProductDetailsActivity.this,
                                     "Error saving: " + error, Toast.LENGTH_LONG).show();
                             resetAddToMealButton();
                         });
@@ -621,7 +620,7 @@ public class ItemDetailsActivity extends BaseActivity implements ProductManager.
             @Override
             public void onError(String error) {
                 runOnUiThread(() -> {
-                    Toast.makeText(ItemDetailsActivity.this,
+                    Toast.makeText(ProductDetailsActivity.this,
                             "Error loading meal: " + error, Toast.LENGTH_LONG).show();
                     resetAddToMealButton();
                 });

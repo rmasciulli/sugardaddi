@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    menu_recipe_details.xml — Toolbar menu for RecipeDetailsActivity.
+
+    ITEMS:
+      - Favorite  : toggles border/filled star (all recipes)
+      - Share     : share recipe name + source (all recipes)
+      - Video     : open video URL in browser (shown only when recipe has videoUrl)
+
+    The "Open in Browser" item from menu_item_details is intentionally absent —
+    recipes do not have a ProductUrlBuilder equivalent. The video button covers
+    the primary external link use case for TheMealDB recipes.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Favourite (toggles between border and filled star) -->
+    <item
+        android:id="@+id/action_favorite"
+        android:icon="@drawable/ic_favorite_rounded_border"
+        android:title="@string/add_to_favorites"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+    <!-- Share recipe name, source, and video link as plain text -->
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/ic_share_rounded"
+        android:title="@string/menu_share"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+    <!--
+        Video link — hidden by default, shown in onPrepareOptionsMenu()
+        only when recipe.getVideoUrl() is non-null.
+        Uses ic_play_circle or ic_open_in_new depending on what's available.
+    -->
+    <item
+        android:id="@+id/action_video"
+        android:icon="@drawable/ic_open_in_new_rounded"
+        android:title="@string/menu_watch_video"
+        android:visible="false"
+        app:showAsAction="always"
+        app:iconTint="@android:color/white" />
+
+</menu>

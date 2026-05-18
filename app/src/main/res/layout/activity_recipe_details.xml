@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    activity_item_details.xml - REFACTORED THIN SHELL (v5.0)
+    activity_recipe_details.xml - REFACTORED THIN SHELL (v5.0)
 
-    This layout is now a minimal container. All product-specific content is
+    This layout is now a minimal container. All recipe-specific content is
     inflated by the appropriate DetailRenderer into @id/rendererContentContainer.
 
     WHAT STAYS HERE (activity-owned):
@@ -12,17 +12,10 @@
       - Error state overlay
       - "Add to Meal" floating button at the bottom
 
-    WHAT MOVED OUT:
-      - Product image, name, brand, category, quantity → into renderer layouts
-      - Score stickers (Nutri-Score, Green-Score, Nova) → into renderer layouts
-      - Allergen card → into renderer layouts
-      - Nutrition facts card → into renderer layouts
-      - Attribution panel → into renderer layouts (Ciqual renderer)
-
     RENDERER CONTENT CONTAINER:
       The FrameLayout @id/rendererContentContainer fills the remaining screen space
       under the AppBar. The current DetailRenderer inflates its own layout into this
-      container. When the product changes (e.g. back/forward navigation), the old
+      container. When the recipe changes (e.g. back/forward navigation), the old
       view is removed and a new one is inflated.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -31,7 +24,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.activities.ItemDetailsActivity">
+    tools:context=".ui.activities.RecipeDetailsActivity">
 
     <!-- ========================================================= -->
     <!-- APP BAR — owned by the activity, not by any renderer      -->
@@ -48,7 +41,7 @@
             android:background="?attr/colorPrimary"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-            app:title="@string/product_details_title" />
+            app:title="@string/recipe_details_title" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -90,7 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/loading_product"
+            android:text="@string/loading_recipe"
             android:textAppearance="?attr/textAppearanceBody1"
             android:textColor="?attr/colorOnSurface" />
 

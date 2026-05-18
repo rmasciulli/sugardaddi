@@ -118,7 +118,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
      * Get a snapshot of current items for enrichment purposes.
      * Returns the live list — callers must not modify it directly.
      * Used by MainActivity.onActivityResumed() to re-enrich after returning
-     * from ItemDetailsActivity without a full re-search.
+     * from ProductDetailsActivity without a full re-search.
      */
     public List<Searchable> getItems() {
         return items;

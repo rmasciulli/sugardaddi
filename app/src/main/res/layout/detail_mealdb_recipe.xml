@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    detail_mealdb_recipe.xml — Layout inflated by MealDbRecipeDetailRenderer.
+
+    STRUCTURE (mirrors product detail layouts):
+      1. Hero image — full-width, no card, GONE when no imageUrl
+      2. Main content card — single card with three sections + two dividers:
+           a. Header: name + area·category description
+           b. Ingredients: dot-leader rows (FoodPortion stubs)
+           c. Instructions: numbered step rows (RecipeStep list)
+      3. Attribution card — amber, separate, tappable (TheMealDB credit)
+
+    DESIGN RATIONALE:
+    One content card with internal dividers matches the established pattern
+    from detail_off_product.xml and detail_ciqual_product.xml. Section headers
+    use textAppearanceLabelMedium + letterSpacing — not bold Headline6 titles.
+
+    WHAT IS NOT SHOWN:
+      - Nutrition (TheMealDB provides none)
+      - Difficulty / prep time / cook time (not available from this source)
+      - Edit button (external recipe — read-only)
+
+    The video button lives in the activity toolbar (action_video menu item).
+-->
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ================================================= -->
+        <!-- 1. HERO IMAGE — full-width, GONE when no imageUrl -->
+        <!-- ================================================= -->
+        <FrameLayout
+            android:id="@+id/heroImageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/heroImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/recipe_image_content_description"
+                android:scaleType="centerCrop" />
+
+        </FrameLayout>
+
+        <!-- ================================================= -->
+        <!-- 2. MAIN CONTENT CARD                              -->
+        <!--    Single card: header + ingredients + steps      -->
+        <!--    Sections separated by 1dp colorOutlineVariant  -->
+        <!-- ================================================= -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <!-- 2a. HEADER: name + area·category           -->
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/recipeName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        android:maxLines="3"
+                        android:ellipsize="end"
+                        tools:text="Chocolate Gateau" />
+
+                    <!-- Area · Category e.g. "France · Dessert" -->
+                    <TextView
+                        android:id="@+id/recipeDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:text="France · Dessert"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <!-- Section divider 1 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <!-- 2b. INGREDIENTS                            -->
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp">
+
+                    <!-- Compact section header — matches product layout style -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/recipe_section_ingredients"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:letterSpacing="0.05" />
+
+                    <!-- Ingredient rows inflated programmatically -->
+                    <LinearLayout
+                        android:id="@+id/ingredientsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+                <!-- Section divider 2 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <!-- 2c. INSTRUCTIONS                           -->
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <LinearLayout
+                    android:id="@+id/instructionsSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="14dp"
+                    android:visibility="gone">
+
+                    <!-- Compact section header -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/recipe_section_instructions"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:letterSpacing="0.05" />
+
+                    <!-- Step rows inflated programmatically -->
+                    <LinearLayout
+                        android:id="@+id/stepsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ================================================= -->
+        <!-- 3. ATTRIBUTION CARD (amber, tappable → website)  -->
+        <!--    Separate because: distinct amber background,   -->
+        <!--    tappable (external URL), legal/meta content.   -->
+        <!-- ================================================= -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/attributionPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="?attr/colorAttributionCardAmberContainer"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="1dp"
+            app:strokeColor="?attr/colorAttributionCardAmber">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/attributionSourceName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
+                    android:textStyle="bold"
+                    tools:text="🍳 TheMealDB" />
+
+                <TextView
+                    android:id="@+id/attributionLegalText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
+                    android:textStyle="italic"
+                    tools:text="Recipe data from TheMealDB." />
+
+                <TextView
+                    android:id="@+id/attributionSourceDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnAttributionCardAmberContainer"
+                    tools:text="Open recipe database" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="end"
+                    android:text="@string/label_visit_website"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorPrimary" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</ScrollView>

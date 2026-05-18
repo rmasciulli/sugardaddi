@@ -38,7 +38,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * TheMealDbDataSource — TheMealDB recipe data source.
+ * TheMealDbDataSource - TheMealDB recipe data source.
  *
  * ARCHITECTURE
  * ============
@@ -48,38 +48,34 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  * Unlike food sources, this source returns {@link Recipe} objects wrapped in
  * {@link SearchResult} items. This is possible because {@link SearchResult}
- * now holds {@code List<Searchable>} — both {@link FoodProduct} and {@link Recipe}
+ * now holds {@code List<Searchable>} - both {@link FoodProduct} and {@link Recipe}
  * implement {@link Searchable}.
  *
  * SEARCH FLOW
  * ===========
  * search() → GET search.php?s={query}
  * Returns full Recipe objects (ingredients, instructions, thumbnail, tags).
- * No pagination — TheMealDB returns all matches in one response; we cap at
+ * No pagination - TheMealDB returns all matches in one response; we cap at
  * {@link TheMealDbConstants#MAX_SEARCH_RESULTS}.
  *
- * PRODUCT DETAIL
- * ==============
- * getProduct() → GET lookup.php?i={id}
- * Returns a single Recipe by TheMealDB meal ID.
- * Results are cached in the session-scoped LRU cache.
- * NOTE: getProduct() returns via DataSourceCallback<FoodProduct> per the interface
- * contract, but TheMealDB produces Recipes. This source does NOT support
- * individual product detail fetches through the standard pipeline — use
- * RecipeRepository.getCachedExternalRecipe() or getRecipeById() directly.
- * getProduct() fires onError() immediately with a clear explanation.
+ * RECIPE DETAIL
+ * =============
+ * getRecipe() → GET lookup.php?i={id}
+ * Overrides DataSource.getRecipe() - the standard pipeline entry point.
+ * Checks the LRU cache first; falls back to network via lookupById().
  *
- * BARCODE LOOKUP
- * ==============
- * Not supported. TheMealDB has no barcode concept. getProductByBarcode()
- * fires onError() immediately, same as USDA's barcode handler.
+ * PRODUCT DETAIL / BARCODE LOOKUP
+ * ================================
+ * Not supported. TheMealDB produces recipes, not food products.
+ * getProduct() and getProductByBarcode() inherit the DataSource default
+ * which fires onError() immediately - no override needed.
  *
  * API KEY
  * =======
  * The development key "1" is a path segment, not a query parameter.
  * Base URL is built dynamically from the active key via
  * {@link TheMealDbConstants#buildBaseUrl(String)}.
- * Key change requires Retrofit reinitialisation — call reinitialize() after
+ * Key change requires Retrofit reinitialisation - call reinitialize() after
  * saving a new key in Settings.
  *
  * LRU CACHE
@@ -91,7 +87,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * THREADING
  * =========
  * onInitialize() runs on BaseDataSource's background init thread.
- * search() and getRecipeById() use Retrofit's async enqueue() — callbacks
+ * search() and getRecipeById() use Retrofit's async enqueue() - callbacks
  * delivered via executeOnMainThread() from BaseDataSource.
  */
 public class TheMealDbDataSource extends BaseDataSource {
@@ -106,16 +102,16 @@ public class TheMealDbDataSource extends BaseDataSource {
     private final TheMealDbMapper  mapper;
     private final Context          context;
 
-    /** Retrofit API interface — created in onInitialize(). */
+    /** Retrofit API interface - created in onInitialize(). */
     private TheMealDbAPI api;
 
-    /** Active Retrofit calls — tracked for cancellation support. */
+    /** Active Retrofit calls - tracked for cancellation support. */
     private final Set<Call<?>> activeCalls =
             Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Session-scoped LRU cache for Recipe objects keyed by TheMealDB meal ID.
-     * Capacity: 50 recipes — sufficient for a full browsing session.
+     * Capacity: 50 recipes - sufficient for a full browsing session.
      * Not persisted to disk (ToS restriction).
      */
     private final LruCache<String, Recipe> recipeCache = new LruCache<>(50);
@@ -173,7 +169,7 @@ public class TheMealDbDataSource extends BaseDataSource {
 
     @Override
     public boolean supportsBarcodeLookup() {
-        // TheMealDB has no barcode concept — recipes are identified by meal ID
+        // TheMealDB has no barcode concept - recipes are identified by meal ID
         return false;
     }
 
@@ -219,12 +215,12 @@ public class TheMealDbDataSource extends BaseDataSource {
 
         api = retrofit.create(TheMealDbAPI.class);
 
-        logInfo("TheMealDB API initialized — key: "
+        logInfo("TheMealDB API initialized - key: "
                 + (config.isUsingDemoKey() ? "DEMO (\"1\")" : "Patreon key"));
     }
 
     /**
-     * Synchronous initialization — delegates to onInitialize().
+     * Synchronous initialization - delegates to onInitialize().
      * Called by DataSourceManager's synchronous fallback path.
      */
     @Override
@@ -268,17 +264,17 @@ public class TheMealDbDataSource extends BaseDataSource {
      *
      * Returns up to {@link TheMealDbConstants#MAX_SEARCH_RESULTS} Recipe objects
      * wrapped in a SearchResult. The items list contains Recipe instances
-     * (not FoodProduct) — downstream handling must use instanceof or
+     * (not FoodProduct) - downstream handling must use instanceof or
      * item.getProductType() to discriminate.
      *
      * Short-circuits with an empty success (not an error) when:
      * - Query is shorter than {@link TheMealDbConstants#MIN_QUERY_LENGTH}
-     * These are not error conditions — callers treat empty results normally.
+     * These are not error conditions - callers treat empty results normally.
      *
      * @param query    Search query. Must not be null.
-     * @param language Language code — ignored (TheMealDB is English-only).
-     * @param limit    Max results — capped to MAX_SEARCH_RESULTS.
-     * @param page     Page number — ignored (TheMealDB has no pagination).
+     * @param language Language code - ignored (TheMealDB is English-only).
+     * @param limit    Max results - capped to MAX_SEARCH_RESULTS.
+     * @param page     Page number - ignored (TheMealDB has no pagination).
      * @param callback Result callback. Always called on the main thread.
      */
     @Override
@@ -294,10 +290,10 @@ public class TheMealDbDataSource extends BaseDataSource {
             return;
         }
 
-        // Enforce minimum query length — very short queries return too much noise
+        // Enforce minimum query length - very short queries return too much noise
         if (query.trim().length() < TheMealDbConstants.MIN_QUERY_LENGTH) {
             logDebug("Query too short for TheMealDB (" + query.length()
-                    + " < " + TheMealDbConstants.MIN_QUERY_LENGTH + ") — returning empty");
+                    + " < " + TheMealDbConstants.MIN_QUERY_LENGTH + ") - returning empty");
             executeOnMainThread(() -> callback.onSuccess(
                     new SearchResult(new ArrayList<>(), 0, false,
                             query, language, TheMealDbConstants.SOURCE_ID)));
@@ -330,13 +326,13 @@ public class TheMealDbDataSource extends BaseDataSource {
                 // Map DTOs to Recipe domain objects
                 List<Recipe> all = mapper.mapSearchResponse(response.body());
 
-                // Cap to MAX_SEARCH_RESULTS — no pagination on TheMealDB
+                // Cap to MAX_SEARCH_RESULTS - no pagination on TheMealDB
                 int effectiveLimit = Math.min(
                         Math.min(limit, TheMealDbConstants.MAX_SEARCH_RESULTS),
                         all.size());
                 List<Recipe> capped = all.subList(0, effectiveLimit);
 
-                // Populate LRU cache — detail lookups for these results are free
+                // Populate LRU cache - detail lookups for these results are free
                 for (Recipe recipe : capped) {
                     if (recipe.getOriginalId() != null) {
                         recipeCache.put(recipe.getOriginalId(), recipe);
@@ -349,7 +345,7 @@ public class TheMealDbDataSource extends BaseDataSource {
                 SearchResult result = new SearchResult(
                         items,
                         all.size(),
-                        false,          // No pagination — TheMealDB is all-or-nothing
+                        false,          // No pagination - TheMealDB is all-or-nothing
                         query,
                         language,
                         TheMealDbConstants.SOURCE_ID
@@ -377,54 +373,13 @@ public class TheMealDbDataSource extends BaseDataSource {
     }
 
     // =========================================================================
-    // PRODUCT DETAIL — not applicable for recipe sources
-    // =========================================================================
-
-    /**
-     * Not supported by TheMealDB.
-     *
-     * TheMealDB produces Recipe objects, not FoodProduct objects. Product detail
-     * fetches go through RecipeRepository.getCachedExternalRecipe() or
-     * getRecipeById() instead.
-     *
-     * This implementation satisfies the DataSource interface contract.
-     */
-    @Override
-    public void getProduct(@NonNull String productId,
-                           @NonNull String language,
-                           @NonNull DataSourceCallback<FoodProduct> callback) {
-        handleError(
-                Error.validation(
-                        "TheMealDB produces recipes, not food products. " +
-                                "Use RecipeRepository.getCachedExternalRecipe() for recipe detail.",
-                        null),
-                callback);
-    }
-
-    /**
-     * Not supported — TheMealDB has no barcode concept.
-     * Satisfies the DataSource interface contract.
-     */
-    @Override
-    public void getProductByBarcode(@NonNull String barcode,
-                                    @NonNull String language,
-                                    @NonNull DataSourceCallback<FoodProduct> callback) {
-        handleError(
-                Error.validation(
-                        "TheMealDB does not support barcode lookup. " +
-                                "Recipes are identified by meal ID, not barcode.",
-                        null),
-                callback);
-    }
-
-    // =========================================================================
-    // RECIPE DETAIL — TheMealDB-specific (bypasses DataSource interface)
+    // RECIPE DETAIL - TheMealDB-specific (bypasses DataSource interface)
     // =========================================================================
 
     /**
      * Fetch a full Recipe by TheMealDB meal ID.
      *
-     * Checks the LRU cache first — avoids a network round-trip for recipes
+     * Checks the LRU cache first - avoids a network round-trip for recipes
      * already fetched during this session (e.g. from a search result).
      *
      * Called by RecipeRepository when the user opens a TheMealDB recipe detail
@@ -433,8 +388,10 @@ public class TheMealDbDataSource extends BaseDataSource {
      * @param mealDbId TheMealDB numeric ID string (e.g. "52772")
      * @param callback Called with the Recipe, or onError if not found
      */
-    public void getRecipeById(@NonNull String mealDbId,
-                              @NonNull RecipeCallback callback) {
+    @Override
+    public void getRecipe(@NonNull String mealDbId,
+                          @NonNull String language,
+                          @NonNull DataSourceCallback<Recipe> callback) {
         if (!isEnabled()) {
             callback.onError(Error.notFound("TheMealDB is disabled"));
             return;
@@ -578,19 +535,5 @@ public class TheMealDbDataSource extends BaseDataSource {
                                      @NonNull DataSourceCallback<T> callback) {
         handleError(Error.fromHttpCode(code, message, TheMealDbConstants.SOURCE_ID), callback);
     }
-
-    // =========================================================================
-    // CALLBACK INTERFACES
-    // =========================================================================
-
-    /**
-     * Callback for TheMealDB-specific recipe detail lookups.
-     * Used by getRecipeById() — bypasses the DataSource interface since
-     * that interface is typed to FoodProduct.
-     */
-    public interface RecipeCallback {
-        void onSuccess(@NonNull Recipe recipe);
-        void onError(@NonNull Error error);
-        default void onLoading() {}
-    }
+    
 }

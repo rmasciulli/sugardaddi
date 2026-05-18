@@ -46,7 +46,8 @@ import java.util.List;
  * TheMealDB fields → Recipe domain model fields:
  *   strMealThumb  → recipe.getImageUrl()
  *   strArea + strCategory → recipe.getDescription("en")   (composed as "Area · Category")
- *   strYoutube    → recipe.hasVideoUrl()                  (via custom tag "has_video")
+ *   strYoutube    → recipe.getVideoUrl()                  (full URL stored on Recipe)
+ *                   recipe tags                           (+ "has_video" tag for card display)
  *   ingredient count → recipe.getPortions().size()
  *   strTags       → recipe.getTags()
  *

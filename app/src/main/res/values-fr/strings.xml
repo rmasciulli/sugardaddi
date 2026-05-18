@@ -233,6 +233,7 @@
     <!-- Loading & Status -->
     <string name="loading">Chargement…</string>
     <string name="loading_product">Chargement des détails du produit…</string>
+    <string name="loading_recipe">Chargement des détails de la recette…</string>
 
     <!-- Empty States -->
     <string name="empty_search_title">Aucun résultat trouvé</string>
@@ -381,7 +382,7 @@
     <string name="source_emoji_user">&#x1F464;</string>
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
-    <string name="source_emoji_themealdb">&#x1F373;</string>
+    <string name="source_emoji_themealdb">&#x1F4D6;</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Base de données collaborative de produits alimentaires</string>
@@ -390,7 +391,7 @@
     <string name="source_description_user">Recettes et aliments personnalisés créés par l\'utilisateur</string>
     <string name="source_description_custom">Données alimentaires saisies manuellement</string>
     <string name="source_description_imported">Données importées d\'autres applications</string>
-    <string name="source_description_themealdb">Base de données de recettes ouverte</string>
+    <string name="source_description_themealdb">Base de données de recettes ouverte. Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Données issues d\'OpenFoodFacts.org</string>
@@ -399,13 +400,13 @@
     <string name="source_attribution_user">Contenu créé par l\'utilisateur</string>
     <string name="source_attribution_custom">Entrée personnalisée</string>
     <string name="source_attribution_imported">Données importées</string>
-    <string name="source_attribution_themealdb">Données fournies par The MealDB</string>
+    <string name="source_attribution_themealdb">Données issues de TheMealDB</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">La base de données Open Food Facts est disponible sous la licence Open Database License. Les contenus individuels de la base de données sont disponibles sous la Database Contents License. Avertissement : les informations et données sont fournies à titre purement indicatif. Elles peuvent contenir des erreurs et ne doivent pas être utilisées à des fins médicales.</string>
     <string name="source_full_attribution_ciqual">Les présentes données sont mises à la disposition du public par l\'Agence nationale de sécurité sanitaire de l\'alimentation, de l\'environnement et du travail (ANSES). Les données de la table de composition nutritionnelle des aliments Ciqual de l\'ANSES sont accessibles au public et peuvent être téléchargées gratuitement depuis leur site internet ou via la plateforme data.gouv.fr. Les données peuvent être utilisées selon les termes et conditions de la Licence Ouverte.</string>
     <string name="source_full_attribution_usda">Département américain de l\'Agriculture, Service de recherche agricole. FoodData Central, 2019. fdc.nal.usda.gov. Les données sont fournies par l\'USDA et appartiennent au domaine public.</string>
-    <string name="source_full_attribution_themealdb">Données de recettes fournies par TheMealDB (themealdb.com). Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
+    <string name="source_full_attribution_themealdb">TheMealDB est une base de données ouverte et collaborative qui regroupe des recettes du monde entier. Elle propose une API de recettes gratuites et faciles à utiliser pour les développeurs et les amateurs de cuisine. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
@@ -448,7 +449,6 @@
 
     <!-- Activity Titles -->
     <string name="journal_title">Mon Journal</string>
-    <string name="item_details_title">Product Details</string>
     <string name="settings_title">Settings</string>
 
     <!-- App branding (for nav header) -->
@@ -681,5 +681,19 @@
     <string name="recipe_ingredient_count">%d ingrédients</string>
     <string name="recipe_has_video">▶ Recette avec vidéo</string>
     <string name="recipe_source_themealdb">TheMealDB</string>
+
+    <!-- RecipeDetailsActivity -->
+    <string name="recipe_details_title">Recette</string>
+    <string name="error_no_recipe_id">Aucun identifiant de recette fourni</string>
+    <string name="recipe_not_found">Recette introuvable</string>
+    <string name="error_loading_recipe">Impossible de charger la recette</string>
+    <string name="menu_watch_video">Voir la vidéo</string>
+    <string name="share_recipe_source_prefix">via</string>
+    <string name="share_recipe_subject">%s — recette SugarDaddi</string>
+    <string name="recipe_section_ingredients">Ingrédients</string>
+    <string name="recipe_section_instructions">Instructions</string>
+    <string name="recipe_section_notes">Notes</string>
+    <string name="recipe_no_nutrition_data">Aucune donnée nutritionnelle disponible pour cette recette.</string>
+    <string name="recipe_image_content_description">Photo de la recette</string>
 
 </resources>

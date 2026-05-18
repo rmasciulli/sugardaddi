@@ -185,8 +185,8 @@ public class BarcodeScannerActivity extends BaseActivity {
         Toast.makeText(this, getSafeString(R.string.barcode_scanned_success), Toast.LENGTH_SHORT).show();
 
         // Navigate to product details with scanned barcode
-        Intent intent = new Intent(this, ItemDetailsActivity.class);
-        intent.putExtra(ItemDetailsActivity.EXTRA_FOOD_ITEM, barcode);
+        Intent intent = new Intent(this, ProductDetailsActivity.class);
+        intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, barcode);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // Clear scanner from back stack
 
         startActivity(intent);

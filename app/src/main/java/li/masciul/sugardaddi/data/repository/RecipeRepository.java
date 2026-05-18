@@ -18,10 +18,8 @@ import li.masciul.sugardaddi.data.database.dao.RecipeDao;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
-import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConfig;
-import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConstants;
-import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
+import li.masciul.sugardaddi.managers.DataSourceManager;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -47,7 +45,13 @@ public class RecipeRepository {
     private final AppDatabase database;
     private final RecipeDao recipeDao;
     private final Executor backgroundExecutor;
-    private final TheMealDbDataSource mealDbDataSource;
+
+    /**
+     * Shared DataSourceManager singleton — same instance used by ProductRepository.
+     * Recipe detail fetches call source.getRecipe() on any registered DataSource,
+     * exactly as ProductRepository calls source.getProduct().
+     */
+    private final DataSourceManager dataSourceManager;
 
     // Caching
     private final Map<String, Recipe> recipeCache = new LinkedHashMap<>();
@@ -83,9 +87,9 @@ public class RecipeRepository {
         this.database = AppDatabase.getInstance(context);
         this.recipeDao = database.recipeDao();
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
-        this.mealDbDataSource = new TheMealDbDataSource(
-                this.context, new TheMealDbConfig(this.context));
-        this.mealDbDataSource.initialize(this.context);
+        // Use the shared DataSourceManager singleton — sources are already initialised
+        // at app startup. No separate initialisation needed here.
+        this.dataSourceManager = DataSourceManager.getInstance(this.context);
 
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "RecipeRepository initialized");
@@ -166,6 +170,103 @@ public class RecipeRepository {
     }
 
     /**
+     * Load a recipe by its source-qualified searchable ID.
+     *
+     * PRIMARY ENTRY POINT for RecipeDetailsActivity. Accepts the "SOURCE:id"
+     * format returned by {@link Recipe#getSearchableId()} and routes to the
+     * correct backend — identical pattern to
+     * {@link ProductRepository#loadProductFromSource}:
+     *
+     *   "USER:some-uuid"   → Room lookup (user-created recipe)
+     *   "THEMEALDB:52772"  → dataSourceManager.getDataSource("THEMEALDB").getRecipe(...)
+     *   "FUTURE_SOURCE:x"  → dataSourceManager.getDataSource("FUTURE_SOURCE").getRecipe(...)
+     *
+     * ADDING A NEW RECIPE SOURCE
+     * ==========================
+     * 1. Override getRecipe() in the new DataSource implementation
+     * 2. Register it in DataSourceManager.initializeDataSources()
+     * Zero changes needed here.
+     *
+     * @param searchableId  Source-qualified ID (e.g. "USER:abc", "THEMEALDB:52772")
+     * @param callback      Called on the main thread with the loaded Recipe or an error
+     */
+    public void getRecipeBySearchableId(@NonNull String searchableId,
+                                        @NonNull RecipeCallback callback) {
+        SourceIdentifier identifier = SourceIdentifier.fromCombinedId(searchableId);
+
+        if (identifier == null || !identifier.isValid()) {
+            callback.onError("Invalid recipe identifier: " + searchableId);
+            return;
+        }
+
+        String sourceId   = identifier.getSourceId();
+        String originalId = identifier.getOriginalId();
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Loading recipe: source=" + sourceId + " originalId=" + originalId);
+        }
+
+        if ("USER".equals(sourceId)) {
+            // USER recipes: Room lookup by UUID — originalId IS the Room primary key
+            getRecipe(originalId, callback);
+            return;
+        }
+
+        // External sources: resolve via DataSourceManager, call getRecipe()
+        // Same routing pattern as ProductRepository.loadProductFromSource()
+        DataSource source = dataSourceManager.getDataSource(sourceId);
+
+        if (source == null) {
+            Log.e(TAG, "No data source registered for: " + sourceId);
+            callback.onError("Unknown recipe source: " + sourceId);
+            return;
+        }
+
+        if (!source.isAvailable()) {
+            Log.w(TAG, "Data source not yet available: " + sourceId);
+            callback.onError("Data source not ready: " + sourceId
+                    + " — it may still be initialising. Please retry.");
+            return;
+        }
+
+        String language = li.masciul.sugardaddi.managers.LanguageManager
+                .getCurrentLanguage(context).getCode();
+
+        // Check Room cache first — avoids a network round-trip for previously-viewed recipes
+        getCachedExternalRecipe(sourceId, originalId, new RecipeCallback() {
+            @Override
+            public void onSuccess(Recipe recipe) {
+                callback.onSuccess(recipe);
+            }
+
+            @Override
+            public void onError(String cacheError) {
+                // Not in Room — fetch live from the source via the standard interface
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Room miss for " + sourceId + ":" + originalId
+                            + " — fetching from network");
+                }
+                source.getRecipe(originalId, language, new DataSourceCallback<Recipe>() {
+                    @Override
+                    public void onSuccess(Recipe recipe) {
+                        callback.onSuccess(recipe);
+                    }
+
+                    @Override
+                    public void onError(li.masciul.sugardaddi.core.models.Error error) {
+                        Log.w(TAG, "Recipe fetch failed from " + sourceId
+                                + ": " + error.getMessage());
+                        callback.onError(error.getMessage());
+                    }
+
+                    @Override
+                    public void onLoading() {}
+                });
+            }
+        });
+    }
+    
+    /**
      * Update existing recipe
      */
     public void updateRecipe(Recipe recipe, RecipeCallback callback) {
@@ -236,18 +337,18 @@ public class RecipeRepository {
      * Search recipes from all sources.
      *
      * Queries two sources in parallel:
-     *   1. Room — user-created recipes and previously cached external recipes
-     *   2. TheMealDB — external recipe network source
+     *   1. Room - user-created recipes and previously cached external recipes
+     *   2. TheMealDB - external recipe network source
      *
      * TheMealDB results are automatically saved to Room (background, non-blocking)
-     * so they appear in subsequent Room-first queries — same pattern as FoodProduct.
+     * so they appear in subsequent Room-first queries - same pattern as FoodProduct.
      *
      * Results are merged, deduplicated by searchableId, sorted by relevance,
      * and delivered once both sources have responded.
      *
      * @param query    Search query. Minimum 2 characters.
      * @param language Language for relevance scoring.
-     * @param callback Result callback — called on main thread.
+     * @param callback Result callback - called on main thread.
      */
     public void search(String query, String language, RecipeSearchCallback callback) {
         if (query == null || query.trim().length() < 2) {
@@ -261,16 +362,16 @@ public class RecipeRepository {
         final java.util.concurrent.atomic.AtomicInteger pending =
                 new java.util.concurrent.atomic.AtomicInteger(2);
 
-        // Synchronized list — both sources write here
+        // Synchronized list - both sources write here
         final List<Recipe> combined =
                 java.util.Collections.synchronizedList(new ArrayList<>());
 
-        // Deduplication set — prevents same recipe appearing twice
+        // Deduplication set - prevents same recipe appearing twice
         // (e.g. if TheMealDB result was already cached in Room)
         final Set<String> seenIds =
                 java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
-        // Fired once both sources complete — sorts and delivers
+        // Fired once both sources complete - sorts and delivers
         final Runnable onBothDone = () -> {
             List<Recipe> sorted = new ArrayList<>(combined);
             sorted.sort((a, b) -> Integer.compare(
@@ -293,7 +394,7 @@ public class RecipeRepository {
                 for (RecipeEntity entity : entities) {
                     Recipe recipe = entity.toRecipe();
                     int relevance = recipe.getSearchRelevance(normalizedQuery, language);
-                    if (relevance >= 20 && seenIds.add(recipe.getSearchableId())) {
+                    if (seenIds.add(recipe.getSearchableId())) {
                         combined.add(recipe);
                     }
                 }
@@ -308,53 +409,68 @@ public class RecipeRepository {
             }
         });
 
-        // ── Source 2: TheMealDB ───────────────────────────────────────────────
-        mealDbDataSource.search(
-                normalizedQuery,
-                language,
-                TheMealDbConstants.MAX_SEARCH_RESULTS,
-                1,
-                new DataSourceCallback<DataSource.SearchResult>() {
-                    @Override
-                    public void onSuccess(DataSource.SearchResult result) {
-                        List<Recipe> fetchedRecipes = new ArrayList<>();
+        // ── Source 2: External recipe sources ────────────────────────────────
+        // Routed via DataSourceManager — no source-specific code here.
+        // Any registered DataSource that produces recipes participates in search
+        // automatically. Currently: TheMealDB. Future sources register in
+        // DataSourceManager.initializeDataSources() — zero changes needed here.
+        DataSource externalRecipeSource = dataSourceManager.getDataSource("THEMEALDB");
 
-                        for (Searchable item : result.items) {
-                            if (item instanceof Recipe) {
-                                Recipe recipe = (Recipe) item;
-                                int relevance = recipe.getSearchRelevance(normalizedQuery, language);
-                                if (relevance >= 20 && seenIds.add(recipe.getSearchableId())) {
-                                    combined.add(recipe);
-                                    fetchedRecipes.add(recipe);
+        if (externalRecipeSource == null || !externalRecipeSource.isAvailable()) {
+            // Source not registered or not yet initialised — treat as empty
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "No external recipe source available — skipping network search");
+            }
+            if (pending.decrementAndGet() == 0) onBothDone.run();
+        } else {
+            externalRecipeSource.search(
+                    normalizedQuery,
+                    language,
+                    20, // Reasonable cap — TheMealDB returns all matches in one response
+                    1,
+                    new DataSourceCallback<DataSource.SearchResult>() {
+                        @Override
+                        public void onSuccess(DataSource.SearchResult result) {
+                            List<Recipe> fetchedRecipes = new ArrayList<>();
+
+                            for (Searchable item : result.items) {
+                                if (item instanceof Recipe) {
+                                    Recipe recipe = (Recipe) item;
+                                    int relevance = recipe.getSearchRelevance(
+                                            normalizedQuery, language);
+                                    if (relevance >= 20
+                                            && seenIds.add(recipe.getSearchableId())) {
+                                        combined.add(recipe);
+                                        fetchedRecipes.add(recipe);
+                                    }
                                 }
                             }
+
+                            // Auto-save to Room — fire-and-forget, non-blocking
+                            if (!fetchedRecipes.isEmpty()) {
+                                saveRecipesToDatabase(fetchedRecipes);
+                            }
+
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "External recipe search: " + fetchedRecipes.size()
+                                        + " results for '" + normalizedQuery + "'");
+                            }
+
+                            if (pending.decrementAndGet() == 0) onBothDone.run();
                         }
 
-                        // Auto-save to Room — same as ProductRepository.saveProductToDatabase()
-                        // Fire-and-forget, background thread, non-blocking
-                        if (!fetchedRecipes.isEmpty()) {
-                            saveRecipesToDatabase(fetchedRecipes);
+                        @Override
+                        public void onError(Error error) {
+                            // Non-fatal — Room results still deliver
+                            Log.w(TAG, "External recipe search failed (non-fatal): "
+                                    + error.getMessage());
+                            if (pending.decrementAndGet() == 0) onBothDone.run();
                         }
 
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "TheMealDB search: " + fetchedRecipes.size()
-                                    + " results for '" + normalizedQuery + "'");
-                        }
-
-                        if (pending.decrementAndGet() == 0) onBothDone.run();
-                    }
-
-                    @Override
-                    public void onError(Error error) {
-                        // Non-fatal — Room results still deliver
-                        Log.w(TAG, "TheMealDB search failed (non-fatal): "
-                                + error.getMessage());
-                        if (pending.decrementAndGet() == 0) onBothDone.run();
-                    }
-
-                    @Override
-                    public void onLoading() {}
-                });
+                        @Override
+                        public void onLoading() {}
+                    });
+        }
     }
 
     /**
@@ -586,13 +702,13 @@ public class RecipeRepository {
      * Called when the user interacts with an external recipe for the first time:
      * opening its detail screen, marking it as a favourite, or adding it to a meal.
      *
-     * This follows the same pattern as FoodProductEntity — external items are
+     * This follows the same pattern as FoodProductEntity - external items are
      * cached on first interaction, not pre-emptively on every search result.
      *
      * UPSERT BEHAVIOUR:
      * RecipeDao.insert() uses OnConflictStrategy.REPLACE, so calling this method
      * on an already-cached recipe replaces the row with fresh data. Fields the
-     * user may have changed (isFavorite) should be preserved — use
+     * user may have changed (isFavorite) should be preserved - use
      * setExternalRecipeFavorite() for toggling favourites on existing cached recipes.
      *
      * NUTRITION:
@@ -606,14 +722,14 @@ public class RecipeRepository {
     public void saveExternalRecipe(@NonNull Recipe recipe,
                                    @NonNull RecipeCallback callback) {
         if (recipe.getDataSource() == DataSourceType.USER) {
-            // Wrong method — user-created recipes go through createRecipe()
+            // Wrong method - user-created recipes go through createRecipe()
             callback.onError("Use createRecipe() for user-created recipes");
             return;
         }
 
         backgroundExecutor.execute(() -> {
             try {
-                // Completeness only — no nutrition for external recipes yet
+                // Completeness only - no nutrition for external recipes yet
                 recipe.calculateCompleteness();
                 recipe.setLastUpdated(System.currentTimeMillis());
                 if (recipe.getCreatedAt() == 0) {
@@ -646,22 +762,22 @@ public class RecipeRepository {
     /**
      * Auto-save a list of externally-fetched recipes to Room.
      *
-     * Mirrors ProductRepository.saveProductToDatabase() — called automatically
+     * Mirrors ProductRepository.saveProductToDatabase() - called automatically
      * after every successful TheMealDB fetch so that recipes are available for:
      * - Subsequent Room-first searches (avoiding repeat network calls)
      * - Favorites (RecipeEntity.isFavorite flag)
      * - Meal composition (RecipeEntity referenced by FoodPortion)
      * - FavoritesActivity (loads from Room directly)
      *
-     * CONFLICT STRATEGY: OnConflictStrategy.IGNORE — if the recipe already exists
+     * CONFLICT STRATEGY: OnConflictStrategy.IGNORE - if the recipe already exists
      * in Room (e.g. from a previous search or user interaction), the existing row
      * is preserved. This protects user-set fields (isFavorite, accessCount).
      * Use saveExternalRecipe() with REPLACE if you need to force-update.
      *
-     * NUTRITION: calculateNutrition() is NOT called — TheMealDB has no nutrition
+     * NUTRITION: calculateNutrition() is NOT called - TheMealDB has no nutrition
      * data. Nutrition stays null until user sets it or ingredient resolution runs.
      *
-     * Fire-and-forget — runs on background executor, never blocks the caller.
+     * Fire-and-forget - runs on background executor, never blocks the caller.
      *
      * @param recipes Recipes to persist. Null or empty list is a no-op.
      */
@@ -672,7 +788,7 @@ public class RecipeRepository {
             int savedCount = 0;
             for (Recipe recipe : recipes) {
                 try {
-                    // Skip user-created recipes — they go through createRecipe()
+                    // Skip user-created recipes - they go through createRecipe()
                     if (recipe.getDataSource() == DataSourceType.USER) continue;
 
                     recipe.calculateCompleteness();
@@ -683,7 +799,7 @@ public class RecipeRepository {
 
                     RecipeEntity entity = RecipeEntity.fromRecipe(recipe);
 
-                    // IGNORE on conflict — preserves existing user-set fields
+                    // IGNORE on conflict - preserves existing user-set fields
                     // (isFavorite, accessCount, user notes if any)
                     recipeDao.insertIfNotExists(entity);
                     cacheRecipe(recipe);
@@ -691,8 +807,8 @@ public class RecipeRepository {
 
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to auto-save recipe: "
-                            + recipe.getSearchableId() + " — " + e.getMessage());
-                    // Never crash the search flow — persistence is best-effort
+                            + recipe.getSearchableId() + " - " + e.getMessage());
+                    // Never crash the search flow - persistence is best-effort
                 }
             }
 
@@ -707,7 +823,7 @@ public class RecipeRepository {
      * Look up a cached external recipe by its source and original ID.
      *
      * Checks the in-memory cache first (O(n) scan on source+originalId),
-     * then falls back to Room. Returns an error via callback if not found —
+     * then falls back to Room. Returns an error via callback if not found -
      * the caller should then fetch from the network and call saveExternalRecipe().
      *
      * This is the cache-check step in the network-first-or-cache pattern:
@@ -722,7 +838,7 @@ public class RecipeRepository {
     public void getCachedExternalRecipe(@NonNull String sourceId,
                                         @NonNull String originalId,
                                         @NonNull RecipeCallback callback) {
-        // Check in-memory cache first — avoids a background thread dispatch
+        // Check in-memory cache first - avoids a background thread dispatch
         Recipe memoryCached = findInCacheBySourceId(sourceId, originalId);
         if (memoryCached != null) {
             if (ApiConfig.DEBUG_LOGGING) {
@@ -748,7 +864,7 @@ public class RecipeRepository {
 
                     runOnMainThread(() -> callback.onSuccess(recipe));
                 } else {
-                    // Not cached — caller should fetch from network
+                    // Not cached - caller should fetch from network
                     runOnMainThread(() -> callback.onError(
                             "Not cached: " + sourceId + ":" + originalId));
                 }
@@ -766,14 +882,14 @@ public class RecipeRepository {
      *
      * If the recipe is not yet cached in Room (first interaction), it is saved
      * in full first via saveExternalRecipe(). If already cached, only the
-     * isFavorite flag and lastUpdated timestamp are updated — other fields
+     * isFavorite flag and lastUpdated timestamp are updated - other fields
      * (especially user-set ones) are preserved.
      *
      * For user-created recipes, use updateRecipe() directly.
      *
      * @param recipe   The external recipe to favourite/unfavourite.
      * @param favorite True to favourite, false to unfavourite.
-     * @param callback Operation result — called on main thread.
+     * @param callback Operation result - called on main thread.
      */
     public void setExternalRecipeFavorite(@NonNull Recipe recipe,
                                           boolean favorite,
@@ -797,7 +913,7 @@ public class RecipeRepository {
                         : null;
 
                 if (existing != null) {
-                    // Already in Room — update only the favourite flag and timestamp
+                    // Already in Room - update only the favourite flag and timestamp
                     existing.setFavorite(favorite);
                     existing.touch();
                     recipeDao.update(existing);
@@ -807,7 +923,7 @@ public class RecipeRepository {
 
                     runOnMainThread(callback::onSuccess);
                 } else {
-                    // First interaction — persist the full recipe, then return
+                    // First interaction - persist the full recipe, then return
                     runOnMainThread(() -> saveExternalRecipe(recipe, new RecipeCallback() {
                         @Override
                         public void onSuccess(Recipe saved) {
@@ -831,7 +947,7 @@ public class RecipeRepository {
     /**
      * Search the in-memory cache for a recipe by source ID and original ID.
      *
-     * Linear scan — acceptable given the small cache size (MAX_CACHE_SIZE = 50).
+     * Linear scan - acceptable given the small cache size (MAX_CACHE_SIZE = 50).
      * Used by getCachedExternalRecipe() to avoid a background thread dispatch
      * for hot cache hits.
      *
@@ -872,8 +988,14 @@ public class RecipeRepository {
         mainHandler.post(runnable);
     }
 
+    /**
+     * Cancel any in-progress network operations across all registered sources.
+     * Mirrors DataSourceAggregator.cancelSearches().
+     */
     public void cancelSearch() {
-        mealDbDataSource.cancelOperations();
+        for (DataSource source : dataSourceManager.getAllDataSources()) {
+            source.cancelOperations();
+        }
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "Recipe search cancelled");
         }

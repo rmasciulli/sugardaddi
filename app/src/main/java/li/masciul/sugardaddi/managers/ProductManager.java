@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.data.repository.ProductRepository;
  * - Split loading logic: barcodes → repository.loadProduct()
  *                        source IDs → repository.loadProductFromSource()
  *
- * This manager sits between the UI (ItemDetailsActivity) and the data layer
+ * This manager sits between the UI (ProductDetailsActivity) and the data layer
  * (ProductRepository), providing a clean interface for product-related operations
  * with intelligent state management and error handling.
  *
@@ -62,7 +62,7 @@ public class ProductManager {
      * Listener interface for product events
      *
      * This interface provides all callbacks needed for proper UI state management
-     * in ItemDetailsActivity. The methods are designed to map directly to UI actions.
+     * in ProductDetailsActivity. The methods are designed to map directly to UI actions.
      */
     public interface ProductListener {
         /**
@@ -115,7 +115,7 @@ public class ProductManager {
 
     /**
      * Set the event listener
-     * This is typically ItemDetailsActivity implementing ProductListener
+     * This is typically ProductDetailsActivity implementing ProductListener
      */
     public void setListener(ProductListener listener) {
         this.listener = listener;

@@ -97,7 +97,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         populateAllergens(view, product);
         populateNutrition(view, product, language);
         // Attribution panel last — informational, never obscures critical content
-        DetailRendererUtils.populateAttribution(context, view, product);
+        DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
     @Override

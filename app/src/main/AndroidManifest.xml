@@ -56,9 +56,17 @@
 
         <!-- Item Details Activity -->
         <activity
-            android:name=".ui.activities.ItemDetailsActivity"
+            android:name=".ui.activities.ProductDetailsActivity"
             android:exported="false"
-            android:label="@string/item_details_title"
+            android:label="@string/product_details_title"
+            android:parentActivityName=".ui.activities.MainActivity"
+            android:theme="@style/Theme.SugarDaddi" />
+
+        <!-- Recipe Details Activity -->
+        <activity
+            android:name=".ui.activities.RecipeDetailsActivity"
+            android:exported="false"
+            android:label="@string/recipe_details_title"
             android:parentActivityName=".ui.activities.MainActivity"
             android:theme="@style/Theme.SugarDaddi" />
 

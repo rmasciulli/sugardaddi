@@ -10,6 +10,7 @@ import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConstants;
 import li.masciul.sugardaddi.data.sources.themealdb.api.dto.MealDbIngredient;
 import li.masciul.sugardaddi.data.sources.themealdb.api.dto.MealDbMeal;
@@ -201,10 +202,55 @@ public class TheMealDbMapper {
             recipe.setDescription(description, LANGUAGE);
         }
 
-        // Instructions — full cooking steps blob
+        // Instructions — parse into structured steps using \r\n as the step delimiter.
+        //
+        // TheMealDB separates steps with \r\n (Windows line endings). Each non-empty
+        // line after normalisation is one step. We populate stepStructure +
+        // stepTranslations via Recipe.addStep() so that Recipe.getSteps(language)
+        // returns properly numbered RecipeStep objects for the renderer.
+        //
+        // The raw blob is ALSO stored via setInstructions() as a plain-text fallback
+        // for search indexing and any renderer that doesn't use structured steps.
         if (meal.getStrInstructions() != null
                 && !meal.getStrInstructions().trim().isEmpty()) {
-            recipe.setInstructions(meal.getStrInstructions().trim(), LANGUAGE);
+
+            String raw = meal.getStrInstructions().trim();
+
+            // Store raw blob for search indexing and plain-text fallback
+            recipe.setInstructions(raw, LANGUAGE);
+
+            // Parse into structured steps
+            String normalised = raw
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    .replaceAll("\n{3,}", "\n\n")
+                    .trim();
+
+            String[] lines = normalised.split("\n");
+            for (String line : lines) {
+                String step = line.trim();
+                // Skip empty lines and bare numbers — TheMealDB sometimes
+                // includes step numbers as standalone lines between instructions
+                // (e.g. "2\r\nStep text\r\n3\r\nNext step text")
+                if (step.isEmpty() || step.matches("^\\d+\\.?$")) {
+                    continue;
+                }
+
+                // Strip leading step numbers — TheMealDB sometimes includes them inline
+                // e.g. "1. Blend all..." → "Blend all..."
+                //      "2) Taste and add..." → "Taste and add..."
+                //      "Step 3: Fill..." → "Fill..."
+                String cleaned = step
+                        .replaceFirst("^[Ss]tep\\s+\\d+[.:\\-]?\\s*", "")  // "Step 3: " / "Step 3 "
+                        .replaceFirst("^\\d+[.):\\-]\\s*", "");            // "1. " / "2) " / "3: "
+
+                recipe.addStep(cleaned.trim(), null, null, LANGUAGE);
+            }
+
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Parsed " + recipe.getSteps(LANGUAGE).size()
+                        + " steps for: " + meal.getStrMeal());
+            }
         }
 
         // Cuisine — the geographic area maps cleanly to cuisine
@@ -217,6 +263,14 @@ public class TheMealDbMapper {
         if (meal.getStrMealThumb() != null
                 && !meal.getStrMealThumb().trim().isEmpty()) {
             recipe.setImageUrl(meal.getStrMealThumb().trim());
+        }
+
+        // Store the YouTube URL if present — available on the detail screen for
+        // a direct video link. The "has_video" tag (set in mapTags) is kept as a
+        // cheap boolean flag so the search card delegate can check video availability
+        // without calling getVideoUrl() on every bind.
+        if (meal.getStrYoutube() != null && !meal.getStrYoutube().trim().isEmpty()) {
+            recipe.setVideoUrl(meal.getStrYoutube());
         }
 
         // Mark as a public recipe (not user-private)
@@ -269,7 +323,7 @@ public class TheMealDbMapper {
             // itemId = ingredient name — this is the display fallback in FoodPortion.getDisplayName()
             // when foodProduct is null, which it will be until ingredient resolution.
             FoodPortion portion = new FoodPortion(
-                    "FOOD_PRODUCT",          // itemType — intended target type
+                    "FOOD_PRODUCT", // itemType — intended target type
                     ingredient.getName(),    // itemId — name used as display fallback
                     serving
             );

@@ -381,7 +381,8 @@ public class CiqualImportService extends Service {
         if (ok(catEn))  sb.append(catEn.toLowerCase()).append(' ');
         if (ok(catFr))  sb.append(catFr.toLowerCase());
         e.setSearchableText(sb.toString().trim());
-        e.setCreatedAt(now); e.setLastUpdated(now); e.setUpdatedAt(now); e.setDataCompleteness(0.0f);
+        e.setCreatedAt(now); e.setLastUpdated(now); e.setUpdatedAt(now);
+        e.setDataCompleteness(0.0f);
         return e;
     }
 

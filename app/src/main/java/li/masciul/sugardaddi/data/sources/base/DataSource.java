@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Set;
 
 import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * DataSource — Base interface for all food data sources.
+ * DataSource — Base interface for all item data sources (food products and recipes).
  *
  * ARCHITECTURE v3.0 — Settings refactor
  * ======================================
@@ -149,27 +151,69 @@ public interface DataSource {
                 @NonNull DataSourceCallback<SearchResult> callback);
 
     /**
-     * Fetch a single product by its source-specific identifier.
+     * Fetch a single food product by its source-specific identifier.
      *
-     * @param productId Source-native product ID (barcode for OFF, alim_code for Ciqual)
+     * Food sources (OFF, Ciqual, USDA) override this method.
+     * Recipe-only sources (TheMealDB) inherit the default which fires onError()
+     * immediately — symmetric with getRecipe() on food-only sources.
+     *
+     * @param productId Source-native product ID
      * @param language  BCP-47 language code
      * @param callback  Receives the product or an error
      */
-    void getProduct(@NonNull String productId,
-                    @NonNull String language,
-                    @NonNull DataSourceCallback<FoodProduct> callback);
+    default void getProduct(@NonNull String productId,
+                            @NonNull String language,
+                            @NonNull DataSourceCallback<FoodProduct> callback) {
+        // Default: this source does not produce food products.
+        // Override in food-capable sources (OFF, Ciqual, USDA).
+        callback.onError(Error.validation(
+                "Source " + getSourceId() + " does not support food product fetches.",
+                null));
+    }
 
     /**
-     * Fetch a product by barcode.  Sources that do not support barcode lookup
-     * should call {@code callback.onError(...)} immediately.
+     * Fetch a food product by barcode.
+     *
+     * Sources that support barcode lookup override this method.
+     * Sources that do not (TheMealDB, USDA) inherit the default which fires
+     * onError() immediately.
      *
      * @param barcode  EAN/UPC barcode string
      * @param language BCP-47 language code
      * @param callback Receives the product or an error
      */
-    void getProductByBarcode(@NonNull String barcode,
-                             @NonNull String language,
-                             @NonNull DataSourceCallback<FoodProduct> callback);
+    default void getProductByBarcode(@NonNull String barcode,
+                                     @NonNull String language,
+                                     @NonNull DataSourceCallback<FoodProduct> callback) {
+        // Default: this source does not support barcode lookup.
+        // Override in sources that do (OFF, Ciqual).
+        callback.onError(Error.validation(
+                "Source " + getSourceId() + " does not support barcode lookup.",
+                null));
+    }
+
+    /**
+     * Fetch a single recipe by its source-specific identifier.
+     *
+     * Recipe sources (TheMealDB) override this method.
+     * Food-only sources (OFF, Ciqual, USDA) inherit the default which fires
+     * onError() immediately — symmetric with getProduct() on recipe-only sources.
+     *
+     * This is the recipe parallel of {@link #getProduct}.
+     *
+     * @param recipeId  Source-native recipe ID (e.g. "52772" for TheMealDB)
+     * @param language  BCP-47 language code
+     * @param callback  Receives the recipe or an error
+     */
+    default void getRecipe(@NonNull String recipeId,
+                           @NonNull String language,
+                           @NonNull DataSourceCallback<Recipe> callback) {
+        // Default: this source does not produce recipes.
+        // Override in recipe-capable sources (TheMealDB).
+        callback.onError(Error.validation(
+                "Source " + getSourceId() + " does not support recipe detail fetches.",
+                null));
+    }
 
     /** Cancel all ongoing network/database operations for this source. */
     void cancelOperations();

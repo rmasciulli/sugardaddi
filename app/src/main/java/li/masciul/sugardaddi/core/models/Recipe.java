@@ -38,6 +38,7 @@ import java.util.*;
  * - Edit metadata: updateStepMetadata() - affects ALL languages
  * - Edit text: updateStepTranslation() - affects ONE language
  * - Add step: addStep() - creates metadata + translation
+ * - Edit the media section: add a videoUrl string to store video links
  */
 public class Recipe implements Nutritional, Searchable, Categorizable, AllergenAware {
 
@@ -100,6 +101,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     // ========== MEDIA ==========
     private String imageUrl;
+    private String videoUrl;
 
     // ========== TAGS ==========
     private Set<String> tags = new HashSet<>();
@@ -128,6 +130,11 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     public Recipe() {
         this.id = UUID.randomUUID().toString();
+        // USER recipes always get a source-qualified identifier so that
+        // getSearchableId() returns "USER:<uuid>" consistently across all sources.
+        // External sources (TheMealDB, etc.) override this in their mapper.
+        this.sourceIdentifier = new SourceIdentifier("USER", this.id);
+        this.dataSource = DataSourceType.USER;
         this.createdAt = System.currentTimeMillis();
         this.lastUpdated = this.createdAt;
         this.translations = new HashMap<>();
@@ -915,6 +922,9 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; touch(); }
 
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; touch(); }
+
     // ========== TAGS ==========
 
     public Set<String> getTags() { return tags != null ? tags : new HashSet<>(); }
@@ -1019,6 +1029,14 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     @Override
     public String getSearchableId() {
+        // Return the source-qualified ID ("SOURCE:originalId") when available.
+        // This ensures cross-source collision safety — "USER:uuid" and
+        // "THEMEALDB:52772" are always distinct even if originalIds were equal.
+        // Falls back to the local UUID for safety, but this should never happen
+        // in practice since the constructor always initialises sourceIdentifier.
+        if (sourceIdentifier != null && sourceIdentifier.isValid()) {
+            return sourceIdentifier.getCombinedId();
+        }
         return id;
     }
 
@@ -1342,6 +1360,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         copy.rating = this.rating;
         copy.ratingCount = this.ratingCount;
         copy.imageUrl = this.imageUrl;
+        copy.videoUrl = this.videoUrl;
 
         // Copy tags
         copy.tags = this.tags != null ? new HashSet<>(this.tags) : new HashSet<>();
@@ -1355,7 +1374,6 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         }
 
         // Timestamps will be set when saving
-
         return copy;
     }
 

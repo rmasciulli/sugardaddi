@@ -89,7 +89,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
     @Override
     public View inflate(@NonNull LayoutInflater inflater, @NonNull ViewGroup container) {
         // Inflate our dedicated layout — do NOT attach to container here,
-        // ItemDetailsActivity does that after receiving the view.
+        // ProductDetailsActivity does that after receiving the view.
         return inflater.inflate(R.layout.detail_off_product, container, false);
     }
 
@@ -104,11 +104,11 @@ public class OffProductDetailRenderer implements DetailRenderer {
         populateAllergens(view, product);
         populateNutrition(view, product, language);
         // Attribution panel last — informational, never obscures critical content
-        DetailRendererUtils.populateAttribution(context, view, product);
+        DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
     /**
-     * Called by ItemDetailsActivity when the custom amount input changes.
+     * Called by ProductDetailsActivity when the custom amount input changes.
      * Delegates to NutritionLabelManager for real-time recalculation.
      */
     @Override

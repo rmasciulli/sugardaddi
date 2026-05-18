@@ -203,7 +203,7 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
                 toggleExpansion(position);
             });
 
-            // Image click - Open ItemDetailsActivity
+            // Image click - Open ProductDetailsActivity
             productImage.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onPortionClicked(portion);

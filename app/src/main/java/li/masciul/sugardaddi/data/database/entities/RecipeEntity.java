@@ -66,17 +66,18 @@ public class RecipeEntity {
     private String dataSource = "USER";
 
     /**
-     * Original ID from the external source.
+     * Original ID from the source.
      * TheMealDB: strIdMeal (e.g. "52772")
-     * User recipes: null (they use the local UUID as their only ID)
-     * Used to refresh or deep-link to the external source after persistence.
+     * USER recipes: null — their Room PK (id) is their only identifier.
+     * Used to fetch from the external source after persistence (e.g. detail refresh).
      */
     @Nullable
     private String originalId;
 
     /**
-     * Source ID string — mirrors DataSource.getId() for DAO query convenience.
-     * Redundant with dataSource but consistent with FoodProductEntity schema.
+     * Source ID string used for the getBySourceAndOriginalId() DAO query.
+     * Populated by fromRecipe() from recipe.getDataSource().getId().
+     * USER recipes: "USER". TheMealDB recipes: "THEMEALDB".
      * e.g. "THEMEALDB", "USER"
      */
     @Nullable
@@ -85,7 +86,7 @@ public class RecipeEntity {
     // ========== PRIMARY CONTENT (in currentLanguage) ==========
     private String name;
     private String description;
-    private String instructions;                    // Full text (optional)
+    private String instructions; // Full text (optional)
     private String cuisine;
     private String notes;
     private String yieldDescription;
@@ -99,10 +100,10 @@ public class RecipeEntity {
 
     // ========== STEP ARCHITECTURE v3.0 ==========
     @TypeConverters(RecipeStepMetadataListConverter.class)
-    private List<RecipeStepMetadata> stepStructure;          // Universal metadata (once)
+    private List<RecipeStepMetadata> stepStructure; // Universal metadata (once)
 
     @TypeConverters(RecipeStepTranslationListConverter.class)
-    private List<RecipeStepTranslation> stepTranslations;    // Primary language text
+    private List<RecipeStepTranslation> stepTranslations; // Primary language text
 
     // ========== LANGUAGE MANAGEMENT ==========
     private String currentLanguage = "en";
@@ -117,10 +118,10 @@ public class RecipeEntity {
     private int servings = 1;
     private int prepTimeMinutes = 0;
     private int cookTimeMinutes = 0;
-    private String difficulty;                      // Stored as String (ID)
+    private String difficulty; // Stored as String (ID)
 
     // ========== INGREDIENTS ==========
-    private String portionsJson;                    // List<FoodPortion> as JSON
+    private String portionsJson; // List<FoodPortion> as JSON
 
     // ========== DIETARY FLAGS ==========
     private boolean isVegan = false;
@@ -148,9 +149,10 @@ public class RecipeEntity {
 
     // ========== MEDIA ==========
     private String imageUrl;
+    private String videoUrl;
 
     // ========== TAGS ==========
-    private String tagsJson;                        // Set<String> as JSON
+    private String tagsJson; // Set<String> as JSON
 
     // ========== QUALITY METRICS ==========
     private float completenessScore = 0.0f;
@@ -244,6 +246,7 @@ public class RecipeEntity {
 
         // Set media
         recipe.setImageUrl(this.imageUrl);
+        recipe.setVideoUrl(this.videoUrl);
 
         // Restore source identification
         recipe.setOriginalId(this.originalId);
@@ -326,10 +329,10 @@ public class RecipeEntity {
         entity.setTranslations(recipe.getTranslations());
         entity.setSearchableText(recipe.getSearchableText());
 
-        // Set recipe properties
-        entity.setServings(recipe.getServings());
-        entity.setPrepTimeMinutes(recipe.getPrepTimeMinutes());
-        entity.setCookTimeMinutes(recipe.getCookTimeMinutes());
+        // Nullable Integer → primitive int: guard against null (TheMealDB provides no timing data)
+        entity.setServings(recipe.getServings() != null ? recipe.getServings() : 1);
+        entity.setPrepTimeMinutes(recipe.getPrepTimeMinutes() != null ? recipe.getPrepTimeMinutes() : 0);
+        entity.setCookTimeMinutes(recipe.getCookTimeMinutes() != null ? recipe.getCookTimeMinutes() : 0);
 
         // Convert difficulty
         if (recipe.getDifficulty() != null) {
@@ -358,6 +361,7 @@ public class RecipeEntity {
 
         // Set media
         entity.setImageUrl(recipe.getImageUrl());
+        entity.setVideoUrl(recipe.getVideoUrl());
 
         // Persist source identification
         entity.setOriginalId(recipe.getOriginalId());
@@ -531,6 +535,9 @@ public class RecipeEntity {
     // Media
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 
     // Tags
     public String getTagsJson() { return tagsJson; }

@@ -51,6 +51,10 @@ public class FDCFoodDetail {
     @Nullable
     private FDCFoodCategory foodCategory;
 
+    @SerializedName("wweiaFoodCategory")
+    @Nullable
+    private WweiaFoodCategory wweiaFoodCategory;
+
     @SerializedName("foodNutrients")
     @Nullable
     private List<FDCFoodNutrient> foodNutrients;
@@ -70,7 +74,14 @@ public class FDCFoodDetail {
 
     @Nullable
     public String getFoodCategoryDescription() {
-        return foodCategory != null ? foodCategory.getDescription() : null;
+        if (foodCategory != null && foodCategory.getDescription() != null) {
+            return foodCategory.getDescription();
+        }
+        // Survey (FNDDS) foods use wweiaFoodCategory instead of foodCategory
+        if (wweiaFoodCategory != null) {
+            return wweiaFoodCategory.getDescription();
+        }
+        return null;
     }
 
     public List<FDCFoodNutrient> getFoodNutrients() {
@@ -175,6 +186,19 @@ public class FDCFoodDetail {
     public static class FDCFoodCategory {
 
         @SerializedName("description")
+        @Nullable
+        private String description;
+
+        @Nullable
+        public String getDescription() { return description; }
+    }
+
+    // =========================================================================
+    // NESTED: WweiaFoodCategory
+    // =========================================================================
+
+    public static class WweiaFoodCategory {
+        @SerializedName("wweiaFoodCategoryDescription")
         @Nullable
         private String description;
 

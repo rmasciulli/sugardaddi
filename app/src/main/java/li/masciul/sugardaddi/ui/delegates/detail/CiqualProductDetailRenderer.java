@@ -91,11 +91,11 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         populateHeader(view, product, language);
         populateNutrition(view, product, language);
         // Attribution panel last — informational, never obscures critical content
-        DetailRendererUtils.populateAttribution(context, view, product);
+        DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
     /**
-     * Forward amount changes from ItemDetailsActivity to NutritionLabelManager.
+     * Forward amount changes from ProductDetailsActivity to NutritionLabelManager.
      */
     @Override
     public void onAmountChanged(@NonNull View view, @NonNull Searchable item,

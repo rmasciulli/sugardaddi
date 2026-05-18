@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_instruction_text.xml — Plain-text instruction fallback.
+
+    Used by DefaultRecipeDetailRenderer when recipe.getSteps() is empty
+    but recipe.getInstructions() returns a non-empty string.
+    Displays the raw text blob with comfortable line spacing.
+-->
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/instructionText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:lineSpacingMultiplier="1.5"
+    android:textAppearance="?attr/textAppearanceBodyMedium"
+    android:textColor="?attr/colorOnSurface" />

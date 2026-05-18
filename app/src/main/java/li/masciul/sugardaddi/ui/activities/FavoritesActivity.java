@@ -28,6 +28,7 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
+import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
 
 import java.util.ArrayList;
@@ -146,7 +147,7 @@ public class FavoritesActivity extends BaseActivity
     protected void onResume() {
         super.onResume();
 
-        // Refresh on resume: the user may have toggled a favorite in ItemDetailsActivity
+        // Refresh on resume: the user may have toggled a favorite in ProductDetailsActivity
         loadFavorites();
     }
 
@@ -243,12 +244,15 @@ public class FavoritesActivity extends BaseActivity
                 List<Searchable> favorites = new ArrayList<>();
 
                 // ── Products ──────────────────────────────────────────────────────
-                List<FoodProductEntity> productEntities =
-                        database.foodProductDao().getFavoriteProducts();
-                for (FoodProductEntity entity : productEntities) {
-                    FoodProduct product = entity.toFoodProduct();
+                // Use FoodProductWithNutrition to load products WITH their nutrition data.
+                // getFavoriteProducts() returns bare entities without nutrition — cards
+                // would be missing kcal, carbs, and other data shown in search results.
+                List<FoodProductWithNutrition> productEntities =
+                        database.combinedProductDao().getFavoriteProductsList();
+                for (FoodProductWithNutrition withNutrition : productEntities) {
+                    FoodProduct product = withNutrition.toFoodProduct();
                     if (product != null) {
-                        favorites.add(product); // FoodProduct implements Searchable
+                        favorites.add(product);
                     }
                 }
 
@@ -379,8 +383,8 @@ public class FavoritesActivity extends BaseActivity
         String language = getCurrentLanguage().getCode();
 
         if (item instanceof FoodProduct) {
-            Intent intent = new Intent(this, ItemDetailsActivity.class);
-            intent.putExtra(ItemDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
+            Intent intent = new Intent(this, ProductDetailsActivity.class);
+            intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
 
             // Forward meal context if active (add-to-meal mode from MainActivity)
             if (returnToMealId != null) {
@@ -391,9 +395,11 @@ public class FavoritesActivity extends BaseActivity
             Log.d(TAG, "Opening product details: " + item.getDisplayName(language));
 
         } else if (item instanceof Recipe) {
-            // TODO: Navigate to RecipeDetailsActivity when available
-            Log.d(TAG, "Recipe clicked (details not yet implemented): "
-                    + item.getDisplayName(language));
+            Intent intent = new Intent(this, RecipeDetailsActivity.class);
+            intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, item.getSearchableId());
+
+            startActivity(intent);
+            logDebug("Opening recipe details: " + item.getDisplayName(language));
         }
     }
 
