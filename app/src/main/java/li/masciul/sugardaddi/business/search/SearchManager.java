@@ -1,302 +1,379 @@
 package li.masciul.sugardaddi.business.search;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
-import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.ApiConfig;
-import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.data.repository.ProductRepository;
-import li.masciul.sugardaddi.data.repository.RecipeRepository;
+import li.masciul.sugardaddi.data.sources.aggregation.AggregatedSearchResult;
+import li.masciul.sugardaddi.data.sources.aggregation.DataSourceAggregator;
+import li.masciul.sugardaddi.data.sources.base.DataSource;
+import li.masciul.sugardaddi.managers.LanguageManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * SearchManager - Unified search orchestration with debouncing and state management
+ * SearchManager — Unified search orchestration.
  *
- * UNIFIED SEARCH v4.1 - Clean API with Autocomplete
+ * ARCHITECTURE v5.0 — Unified pipeline
+ * =====================================
+ * All search — products and recipes — flows through a single path:
  *
- * This manager handles all search operations across products and recipes with intelligent
- * debouncing, state management, and flexible scope configuration.
+ *   search(query) / loadMoreResults()
+ *       → DataSourceAggregator.searchAll(query, limit, page, exhaustedSources)
+ *       → SmartMergeStrategy (level-1 deduplication, per-page)
+ *       → ProductRepository.enrichAndCache() (Room enrichment, background thread)
+ *       → level-2 deduplication via seenSearchableIds (cross-page)
+ *       → SearchListener callbacks (main thread)
  *
- * KEY FEATURES:
- * - SearchScope enum (PRODUCTS_ONLY, RECIPES_ONLY, ALL)
- * - Unified List<Searchable> results supporting both FoodProduct and Recipe
- * - Parallel search execution for ALL scope
- * - Autocomplete support with separate lightweight queries
- * - Debounced search to prevent excessive API calls
- * - Automatic cancellation of outdated searches
- * - Pagination with loadMoreResults()
- * - Retry capability for failed searches
- * - Search statistics tracking
- * - Comprehensive error handling
- * - Handler-based threading for UI safety
- * - Clean resource management
+ * WHAT WAS REMOVED vs v4.1
+ * =========================
+ * - SearchScope enum (PRODUCTS_ONLY / RECIPES_ONLY / ALL) — scope gating was
+ *   hardcoded to PRODUCTS_ONLY and bypassed recipe search entirely. The aggregator
+ *   already handles all Searchable types uniformly.
+ * - performProductSearch / performRecipeSearch / performParallelSearch — replaced
+ *   by a single performSearch() that calls the aggregator directly.
+ * - RecipeRepository dependency — SearchManager no longer needs it. Recipe live
+ *   search comes through the aggregator (TheMealDB is a registered DataSource).
+ *   RecipeRepository.search() is now Room-only, used by dedicated recipe screens.
+ * - searchFoodAdvanced() / ProductRepository pagination delegation — pagination
+ *   is now owned here, not split across SearchManager + ProductRepository.
+ * - parallelCombinedResults / AtomicInteger parallel state — gone with the scope.
  *
- * USAGE:
- * ```java
- * SearchManager manager = new SearchManager(productRepository, recipeRepository);
- * manager.setListener(this);
- * manager.setAutocompleteListener(this);
- * manager.setSearchScope(SearchScope.ALL);
- * manager.setLanguage("en");
- * manager.search("pizza");
- * ```
+ * PAGINATION STATE
+ * ================
+ * SearchManager owns all pagination state for the current query:
  *
- * @version 4.1 - Unified Search with Autocomplete (Beta Clean)
- * @author SugarDaddi Team
+ *   currentPage       — 1-based, incremented by loadMoreResults()
+ *   hasMorePages      — set from AggregatedSearchResult.hasMore() after each call
+ *   exhaustedSources  — sources that reported hasMore=false; skipped on next pages
+ *   seenSearchableIds — all IDs delivered to the UI; filters cross-page duplicates
+ *
+ * All four are reset together by resetSearchState() on every new query.
+ *
+ * DEDUPLICATION — TWO LEVELS
+ * ==========================
+ * Level 1 (SmartMergeStrategy, inside aggregator): deduplicates FoodProduct items
+ *   from different sources within a single page, merging the richest data.
+ *   Recipes pass through as-is (no cross-source recipe merging needed).
+ *
+ * Level 2 (seenSearchableIds, here): deduplicates across pages using
+ *   Searchable.getSearchableId(). Handles the case where the same item appears
+ *   on different pages due to server-side ranking drift. Works uniformly for
+ *   both FoodProduct and Recipe because both implement Searchable.
+ *
+ * THREADING
+ * =========
+ * - search() and loadMoreResults() may be called from any thread.
+ * - All listener callbacks are delivered on the main thread.
+ * - Enrichment (Room read) runs on ProductRepository's background executor.
+ * - searchHandler posts debounced searches; no other handler needed.
  */
 public class SearchManager {
 
     private static final String TAG = ApiConfig.SEARCH_LOG_TAG;
 
-    // ========== SEARCH SCOPE ==========
+    // =========================================================================
+    // DEPENDENCIES
+    // =========================================================================
+
+    /** Parallel search across all registered DataSource instances. */
+    private final DataSourceAggregator aggregator;
 
     /**
-     * Search scope determines what to search
+     * Room enrichment and SearchResultCache.
+     * SearchManager does NOT call aggregator through searchCache —
+     * it calls the aggregator directly and uses searchCache only for
+     * enrichAndCache() and checkCache().
      */
-    public enum SearchScope {
-        /** Search only products */
-        PRODUCTS_ONLY,
+    private final SearchCache searchCache;
 
-        /** Search only recipes */
-        RECIPES_ONLY,
+    /** Application context — used for LanguageManager. */
+    private final Context context;
 
-        /** Search both products and recipes in parallel */
-        ALL
-    }
-
-    // ========== CORE DEPENDENCIES ==========
-
-    private final ProductRepository productRepository;
-    private final RecipeRepository recipeRepository;
+    /** Debounce handler — all search scheduling goes through this. */
     private final Handler searchHandler;
+
+    /** Autocomplete debounce handler — separate so it doesn't cancel full searches. */
     private final Handler autocompleteHandler;
 
-    // ========== SEARCH CONFIGURATION ==========
+    // =========================================================================
+    // LISTENERS
+    // =========================================================================
 
-    private SearchScope searchScope = SearchScope.PRODUCTS_ONLY;
-    private String currentLanguage = "en";
+    @Nullable private SearchListener listener;
+    @Nullable private AutocompleteListener autocompleteListener;
 
-    // ========== SEARCH STATE ==========
+    // =========================================================================
+    // SEARCH STATE
+    // =========================================================================
 
-    private Runnable pendingSearch;
-    private Runnable pendingAutocomplete;
-    private SearchListener listener;
-    private AutocompleteListener autocompleteListener;
+    /** The query currently being searched or last searched. */
     private String currentQuery = "";
+
+    /** Last query that produced successful results (used by retryLastSearch). */
     private String lastSuccessfulQuery = "";
+
+    /** True while a search call is in flight (page 1). */
     private boolean isSearchActive = false;
+
+    /** True while a loadMoreResults call is in flight (page 2+). */
+    private boolean isPaginationActive = false;
+
+    /** True while an autocomplete call is in flight. */
     private boolean isAutocompleteActive = false;
 
-    // ========== PAGINATION STATE ==========
+    /** True once onSearchComplete has delivered final results for the current query. */
+    private boolean finalResultDelivered = false;
 
-    private boolean isPaginationActive = false;
+    // =========================================================================
+    // PAGINATION STATE  (all reset by resetSearchState on new query)
+    // =========================================================================
+
+    /** Current page number. Starts at 1, incremented by loadMoreResults(). */
     private int currentPage = 1;
-    private boolean hasMorePages = true;
-
-    // ========== SEARCH STATISTICS ==========
-
-    private int searchCount = 0;
-    private int autocompleteCount = 0;
-    private int cacheHits = 0;
-    private long lastSearchTime = 0;
-
-    // ========== PARALLEL SEARCH STATE ==========
-
-    private boolean isParallelSearchActive = false;
-    private final AtomicInteger parallelSearchesCompleted = new AtomicInteger(0);
-    private final AtomicInteger parallelSearchesFailed = new AtomicInteger(0);
-    private final List<Searchable> parallelCombinedResults = new ArrayList<>();
 
     /**
-     * Listener interface for full search events
+     * True while more pages are available.
+     * Set from AggregatedSearchResult.hasMore() — replaces the old heuristic
+     * of items.size() >= API_PAGE_SIZE, which was wrong when results exhausted
+     * exactly on a page boundary.
+     */
+    private boolean hasMorePages = true;
+
+    /**
+     * Source IDs that have reported hasMore=false for the current query.
+     * Passed to DataSourceAggregator.searchAll() so those sources are skipped.
+     * Prevents TheMealDB (all-in-one, no pagination) from being called again
+     * on pages 2, 3, …
+     */
+    private final Set<String> exhaustedSources = new HashSet<>();
+
+    /**
+     * Searchable IDs already delivered to the listener for the current query.
+     * Used for level-2 cross-page deduplication. A result whose ID is already
+     * in this set is silently dropped before the listener callback.
+     */
+    private final Set<String> seenSearchableIds = new HashSet<>();
+
+    // =========================================================================
+    // PENDING RUNNABLES (for debounce cancellation)
+    // =========================================================================
+
+    @Nullable private Runnable pendingSearch;
+    @Nullable private Runnable pendingAutocomplete;
+
+    // =========================================================================
+    // SEARCH STATISTICS
+    // =========================================================================
+
+    private int searchCount     = 0;
+    private int autocompleteCount = 0;
+    private int cacheHits       = 0;
+    private long lastSearchTime = 0;
+
+    // =========================================================================
+    // LISTENER INTERFACES
+    // =========================================================================
+
+    /**
+     * Listener for full search lifecycle events.
+     *
+     * All methods are called on the main thread.
+     *
+     * hasMore is carried on onSearchResults and onMoreResults so the adapter
+     * can show/hide the pagination footer with an accurate signal rather than
+     * guessing from items.size().
      */
     public interface SearchListener {
-        void onSearchResults(List<Searchable> results);
-        void onSearchError(Error error);
+
+        /**
+         * Called when page-1 results are ready.
+         * @param results Merged, deduplicated, scored items (FoodProduct + Recipe)
+         * @param hasMore True if further pages are available via loadMoreResults()
+         */
+        void onSearchResults(@NonNull List<Searchable> results, boolean hasMore);
+
+        /** Called when the search fails after all retries. */
+        void onSearchError(@NonNull Error error);
+
+        /** Called immediately when a search starts (show spinner). */
         void onSearchLoading();
+
+        /** Called when query is empty or too short. */
         void onSearchEmpty();
 
-        void onMoreResults(List<Searchable> results);
-        void onMoreResultsError(Error error);
+        /**
+         * Called when a pagination page is ready.
+         * @param results New items to append to the list
+         * @param hasMore True if further pages are still available
+         */
+        void onMoreResults(@NonNull List<Searchable> results, boolean hasMore);
+
+        /** Called when a pagination call fails. */
+        void onMoreResultsError(@NonNull Error error);
+
+        /** Called when loadMoreResults() starts (show footer spinner). */
         void onLoadingMore();
 
+        /** Called when the current search is cancelled. */
         default void onSearchCancelled() {}
     }
 
     /**
-     * Listener interface for autocomplete events
+     * Listener for autocomplete suggestions.
+     * All methods called on the main thread.
      */
     public interface AutocompleteListener {
-        void onAutocompleteSuggestions(List<String> suggestions);
-        void onAutocompleteError(Error error);
+        void onAutocompleteSuggestions(@NonNull List<String> suggestions);
+        void onAutocompleteError(@NonNull Error error);
         void onQueryTooShort();
     }
 
+    // =========================================================================
+    // CONSTRUCTOR
+    // =========================================================================
+
     /**
-     * Constructor
-     *
-     * @param productRepository Repository for product search
-     * @param recipeRepository Repository for recipe search
+     * @param context       Application or Activity context
+     * @param aggregator    Stateless parallel search executor
+     * @param searchCache   Used for cache checks and Room enrichment
      */
-    public SearchManager(@NonNull ProductRepository productRepository,
-                         @NonNull RecipeRepository recipeRepository) {
-        this.productRepository = productRepository;
-        this.recipeRepository = recipeRepository;
-        this.searchHandler = new Handler(Looper.getMainLooper());
+    public SearchManager(@NonNull Context context,
+                         @NonNull DataSourceAggregator aggregator,
+                         @NonNull SearchCache searchCache) {
+        this.context            = context.getApplicationContext();
+        this.aggregator         = aggregator;
+        this.searchCache        = searchCache;
+        this.searchHandler      = new Handler(Looper.getMainLooper());
         this.autocompleteHandler = new Handler(Looper.getMainLooper());
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "SearchManager initialized (v4.1 with Autocomplete) with " +
-                    ApiConfig.SEARCH_DEBOUNCE_MS + "ms debounce");
-            Log.d(TAG, "Default scope: " + searchScope);
+            Log.d(TAG, "SearchManager v5.0 initialized ("
+                    + ApiConfig.SEARCH_DEBOUNCE_MS + "ms debounce)");
         }
     }
 
-    // ========== CONFIGURATION ==========
+    // =========================================================================
+    // CONFIGURATION
+    // =========================================================================
 
-    public void setSearchScope(@NonNull SearchScope scope) {
-        if (scope == SearchScope.RECIPES_ONLY && recipeRepository == null) {
-            Log.e(TAG, "Cannot set RECIPES_ONLY scope - RecipeRepository is null");
-            return;
-        }
-
-        if (scope == SearchScope.ALL && recipeRepository == null) {
-            Log.e(TAG, "Cannot set ALL scope - RecipeRepository is null");
-            return;
-        }
-
-        this.searchScope = scope;
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Search scope changed to: " + scope);
-        }
-    }
-
-    @NonNull
-    public SearchScope getSearchScope() {
-        return searchScope;
-    }
-
-    public void setLanguage(@NonNull String languageCode) {
-        this.currentLanguage = languageCode;
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Recipe search language set to: " + languageCode);
-        }
-    }
-
-    public void setListener(SearchListener listener) {
+    public void setListener(@Nullable SearchListener listener) {
         this.listener = listener;
     }
 
-    public void setAutocompleteListener(AutocompleteListener listener) {
+    public void setAutocompleteListener(@Nullable AutocompleteListener listener) {
         this.autocompleteListener = listener;
     }
 
-    // ========== SEARCH METHODS ==========
+    // =========================================================================
+    // PUBLIC SEARCH API
+    // =========================================================================
 
-    public void search(String query) {
+    /**
+     * Schedule a debounced search for the given query.
+     *
+     * If the query is the same as the previous one (e.g. user re-submits),
+     * the debounce is still applied so rapid re-triggers don't double-fire.
+     * Resets all pagination state for the new query.
+     *
+     * @param query Raw user input — trimmed internally
+     */
+    public void search(@Nullable String query) {
         cancelPendingSearch();
 
-        String trimmedQuery = query != null ? query.trim() : "";
-        currentQuery = trimmedQuery;
+        final String trimmed = query != null ? query.trim() : "";
+        currentQuery = trimmed;
 
-        currentPage = 1;
-        hasMorePages = true;
+        // Reset all pagination state for this new query
+        resetSearchState();
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Search requested: '" + trimmedQuery + "' (length: " +
-                    trimmedQuery.length() + ", scope: " + searchScope + ")");
+            Log.d(TAG, "Search requested: '" + trimmed + "' (length=" + trimmed.length() + ")");
         }
 
-        if (trimmedQuery.length() < ApiConfig.MIN_SEARCH_LENGTH) {
-            if (trimmedQuery.isEmpty()) {
-                notifySearchEmpty();
-            }
+        if (trimmed.length() < ApiConfig.MIN_SEARCH_LENGTH) {
+            notifySearchEmpty();
             return;
         }
 
-        pendingSearch = new Runnable() {
-            @Override
-            public void run() {
-                if (currentQuery.equals(trimmedQuery)) {
-                    performSearch(trimmedQuery);
-                }
+        pendingSearch = () -> {
+            if (currentQuery.equals(trimmed)) {
+                performSearch(trimmed);
             }
         };
-
         searchHandler.postDelayed(pendingSearch, ApiConfig.SEARCH_DEBOUNCE_MS);
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Search scheduled for: '" + trimmedQuery + "' in " +
-                    ApiConfig.SEARCH_DEBOUNCE_MS + "ms");
-        }
     }
 
-    public void searchImmediate(String query) {
+    /**
+     * Execute a search immediately, bypassing the debounce delay.
+     * Used when the user explicitly submits (Enter key, suggestion tap).
+     */
+    public void searchImmediate(@Nullable String query) {
         cancelPendingSearch();
-        currentQuery = query != null ? query.trim() : "";
-        currentPage = 1;
-        hasMorePages = true;
+        final String trimmed = query != null ? query.trim() : "";
+        currentQuery = trimmed;
+        resetSearchState();
 
-        if (currentQuery.length() >= ApiConfig.MIN_SEARCH_LENGTH) {
-            performSearch(currentQuery);
+        if (trimmed.length() >= ApiConfig.MIN_SEARCH_LENGTH) {
+            performSearch(trimmed);
         } else {
             notifySearchEmpty();
         }
     }
 
     /**
-     * Perform autocomplete search (lightweight, fast suggestions)
-     * Debounced separately from full search for better UX
+     * Schedule a debounced autocomplete query.
+     * Uses a shorter delay than full search for faster suggestions.
+     *
+     * Failures are silent — the dropdown simply stays empty.
+     *
+     * @param query Raw user input — trimmed internally
      */
-    public void autocomplete(String query) {
+    public void autocomplete(@Nullable String query) {
         cancelPendingAutocomplete();
 
-        String trimmedQuery = query != null ? query.trim() : "";
+        final String trimmed = query != null ? query.trim() : "";
 
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Autocomplete requested: '" + trimmedQuery + "' (length: " + trimmedQuery.length() + ")");
-        }
-
-        // Minimum 3 characters for autocomplete
-        if (trimmedQuery.length() < 3) {
+        if (trimmed.length() < 3) {
             notifyQueryTooShort();
             return;
         }
 
-        pendingAutocomplete = new Runnable() {
-            @Override
-            public void run() {
-                performAutocomplete(trimmedQuery);
-            }
-        };
-
-        // Shorter debounce for autocomplete (faster feedback)
+        pendingAutocomplete = () -> performAutocomplete(trimmed);
         autocompleteHandler.postDelayed(pendingAutocomplete, ApiConfig.SEARCH_DEBOUNCE_MS / 2);
     }
 
+    /**
+     * Load the next page of results for the current query.
+     *
+     * Guards:
+     * - currentQuery must be non-empty
+     * - hasMorePages must be true (set from AggregatedSearchResult.hasMore())
+     * - no pagination already in flight
+     * - no page-1 search in flight
+     *
+     * Safe to call repeatedly from a scroll listener — guards prevent double-firing.
+     */
     public void loadMoreResults() {
-        if (currentQuery.isEmpty() || !hasMorePages || isPaginationActive || isSearchActive) {
+        if (currentQuery.isEmpty() || !hasMorePages
+                || isPaginationActive || isSearchActive) {
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Cannot load more: query=" + currentQuery +
-                        ", hasMore=" + hasMorePages + ", paginationActive=" + isPaginationActive);
-            }
-            return;
-        }
-
-        if (searchScope != SearchScope.PRODUCTS_ONLY) {
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.w(TAG, "Pagination not yet supported for scope: " + searchScope);
+                Log.d(TAG, "loadMoreResults skipped: query='" + currentQuery
+                        + "' hasMore=" + hasMorePages
+                        + " paginationActive=" + isPaginationActive
+                        + " searchActive=" + isSearchActive);
             }
             return;
         }
@@ -305,131 +382,379 @@ public class SearchManager {
         currentPage++;
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Loading page " + currentPage + " for query: '" + currentQuery + "'");
+            Log.d(TAG, "Loading page " + currentPage
+                    + " for '" + currentQuery + "'"
+                    + " (exhausted=" + exhaustedSources + ")");
         }
 
         notifyLoadingMore();
 
-        productRepository.searchFoodAdvanced(currentQuery, currentPage, new ProductRepository.SearchCallback() {
-            @Override
-            public void onSuccess(List<Searchable> items) {
-                isPaginationActive = false;
-                if (items.isEmpty()) {
-                    hasMorePages = false;
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "No more results available for: '" + currentQuery + "'");
+        // Use an unmodifiable snapshot of exhaustedSources — the set must not be
+        // modified while the aggregator is iterating it on a background thread.
+        final Set<String> exhaustedSnapshot =
+                Collections.unmodifiableSet(new HashSet<>(exhaustedSources));
+
+        aggregator.searchAll(
+                currentQuery,
+                ApiConfig.API_PAGE_SIZE,
+                currentPage,
+                exhaustedSnapshot,
+                new DataSourceAggregator.AggregatorCallback() {
+
+                    @Override
+                    public void onSearchComplete(@NonNull AggregatedSearchResult result) {
+                        // Update exhaustion state from this page's results
+                        updateExhaustedSources(result.getSourceHasMore());
+
+                        // Update hasMorePages from the aggregated signal
+                        hasMorePages = result.hasMore();
+
+                        // Deduplicate against everything already delivered (level 2)
+                        List<Searchable> fresh = deduplicateAndRegister(result.getItems());
+
+                        isPaginationActive = false;
+
+                        if (fresh.isEmpty()) {
+                            // All results were cross-page duplicates — treat as exhausted
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "Page " + currentPage
+                                        + " contained only duplicates — marking exhausted");
+                            }
+                            hasMorePages = false;
+                            // No callback — footer disappears naturally when hasMore=false
+                            return;
+                        }
+
+                        finalResultDelivered = true;
+
+                        // Enrich without caching (page 1 cache is the canonical entry)
+                        searchCache.enrichAndCache(fresh, currentQuery, false, () ->
+                                notifyMoreResults(fresh, hasMorePages));
                     }
-                } else {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Loaded " + items.size() + " more results for page " + currentPage);
+
+                    @Override
+                    public void onSearchError(@NonNull String error) {
+                        isPaginationActive = false;
+                        currentPage--; // Roll back so the user can retry
+                        Log.w(TAG, "Pagination error page " + (currentPage + 1) + ": " + error);
+                        notifyMoreResultsError(Error.network(error, null));
                     }
-                    notifyMoreResults(new ArrayList<>(items));
-                }
-            }
 
-            @Override
-            public void onError(Error error) {
-                isPaginationActive = false;
-                currentPage--;
-
-                Log.w(TAG, "Failed to load more results: " + error.getMessage());
-                notifyMoreResultsError(error);
-            }
-
-            @Override
-            public void onLoading() {
-                // Already handled
-            }
-        });
+                    @Override
+                    public void onSearchProgress(@NonNull String sourceId,
+                                                 int completed, int total) {
+                        // No per-source progress indicator for pagination
+                    }
+                });
     }
 
+    /**
+     * Retry the last search that produced results.
+     * Falls back to currentQuery if no successful search has been made yet.
+     */
     public void retryLastSearch() {
-        if (!currentQuery.isEmpty()) {
+        String queryToRetry = !lastSuccessfulQuery.isEmpty()
+                ? lastSuccessfulQuery : currentQuery;
+
+        if (!queryToRetry.isEmpty()) {
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Retrying search for: '" + currentQuery + "'");
+                Log.d(TAG, "Retrying search: '" + queryToRetry + "'");
             }
-            performSearch(currentQuery);
-        } else if (!lastSuccessfulQuery.isEmpty()) {
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Retrying last successful search: '" + lastSuccessfulQuery + "'");
-            }
-            performSearch(lastSuccessfulQuery);
+            search(queryToRetry);
         } else {
-            Log.w(TAG, "No query available for retry");
+            Log.w(TAG, "retryLastSearch: no query to retry");
         }
     }
 
     /**
-     * Cancel all active searches and pending operations
-     * Simple alias for cancelAllSearches() for better API ergonomics
+     * Cancel all in-flight and pending searches.
+     * Does not clear state — allows retryLastSearch() to still work.
      */
     public void cancel() {
         cancelAllSearches();
     }
 
-    public void cancelAllSearches() {
-        cancelPendingSearch();
-        cancelPendingAutocomplete();
-
-        if (isSearchActive || isPaginationActive || isParallelSearchActive) {
-            productRepository.cancelCurrentSearch();
-
-            if (recipeRepository != null) {
-                recipeRepository.cancelSearch();
-            }
-
-            isSearchActive = false;
-            isPaginationActive = false;
-            isParallelSearchActive = false;
-            isAutocompleteActive = false;
-
-            if (listener != null) {
-                listener.onSearchCancelled();
-            }
-
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "All searches cancelled");
-            }
-        }
-    }
-
+    /**
+     * Release all resources. Call from the owning Activity's onDestroy().
+     */
     public void cleanup() {
         cancelAllSearches();
         listener = null;
         autocompleteListener = null;
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "SearchManager cleaned up. Stats: " + getSearchStats());
+            Log.d(TAG, "SearchManager cleaned up. " + getSearchStats());
         }
     }
 
-    // ========== STATE QUERIES ==========
+    // =========================================================================
+    // STATE QUERIES
+    // =========================================================================
 
-    public boolean hasMoreResults() {
-        return hasMorePages && !currentQuery.isEmpty();
-    }
-
-    public boolean isLoadingMore() {
-        return isPaginationActive;
-    }
-
+    public boolean hasMoreResults()    { return hasMorePages && !currentQuery.isEmpty(); }
+    public boolean isLoadingMore()     { return isPaginationActive; }
     public boolean isSearchInProgress() {
-        return isSearchActive || pendingSearch != null || isPaginationActive ||
-                isParallelSearchActive || isAutocompleteActive;
+        return isSearchActive || pendingSearch != null
+                || isPaginationActive || isAutocompleteActive;
     }
-
-    public String getCurrentQuery() {
-        return currentQuery;
-    }
+    public String getCurrentQuery()   { return currentQuery; }
 
     public String getSearchStats() {
-        return String.format("Searches: %d, Autocomplete: %d, Cache hits: %d, Cache rate: %.1f%%, Last search: %dms ago, Scope: %s",
+        return String.format(
+                "Searches=%d, Autocomplete=%d, CacheHits=%d, CacheRate=%.1f%%, LastSearch=%dms ago",
                 searchCount, autocompleteCount, cacheHits,
-                (searchCount > 0 ? (cacheHits * 100.0 / searchCount) : 0),
-                (System.currentTimeMillis() - lastSearchTime), searchScope);
+                searchCount > 0 ? (cacheHits * 100.0 / searchCount) : 0.0,
+                System.currentTimeMillis() - lastSearchTime);
     }
 
-    // ========== PRIVATE METHODS ==========
+    // =========================================================================
+    // PRIVATE — SEARCH EXECUTION
+    // =========================================================================
+
+    /**
+     * Execute page-1 search for the given query.
+     *
+     * Flow:
+     *   1. Check SearchResultCache — if hit, enrich and deliver immediately.
+     *   2. If miss, call aggregator → enrich → deduplicate → deliver.
+     *
+     * Cache hits skip the aggregator entirely for instant results on repeated
+     * queries within the same session.
+     */
+    private void performSearch(final String query) {
+        // Cancel any previous in-flight aggregator call
+        if (isSearchActive || isPaginationActive) {
+            aggregator.cancelSearches();
+            isPaginationActive = false;
+            currentPage = 1;
+        }
+
+        isSearchActive = true;
+        searchCount++;
+        lastSearchTime = System.currentTimeMillis();
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "performSearch: '" + query + "' (search #" + searchCount + ")");
+        }
+
+        notifySearchLoading();
+
+        // ── Cache check ───────────────────────────────────────────────────────
+        // ProductRepository's SearchResultCache holds the enriched page-1 result.
+        // If present, deliver immediately and mark all IDs as seen so pagination
+        // deduplication still works correctly.
+        List<Searchable> cached = searchCache.getCachedResults(query);
+        if (cached != null) {
+            cacheHits++;
+            isSearchActive = false;
+            lastSuccessfulQuery = query;
+
+            // Register cached IDs for cross-page deduplication
+            for (Searchable item : cached) {
+                String id = item.getSearchableId();
+                if (id != null) seenSearchableIds.add(id);
+            }
+
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Cache hit: '" + query + "' → " + cached.size() + " items");
+            }
+
+            // We don't have a fresh hasMore signal from cache — assume true so
+            // the user can still attempt pagination (loadMoreResults guards will
+            // catch the case where the server has no more pages).
+            notifySearchResults(cached, true);
+            return;
+        }
+
+        // ── Live search via aggregator ────────────────────────────────────────
+        // exhaustedSources is empty for page 1 (reset by resetSearchState).
+        aggregator.searchAll(
+                query,
+                ApiConfig.API_PAGE_SIZE,
+                1,
+                Collections.emptySet(), // page 1: no sources exhausted yet
+                new DataSourceAggregator.AggregatorCallback() {
+
+                    @Override
+                    public void onPartialResult(@NonNull String sourceId,
+                                                @NonNull List<DataSource.SearchResult> partialResults) {
+                        // A fast source (e.g. OFF) finished before the others.
+                        // Show its results immediately for perceived speed.
+                        if (partialResults.isEmpty()) return;
+
+                        List<Searchable> partialItems = new ArrayList<>();
+                        for (DataSource.SearchResult r : partialResults) {
+                            partialItems.addAll(r.items);
+                        }
+
+                        // Apply scoring/filtering (same as full result path)
+                        String lang = LanguageManager.getCurrentLanguage(context).getCode();
+                        List<Searchable> filtered =
+                                li.masciul.sugardaddi.core.utils.SearchFilter
+                                        .filterAndSort(partialItems, query, lang);
+
+                        if (!filtered.isEmpty()) {
+                            // Enrich on background thread, then deliver (no cache put yet)
+                            searchCache.enrichAndCache(filtered, query, false, () -> {
+                                if (query.equals(currentQuery) && !finalResultDelivered) {
+                                    notifySearchResults(filtered, true);
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onSearchComplete(@NonNull AggregatedSearchResult result) {
+                        isSearchActive = false;
+
+                        if (!query.equals(currentQuery)) {
+                            // Query changed while this call was in flight — discard
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "Discarding stale result for '" + query + "'");
+                            }
+                            return;
+                        }
+
+                        // Update pagination state from result
+                        hasMorePages = result.hasMore();
+                        updateExhaustedSources(result.getSourceHasMore());
+
+                        // Apply scoring/filtering
+                        String lang = LanguageManager.getCurrentLanguage(context).getCode();
+                        List<Searchable> filtered =
+                                li.masciul.sugardaddi.core.utils.SearchFilter
+                                        .filterAndSort(result.getItems(), query, lang);
+
+                        if (filtered.isEmpty()) {
+                            Log.w(TAG, "All results filtered for: '" + query + "'");
+                            notifySearchError(Error.noData("No results found for: " + query));
+                            return;
+                        }
+
+                        // Level-2 deduplication and ID registration
+                        List<Searchable> fresh = deduplicateAndRegister(filtered);
+
+                        lastSuccessfulQuery = query;
+
+                        // Enrich on background thread AND cache (page 1 only)
+                        searchCache.enrichAndCache(fresh, query, true, () ->
+                                notifySearchResults(fresh, hasMorePages));
+
+                        if (ApiConfig.DEBUG_LOGGING) {
+                            Log.d(TAG, "Search complete: '" + query + "' → "
+                                    + fresh.size() + " items, hasMore=" + hasMorePages);
+                        }
+                    }
+
+                    @Override
+                    public void onSearchError(@NonNull String error) {
+                        isSearchActive = false;
+                        if (query.equals(currentQuery)) {
+                            Log.e(TAG, "Search error for '" + query + "': " + error);
+                            notifySearchError(Error.network(error, null));
+                        }
+                    }
+
+                    @Override
+                    public void onSearchProgress(@NonNull String sourceId,
+                                                 int completed, int total) {
+                        if (ApiConfig.DEBUG_LOGGING) {
+                            Log.d(TAG, "Search progress: " + sourceId
+                                    + " (" + completed + "/" + total + ")");
+                        }
+                    }
+                });
+    }
+
+    private void performAutocomplete(final String query) {
+        isAutocompleteActive = true;
+        autocompleteCount++;
+
+        searchCache.autocomplete(query, suggestions -> {
+            isAutocompleteActive = false;
+
+            String lang = LanguageManager.getCurrentLanguage(context).getCode();
+            List<String> names = new ArrayList<>();
+            for (Searchable item : suggestions) {
+                String name = item.getDisplayName(lang);
+                if (name != null && !name.trim().isEmpty()) {
+                    names.add(name);
+                }
+                if (names.size() >= 10) break;
+            }
+
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Autocomplete '" + query + "': " + names.size() + " suggestions");
+            }
+
+            notifyAutocompleteSuggestions(names);
+        });
+    }
+
+    // =========================================================================
+    // PRIVATE — PAGINATION STATE MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Reset all pagination state for a new query.
+     * Called at the start of search() and searchImmediate().
+     */
+    private void resetSearchState() {
+        currentPage          = 1;
+        hasMorePages         = true;
+        finalResultDelivered = false;
+        exhaustedSources.clear();
+        seenSearchableIds.clear();
+    }
+
+    /**
+     * Update exhaustedSources from a per-source hasMore map.
+     * Sources reporting false are added; true sources are left in (or never added).
+     *
+     * @param sourceHasMore Map from AggregatedSearchResult.getSourceHasMore()
+     */
+    private void updateExhaustedSources(@NonNull Map<String, Boolean> sourceHasMore) {
+        for (Map.Entry<String, Boolean> entry : sourceHasMore.entrySet()) {
+            if (!Boolean.TRUE.equals(entry.getValue())) {
+                // Source reported hasMore=false — exhausted for this query
+                if (exhaustedSources.add(entry.getKey()) && ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Source exhausted: " + entry.getKey());
+                }
+            }
+        }
+    }
+
+    /**
+     * Level-2 cross-page deduplication.
+     *
+     * Filters out any item whose searchableId was already delivered to the
+     * listener in a previous page, then registers all remaining IDs.
+     *
+     * @param items Items from the current page (after level-1 SmartMergeStrategy)
+     * @return Items not previously seen — safe to deliver to the listener
+     */
+    @NonNull
+    private List<Searchable> deduplicateAndRegister(@NonNull List<Searchable> items) {
+        List<Searchable> fresh = new ArrayList<>(items.size());
+        for (Searchable item : items) {
+            String id = item.getSearchableId();
+            if (id == null || seenSearchableIds.add(id)) {
+                // null IDs always pass through (edge case); new IDs are registered
+                fresh.add(item);
+            }
+        }
+
+        if (ApiConfig.DEBUG_LOGGING && fresh.size() < items.size()) {
+            Log.d(TAG, "Level-2 dedup: dropped " + (items.size() - fresh.size())
+                    + " cross-page duplicate(s)");
+        }
+
+        return fresh;
+    }
+
+    // =========================================================================
+    // PRIVATE — CANCELLATION
+    // =========================================================================
 
     private void cancelPendingSearch() {
         if (pendingSearch != null) {
@@ -445,389 +770,93 @@ public class SearchManager {
         }
     }
 
-    private void performSearch(String query) {
-        if (isSearchActive) {
-            productRepository.cancelCurrentSearch();
-            if (recipeRepository != null) {
-                recipeRepository.cancelSearch();
-            }
-        }
+    private void cancelAllSearches() {
+        cancelPendingSearch();
+        cancelPendingAutocomplete();
 
-        isSearchActive = true;
-        searchCount++;
-        lastSearchTime = System.currentTimeMillis();
+        if (isSearchActive || isPaginationActive || isAutocompleteActive) {
+            aggregator.cancelSearches();
+            isSearchActive      = false;
+            isPaginationActive  = false;
+            isAutocompleteActive = false;
 
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Executing search: '" + query + "' (search #" + searchCount +
-                    ", scope: " + searchScope + ")");
-        }
+            notifySearchCancelled();
 
-        switch (searchScope) {
-            case PRODUCTS_ONLY:
-                performProductSearch(query);
-                break;
-
-            case RECIPES_ONLY:
-                performRecipeSearch(query);
-                break;
-
-            case ALL:
-                performParallelSearch(query);
-                break;
+            if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "All searches cancelled");
         }
     }
 
-    private void performAutocomplete(String query) {
-        if (isAutocompleteActive) {
-            // Cancel previous autocomplete if still running
-            productRepository.cancelCurrentSearch();
-        }
+    // =========================================================================
+    // PRIVATE — LISTENER NOTIFICATIONS  (all on main thread, null-safe)
+    // =========================================================================
 
-        isAutocompleteActive = true;
-        autocompleteCount++;
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Executing autocomplete: '" + query + "' (autocomplete #" + autocompleteCount + ")");
-        }
-
-        // Use lightweight autocomplete API from ProductRepository
-        productRepository.autocomplete(query, new ProductRepository.SearchCallback() {
-            @Override
-            public void onSuccess(List<Searchable> items) {
-                isAutocompleteActive = false;
-
-                // Extract display names for suggestions — works for both FoodProduct and Recipe
-                List<String> suggestions = new ArrayList<>();
-                for (Searchable item : items) {
-                    String name = item.getDisplayName(currentLanguage);
-                    if (name != null && !name.trim().isEmpty()) {
-                        suggestions.add(name);
-                    }
-                }
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Autocomplete successful: '" + query + "' returned " +
-                            suggestions.size() + " suggestions");
-                }
-
-                notifyAutocompleteSuggestions(suggestions);
-            }
-
-            @Override
-            public void onError(Error error) {
-                isAutocompleteActive = false;
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Autocomplete failed for '" + query + "': " + error.getMessage());
-                }
-
-                // Don't notify errors for autocomplete (silent failure for better UX)
-                // Just provide empty suggestions
-                notifyAutocompleteSuggestions(new ArrayList<>());
-            }
-
-            @Override
-            public void onLoading() {
-                // No loading indicator for autocomplete (too fast)
-            }
-        });
-    }
-
-    private void performProductSearch(String query) {
-        productRepository.searchFood(query, new ProductRepository.SearchCallback() {
-            @Override
-            public void onSuccess(List<Searchable> items) {
-                isSearchActive = false;
-                if (query.equals(currentQuery)) {
-                    lastSuccessfulQuery = query;
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Product search successful: '" + query + "' returned "
-                                + items.size() + " results");
-                    }
-                    notifySearchResults(new ArrayList<>(items));
-                } else {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Ignoring outdated search results for: '" + query + "'");
-                    }
-                }
-            }
-
-            @Override
-            public void onError(Error error) {
-                isSearchActive = false;
-
-                if (query.equals(currentQuery)) {
-                    Log.w(TAG, "Product search failed for '" + query + "': " + error.getMessage());
-                    notifySearchError(error);
-                }
-            }
-
-            @Override
-            public void onLoading() {
-                if (query.equals(currentQuery)) {
-                    notifySearchLoading();
-                }
-            }
-        });
-    }
-
-    private void performRecipeSearch(String query) {
-        if (recipeRepository == null) {
-            isSearchActive = false;
-            Log.e(TAG, "RecipeRepository is null - cannot perform recipe search");
-            notifySearchError(Error.unknown(
-                    "Recipe search not available",
-                    "RecipeRepository not initialized"
-            ));
-            return;
-        }
-
-        notifySearchLoading();
-
-        recipeRepository.search(query, currentLanguage, new RecipeRepository.RecipeSearchCallback() {
-            @Override
-            public void onSuccess(List<Recipe> recipes) {
-                isSearchActive = false;
-
-                if (query.equals(currentQuery)) {
-                    lastSuccessfulQuery = query;
-                    List<Searchable> searchableItems = new ArrayList<>(recipes);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Recipe search successful: '" + query + "' returned " +
-                                recipes.size() + " results");
-                    }
-
-                    notifySearchResults(searchableItems);
-                } else {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Ignoring outdated recipe search results for: '" + query + "'");
-                    }
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                isSearchActive = false;
-
-                if (query.equals(currentQuery)) {
-                    Log.w(TAG, "Recipe search failed for '" + query + "': " + errorMessage);
-                    notifySearchError(Error.unknown("Recipe search failed", errorMessage));
-                }
-            }
-        });
-    }
-
-    private void performParallelSearch(String query) {
-        if (recipeRepository == null) {
-            Log.w(TAG, "RecipeRepository is null - falling back to products only");
-            performProductSearch(query);
-            return;
-        }
-
-        isParallelSearchActive = true;
-        parallelSearchesCompleted.set(0);
-        parallelSearchesFailed.set(0);
-
-        synchronized (parallelCombinedResults) {
-            parallelCombinedResults.clear();
-        }
-
-        notifySearchLoading();
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Starting parallel search for: '" + query + "'");
-        }
-
-        // Launch product search
-        productRepository.searchFood(query, new ProductRepository.SearchCallback() {
-            @Override
-            public void onSuccess(List<Searchable> items) {
-                synchronized (parallelCombinedResults) {
-                    parallelCombinedResults.addAll(items);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Items found in parallel search: " + items.size());
-                    }
-
-                    checkParallelSearchCompletion(query);
-                }
-            }
-
-            @Override
-            public void onError(Error error) {
-                parallelSearchesFailed.incrementAndGet();
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.e(TAG, "Product search failed in parallel search: " + error.getMessage());
-                }
-
-                checkParallelSearchCompletion(query);
-            }
-
-            @Override
-            public void onLoading() {
-                // Already notified
-            }
-        });
-
-        // Launch recipe search
-        recipeRepository.search(query, currentLanguage, new RecipeRepository.RecipeSearchCallback() {
-            @Override
-            public void onSuccess(List<Recipe> recipes) {
-                synchronized (parallelCombinedResults) {
-                    parallelCombinedResults.addAll(recipes);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Recipes found in parallel search: " + recipes.size());
-                    }
-
-                    checkParallelSearchCompletion(query);
-                }
-            }
-
-            @Override
-            public void onError(String errorMessage) {
-                parallelSearchesFailed.incrementAndGet();
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.e(TAG, "Recipe search failed in parallel search: " + errorMessage);
-                }
-
-                checkParallelSearchCompletion(query);
-            }
-        });
-    }
-
-    private void checkParallelSearchCompletion(String query) {
-        int completed = parallelSearchesCompleted.incrementAndGet();
-
-        if (completed == 2) {
-            isSearchActive = false;
-            isParallelSearchActive = false;
-
-            if (!query.equals(currentQuery)) {
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Ignoring outdated parallel search results for: '" + query + "'");
-                }
-                return;
-            }
-
-            if (parallelSearchesFailed.get() == 2) {
-                Log.w(TAG, "Both product and recipe searches failed for: '" + query + "'");
-                notifySearchError(Error.network(
-                        "Search failed for all sources",
-                        "Both product and recipe searches failed"
-                ));
-                return;
-            }
-
-            List<Searchable> results;
-            synchronized (parallelCombinedResults) {
-                results = new ArrayList<>(parallelCombinedResults);
-            }
-
-            lastSuccessfulQuery = query;
-
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Parallel search completed: '" + query + "' returned " +
-                        results.size() + " total results (" +
-                        parallelSearchesFailed.get() + " sources failed)");
-            }
-
-            notifySearchResults(results);
-        }
-    }
-
-    // ========== NOTIFICATIONS ==========
-
-    private void notifySearchResults(List<Searchable> results) {
+    private void notifySearchResults(@NonNull List<Searchable> results, boolean hasMore) {
         if (listener != null) {
-            try {
-                listener.onSearchResults(results);
-            } catch (Exception e) {
-                Log.e(TAG, "Error in search results callback", e);
-            }
+            try { listener.onSearchResults(results, hasMore); }
+            catch (Exception e) { Log.e(TAG, "onSearchResults callback error", e); }
         }
     }
 
-    private void notifySearchError(Error error) {
+    private void notifySearchError(@NonNull Error error) {
         if (listener != null) {
-            try {
-                listener.onSearchError(error);
-            } catch (Exception e) {
-                Log.e(TAG, "Error in search error callback", e);
-            }
+            try { listener.onSearchError(error); }
+            catch (Exception e) { Log.e(TAG, "onSearchError callback error", e); }
         }
     }
 
     private void notifySearchLoading() {
         if (listener != null) {
-            try {
-                listener.onSearchLoading();
-            } catch (Exception e) {
-                Log.e(TAG, "Error in search loading callback", e);
-            }
+            try { listener.onSearchLoading(); }
+            catch (Exception e) { Log.e(TAG, "onSearchLoading callback error", e); }
         }
     }
 
     private void notifySearchEmpty() {
         if (listener != null) {
-            try {
-                listener.onSearchEmpty();
-            } catch (Exception e) {
-                Log.e(TAG, "Error in search empty callback", e);
-            }
+            try { listener.onSearchEmpty(); }
+            catch (Exception e) { Log.e(TAG, "onSearchEmpty callback error", e); }
         }
     }
 
-    private void notifyMoreResults(List<Searchable> results) {
+    private void notifyMoreResults(@NonNull List<Searchable> results, boolean hasMore) {
         if (listener != null) {
-            try {
-                listener.onMoreResults(results);
-            } catch (Exception e) {
-                Log.e(TAG, "Error in more results callback", e);
-            }
+            try { listener.onMoreResults(results, hasMore); }
+            catch (Exception e) { Log.e(TAG, "onMoreResults callback error", e); }
         }
     }
 
-    private void notifyMoreResultsError(Error error) {
+    private void notifyMoreResultsError(@NonNull Error error) {
         if (listener != null) {
-            try {
-                listener.onMoreResultsError(error);
-            } catch (Exception e) {
-                Log.e(TAG, "Error in more results error callback", e);
-            }
+            try { listener.onMoreResultsError(error); }
+            catch (Exception e) { Log.e(TAG, "onMoreResultsError callback error", e); }
         }
     }
 
     private void notifyLoadingMore() {
         if (listener != null) {
-            try {
-                listener.onLoadingMore();
-            } catch (Exception e) {
-                Log.e(TAG, "Error in loading more callback", e);
-            }
+            try { listener.onLoadingMore(); }
+            catch (Exception e) { Log.e(TAG, "onLoadingMore callback error", e); }
         }
     }
 
-    private void notifyAutocompleteSuggestions(List<String> suggestions) {
+    private void notifySearchCancelled() {
+        if (listener != null) {
+            try { listener.onSearchCancelled(); }
+            catch (Exception e) { Log.e(TAG, "onSearchCancelled callback error", e); }
+        }
+    }
+
+    private void notifyAutocompleteSuggestions(@NonNull List<String> suggestions) {
         if (autocompleteListener != null) {
-            try {
-                autocompleteListener.onAutocompleteSuggestions(suggestions);
-            } catch (Exception e) {
-                Log.e(TAG, "Error in autocomplete suggestions callback", e);
-            }
+            try { autocompleteListener.onAutocompleteSuggestions(suggestions); }
+            catch (Exception e) { Log.e(TAG, "onAutocompleteSuggestions callback error", e); }
         }
     }
 
     private void notifyQueryTooShort() {
         if (autocompleteListener != null) {
-            try {
-                autocompleteListener.onQueryTooShort();
-            } catch (Exception e) {
-                Log.e(TAG, "Error in query too short callback", e);
-            }
+            try { autocompleteListener.onQueryTooShort(); }
+            catch (Exception e) { Log.e(TAG, "onQueryTooShort callback error", e); }
         }
     }
 }

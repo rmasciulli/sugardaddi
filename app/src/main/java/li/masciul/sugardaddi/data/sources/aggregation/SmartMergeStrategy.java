@@ -90,6 +90,9 @@ public class SmartMergeStrategy implements MergeStrategy {
             language = firstResult.language;
         }
 
+        // hasMore and sourceHasMore are placeholder values here —
+        // DataSourceAggregator.mergeAndDeliver() computes the real values
+        // from raw SearchResult objects and overwrites them in the final result.
         return new AggregatedSearchResult(
                 mergedItems,
                 sourceStats,
@@ -97,7 +100,9 @@ public class SmartMergeStrategy implements MergeStrategy {
                 language,
                 searchDuration,
                 duplicatesFound,
-                totalItemsBeforeMerge
+                totalItemsBeforeMerge,
+                false,          // placeholder — aggregator sets real value
+                Collections.emptyMap()  // placeholder — aggregator sets real value
         );
     }
 

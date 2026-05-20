@@ -358,119 +358,35 @@ public class RecipeRepository {
 
         final String normalizedQuery = query.trim();
 
-        // AtomicInteger tracks completion of both parallel sources
-        final java.util.concurrent.atomic.AtomicInteger pending =
-                new java.util.concurrent.atomic.AtomicInteger(2);
-
-        // Synchronized list - both sources write here
-        final List<Recipe> combined =
-                java.util.Collections.synchronizedList(new ArrayList<>());
-
-        // Deduplication set - prevents same recipe appearing twice
-        // (e.g. if TheMealDB result was already cached in Room)
-        final Set<String> seenIds =
-                java.util.Collections.synchronizedSet(new java.util.HashSet<>());
-
-        // Fired once both sources complete - sorts and delivers
-        final Runnable onBothDone = () -> {
-            List<Recipe> sorted = new ArrayList<>(combined);
-            sorted.sort((a, b) -> Integer.compare(
-                    b.getSearchRelevance(normalizedQuery, language),
-                    a.getSearchRelevance(normalizedQuery, language)));
-
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Combined recipe search: " + sorted.size()
-                        + " results for '" + normalizedQuery + "'");
-            }
-
-            runOnMainThread(() -> callback.onSuccess(sorted));
-        };
-
-        // ── Source 1: Room ────────────────────────────────────────────────────
-        // Queries both user-created AND previously cached external recipes
         backgroundExecutor.execute(() -> {
             try {
                 List<RecipeEntity> entities = recipeDao.search(normalizedQuery, 100);
+                List<Recipe> results = new ArrayList<>();
+
                 for (RecipeEntity entity : entities) {
                     Recipe recipe = entity.toRecipe();
-                    int relevance = recipe.getSearchRelevance(normalizedQuery, language);
-                    if (seenIds.add(recipe.getSearchableId())) {
-                        combined.add(recipe);
+                    if (recipe.getSearchRelevance(normalizedQuery, language) >= 20) {
+                        results.add(recipe);
                     }
                 }
+
+                results.sort((a, b) -> Integer.compare(
+                        b.getSearchRelevance(normalizedQuery, language),
+                        a.getSearchRelevance(normalizedQuery, language)));
+
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Room recipe search: " + entities.size()
-                            + " for '" + normalizedQuery + "'");
+                    Log.d(TAG, "Room recipe search: " + results.size()
+                            + " results for '" + normalizedQuery + "'");
                 }
+
+                runOnMainThread(() -> callback.onSuccess(results));
+
             } catch (Exception e) {
                 Log.e(TAG, "Room recipe search failed", e);
-            } finally {
-                if (pending.decrementAndGet() == 0) onBothDone.run();
+                runOnMainThread(() -> callback.onError(
+                        "Recipe search failed: " + e.getMessage()));
             }
         });
-
-        // ── Source 2: External recipe sources ────────────────────────────────
-        // Routed via DataSourceManager — no source-specific code here.
-        // Any registered DataSource that produces recipes participates in search
-        // automatically. Currently: TheMealDB. Future sources register in
-        // DataSourceManager.initializeDataSources() — zero changes needed here.
-        DataSource externalRecipeSource = dataSourceManager.getDataSource("THEMEALDB");
-
-        if (externalRecipeSource == null || !externalRecipeSource.isAvailable()) {
-            // Source not registered or not yet initialised — treat as empty
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "No external recipe source available — skipping network search");
-            }
-            if (pending.decrementAndGet() == 0) onBothDone.run();
-        } else {
-            externalRecipeSource.search(
-                    normalizedQuery,
-                    language,
-                    20, // Reasonable cap — TheMealDB returns all matches in one response
-                    1,
-                    new DataSourceCallback<DataSource.SearchResult>() {
-                        @Override
-                        public void onSuccess(DataSource.SearchResult result) {
-                            List<Recipe> fetchedRecipes = new ArrayList<>();
-
-                            for (Searchable item : result.items) {
-                                if (item instanceof Recipe) {
-                                    Recipe recipe = (Recipe) item;
-                                    int relevance = recipe.getSearchRelevance(
-                                            normalizedQuery, language);
-                                    if (relevance >= 20
-                                            && seenIds.add(recipe.getSearchableId())) {
-                                        combined.add(recipe);
-                                        fetchedRecipes.add(recipe);
-                                    }
-                                }
-                            }
-
-                            // Auto-save to Room — fire-and-forget, non-blocking
-                            if (!fetchedRecipes.isEmpty()) {
-                                saveRecipesToDatabase(fetchedRecipes);
-                            }
-
-                            if (ApiConfig.DEBUG_LOGGING) {
-                                Log.d(TAG, "External recipe search: " + fetchedRecipes.size()
-                                        + " results for '" + normalizedQuery + "'");
-                            }
-
-                            if (pending.decrementAndGet() == 0) onBothDone.run();
-                        }
-
-                        @Override
-                        public void onError(Error error) {
-                            // Non-fatal — Room results still deliver
-                            Log.w(TAG, "External recipe search failed (non-fatal): "
-                                    + error.getMessage());
-                            if (pending.decrementAndGet() == 0) onBothDone.run();
-                        }
-
-                        @Override
-                        public void onLoading() {}
-                    });
-        }
     }
 
     /**

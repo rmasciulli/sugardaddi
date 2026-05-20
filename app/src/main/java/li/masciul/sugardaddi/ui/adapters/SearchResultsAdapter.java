@@ -74,10 +74,10 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
      * Registers all delegates in priority order.
      * Specific sources (OFF, Ciqual) must come before the generic fallback.
      */
-    public SearchResultsAdapter(@NonNull Context context) {
+    public SearchResultsAdapter(@NonNull Context context, OnItemClickListener listener) {
         this.context = context;
         this.currentLanguage = LanguageManager.getCurrentLanguage(context).getCode();
-
+        this.clickListener = listener;
         this.registry = new DelegateRegistry();
         registry.register(new OffProductSearchDelegate(context));
         registry.register(new CiqualProductSearchDelegate(context));
@@ -102,13 +102,13 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     /** Replace all items and reset pagination. */
-    public void updateItems(@Nullable List<Searchable> newItems) {
+    public void updateItems(@Nullable List<Searchable> newItems, boolean hasMore) {
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, String.format("updateItems: %d -> %d",
-                    items.size(), newItems != null ? newItems.size() : 0));
+            Log.d(TAG, String.format("updateItems: %d -> %d, hasMore=%b",
+                    items.size(), newItems != null ? newItems.size() : 0, hasMore));
         }
         isLoadingMore = false;
-        hasMoreItems = newItems != null && newItems.size() >= ApiConfig.API_PAGE_SIZE;
+        hasMoreItems = hasMore;
         items.clear();
         if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
@@ -125,7 +125,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
     }
 
     /** Append next page of items. */
-    public void addMoreItems(@Nullable List<Searchable> newItems) {
+    public void addMoreItems(@Nullable List<Searchable> newItems, boolean hasMore) {
         if (newItems == null || newItems.isEmpty()) {
             isLoadingMore = false;
             hasMoreItems = false;
@@ -135,7 +135,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         int oldSize = items.size();
         items.addAll(newItems);
         isLoadingMore = false;
-        hasMoreItems = newItems.size() >= ApiConfig.API_PAGE_SIZE;
+        hasMoreItems = hasMore;
         notifyItemRangeInserted(oldSize, newItems.size());
         notifyItemChanged(items.size());
     }

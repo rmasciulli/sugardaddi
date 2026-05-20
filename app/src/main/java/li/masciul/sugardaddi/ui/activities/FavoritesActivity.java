@@ -221,7 +221,7 @@ public class FavoritesActivity extends BaseActivity
     private void setupRecyclerView() {
         // Reuse the same delegate-based adapter as the search results screen.
         // Pagination is explicitly disabled — there is no load-more footer in favorites.
-        adapter = new SearchResultsAdapter(this);
+        adapter = new SearchResultsAdapter(this, this);
         adapter.setPaginationEnabled(false);
         adapter.setOnItemClickListener(this);
 
@@ -321,7 +321,7 @@ public class FavoritesActivity extends BaseActivity
         }
 
         // Push to adapter — updateItems() also resets pagination state (harmless here)
-        adapter.updateItems(displayedFavorites);
+        adapter.updateItems(displayedFavorites, false);
 
         updateCountText();
         updateEmptyState();
