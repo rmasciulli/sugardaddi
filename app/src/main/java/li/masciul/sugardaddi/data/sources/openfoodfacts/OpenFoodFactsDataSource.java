@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -123,7 +124,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
         this.productMapper = new OpenFoodFactsMapper();
     }
 
-    // ========== NETWORK CONFIG (REQUIRED BY BaseDataSource) ==========
+    // ========== REQUIRED BASEDATASOURCE METHODS ==========
 
     /**
      * Implement getNetworkConfig() required by BaseDataSource
@@ -134,8 +135,6 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
     public NetworkConfig getNetworkConfig() {
         return config;
     }
-
-    // ========== DATA SOURCE IDENTIFICATION (REQUIRED BY DataSource INTERFACE) ==========
 
     /**
      * Implement getSourceId() required by DataSource interface
@@ -153,6 +152,12 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
     @Override
     public String getSourceName() {
         return OpenFoodFactsConstants.SOURCE_NAME;
+    }
+
+    @NonNull
+    @Override
+    public Set<ProductType> getProducedTypes() {
+        return Collections.singleton(ProductType.FOOD);
     }
 
     // ========== SETTINGS PROVIDER ==========

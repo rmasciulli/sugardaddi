@@ -4,7 +4,7 @@ import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
-import li.masciul.sugardaddi.core.utils.SearchFilter;
+import li.masciul.sugardaddi.business.search.ResultPipeline;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 import java.util.List;
@@ -139,7 +139,7 @@ public class RecipeScorer extends BaseScorer<Recipe> {
         // Users search by cuisine type (e.g., "italian", "chinese")
         String cuisine = recipe.getCuisine(language);
         if (cuisine != null && !cuisine.isEmpty()) {
-            String normalizedCuisine = SearchFilter.normalizeSearchTerm(cuisine);
+            String normalizedCuisine = ResultPipeline.normalizeSearchTerm(cuisine);
             if (normalizedCuisine.contains(normalizedQuery)) {
                 score += ApiConfig.Scoring.Recipe.CUISINE_MATCH;
                 breakdown.append("cuisine:").append(ApiConfig.Scoring.Recipe.CUISINE_MATCH).append(" ");
@@ -204,7 +204,7 @@ public class RecipeScorer extends BaseScorer<Recipe> {
             if (portion.getFoodProduct() != null) {
                 String ingredientName = portion.getFoodProduct().getName(language);
                 if (ingredientName != null && !ingredientName.isEmpty()) {
-                    String normalizedIngredient = SearchFilter.normalizeSearchTerm(ingredientName);
+                    String normalizedIngredient = ResultPipeline.normalizeSearchTerm(ingredientName);
 
                     // Check for match
                     if (normalizedIngredient.equals(normalizedQuery)) {
@@ -220,7 +220,7 @@ public class RecipeScorer extends BaseScorer<Recipe> {
             if (portion.getRecipe() != null) {
                 String recipeName = portion.getRecipe().getName(language);
                 if (recipeName != null && !recipeName.isEmpty()) {
-                    String normalizedRecipeName = SearchFilter.normalizeSearchTerm(recipeName);
+                    String normalizedRecipeName = ResultPipeline.normalizeSearchTerm(recipeName);
 
                     if (normalizedRecipeName.contains(normalizedQuery)) {
                         matchCount++;

@@ -369,11 +369,14 @@
     <string name="source_name_custom">Entrée personnalisée</string>
     <string name="source_name_imported">Import&#233;</string>
     <string name="source_name_themealdb">The MealDB</string>
+    <string name="source_name_thecocktaildb">TheCocktailDB</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Produit alimentaire</string>
     <string name="product_type_recipe">Recette</string>
     <string name="product_type_recipe_with_video">Recette avec vidéo</string>
+    <string name="product_type_cocktail">Cocktail</string>
+    <string name="product_type_cocktail_with_video">Cocktail avec vidéo</string>
 
     <!-- Data Source Emojis  -->
     <string name="source_emoji_openfoodfacts">&#x1F30D;</string>
@@ -383,6 +386,7 @@
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
     <string name="source_emoji_themealdb">&#x1F4D6;</string>
+    <string name="source_emoji_thecocktaildb">🍹</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Base de données collaborative de produits alimentaires</string>
@@ -392,6 +396,7 @@
     <string name="source_description_custom">Données alimentaires saisies manuellement</string>
     <string name="source_description_imported">Données importées d\'autres applications</string>
     <string name="source_description_themealdb">Base de données de recettes ouverte. Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
+    <string name="source_description_thecocktaildb">Base de données de cocktails ouverte. Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Données issues d\'OpenFoodFacts.org</string>
@@ -401,18 +406,21 @@
     <string name="source_attribution_custom">Entrée personnalisée</string>
     <string name="source_attribution_imported">Données importées</string>
     <string name="source_attribution_themealdb">Données issues de TheMealDB</string>
+    <string name="source_attribution_thecocktaildb">Données issues de TheCocktailDB</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">La base de données Open Food Facts est disponible sous la licence Open Database License. Les contenus individuels de la base de données sont disponibles sous la Database Contents License. Avertissement : les informations et données sont fournies à titre purement indicatif. Elles peuvent contenir des erreurs et ne doivent pas être utilisées à des fins médicales.</string>
     <string name="source_full_attribution_ciqual">Les présentes données sont mises à la disposition du public par l\'Agence nationale de sécurité sanitaire de l\'alimentation, de l\'environnement et du travail (ANSES). Les données de la table de composition nutritionnelle des aliments Ciqual de l\'ANSES sont accessibles au public et peuvent être téléchargées gratuitement depuis leur site internet ou via la plateforme data.gouv.fr. Les données peuvent être utilisées selon les termes et conditions de la Licence Ouverte.</string>
     <string name="source_full_attribution_usda">Département américain de l\'Agriculture, Service de recherche agricole. FoodData Central, 2019. fdc.nal.usda.gov. Les données sont fournies par l\'USDA et appartiennent au domaine public.</string>
-    <string name="source_full_attribution_themealdb">TheMealDB est une base de données ouverte et collaborative qui regroupe des recettes du monde entier. Elle propose une API de recettes gratuites et faciles à utiliser pour les développeurs et les amateurs de cuisine. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires.</string>
+    <string name="source_full_attribution_themealdb">TheMealDB est une base de données ouverte et collaborative qui regroupe des recettes du monde entier. Elle propose une API de recettes gratuite et facile à utiliser. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires. Utilisé dans le cadre du niveau de développement gratuit.</string>
+    <string name="source_full_attribution_thecocktaildb">TheCocktailDB est une base de données ouverte et collaborative qui regroupe des cocktails du monde entier. Elle propose une API de cocktails gratuite et facile à utiliser. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires. Utilisé dans le cadre du niveau de développement gratuit.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
     <string name="source_website_ciqual">https://ciqual.anses.fr/</string>
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
     <string name="source_website_themealdb">https://www.themealdb.com</string>
+    <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Créez un nouveau repas</string>
@@ -679,8 +687,10 @@
 
     <!-- TheMealDB recipe card -->
     <string name="recipe_ingredient_count">%d ingrédients</string>
-    <string name="recipe_has_video">▶ Recette avec vidéo</string>
     <string name="recipe_source_themealdb">TheMealDB</string>
+
+    <!-- TheCocktailDB recipe card -->
+    <string name="recipe_source_thecocktaildb">TheCocktailDB</string>
 
     <!-- RecipeDetailsActivity -->
     <string name="recipe_details_title">Recette</string>
@@ -695,5 +705,15 @@
     <string name="recipe_section_notes">Notes</string>
     <string name="recipe_no_nutrition_data">Aucune donnée nutritionnelle disponible pour cette recette.</string>
     <string name="recipe_image_content_description">Photo de la recette</string>
+    <string name="recipe_no_ingredients">Aucun ingrédient disponible</string>
+
+    <!-- CocktailDetailsActivity -->
+    <string name="cocktail_glass_label">Verre</string>
+
+    <string name="filter_type_all">Aliments et recettes</string>
+    <string name="filter_type_food">Aliments</string>
+    <string name="filter_type_recipe">Recettes</string>
+    <string name="filter_source_all">Toutes sources confondues</string>
+    <string name="filter_source_subset">%1$d source(s) sur %2$d</string>
 
 </resources>

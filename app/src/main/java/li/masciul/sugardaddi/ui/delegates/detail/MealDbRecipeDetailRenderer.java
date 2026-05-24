@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import li.masciul.sugardaddi.R;
@@ -24,21 +25,21 @@ import li.masciul.sugardaddi.core.models.RecipeStep;
 import java.util.List;
 
 /**
- * MealDbRecipeDetailRenderer — Detail renderer for TheMealDB recipes.
+ * MealDbRecipeDetailRenderer - Detail renderer for TheMealDB recipes.
  *
  * HANDLES: Recipe items with DataSourceType.THEMEALDB.
  *
  * DISPLAYS:
  *   - Hero image (full-width)
  *   - Name + area·category description
- *   - Ingredient list (unresolved FoodPortion stubs — name + measure string)
+ *   - Ingredient list (unresolved FoodPortion stubs - name + measure string)
  *   - Full cooking instructions (plain-text blob, split into paragraphs)
  *   - TheMealDB attribution
  *
  * DOES NOT DISPLAY:
- *   - Nutrition (TheMealDB provides none — placeholder shown instead)
+ *   - Nutrition (TheMealDB provides none - placeholder shown instead)
  *   - Difficulty / prep time / cook time (not available from this source)
- *   - Edit button (external recipe — read-only)
+ *   - Edit button (external recipe - read-only)
  *   - Video link (handled by the activity toolbar action_video menu item)
  *
  * INGREDIENTS:
@@ -79,7 +80,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
     @NonNull
     @Override
     public View inflate(@NonNull LayoutInflater inflater, @NonNull ViewGroup container) {
-        // Do NOT attach to container — RecipeDetailsActivity does that.
+        // Do NOT attach to container - RecipeDetailsActivity does that.
         return inflater.inflate(R.layout.detail_mealdb_recipe, container, false);
     }
 
@@ -107,13 +108,13 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         return null;
     }
 
-    // destroy() default no-op is sufficient — no TextWatchers or heavy resources held.
+    // destroy() default no-op is sufficient - no TextWatchers or heavy resources held.
 
     // ========== POPULATE HELPERS ==========
 
     /**
      * Hero image: full-width, 220dp tall.
-     * Container is GONE by default — shown only when imageUrl is present.
+     * Container is GONE by default - shown only when imageUrl is present.
      */
     private void populateHeroImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
@@ -121,12 +122,22 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
 
         String imageUrl = recipe.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            // The ImageView is match_parent × 220dp. At inflate time the view
+            // hasn't been measured yet so heroImage.getWidth() returns 0.
+            // We compute the pixel dimensions explicitly instead of letting
+            // Glide measure the view (which would fall back to SIZE_ORIGINAL).
+            android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+            int widthPx  = dm.widthPixels;
+            int heightPx = Math.round(220 * dm.density);  // 220dp → px
+
             Glide.with(context)
                     .load(imageUrl)
-                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .override(widthPx, heightPx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_placeholder)
+                    .error(R.drawable.ic_food_error)
                     .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
                     .into(heroImage);
             heroContainer.setVisibility(View.VISIBLE);
         } else {
@@ -159,8 +170,8 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
      * Ingredients: one row per FoodPortion stub.
      *
      * Each row shows:
-     *   LEFT  — ingredient name (portion.getItemId())
-     *   RIGHT — measure string (portion.getServing().getDisplayText())
+     *   LEFT  - ingredient name (portion.getItemId())
+     *   RIGHT - measure string (portion.getServing().getDisplayText())
      *
      * Rows are sorted by orderIndex (API order). Portions are always present
      * for TheMealDB recipes (mapIngredients() guarantees at least 1), but we
@@ -173,7 +184,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
 
         List<FoodPortion> portions = recipe.getPortions();
         if (portions == null || portions.isEmpty()) {
-            // Container is empty — divider and section header still show,
+            // Container is empty - divider and section header still show,
             // but that won't happen in practice since TheMealDB always has ingredients
             return;
         }
@@ -192,7 +203,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
      *   - portion.getServing().getDisplayText() as the measure
      *
      * FoodPortion.getDisplayName() falls back to itemId when foodProduct is null,
-     * so both approaches produce the same result — we use getDisplayName() for
+     * so both approaches produce the same result - we use getDisplayName() for
      * consistency with the rest of the codebase.
      */
     private void addIngredientRow(@NonNull LayoutInflater inflater,
@@ -213,7 +224,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         String measure = portion.getServing() != null
                 ? portion.getServing().getDisplayText()
                 : "";
-        // "Unknown serving" is the ServingSize fallback — replace with empty for cleaner UI
+        // "Unknown serving" is the ServingSize fallback - replace with empty for cleaner UI
         if ("Unknown serving".equals(measure)) {
             measure = "";
         }
@@ -229,10 +240,10 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
      * RecipeStepMetadata + RecipeStepTranslation entries using \r\n as the
      * step delimiter. Recipe.getSteps() assembles them into RecipeStep objects.
      *
-     * Falls back to the raw instructions blob if getSteps() returns empty —
+     * Falls back to the raw instructions blob if getSteps() returns empty -
      * defensive against edge cases where the mapper receives malformed data.
      *
-     * Duration and equipment are not available from TheMealDB — those views
+     * Duration and equipment are not available from TheMealDB - those views
      * are set to GONE in each inflated row.
      */
     private void populateInstructions(@NonNull View view, @NonNull Recipe recipe,
@@ -244,7 +255,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         List<RecipeStep> steps = recipe.getSteps(language);
 
         if (steps != null && !steps.isEmpty()) {
-            // Structured steps — inflate one row per step
+            // Structured steps - inflate one row per step
             instructionsSection.setVisibility(View.VISIBLE);
             LayoutInflater inflater = LayoutInflater.from(context);
 
@@ -285,7 +296,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
 
     /**
      * Attribution: fixed TheMealDB credit string.
-     * Always shown — TheMealDB requires attribution for public API use.
+     * Always shown - TheMealDB requires attribution for public API use.
      */
     private void populateAttribution(@NonNull View view, @NonNull Recipe recipe) {
         DetailRendererUtils.populateAttribution(context, view, recipe.getDataSource());

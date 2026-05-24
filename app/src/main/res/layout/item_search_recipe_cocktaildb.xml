@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_search_recipe_themealdb.xml
-    Search result card for TheMealDB recipes.
+    item_search_recipe_cocktaildb.xml
+    Search result card for TheCocktailDB cocktails.
 
     STRUCTURE:
-    ┌───────────────────────────────────────────────────┐
-    │ [Recipe name (bold, 2 lines)]   [TheMealDB badge] │
-    │ Recipe                                            │
-    │ ───────────────────────────────────────────────── │
-    │ [72x72     ]  Japanese · Chicken                  │
-    │ [thumbnail ]  8 ingredients                       │
-    │ [          ]  [Meat] [Casserole]                  │
-    └───────────────────────────────────────────────────┘
+    ┌───────────────────────────────────────────────────────┐
+    │ [Cocktail name (bold, 2 lines)]  [TheCocktailDB badge]│
+    │ Cocktail                                              │
+    │ ───────────────────────────────────────────────────── │
+    │ [72x72     ]  Cocktail · Alcoholic                    │
+    │ [thumbnail ]  5 ingredients                           │
+    │ [          ]  [IBA] [NewEra]                          │
+    └───────────────────────────────────────────────────────┘
 
-    Notes:
-    - Ingredient count and video indicator on the same line
-    - Tag chips on the third metadata line (below ingredient row)
-    - Chips are compact — Widget.Material3.Chip.Filter style
-    - Video indicator only shown when strYoutube is set
-    - Tags ChipGroup hidden when no displayable tags
+    Mirrors item_search_recipe_themealdb.xml exactly in structure.
+    Only the badge text and source differ — same ViewHolder field IDs.
 
-    Used by: MealDbRecipeSearchDelegate
+    Used by: CocktailDbRecipeSearchDelegate
 -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -43,7 +39,7 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- ROW 1: Recipe name + source badge -->
+        <!-- ROW 1: Cocktail name + source badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,7 +57,7 @@
                 android:textColor="?attr/colorOnSurface"
                 android:maxLines="1"
                 android:ellipsize="end"
-                tools:text="Chocolate Gateau" />
+                tools:text="Margarita" />
 
             <TextView
                 android:id="@+id/sourceBadge"
@@ -74,11 +70,11 @@
                 android:textColor="?attr/colorPrimary"
                 android:background="@drawable/rounded_corner_8dp"
                 android:backgroundTint="?attr/colorPrimaryContainer"
-                android:text="@string/recipe_source_themealdb" />
+                android:text="@string/source_name_thecocktaildb" />
 
         </LinearLayout>
 
-        <!-- ROW 2: productType label ("Recipe") -->
+        <!-- ROW 2: productType label ("Cocktail" or "Cocktail · Video") -->
         <TextView
             android:id="@+id/productType"
             android:layout_width="wrap_content"
@@ -87,7 +83,7 @@
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
-            android:text="@string/product_type_recipe"
+            android:text="@string/product_type_cocktail"
             android:visibility="visible" />
 
         <!-- ROW 3: thumbnail + metadata column -->
@@ -96,7 +92,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Thumbnail: 72x72dp — identical to OFF cards -->
+            <!-- Thumbnail: 72x72dp — identical to MealDB card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/imageContainer"
                 android:layout_width="72dp"
@@ -118,7 +114,7 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Metadata column: description, ingredient+video row, chips -->
+            <!-- Metadata column: description, ingredient count, tags -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -126,7 +122,7 @@
                 android:orientation="vertical"
                 android:gravity="center_vertical">
 
-                <!-- Area · Category e.g. "Japanese · Chicken" -->
+                <!-- Category · Alcoholic status e.g. "Cocktail · Alcoholic" -->
                 <TextView
                     android:id="@+id/recipeDescription"
                     android:layout_width="match_parent"
@@ -137,7 +133,7 @@
                     android:ellipsize="end"
                     android:visibility="gone"
                     tools:visibility="visible"
-                    tools:text="Japanese · Chicken" />
+                    tools:text="Cocktail · Alcoholic" />
 
                 <!-- Ingredient count -->
                 <TextView
@@ -149,11 +145,11 @@
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:visibility="gone"
                     tools:visibility="visible"
-                    tools:text="8 ingredients" />
+                    tools:text="5 ingredients" />
 
-                <!-- Tag chips — compact, on the third metadata line -->
+                <!-- Tag chips — compact, IBA / category tags from strTags -->
                 <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/tagsChipGroup"
+                    android:id="@+id/tagChips"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
@@ -164,12 +160,7 @@
                     app:chipSpacingHorizontal="4dp"
                     app:singleLine="true"
                     android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <!-- Chips added programmatically by MealDbRecipeSearchDelegate -->
-                    <include layout="@layout/chip_tag_compact" />
-
-                </com.google.android.material.chip.ChipGroup>
+                    tools:visibility="visible" />
 
             </LinearLayout>
 

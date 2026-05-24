@@ -26,7 +26,7 @@ import li.masciul.sugardaddi.core.models.ScoredProduct;
  *
  * ARCHITECTURE:
  * This is a Strategy Pattern implementation where:
- * - Context: SearchFilter
+ * - Context: ResultPipeline
  * - Strategy: SourceSpecificScorer (this interface)
  * - Concrete Strategies: OpenFoodFactsScorer, CiqualScorer, RecipeScorer
  *
@@ -74,7 +74,7 @@ public interface SourceSpecificScorer<T extends Searchable> {
      * the item matches the query, with higher scores indicating better matches.
      *
      * IMPLEMENTATION NOTES:
-     * - Use SearchFilter.normalizeSearchTerm() for text normalization
+     * - Use ResultPipeline.normalizeSearchTerm() for text normalization
      * - Break down score into components (name match, category match, bonuses)
      * - Include favorites bonus (+15 points) if item is favorited
      * - Return detailed breakdown string for debugging/transparency
@@ -101,7 +101,7 @@ public interface SourceSpecificScorer<T extends Searchable> {
     /**
      * Get the data source this scorer handles
      *
-     * Used by SearchFilter to route products to the correct scorer.
+     * Used by ResultPipeline to route products to the correct scorer.
      * Each scorer should return a specific DataSource enum value.
      *
      * @return The data source this scorer is designed for

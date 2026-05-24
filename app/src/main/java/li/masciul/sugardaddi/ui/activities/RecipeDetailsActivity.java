@@ -20,6 +20,7 @@ import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
+import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DefaultRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
@@ -132,6 +133,7 @@ public class RecipeDetailsActivity extends BaseActivity
     private void initializeRendererRegistry() {
         rendererRegistry = new DetailRendererRegistry();
         rendererRegistry.register(new MealDbRecipeDetailRenderer(this));
+        rendererRegistry.register(new CocktailDbRecipeDetailRenderer(this));
         rendererRegistry.register(new DefaultRecipeDetailRenderer(this)); // must be last
         logDebug("Recipe renderer registry initialized with "
                 + rendererRegistry.size() + " renderers");

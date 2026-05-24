@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.utils.SearchFilter;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.network.ApiConfig;

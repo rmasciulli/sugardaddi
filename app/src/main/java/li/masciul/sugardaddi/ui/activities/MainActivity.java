@@ -9,6 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +20,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -26,6 +28,7 @@ import com.google.android.material.textfield.TextInputLayout;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.business.search.SearchCache;
+import li.masciul.sugardaddi.business.search.SearchFilter;
 import li.masciul.sugardaddi.business.search.SearchManager;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -34,11 +37,16 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.aggregation.DataSourceAggregator;
+import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualImportService;
+import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.ui.adapters.AutocompleteAdapter;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * MainActivity — Search entry point for SugarDaddi.
@@ -91,8 +99,13 @@ public class MainActivity extends BaseActivity implements
 
     private AutoCompleteTextView searchEditText;
     private TextInputLayout searchInputLayout;
-    private RecyclerView recyclerView;
+
+    // Filter pills
+    private MaterialButton filterTypeButton;
+    private MaterialButton filterSourceButton;
+
     private LinearProgressIndicator progressIndicator;
+    private RecyclerView recyclerView;
     private View emptyStateView;
     private View errorStateView;
     private TextView emptyTitle;
@@ -238,8 +251,10 @@ public class MainActivity extends BaseActivity implements
     private void initializeUIComponents() {
         searchEditText     = findViewById(R.id.searchEditText);
         searchInputLayout  = findViewById(R.id.searchInputLayout);
-        recyclerView       = findViewById(R.id.recyclerView);
         progressIndicator  = findViewById(R.id.progressIndicator);
+        filterTypeButton   = findViewById(R.id.filterTypeButton);
+        filterSourceButton = findViewById(R.id.filterSourceButton);
+        recyclerView       = findViewById(R.id.recyclerView);
         emptyStateView     = findViewById(R.id.emptyStateView);
         errorStateView     = findViewById(R.id.errorStateView);
         emptyTitle         = findViewById(R.id.emptyTitle);
@@ -254,6 +269,8 @@ public class MainActivity extends BaseActivity implements
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
+
+        updateFilterPillLabels();
     }
 
     /**
@@ -340,6 +357,7 @@ public class MainActivity extends BaseActivity implements
             if (!query.isEmpty()) {
                 searchEditText.dismissDropDown();
                 autocompleteAdapter.clear();
+                hideKeyboard(searchEditText);
                 performSearch(query);
             }
             return true;
@@ -352,6 +370,7 @@ public class MainActivity extends BaseActivity implements
                 searchEditText.setText(suggestion);
                 searchEditText.dismissDropDown();
                 autocompleteAdapter.clear();
+                hideKeyboard(searchEditText);
                 performSearch(suggestion);
             }
         });
@@ -362,8 +381,17 @@ public class MainActivity extends BaseActivity implements
 
         // 5. Error retry
         tryAgainButton.setOnClickListener(v -> {
-            if (!lastQuery.isEmpty()) performSearch(lastQuery);
+            if (!lastQuery.isEmpty()) {
+                hideKeyboard(searchEditText);
+                performSearch(lastQuery);
+            }
         });
+
+        // 6. Type filter pill
+        filterTypeButton.setOnClickListener(v -> showTypeFilterPopup());
+
+        // 7. Source filter pill
+        filterSourceButton.setOnClickListener(v -> showSourceFilterPopup());
     }
 
     // =========================================================================
@@ -620,6 +648,138 @@ public class MainActivity extends BaseActivity implements
             logDebug("CiqualImportService auto-started");
         } catch (Exception e) {
             logError("Failed to auto-start CiqualImportService", e);
+        }
+    }
+
+    // =========================================================================
+    // SEARCH FILTERS
+    // =========================================================================
+
+    /**
+     * Show a popup below the type pill listing available item types.
+     * Current selection is pre-checked. Search re-triggers on dismiss.
+     */
+    private void showTypeFilterPopup() {
+        SearchFilter current = searchManager.getActiveFilter();
+        Set<ProductType> currentTypes = current.getAllowedTypes();
+
+        boolean foodSelected   = !current.isTypeFilterActive()
+                || currentTypes.contains(ProductType.FOOD);
+        boolean recipeSelected = !current.isTypeFilterActive()
+                || currentTypes.contains(ProductType.RECIPE);
+
+        PopupMenu popup = new PopupMenu(this, filterTypeButton);
+        popup.getMenu().add(0, 1, 0, getString(R.string.filter_type_food))
+                .setCheckable(true).setChecked(foodSelected);
+        popup.getMenu().add(0, 2, 1, getString(R.string.filter_type_recipe))
+                .setCheckable(true).setChecked(recipeSelected);
+
+        popup.setOnMenuItemClickListener(item -> {
+            item.setChecked(!item.isChecked());
+            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+            item.setActionView(new View(this));
+            return false;
+        });
+
+        popup.setOnDismissListener(menu -> {
+            boolean food   = popup.getMenu().findItem(1).isChecked();
+            boolean recipe = popup.getMenu().findItem(2).isChecked();
+
+            Set<ProductType> selected = new HashSet<>();
+            if (food)   selected.add(ProductType.FOOD);
+            if (recipe) selected.add(ProductType.RECIPE);
+
+            boolean noFilter = selected.size() == 2 || selected.isEmpty();
+
+            SearchFilter newFilter = new SearchFilter(
+                    noFilter ? Collections.emptySet() : selected,
+                    current.getAllowedSources()
+            );
+            searchManager.setFilters(newFilter);
+            updateFilterPillLabels();
+        });
+
+        popup.show();
+    }
+
+    /**
+     * Show a popup below the source pill listing all active sources.
+     * Disabled sources in Settings do not appear here.
+     * Search re-triggers on dismiss.
+     */
+    private void showSourceFilterPopup() {
+        SearchFilter current = searchManager.getActiveFilter();
+        List<DataSource> activeSources =
+                DataSourceManager.getInstance(this).getActiveSources();
+
+        if (activeSources.isEmpty()) return;
+
+        PopupMenu popup = new PopupMenu(this, filterSourceButton);
+        for (int i = 0; i < activeSources.size(); i++) {
+            DataSource source = activeSources.get(i);
+            boolean checked = !current.isSourceFilterActive()
+                    || current.getAllowedSources().contains(source.getSourceId());
+            popup.getMenu().add(0, i, i, source.getSourceName())
+                    .setCheckable(true).setChecked(checked);
+        }
+
+        popup.setOnMenuItemClickListener(item -> {
+            item.setChecked(!item.isChecked());
+            item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+            item.setActionView(new View(this));
+            return false;
+        });
+
+        popup.setOnDismissListener(menu -> {
+            Set<String> selected = new HashSet<>();
+            for (int i = 0; i < activeSources.size(); i++) {
+                if (popup.getMenu().findItem(i).isChecked()) {
+                    selected.add(activeSources.get(i).getSourceId());
+                }
+            }
+
+            boolean noFilter = selected.size() == activeSources.size();
+
+            SearchFilter newFilter = new SearchFilter(
+                    current.getAllowedTypes(),
+                    noFilter ? Collections.emptySet() : selected
+            );
+            searchManager.setFilters(newFilter);
+            updateFilterPillLabels();
+        });
+
+        popup.show();
+    }
+
+    /**
+     * Update both pill labels to reflect the current active filter state.
+     * Called after dismissing either popup and on first layout.
+     */
+    private void updateFilterPillLabels() {
+        if (searchManager == null || filterTypeButton == null) return;
+
+        SearchFilter filter = searchManager.getActiveFilter();
+        int totalSources = DataSourceManager.getInstance(this).getActiveSources().size();
+
+        // Type label
+        Set<ProductType> types = filter.getAllowedTypes();
+        if (!filter.isTypeFilterActive() || types.size() >= 2) {
+            filterTypeButton.setText(getString(R.string.filter_type_all));
+        } else if (types.contains(ProductType.FOOD)) {
+            filterTypeButton.setText(getString(R.string.filter_type_food));
+        } else if (types.contains(ProductType.RECIPE)) {
+            filterTypeButton.setText(getString(R.string.filter_type_recipe));
+        } else {
+            filterTypeButton.setText(getString(R.string.filter_type_all));
+        }
+
+        // Source label
+        if (!filter.isSourceFilterActive()
+                || filter.getAllowedSources().size() == totalSources) {
+            filterSourceButton.setText(getString(R.string.filter_source_all));
+        } else {
+            filterSourceButton.setText(getString(R.string.filter_source_subset,
+                    filter.getAllowedSources().size(), totalSources));
         }
     }
 

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import li.masciul.sugardaddi.BuildConfig;
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
@@ -133,6 +134,12 @@ public class USDADataSource extends BaseDataSource {
     @Override
     public String getSourceName() {
         return USDAConstants.SOURCE_NAME;
+    }
+
+    @NonNull
+    @Override
+    public Set<ProductType> getProducedTypes() {
+        return Collections.singleton(ProductType.FOOD);
     }
 
     @Nullable

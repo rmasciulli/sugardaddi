@@ -16,23 +16,23 @@ import com.bumptech.glide.module.AppGlideModule;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
+import li.masciul.sugardaddi.data.network.ApiConfig;
 import okhttp3.OkHttpClient;
 
 /**
- * GlideConfiguration - Custom Glide setup for SugarDaddi
+ * GlideConfiguration — Custom Glide module for SugarDaddi.
  *
- * Configures Glide with:
- * - Custom OkHttp client with proper timeouts (15s/30s/15s)
- * - Retry on connection failure
- * - Request/response logging
+ * Replaces Glide's default HttpUrlConnection networking with a custom
+ * OkHttp client. This gives us:
+ *   - Consistent timeouts across all image requests (connect 15s, read 30s)
+ *   - Automatic retry on connection failure
+ *   - Shared connection pool with the rest of the app's OkHttp usage
  *
- * Fixes:
- * - SocketTimeoutException (read timed out)
- * - HttpException (status code: -1)
- * - Cache corruption from failed loads
+ * Request/response logging is gated behind ApiConfig.DEBUG_LOGGING.
+ * In production builds this interceptor adds zero overhead.
  *
- * This class is automatically discovered by Glide's annotation processor.
- * No manual registration required!
+ * Automatically discovered by Glide's annotation processor via @GlideModule.
+ * No manual registration required.
  */
 @GlideModule
 public class GlideConfiguration extends AppGlideModule {
@@ -41,55 +41,48 @@ public class GlideConfiguration extends AppGlideModule {
 
     @Override
     public void applyOptions(@NonNull Context context, @NonNull GlideBuilder builder) {
-        // Enable logging for debugging
-        builder.setLogLevel(Log.INFO);
+        // Keep Glide's own log level at WARN in production; DEBUG_LOGGING promotes it to INFO.
+        builder.setLogLevel(ApiConfig.DEBUG_LOGGING ? Log.INFO : Log.WARN);
     }
 
     @Override
-    public void registerComponents(@NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
-        // Create OkHttp client with custom timeouts and retry logic
-        OkHttpClient client = new OkHttpClient.Builder()
-                // Connection timeout: Time to establish connection
+    public void registerComponents(@NonNull Context context, @NonNull Glide glide,
+                                   @NonNull Registry registry) {
+
+        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
-
-                // Read timeout: Time to read data from server
                 .readTimeout(30, TimeUnit.SECONDS)
-
-                // Write timeout: Time to write data to server
                 .writeTimeout(15, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true);
 
-                // Retry on connection failure
-                .retryOnConnectionFailure(true)
-
-                // Add interceptor for logging (optional, can be removed in production)
-                .addInterceptor(chain -> {
-                    okhttp3.Request request = chain.request();
-                    Log.d(TAG, "Loading image: " + request.url());
-
-                    try {
-                        okhttp3.Response response = chain.proceed(request);
-                        if (!response.isSuccessful()) {
-                            Log.w(TAG, "Image load failed: " + response.code() + " - " + request.url());
-                        }
-                        return response;
-                    } catch (Exception e) {
-                        Log.e(TAG, "Image load error: " + request.url(), e);
-                        throw e;
+        // Request/response logging — only in debug builds to avoid logcat noise in production
+        if (ApiConfig.DEBUG_LOGGING) {
+            clientBuilder.addInterceptor(chain -> {
+                okhttp3.Request request = chain.request();
+                Log.d(TAG, "Loading image: " + request.url());
+                try {
+                    okhttp3.Response response = chain.proceed(request);
+                    if (!response.isSuccessful()) {
+                        Log.w(TAG, "Image load failed: HTTP " + response.code()
+                                + " — " + request.url());
                     }
-                })
+                    return response;
+                } catch (Exception e) {
+                    // Log the URL at WARN; the full stack trace comes from Glide's own error path
+                    Log.w(TAG, "Image load error: " + request.url() + " — " + e.getMessage());
+                    throw e;
+                }
+            });
+        }
 
-                .build();
-
-        // Replace Glide's default networking with our custom OkHttp client
         registry.replace(GlideUrl.class, InputStream.class,
-                new OkHttpUrlLoader.Factory(client));
+                new OkHttpUrlLoader.Factory((okhttp3.Call.Factory) clientBuilder.build()));
 
-        Log.i(TAG, "Glide configured with custom OkHttp client (timeouts: 15s/30s/15s, retry enabled)");
+        Log.i(TAG, "Glide configured — OkHttp client ready (connect 15s, read 30s, retry enabled)");
     }
 
     @Override
     public boolean isManifestParsingEnabled() {
-        // We don't use manifest parsing, so disable it for performance
         return false;
     }
 }

@@ -5,7 +5,7 @@ import li.masciul.sugardaddi.core.interfaces.SourceSpecificScorer;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ScoredProduct;
-import li.masciul.sugardaddi.core.utils.SearchFilter;
+import li.masciul.sugardaddi.business.search.ResultPipeline;
 
 /**
  * BaseScorer - Abstract base class for source-specific scorers
@@ -23,7 +23,7 @@ import li.masciul.sugardaddi.core.utils.SearchFilter;
  * - Override capability for all methods (maximum flexibility)
  *
  * SCORING FLOW:
- * 1. scoreProduct() called by SearchFilter
+ * 1. scoreProduct() called by ResultPipeline
  * 2. scoreNameMatch() - can be overridden
  * 3. scoreCategoryMatch() - can be overridden
  * 4. scoreSourceSpecificAttributes() - MUST be implemented
@@ -120,7 +120,7 @@ public abstract class BaseScorer<T extends Searchable> implements SourceSpecific
             return 0;
         }
 
-        String normalizedName = SearchFilter.normalizeSearchTerm(displayName);
+        String normalizedName = ResultPipeline.normalizeSearchTerm(displayName);
 
         // Calculate name match score using utility
         int score = ScoringUtils.calculateNameMatchScore(normalizedName, normalizedQuery);
@@ -151,7 +151,7 @@ public abstract class BaseScorer<T extends Searchable> implements SourceSpecific
         // Get categories text (works for both FoodProduct and Recipe via Searchable)
         String categories = getCategoriesText(item, language);
         if (categories != null) {
-            String normalizedCategories = SearchFilter.normalizeSearchTerm(categories);
+            String normalizedCategories = ResultPipeline.normalizeSearchTerm(categories);
             int categoryScore = ScoringUtils.calculateCategoryMatchScore(normalizedCategories, normalizedQuery);
 
             if (categoryScore > 0) {
@@ -163,7 +163,7 @@ public abstract class BaseScorer<T extends Searchable> implements SourceSpecific
         // Primary category (if available)
         String primaryCategory = getPrimaryCategory(item, language);
         if (primaryCategory != null) {
-            String normalizedPrimary = SearchFilter.normalizeSearchTerm(primaryCategory);
+            String normalizedPrimary = ResultPipeline.normalizeSearchTerm(primaryCategory);
             int primaryScore = ScoringUtils.calculatePrimaryCategoryMatchScore(normalizedPrimary, normalizedQuery);
 
             if (primaryScore > 0) {

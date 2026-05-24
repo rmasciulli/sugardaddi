@@ -14,7 +14,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
  * - Immutable design (all fields final) for thread safety
  * - Contains the scored item and metadata about the score
  * - Used by SourceSpecificScorer implementations
- * - Consumed by SearchFilter and DiversityStrategy
+ * - Consumed by ResultPipeline and DiversityStrategy
  * - Supports both FoodProduct and Recipe via Searchable interface
  *
  * SCORE BREAKDOWN FORMAT:

@@ -1,4 +1,4 @@
-package li.masciul.sugardaddi.core.utils;
+package li.masciul.sugardaddi.business.search;
 
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;

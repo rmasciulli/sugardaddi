@@ -168,6 +168,19 @@ public class SearchManager {
     private final Set<String> seenSearchableIds = new HashSet<>();
 
     // =========================================================================
+    // FILTER STATE
+    // =========================================================================
+
+    /**
+     * Active search filter set by the user via the filter UI in MainActivity.
+     * Passed to DataSourceAggregator.searchAll() on every search call.
+     * Default: no filter (all types, all sources).
+     * Survives across queries — reset only if the user explicitly clears filters.
+     */
+    @NonNull
+    private SearchFilter activeFilter = SearchFilter.noFilter();
+
+    // =========================================================================
     // PENDING RUNNABLES (for debounce cancellation)
     // =========================================================================
 
@@ -280,6 +293,37 @@ public class SearchManager {
     // =========================================================================
     // PUBLIC SEARCH API
     // =========================================================================
+
+    /**
+     * Update the active search filter and re-trigger the current search.
+     *
+     * Called by MainActivity when the user dismisses a filter popup.
+     * No-op if the filter hasn't changed (avoids spurious re-searches).
+     * No-op if no query is active.
+     *
+     * @param filter New filter state. Pass SearchFilter.noFilter() to clear.
+     */
+    public void setFilters(@NonNull SearchFilter filter) {
+        if (filter.equals(activeFilter)) return;
+        activeFilter = filter;
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Filter updated: " + filter);
+        }
+
+        if (!currentQuery.isEmpty()) {
+            // Invalidate cache for current query — cached results were produced
+            // with the previous filter and must not be reused
+            searchCache.invalidate(currentQuery);
+            searchImmediate(currentQuery);
+        }
+    }
+
+    /** @return The currently active search filter. Never null. */
+    @NonNull
+    public SearchFilter getActiveFilter() {
+        return activeFilter;
+    }
 
     /**
      * Schedule a debounced search for the given query.
@@ -399,6 +443,7 @@ public class SearchManager {
                 ApiConfig.API_PAGE_SIZE,
                 currentPage,
                 exhaustedSnapshot,
+                activeFilter,
                 new DataSourceAggregator.AggregatorCallback() {
 
                     @Override
@@ -573,6 +618,7 @@ public class SearchManager {
                 ApiConfig.API_PAGE_SIZE,
                 1,
                 Collections.emptySet(), // page 1: no sources exhausted yet
+                activeFilter,
                 new DataSourceAggregator.AggregatorCallback() {
 
                     @Override
@@ -587,11 +633,20 @@ public class SearchManager {
                             partialItems.addAll(r.items);
                         }
 
+                        // Apply active type filter to partial results.
+                        // Source filter is already enforced upstream by DataSourceAggregator —
+                        // only allowed sources are called. Type filter must be applied here
+                        // since partial results arrive before the full aggregation completes.
+                        if (activeFilter.isTypeFilterActive()) {
+                            partialItems.removeIf(item ->
+                                    !activeFilter.getAllowedTypes().contains(item.getProductType()));
+                        }
+
                         // Apply scoring/filtering (same as full result path)
                         String lang = LanguageManager.getCurrentLanguage(context).getCode();
                         List<Searchable> filtered =
-                                li.masciul.sugardaddi.core.utils.SearchFilter
-                                        .filterAndSort(partialItems, query, lang);
+                                ResultPipeline
+                                        .process(partialItems, query, lang);
 
                         if (!filtered.isEmpty()) {
                             // Enrich on background thread, then deliver (no cache put yet)
@@ -622,8 +677,8 @@ public class SearchManager {
                         // Apply scoring/filtering
                         String lang = LanguageManager.getCurrentLanguage(context).getCode();
                         List<Searchable> filtered =
-                                li.masciul.sugardaddi.core.utils.SearchFilter
-                                        .filterAndSort(result.getItems(), query, lang);
+                                ResultPipeline
+                                        .process(result.getItems(), query, lang);
 
                         if (filtered.isEmpty()) {
                             Log.w(TAG, "All results filtered for: '" + query + "'");

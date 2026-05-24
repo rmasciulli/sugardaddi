@@ -70,7 +70,7 @@
 
         <!-- ===== STATUS BAR ===== -->
         <item name="android:statusBarColor">@color/md_theme_primary</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
 
         <!-- ===== CONTROL COLORS ===== -->
         <item name="colorControlNormal">@color/md_theme_onSurfaceVariant</item>

@@ -114,6 +114,64 @@
 
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Filter pills — type and source filters, shown below the search input -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/filterRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp">
+
+                        <!-- Item type filter pill — anchored to parent start, sizes to text -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/filterTypeButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="3dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:text="@string/filter_type_all"
+                            android:textAppearance="@style/TextAppearance.SugarDaddi.BodySmall"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:icon="@drawable/ic_arrow_drop_down"
+                            app:iconGravity="end"
+                            app:iconSize="16dp"
+                            app:iconPadding="4dp"
+                            app:cornerRadius="10dp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <!-- Data source filter pill — anchored to type button end, sizes to text, capped at row end -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/filterSourceButton"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="3dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:text="@string/filter_source_all"
+                            android:textAppearance="@style/TextAppearance.SugarDaddi.BodySmall"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:icon="@drawable/ic_arrow_drop_down"
+                            app:iconGravity="end"
+                            app:iconSize="16dp"
+                            app:iconPadding="4dp"
+                            app:cornerRadius="10dp"
+                            app:layout_constraintStart_toEndOf="@id/filterTypeButton"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintWidth_default="wrap"
+                            app:layout_constraintHorizontal_bias="0" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
                     <!-- Progress Indicator -->
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/progressIndicator"

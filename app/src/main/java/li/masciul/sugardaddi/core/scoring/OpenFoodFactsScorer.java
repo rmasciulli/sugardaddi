@@ -2,7 +2,7 @@ package li.masciul.sugardaddi.core.scoring;
 
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.utils.SearchFilter;
+import li.masciul.sugardaddi.business.search.ResultPipeline;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 /**
@@ -107,7 +107,7 @@ public class OpenFoodFactsScorer extends BaseScorer<FoodProduct> {
         // Add brand matching (OpenFoodFacts specific - 0-30 pts)
         String brand = product.getBrand(language);
         if (brand != null && !brand.isEmpty()) {
-            String normalizedBrand = SearchFilter.normalizeSearchTerm(brand);
+            String normalizedBrand = ResultPipeline.normalizeSearchTerm(brand);
             int brandScore = calculateBrandMatchScore(normalizedBrand, normalizedQuery);
 
             if (brandScore > 0) {

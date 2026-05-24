@@ -83,7 +83,15 @@ public enum DataSourceType {
      * - Requires network: Yes (no local bundle — recipes are fetched on demand)
      * - Data quality: Good for recipe structure; NO nutrition data provided
      */
-    THEMEALDB("THEMEALDB", false, true);
+    THEMEALDB("THEMEALDB", false, true),
+
+    /**
+     * TheCocktailDB — Open cocktail database (thecocktaildb.com)
+     * - Allows caching: No (same ToS as TheMealDB)
+     * - Requires network: Yes
+     * - Data quality: Good for cocktail structure; NO nutrition data provided
+     */
+    THECOCKTAILDB("THECOCKTAILDB", false, true);
 
     // ========== ENUM FIELDS ==========
 
@@ -249,6 +257,7 @@ public enum DataSourceType {
             case CUSTOM: return R.string.source_name_custom;
             case IMPORTED: return R.string.source_name_imported;
             case THEMEALDB: return R.string.source_name_themealdb;
+            case THECOCKTAILDB: return R.string.source_name_thecocktaildb;
             default: return 0;
         }
     }
@@ -265,6 +274,7 @@ public enum DataSourceType {
             case CUSTOM: return R.string.source_description_custom;
             case IMPORTED: return R.string.source_description_imported;
             case THEMEALDB: return R.string.source_description_themealdb;
+            case THECOCKTAILDB: return R.string.source_description_thecocktaildb;
             default: return 0;
         }
     }
@@ -281,6 +291,7 @@ public enum DataSourceType {
             case CUSTOM: return R.string.source_attribution_custom;
             case IMPORTED: return R.string.source_attribution_imported;
             case THEMEALDB: return R.string.source_attribution_themealdb;
+            case THECOCKTAILDB: return R.string.source_attribution_thecocktaildb;
             default: return 0;
         }
     }
@@ -294,6 +305,7 @@ public enum DataSourceType {
             case CIQUAL: return R.string.source_full_attribution_ciqual;
             case USDA: return R.string.source_full_attribution_usda;
             case THEMEALDB: return R.string.source_full_attribution_themealdb;
+            case THECOCKTAILDB: return R.string.source_full_attribution_thecocktaildb;
             default: return 0; // User content doesn't need full attribution
         }
     }
@@ -307,6 +319,7 @@ public enum DataSourceType {
             case CIQUAL: return R.string.source_website_ciqual;
             case USDA: return R.string.source_website_usda;
             case THEMEALDB: return R.string.source_website_themealdb;
+            case THECOCKTAILDB: return R.string.source_website_thecocktaildb;
             default: return 0;
         }
     }
@@ -323,6 +336,7 @@ public enum DataSourceType {
             case CUSTOM: return R.string.source_emoji_custom;
             case IMPORTED: return R.string.source_emoji_imported;
             case THEMEALDB: return R.string.source_emoji_themealdb;
+            case THECOCKTAILDB: return R.string.source_emoji_thecocktaildb;
             default: return 0;
         }
     }
@@ -347,7 +361,8 @@ public enum DataSourceType {
      * Check if this is a public/open data source
      */
     public boolean isPublic() {
-        return this == OPENFOODFACTS || this == CIQUAL || this == USDA || this == THEMEALDB;
+        return this == OPENFOODFACTS || this == CIQUAL || this == USDA ||
+               this == THEMEALDB || this == THECOCKTAILDB;
     }
 
     /**

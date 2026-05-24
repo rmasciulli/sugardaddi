@@ -14,6 +14,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.ui.delegates.DelegateRegistry;
+import li.masciul.sugardaddi.ui.delegates.search.CocktailDbRecipeSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.DefaultRecipeSearchDelegate;
 import li.masciul.sugardaddi.ui.delegates.search.FooterDelegate;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
@@ -85,6 +86,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         registry.register(new DefaultProductSearchDelegate(context));
 
         registry.register(new MealDbRecipeSearchDelegate(context));
+        registry.register(new CocktailDbRecipeSearchDelegate(context));
         registry.register(new DefaultRecipeSearchDelegate(context));
         registry.register(new FooterDelegate(context));
 

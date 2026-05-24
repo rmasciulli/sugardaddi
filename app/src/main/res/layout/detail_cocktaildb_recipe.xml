@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    detail_mealdb_recipe.xml — Layout inflated by MealDbRecipeDetailRenderer.
+    detail_cocktaildb_recipe.xml — Layout inflated by CocktailDbRecipeDetailRenderer.
 
-    STRUCTURE (mirrors product detail layouts):
-      1. Hero image — full-width, no card, GONE when no imageUrl
-      2. Main content card — single card with three sections + two dividers:
-           a. Header: name + area·category description
-           b. Ingredients: dot-leader rows (FoodPortion stubs)
-           c. Instructions: numbered step rows (RecipeStep list)
-      3. Attribution card — amber, separate, tappable (TheMealDB credit)
+    STRUCTURE (mirrors detail_mealdb_recipe.xml):
+      1. Hero image — full-width, 200dp, GONE when no imageUrl
+      2. Main content card — single card with four sections + three dividers:
+           a. Header: cocktail name + category·alcoholic status description
+           b. Glass type row (GONE when no glass tag present)
+           c. Ingredients: dot-leader rows (FoodPortion stubs)
+           d. Instructions: numbered step rows
+      3. Attribution card — amber, separate, tappable (TheCocktailDB credit)
 
-    DESIGN RATIONALE:
-    One content card with internal dividers matches the established pattern
-    from detail_off_product.xml and detail_ciqual_product.xml. Section headers
-    use textAppearanceLabelMedium + letterSpacing — not bold Headline6 titles.
+    DIFFERENCES FROM detail_mealdb_recipe.xml:
+      - Hero container height: 200dp (harmonised, was 220dp in MealDB layout)
+      - Extra section: glass type row (between header and ingredients)
+      - No dot-leader for ingredients — plain two-column rows via item_ingredient_row.xml
 
-    WHAT IS NOT SHOWN:
-      - Nutrition (TheMealDB provides none)
-      - Difficulty / prep time / cook time (not available from this source)
-      - Edit button (external recipe — read-only)
-
-    The video button lives in the activity toolbar (action_video menu item).
+    Used by: CocktailDbRecipeDetailRenderer
 -->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -55,8 +51,6 @@
 
         <!-- ================================================= -->
         <!-- 2. MAIN CONTENT CARD                              -->
-        <!--    Single card: header + ingredients + steps      -->
-        <!--    Sections separated by 1dp colorOutlineVariant  -->
         <!-- ================================================= -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -74,7 +68,7 @@
                 android:orientation="vertical">
 
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-                <!-- 2a. HEADER: name + area·category           -->
+                <!-- 2a. HEADER: name + description              -->
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -85,18 +79,17 @@
                     android:paddingTop="14dp"
                     android:paddingBottom="10dp">
 
+                    <!-- Cocktail name -->
                     <TextView
                         android:id="@+id/recipeName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnSurface"
                         android:textStyle="bold"
-                        android:maxLines="3"
-                        android:ellipsize="end"
-                        tools:text="Chocolate Gateau" />
+                        tools:text="Margarita" />
 
-                    <!-- Area · Category e.g. "France · Dessert" -->
+                    <!-- Category · Alcoholic status e.g. "Cocktail · Alcoholic" -->
                     <TextView
                         android:id="@+id/recipeDescription"
                         android:layout_width="match_parent"
@@ -105,7 +98,7 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:visibility="gone"
-                        tools:text="France · Dessert"
+                        tools:text="Cocktail · Alcoholic"
                         tools:visibility="visible" />
 
                 </LinearLayout>
@@ -121,7 +114,53 @@
                     android:background="?attr/colorOutlineVariant" />
 
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-                <!-- 2b. INGREDIENTS                            -->
+                <!-- 2b. GLASS TYPE — GONE when no glass tag    -->
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <LinearLayout
+                    android:id="@+id/glassTypeRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:visibility="gone">
+
+                    <!-- Label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cocktail_glass_label"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginEnd="8dp" />
+
+                    <!-- Value — set programmatically -->
+                    <TextView
+                        android:id="@+id/glassTypeValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        tools:text="Cocktail glass" />
+
+                </LinearLayout>
+
+                <!-- Section divider 2 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
+                <!-- 2c. INGREDIENTS                            -->
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -132,7 +171,6 @@
                     android:paddingTop="10dp"
                     android:paddingBottom="10dp">
 
-                    <!-- Compact section header — matches product layout style -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -149,9 +187,19 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
 
+                    <!-- Shown when no ingredients are available -->
+                    <TextView
+                        android:id="@+id/ingredientsEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/recipe_no_ingredients"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
-                <!-- Section divider 2 -->
+                <!-- Section divider 3 -->
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
@@ -162,20 +210,17 @@
                     android:background="?attr/colorOutlineVariant" />
 
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-                <!-- 2c. INSTRUCTIONS                           -->
+                <!-- 2d. INSTRUCTIONS                           -->
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
                 <LinearLayout
-                    android:id="@+id/instructionsSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:paddingStart="14dp"
                     android:paddingEnd="14dp"
                     android:paddingTop="10dp"
-                    android:paddingBottom="14dp"
-                    android:visibility="gone">
+                    android:paddingBottom="14dp">
 
-                    <!-- Compact section header -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -187,7 +232,7 @@
 
                     <!-- Step rows inflated programmatically -->
                     <LinearLayout
-                        android:id="@+id/stepsContainer"
+                        android:id="@+id/instructionsContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
@@ -200,8 +245,6 @@
 
         <!-- ================================================= -->
         <!-- 3. ATTRIBUTION CARD (amber, tappable → website)  -->
-        <!--    Separate because: distinct amber background,   -->
-        <!--    tappable (external URL), legal/meta content.   -->
         <!-- ================================================= -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/attributionPanel"
@@ -230,7 +273,7 @@
                     android:textAppearance="?attr/textAppearanceLabelMedium"
                     android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="bold"
-                    tools:text="🍳 TheMealDB" />
+                    tools:text="🍹 TheCocktailDB" />
 
                 <TextView
                     android:id="@+id/attributionLegalText"
@@ -240,7 +283,7 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnAttributionCardAmberContainer"
                     android:textStyle="italic"
-                    tools:text="Recipe data from TheMealDB." />
+                    tools:text="Cocktail data from TheCocktailDB." />
 
                 <TextView
                     android:id="@+id/attributionSourceDescription"
@@ -249,7 +292,7 @@
                     android:layout_marginTop="2dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnAttributionCardAmberContainer"
-                    tools:text="Open recipe database" />
+                    tools:text="Open cocktail database" />
 
                 <TextView
                     android:layout_width="match_parent"

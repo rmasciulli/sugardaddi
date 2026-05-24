@@ -46,6 +46,9 @@ public final class ViewType {
     /** TheMealDB recipe — external recipe fetched on demand, no local storage */
     public static final int RECIPE_MEALDB = 21;
 
+    /** TheCocktailDB cocktail — external cocktail recipe, no local storage */
+    public static final int RECIPE_COCKTAILDB = 22;
+
     // ========== SPECIAL VIEW TYPES ==========
 
     /** Loading footer for pagination */

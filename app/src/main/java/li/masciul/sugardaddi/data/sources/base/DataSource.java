@@ -5,9 +5,11 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -134,6 +136,25 @@ public interface DataSource {
     // =========================================================================
     // CORE OPERATIONS
     // =========================================================================
+
+    /**
+     * The set of item types this source produces in search results.
+     *
+     * Used by DataSourceAggregator to skip sources that produce only types
+     * the user has filtered out — avoiding unnecessary network calls.
+     *
+     * The default returns both types as a safe fallback — a source that doesn't
+     * override this method is never silently excluded from any search.
+     *
+     * @return Set of ProductType values. Never null.
+     */
+    @NonNull
+    default Set<ProductType> getProducedTypes() {
+        Set<ProductType> both = new HashSet<>();
+        both.add(ProductType.FOOD);
+        both.add(ProductType.RECIPE);
+        return both;
+    }
 
     /**
      * Search for food products matching the query.

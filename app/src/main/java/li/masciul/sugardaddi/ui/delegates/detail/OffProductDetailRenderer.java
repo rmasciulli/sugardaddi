@@ -13,6 +13,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -25,7 +28,6 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
-import li.masciul.sugardaddi.ui.utils.GlideImageLoader;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
 
@@ -156,13 +158,25 @@ public class OffProductDetailRenderer implements DetailRenderer {
 
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            GlideImageLoader.load(context, imageUrl)
+
+            // The ImageView is match_parent × 200dp. At inflate time the view
+            // hasn't been measured yet so heroImage.getWidth() returns 0.
+            // We compute the pixel dimensions explicitly instead of letting
+            // Glide measure the view (which would fall back to SIZE_ORIGINAL).
+            android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+            int widthPx  = dm.widthPixels;
+            int heightPx = Math.round(200 * dm.density);  // 200dp → px
+
+            Glide.with(context)
+                    .load(imageUrl)
+                    .override(widthPx, heightPx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
                     .error(R.drawable.ic_food_error)
                     .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
                     .into(heroImage);
         } else {
-            // No image available: show a centered placeholder (no scrim, no overlay text)
             heroImage.setImageResource(R.drawable.ic_food_placeholder);
             heroImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         }

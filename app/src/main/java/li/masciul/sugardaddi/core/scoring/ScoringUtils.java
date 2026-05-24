@@ -31,15 +31,15 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * - Any source-specific logic
  *
  * IMPORTANT - SEPARATION OF CONCERNS:
- * - This class does NOT normalize text (use SearchFilter.normalizeSearchTerm())
+ * - This class does NOT normalize text (use ResultPipeline.normalizeSearchTerm())
  * - This class does NOT fetch data (handled by repositories)
  * - This class ONLY calculates scores based on already-normalized inputs
  *
  * USAGE PATTERN:
  * ```java
  * // In a scorer implementation
- * String normalizedName = SearchFilter.normalizeSearchTerm(product.getName(lang));
- * String normalizedQuery = SearchFilter.normalizeSearchTerm(query);
+ * String normalizedName = ResultPipeline.normalizeSearchTerm(product.getName(lang));
+ * String normalizedQuery = ResultPipeline.normalizeSearchTerm(query);
  * int nameScore = ScoringUtils.calculateNameMatchScore(normalizedName, normalizedQuery);
  * ```
  *
@@ -71,7 +71,7 @@ public final class ScoringUtils {
      * GENERIC: Used by all sources (OpenFoodFacts, Ciqual, Recipes)
      *
      * PRECONDITION: Both name and query must already be normalized
-     * (use SearchFilter.normalizeSearchTerm() before calling)
+     * (use ResultPipeline.normalizeSearchTerm() before calling)
      *
      * SCORING (from ApiConfig.Scoring):
      * - Exact match: EXACT_NAME_MATCH points (40)

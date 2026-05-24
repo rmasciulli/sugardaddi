@@ -7,6 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
@@ -432,6 +433,12 @@ public class CiqualDataSource extends BaseDataSource {
 
         // Check if API is ready
         return apiReady.get();
+    }
+
+    @NonNull
+    @Override
+    public Set<ProductType> getProducedTypes() {
+        return Collections.singleton(ProductType.FOOD);
     }
 
     // ========== SETTINGS PROVIDER ==========

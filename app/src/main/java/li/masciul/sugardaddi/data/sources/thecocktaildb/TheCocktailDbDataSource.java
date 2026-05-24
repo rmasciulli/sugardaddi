@@ -1,11 +1,10 @@
-package li.masciul.sugardaddi.data.sources.themealdb;
+package li.masciul.sugardaddi.data.sources.thecocktaildb;
 
 import android.content.Context;
 import android.util.Log;
 import android.util.LruCache;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import java.util.concurrent.Executors;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
-import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.network.NetworkClient;
@@ -28,9 +26,9 @@ import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
-import li.masciul.sugardaddi.data.sources.themealdb.api.TheMealDbAPI;
-import li.masciul.sugardaddi.data.sources.themealdb.api.dto.MealDbSearchResponse;
-import li.masciul.sugardaddi.data.sources.themealdb.mappers.TheMealDbMapper;
+import li.masciul.sugardaddi.data.sources.thecocktaildb.api.TheCocktailDbAPI;
+import li.masciul.sugardaddi.data.sources.thecocktaildb.api.dto.CocktailDbSearchResponse;
+import li.masciul.sugardaddi.data.sources.thecocktaildb.mappers.TheCocktailDbMapper;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -39,81 +37,67 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * TheMealDbDataSource - TheMealDB recipe data source.
+ * TheCocktailDbDataSource — TheCocktailDB cocktail data source.
  *
  * ARCHITECTURE
  * ============
  * Extends {@link BaseDataSource} and implements {@link DataSource} so it
- * registers and initialises via {@link li.masciul.sugardaddi.managers.DataSourceManager}
- * exactly like all other sources (OFF, Ciqual, USDA).
+ * registers and initialises via DataSourceManager exactly like all other
+ * sources (OFF, Ciqual, USDA, TheMealDB).
  *
- * Unlike food sources, this source returns {@link Recipe} objects wrapped in
- * {@link SearchResult} items. This is possible because {@link SearchResult}
- * now holds {@code List<Searchable>} - both {@link FoodProduct} and {@link Recipe}
- * implement {@link Searchable}.
+ * Returns {@link Recipe} objects wrapped in {@link SearchResult} items.
+ * Cocktails are treated as recipes — they share the same domain model,
+ * same Room persistence, and same detail screen pipeline.
  *
  * SEARCH FLOW
  * ===========
  * search() → GET search.php?s={query}
  * Returns full Recipe objects (ingredients, instructions, thumbnail, tags).
- * No pagination - TheMealDB returns all matches in one response; we cap at
- * {@link TheMealDbConstants#MAX_SEARCH_RESULTS}.
+ * No pagination — TheCocktailDB returns all matches in one response; we cap
+ * at {@link TheCocktailDbConstants#MAX_SEARCH_RESULTS}.
  *
  * RECIPE DETAIL
  * =============
  * getRecipe() → GET lookup.php?i={id}
- * Overrides DataSource.getRecipe() - the standard pipeline entry point.
  * Checks the LRU cache first; falls back to network via lookupById().
  *
  * PRODUCT DETAIL / BARCODE LOOKUP
  * ================================
- * Not supported. TheMealDB produces recipes, not food products.
- * getProduct() and getProductByBarcode() inherit the DataSource default
- * which fires onError() immediately - no override needed.
+ * Not supported. TheCocktailDB produces cocktail recipes, not food products.
+ * getProduct() and getProductByBarcode() inherit the DataSource default no-op.
  *
  * API KEY
  * =======
- * The development key "1" is a path segment, not a query parameter.
- * Base URL is built dynamically from the active key via
- * {@link TheMealDbConstants#buildBaseUrl(String)}.
- * Key change requires Retrofit reinitialisation - call reinitialize() after
- * saving a new key in Settings.
+ * The key is a path segment in the base URL — changing it requires rebuilding
+ * the Retrofit instance. Call reinitialize() after saving a new key in Settings.
  *
  * LRU CACHE
  * =========
- * Session-scoped in-memory cache for Recipe objects keyed by TheMealDB meal ID.
- * Not persisted to disk per TheMealDB ToS. Capacity: 50 recipes.
- * Persistent caching is handled by RecipeRepository (Room) on user interaction.
- *
- * THREADING
- * =========
- * onInitialize() runs on BaseDataSource's background init thread.
- * search() and getRecipeById() use Retrofit's async enqueue() - callbacks
- * delivered via executeOnMainThread() from BaseDataSource.
+ * Session-scoped in-memory cache for Recipe objects keyed by TheCocktailDB drink ID.
+ * Not persisted to disk. Capacity: 50 cocktails.
  */
-public class TheMealDbDataSource extends BaseDataSource {
+public class TheCocktailDbDataSource extends BaseDataSource {
 
-    private static final String TAG = "TheMealDbDataSource";
+    private static final String TAG = "TheCocktailDbDataSource";
 
     // =========================================================================
     // FIELDS
     // =========================================================================
 
-    private final TheMealDbConfig  config;
-    private final TheMealDbMapper  mapper;
-    private final Context          context;
+    private final TheCocktailDbConfig  config;
+    private final TheCocktailDbMapper  mapper;
+    private final Context              context;
 
-    /** Retrofit API interface - created in onInitialize(). */
-    private TheMealDbAPI api;
+    /** Retrofit API interface — created in onInitialize(). */
+    private TheCocktailDbAPI api;
 
-    /** Active Retrofit calls - tracked for cancellation support. */
+    /** Active Retrofit calls — tracked for cancellation support. */
     private final Set<Call<?>> activeCalls =
             Collections.synchronizedSet(new HashSet<>());
 
     /**
-     * Session-scoped LRU cache for Recipe objects keyed by TheMealDB meal ID.
-     * Capacity: 50 recipes - sufficient for a full browsing session.
-     * Not persisted to disk (ToS restriction).
+     * Session-scoped LRU cache keyed by TheCocktailDB drink ID.
+     * Capacity: 50 cocktails — sufficient for a full browsing session.
      */
     private final LruCache<String, Recipe> recipeCache = new LruCache<>(50);
 
@@ -127,16 +111,16 @@ public class TheMealDbDataSource extends BaseDataSource {
 
     /**
      * @param context Application context
-     * @param config  TheMealDB network configuration (holds active API key logic)
+     * @param config  TheCocktailDB network configuration (holds active API key logic)
      */
-    public TheMealDbDataSource(@NonNull Context context,
-                               @NonNull TheMealDbConfig config) {
+    public TheCocktailDbDataSource(@NonNull Context context,
+                                   @NonNull TheCocktailDbConfig config) {
         super();
         this.context = context.getApplicationContext();
         this.config  = config;
-        this.mapper  = new TheMealDbMapper();
+        this.mapper  = new TheCocktailDbMapper();
 
-        Log.d(TAG, "TheMealDbDataSource created (deferred initialization)");
+        Log.d(TAG, "TheCocktailDbDataSource created (deferred initialization)");
     }
 
     // =========================================================================
@@ -152,13 +136,13 @@ public class TheMealDbDataSource extends BaseDataSource {
     @NonNull
     @Override
     public String getSourceId() {
-        return TheMealDbConstants.SOURCE_ID;
+        return TheCocktailDbConstants.SOURCE_ID;
     }
 
     @NonNull
     @Override
     public String getSourceName() {
-        return TheMealDbConstants.SOURCE_NAME;
+        return TheCocktailDbConstants.SOURCE_NAME;
     }
 
     @NonNull
@@ -170,20 +154,20 @@ public class TheMealDbDataSource extends BaseDataSource {
     @NonNull
     @Override
     public SettingsProvider getSettingsProvider() {
-        // Pass reinitialize callback so key changes trigger Retrofit rebuild
-        return new TheMealDbSettingsProvider(this::reinitialize);
+        // Pass reinitialize callback so key changes trigger Retrofit rebuild immediately
+        return new TheCocktailDbSettingsProvider(this::reinitialize);
     }
 
     @Override
     public boolean supportsBarcodeLookup() {
-        // TheMealDB has no barcode concept - recipes are identified by meal ID
+        // TheCocktailDB has no barcode concept
         return false;
     }
 
     @NonNull
     @Override
     public Set<String> getSupportedLanguages() {
-        // TheMealDB v1 is English-only
+        // TheCocktailDB v1 is English-only
         Set<String> langs = new HashSet<>();
         langs.add("en");
         return langs;
@@ -204,30 +188,28 @@ public class TheMealDbDataSource extends BaseDataSource {
      * Creates the Retrofit instance using the active API key.
      *
      * The base URL contains the key as a path segment:
-     *   https://www.themealdb.com/api/json/v1/{key}/
-     * This is why we build it here from config.getActiveApiKey() rather than
-     * using a static constant.
+     *   https://www.thecocktaildb.com/api/json/v1/{key}/
      */
     @Override
     protected void onInitialize(@NonNull Context context) throws Exception {
-        logInfo("Initializing TheMealDB data source...");
+        logInfo("Initializing TheCocktailDB data source...");
 
         config.validate();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(TheMealDbConstants.buildBaseUrl(config.getActiveApiKey()))
+                .baseUrl(TheCocktailDbConstants.buildBaseUrl(config.getActiveApiKey()))
                 .client(NetworkClient.createHttpClient(config, context))
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        api = retrofit.create(TheMealDbAPI.class);
+        api = retrofit.create(TheCocktailDbAPI.class);
 
-        logInfo("TheMealDB API initialized - key: "
+        logInfo("TheCocktailDB API initialized — key: "
                 + (config.isUsingDemoKey() ? "DEMO (\"1\")" : "Patreon key"));
     }
 
     /**
-     * Synchronous initialization - delegates to onInitialize().
+     * Synchronous initialization — delegates to onInitialize().
      * Called by DataSourceManager's synchronous fallback path.
      */
     @Override
@@ -240,23 +222,23 @@ public class TheMealDbDataSource extends BaseDataSource {
             onInitialize(context);
             initialized = true;
         } catch (Exception e) {
-            Log.e(TAG, "TheMealDB initialization failed", e);
+            Log.e(TAG, "TheCocktailDB initialization failed", e);
         }
     }
 
     /**
      * Reinitialize the Retrofit instance after an API key change.
      *
-     * Because the TheMealDB key is a URL path segment (not a query parameter),
-     * changing the key requires rebuilding the Retrofit instance with the new
-     * base URL. This method is called by TheMealDbSettingsProvider via the
-     * ReinitializeCallback after the user saves a new key.
+     * Because the key is a URL path segment, changing it requires rebuilding
+     * the Retrofit instance with the new base URL. Called by
+     * TheCocktailDbSettingsProvider via the ReinitializeCallback after the
+     * user saves a new key in Settings.
      */
     public void reinitialize() {
         initialized = false;
         api = null;
         recipeCache.evictAll();
-        Log.d(TAG, "TheMealDB reinitializing with new API key...");
+        Log.d(TAG, "TheCocktailDB reinitializing with new API key...");
         initialize(context);
     }
 
@@ -265,23 +247,21 @@ public class TheMealDbDataSource extends BaseDataSource {
     // =========================================================================
 
     /**
-     * Search TheMealDB for recipes matching the query.
+     * Search TheCocktailDB for cocktails matching the query.
      *
      * Fires: GET search.php?s={query}
      *
-     * Returns up to {@link TheMealDbConstants#MAX_SEARCH_RESULTS} Recipe objects
-     * wrapped in a SearchResult. The items list contains Recipe instances
-     * (not FoodProduct) - downstream handling must use instanceof or
-     * item.getProductType() to discriminate.
+     * Returns up to {@link TheCocktailDbConstants#MAX_SEARCH_RESULTS} Recipe objects
+     * wrapped in a SearchResult. The items list contains Recipe instances —
+     * downstream handling must use instanceof or item.getProductType() to discriminate.
      *
-     * Short-circuits with an empty success (not an error) when:
-     * - Query is shorter than {@link TheMealDbConstants#MIN_QUERY_LENGTH}
-     * These are not error conditions - callers treat empty results normally.
+     * Short-circuits with an empty success (not an error) when the query is
+     * shorter than {@link TheCocktailDbConstants#MIN_QUERY_LENGTH}.
      *
      * @param query    Search query. Must not be null.
-     * @param language Language code - ignored (TheMealDB is English-only).
-     * @param limit    Max results - capped to MAX_SEARCH_RESULTS.
-     * @param page     Page number - ignored (TheMealDB has no pagination).
+     * @param language Language code — ignored (TheCocktailDB is English-only).
+     * @param limit    Max results — capped to MAX_SEARCH_RESULTS.
+     * @param page     Page number — ignored (TheCocktailDB has no pagination).
      * @param callback Result callback. Always called on the main thread.
      */
     @Override
@@ -293,17 +273,17 @@ public class TheMealDbDataSource extends BaseDataSource {
         if (!checkEnabled(callback)) return;
 
         if (api == null) {
-            handleError(Error.unknown("TheMealDB API not initialized", null), callback);
+            handleError(Error.unknown("TheCocktailDB API not initialized", null), callback);
             return;
         }
 
-        // Enforce minimum query length - very short queries return too much noise
-        if (query.trim().length() < TheMealDbConstants.MIN_QUERY_LENGTH) {
-            logDebug("Query too short for TheMealDB (" + query.length()
-                    + " < " + TheMealDbConstants.MIN_QUERY_LENGTH + ") - returning empty");
+        // Enforce minimum query length
+        if (query.trim().length() < TheCocktailDbConstants.MIN_QUERY_LENGTH) {
+            logDebug("Query too short for TheCocktailDB (" + query.length()
+                    + " < " + TheCocktailDbConstants.MIN_QUERY_LENGTH + ") — returning empty");
             executeOnMainThread(() -> callback.onSuccess(
                     new SearchResult(new ArrayList<>(), 0, false,
-                            query, language, TheMealDbConstants.SOURCE_ID)));
+                            query, language, TheCocktailDbConstants.SOURCE_ID)));
             return;
         }
 
@@ -311,35 +291,35 @@ public class TheMealDbDataSource extends BaseDataSource {
         onOperationStart();
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Searching TheMealDB: '" + query + "'");
+            Log.d(TAG, "Searching TheCocktailDB: '" + query + "'");
         }
 
-        Call<MealDbSearchResponse> call = api.searchByName(query.trim());
+        Call<CocktailDbSearchResponse> call = api.searchByName(query.trim());
         activeCalls.add(call);
 
-        call.enqueue(new Callback<MealDbSearchResponse>() {
+        call.enqueue(new Callback<CocktailDbSearchResponse>() {
 
             @Override
-            public void onResponse(@NonNull Call<MealDbSearchResponse> call,
-                                   @NonNull Response<MealDbSearchResponse> response) {
+            public void onResponse(@NonNull Call<CocktailDbSearchResponse> call,
+                                   @NonNull Response<CocktailDbSearchResponse> response) {
                 activeCalls.remove(call);
                 if (call.isCanceled()) return;
 
                 if (!response.isSuccessful()) {
-                    handleHttpError(response.code(), "TheMealDB search failed", callback);
+                    handleHttpError(response.code(), "TheCocktailDB search failed", callback);
                     return;
                 }
 
                 // Map DTOs to Recipe domain objects
                 List<Recipe> all = mapper.mapSearchResponse(response.body());
 
-                // Cap to MAX_SEARCH_RESULTS - no pagination on TheMealDB
+                // Cap to MAX_SEARCH_RESULTS — no pagination on TheCocktailDB
                 int effectiveLimit = Math.min(
-                        Math.min(limit, TheMealDbConstants.MAX_SEARCH_RESULTS),
+                        Math.min(limit, TheCocktailDbConstants.MAX_SEARCH_RESULTS),
                         all.size());
                 List<Recipe> capped = all.subList(0, effectiveLimit);
 
-                // Populate LRU cache - detail lookups for these results are free
+                // Populate LRU cache — detail lookups for these results are free
                 for (Recipe recipe : capped) {
                     if (recipe.getOriginalId() != null) {
                         recipeCache.put(recipe.getOriginalId(), recipe);
@@ -352,16 +332,16 @@ public class TheMealDbDataSource extends BaseDataSource {
                 SearchResult result = new SearchResult(
                         items,
                         all.size(),
-                        false,          // No pagination - TheMealDB is all-or-nothing
+                        false,  // No pagination — TheCocktailDB is all-or-nothing
                         query,
                         language,
-                        TheMealDbConstants.SOURCE_ID
+                        TheCocktailDbConstants.SOURCE_ID
                 );
 
                 onOperationSuccess();
 
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "TheMealDB search '" + query + "': "
+                    Log.d(TAG, "TheCocktailDB search '" + query + "': "
                             + capped.size() + " results (total API: " + all.size() + ")");
                 }
 
@@ -369,51 +349,52 @@ public class TheMealDbDataSource extends BaseDataSource {
             }
 
             @Override
-            public void onFailure(@NonNull Call<MealDbSearchResponse> call,
+            public void onFailure(@NonNull Call<CocktailDbSearchResponse> call,
                                   @NonNull Throwable t) {
                 activeCalls.remove(call);
                 if (call.isCanceled()) return;
-                Log.e(TAG, "TheMealDB search network failure", t);
-                handleError(createNetworkError(t, "TheMealDB search failed"), callback);
+                Log.e(TAG, "TheCocktailDB search network failure", t);
+                handleError(createNetworkError(t, "TheCocktailDB search failed"), callback);
             }
         });
     }
 
     // =========================================================================
-    // RECIPE DETAIL - TheMealDB-specific (bypasses DataSource interface)
+    // RECIPE DETAIL
     // =========================================================================
 
     /**
-     * Fetch a full Recipe by TheMealDB meal ID.
+     * Fetch a full Recipe by TheCocktailDB drink ID.
      *
-     * Checks the LRU cache first - avoids a network round-trip for recipes
+     * Checks the LRU cache first — avoids a network round-trip for cocktails
      * already fetched during this session (e.g. from a search result).
      *
-     * Called by RecipeRepository when the user opens a TheMealDB recipe detail
-     * screen and the recipe is not yet in Room.
+     * Called by RecipeRepository when the user opens a TheCocktailDB recipe
+     * detail screen and the recipe is not yet in Room.
      *
-     * @param mealDbId TheMealDB numeric ID string (e.g. "52772")
+     * @param drinkId  TheCocktailDB numeric ID string (e.g. "11007")
+     * @param language Language code — ignored (English-only source)
      * @param callback Called with the Recipe, or onError if not found
      */
     @Override
-    public void getRecipe(@NonNull String mealDbId,
+    public void getRecipe(@NonNull String drinkId,
                           @NonNull String language,
                           @NonNull DataSourceCallback<Recipe> callback) {
         if (!isEnabled()) {
-            callback.onError(Error.notFound("TheMealDB is disabled"));
+            callback.onError(Error.notFound("TheCocktailDB is disabled"));
             return;
         }
 
         if (api == null) {
-            callback.onError(Error.unknown("TheMealDB API not initialized", null));
+            callback.onError(Error.unknown("TheCocktailDB API not initialized", null));
             return;
         }
 
         // Check LRU cache first
-        Recipe cached = recipeCache.get(mealDbId);
+        Recipe cached = recipeCache.get(drinkId);
         if (cached != null) {
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "LRU cache hit for meal ID: " + mealDbId);
+                Log.d(TAG, "LRU cache hit for drink ID: " + drinkId);
             }
             callback.onSuccess(cached);
             return;
@@ -422,14 +403,14 @@ public class TheMealDbDataSource extends BaseDataSource {
         callback.onLoading();
         onOperationStart();
 
-        Call<MealDbSearchResponse> call = api.lookupById(mealDbId.trim());
+        Call<CocktailDbSearchResponse> call = api.lookupById(drinkId.trim());
         activeCalls.add(call);
 
-        call.enqueue(new Callback<MealDbSearchResponse>() {
+        call.enqueue(new Callback<CocktailDbSearchResponse>() {
 
             @Override
-            public void onResponse(@NonNull Call<MealDbSearchResponse> call,
-                                   @NonNull Response<MealDbSearchResponse> response) {
+            public void onResponse(@NonNull Call<CocktailDbSearchResponse> call,
+                                   @NonNull Response<CocktailDbSearchResponse> response) {
                 activeCalls.remove(call);
                 if (call.isCanceled()) return;
 
@@ -437,8 +418,8 @@ public class TheMealDbDataSource extends BaseDataSource {
                     onOperationError();
                     executeOnMainThread(() -> callback.onError(
                             Error.fromHttpCode(response.code(),
-                                    "TheMealDB lookup failed",
-                                    TheMealDbConstants.SOURCE_ID)));
+                                    "TheCocktailDB lookup failed",
+                                    TheCocktailDbConstants.SOURCE_ID)));
                     return;
                 }
 
@@ -447,31 +428,31 @@ public class TheMealDbDataSource extends BaseDataSource {
                 if (results.isEmpty()) {
                     onOperationError();
                     executeOnMainThread(() -> callback.onError(
-                            Error.notFound("Recipe not found: " + mealDbId)));
+                            Error.notFound("Cocktail not found: " + drinkId)));
                     return;
                 }
 
                 // lookup.php always returns exactly one result
                 Recipe recipe = results.get(0);
-                recipeCache.put(mealDbId, recipe);
+                recipeCache.put(drinkId, recipe);
 
                 onOperationSuccess();
 
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Fetched recipe: " + recipe.getDisplayName("en")
-                            + " (ID: " + mealDbId + ")");
+                    Log.d(TAG, "Fetched cocktail: " + recipe.getDisplayName("en")
+                            + " (ID: " + drinkId + ")");
                 }
 
                 executeOnMainThread(() -> callback.onSuccess(recipe));
             }
 
             @Override
-            public void onFailure(@NonNull Call<MealDbSearchResponse> call,
+            public void onFailure(@NonNull Call<CocktailDbSearchResponse> call,
                                   @NonNull Throwable t) {
                 activeCalls.remove(call);
                 if (call.isCanceled()) return;
-                Log.e(TAG, "TheMealDB lookup network failure for ID: " + mealDbId, t);
-                handleError(createNetworkError(t, "TheMealDB lookup failed"),
+                Log.e(TAG, "TheCocktailDB lookup network failure for ID: " + drinkId, t);
+                handleError(createNetworkError(t, "TheCocktailDB lookup failed"),
                         new DataSourceCallback<SearchResult>() {
                             @Override public void onSuccess(SearchResult r) {}
                             @Override public void onError(Error e) { callback.onError(e); }
@@ -493,7 +474,7 @@ public class TheMealDbDataSource extends BaseDataSource {
             }
             activeCalls.clear();
         }
-        logDebug("All TheMealDB operations cancelled");
+        logDebug("All TheCocktailDB operations cancelled");
     }
 
     @Override
@@ -502,20 +483,20 @@ public class TheMealDbDataSource extends BaseDataSource {
         cancelOperations();
         recipeCache.evictAll();
         backgroundExecutor.shutdown();
-        logDebug("TheMealDbDataSource cleanup complete");
+        logDebug("TheCocktailDbDataSource cleanup complete");
     }
 
     // =========================================================================
     // CACHE MANAGEMENT
     // =========================================================================
 
-    /** Clear the session-scoped recipe LRU cache. */
+    /** Clear the session-scoped cocktail LRU cache. */
     public void clearCache() {
         recipeCache.evictAll();
-        Log.d(TAG, "TheMealDB recipe cache cleared");
+        Log.d(TAG, "TheCocktailDB recipe cache cleared");
     }
 
-    /** @return Number of recipes currently held in the LRU cache. */
+    /** @return Number of cocktails currently held in the LRU cache. */
     public int getCacheSize() {
         return recipeCache.size();
     }
@@ -524,23 +505,16 @@ public class TheMealDbDataSource extends BaseDataSource {
     // HELPERS
     // =========================================================================
 
-    /**
-     * Build a typed network Error from a throwable.
-     * IOExceptions are classified as network errors; others as unknown.
-     */
     @NonNull
-    private Error createNetworkError(@NonNull Throwable t,
-                                     @NonNull String message) {
+    private Error createNetworkError(@NonNull Throwable t, @NonNull String message) {
         if (t instanceof IOException) {
-            return Error.network(message, t.getMessage(),
-                    TheMealDbConstants.SOURCE_ID);
+            return Error.network(message, t.getMessage(), TheCocktailDbConstants.SOURCE_ID);
         }
         return Error.fromThrowable(t, message);
     }
 
     private <T> void handleHttpError(int code, String message,
                                      @NonNull DataSourceCallback<T> callback) {
-        handleError(Error.fromHttpCode(code, message, TheMealDbConstants.SOURCE_ID), callback);
+        handleError(Error.fromHttpCode(code, message, TheCocktailDbConstants.SOURCE_ID), callback);
     }
-    
 }

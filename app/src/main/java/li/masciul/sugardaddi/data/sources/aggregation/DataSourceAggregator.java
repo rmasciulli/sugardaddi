@@ -7,6 +7,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import li.masciul.sugardaddi.business.search.SearchFilter;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -160,13 +161,14 @@ public class DataSourceAggregator {
             int limit,
             int page,
             @NonNull Set<String> exhaustedSources,
+            @NonNull SearchFilter filter,
             @NonNull AggregatorCallback callback) {
 
         cancelRequested = false;
 
         final String language = LanguageManager.getCurrentLanguage(context).getCode();
 
-        // ── 1. Build the active source list, skipping exhausted sources ───────
+        // ── 1. Build the active source list, applying exhaustion + user filter ────
         List<DataSource> allActive = dataSourceManager.getActiveSources();
         List<DataSource> sourcesToSearch = new ArrayList<>(allActive.size());
 
@@ -175,9 +177,16 @@ public class DataSourceAggregator {
                 if (ApiConfig.DEBUG_LOGGING) {
                     Log.d(TAG, "Skipping exhausted source: " + source.getSourceId());
                 }
-            } else {
-                sourcesToSearch.add(source);
+                continue;
             }
+            if (!filter.allowsSource(source.getSourceId(), source.getProducedTypes())) {
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Skipping filtered source: " + source.getSourceId()
+                            + " (filter=" + filter + ")");
+                }
+                continue;
+            }
+            sourcesToSearch.add(source);
         }
 
         if (sourcesToSearch.isEmpty()) {

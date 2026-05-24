@@ -369,11 +369,14 @@
     <string name="source_name_custom">Custom Entry</string>
     <string name="source_name_imported">Imported</string>
     <string name="source_name_themealdb">TheMealDB</string>
+    <string name="source_name_thecocktaildb">TheCocktailDB</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Food product</string>
     <string name="product_type_recipe">Recipe</string>
     <string name="product_type_recipe_with_video">Recipe with video</string>
+    <string name="product_type_cocktail">Cocktail</string>
+    <string name="product_type_cocktail_with_video">Cocktail with video</string>
 
     <!-- Data Source Emojis  -->
     <string name="source_emoji_openfoodfacts">&#x1F30D;</string>
@@ -383,6 +386,7 @@
     <string name="source_emoji_custom">&#x270F;&#xFE0F;</string>
     <string name="source_emoji_imported">&#x1F525;</string>
     <string name="source_emoji_themealdb">&#x1F4D6;</string>
+    <string name="source_emoji_thecocktaildb">🍹</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Open database of food products</string>
@@ -392,6 +396,7 @@
     <string name="source_description_custom">Manually entered food data</string>
     <string name="source_description_imported">Data imported from other apps</string>
     <string name="source_description_themealdb">Open recipe database. Free for development use. Public release requires a Patreon subscription.</string>
+    <string name="source_description_thecocktaildb">Open cocktail database. Free for development use. Public release requires a Patreon subscription.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Data from OpenFoodFacts.org</string>
@@ -401,18 +406,21 @@
     <string name="source_attribution_custom">Custom entry</string>
     <string name="source_attribution_imported">Imported data</string>
     <string name="source_attribution_themealdb">Data from TheMealDB</string>
+    <string name="source_attribution_thecocktaildb">Data from TheCocktailDB</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">The Open Food Facts database is available under the Open Database License. The individual contents of the database are available under the Database Contents License. Warning: the information and data is provided only for indicative information. It can contain errors and must not be used for medical purposes.</string>
     <string name="source_full_attribution_ciqual">The present data is made available to the public by the French Agency for Food, Environmental and Occupational Health &amp; Safety (ANSES). The data in the ANSES-CIQUAL food composition table is available to the public and may be downloaded free of charge from their website or via the data.gouv.fr platform. Data may be used under the terms and conditions of the Open Licence.</string>
     <string name="source_full_attribution_usda">U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. The data is provided by USDA and is in the public domain.</string>
-    <string name="source_full_attribution_themealdb">TheMealDB is an open, collaborative database that brings together recipes from around the world. It offers a free, easy-to-use recipe API for developers and cooking enthusiasts. You can also purchase a license to support the project and gain access to additional premium features.</string>
+    <string name="source_full_attribution_themealdb">TheMealDB is an open, collaborative database that brings together recipes from around the world. It offers a free, easy-to-use API. You can purchase a license to support the project and gain access to additional premium features. Used under the terms of the free development tier.</string>
+    <string name="source_full_attribution_thecocktaildb">TheCocktailDB is an open, collaborative database that brings together cocktails from around the world. It offers a free, easy-to-use API. You can purchase a license to support the project and gain access to additional premium features. Used under the terms of the free development tier.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
     <string name="source_website_ciqual">https://ciqual.anses.fr/</string>
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
     <string name="source_website_themealdb">https://www.themealdb.com</string>
+    <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Create a new meal</string>
@@ -702,8 +710,10 @@
 
     <!-- TheMealDB recipe card -->
     <string name="recipe_ingredient_count">%d ingredients</string>
-    <string name="recipe_has_video">▶ Recipe with video</string>
     <string name="recipe_source_themealdb">TheMealDB</string>
+
+    <!-- TheCocktailDB recipe card -->
+    <string name="recipe_source_thecocktaildb">TheCocktailDB</string>
 
     <!-- RecipeDetailsActivity -->
     <string name="recipe_details_title">Recipe</string>
@@ -718,5 +728,15 @@
     <string name="recipe_section_notes">Notes</string>
     <string name="recipe_no_nutrition_data">No nutrition data available for this recipe.</string>
     <string name="recipe_image_content_description">Recipe photo</string>
+    <string name="recipe_no_ingredients">No ingredients available</string>
+
+    <!-- CocktailDetailsActivity -->
+    <string name="cocktail_glass_label">Glass</string>
+
+    <string name="filter_type_all">Foods &amp; recipes</string>
+    <string name="filter_type_food">Food</string>
+    <string name="filter_type_recipe">Recipe</string>
+    <string name="filter_source_all">From all data sources</string>
+    <string name="filter_source_subset">From %1$d out of %2$d sources</string>
 
 </resources>

@@ -2,7 +2,7 @@ package li.masciul.sugardaddi.core.scoring;
 
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.utils.SearchFilter;
+import li.masciul.sugardaddi.business.search.ResultPipeline;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 /**
@@ -121,7 +121,7 @@ public class CiqualScorer extends BaseScorer<FoodProduct> {
         // Add generic name matching (Ciqual specific - 0-30 pts)
         String genericName = product.getGenericName(language);
         if (genericName != null && !genericName.isEmpty()) {
-            String normalizedGeneric = SearchFilter.normalizeSearchTerm(genericName);
+            String normalizedGeneric = ResultPipeline.normalizeSearchTerm(genericName);
 
             // Calculate generic name score
             int genericScore = 0;

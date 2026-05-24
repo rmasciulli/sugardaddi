@@ -8,6 +8,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -16,7 +20,6 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.GlideImageLoader;
 
 import java.util.Locale;
 
@@ -155,10 +158,16 @@ public class DefaultProductSearchDelegate
     private void bindImage(ViewHolder holder, FoodProduct product) {
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            GlideImageLoader.load(context, imageUrl)
+            int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+
+            Glide.with(context)
+                    .load(imageUrl)
+                    .override(sizePx, sizePx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
                     .error(R.drawable.ic_food_error)
                     .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
                     .into(holder.productImage);
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
