@@ -18,11 +18,11 @@ The project is still in alpha (core architecture complete), it's actively develo
 ## Screenshots
 
 <p align="center">
-  <img width="180" alt="2026-05-25T02-53-00" src="https://github.com/user-attachments/assets/e30cd130-df7f-4f67-a674-b340ac261252" />
-  <img width="180" alt="2026-05-25T03-14-00" src="https://github.com/user-attachments/assets/a340dd9d-0fe6-4704-a40e-b0b0a1e37749" />
-  <img width="180" alt="2026-05-25T02-59-00" src="https://github.com/user-attachments/assets/c2a48c28-fef9-46f0-8c67-2b83e9cd68a6" />
-  <img width="180" alt="2026-05-25T03-30-00" src="https://github.com/user-attachments/assets/32eb1d22-447e-4228-b6a2-1fd3c886c92b" />
-  <img width="180" alt="2026-05-25T03-22-00" src="https://github.com/user-attachments/assets/b1c5e5ad-c876-491c-8d08-c9566d6b8682" />
+  <img width="160" alt="2026-05-25T02-53-00" src="https://github.com/user-attachments/assets/e30cd130-df7f-4f67-a674-b340ac261252" />
+  <img width="160" alt="2026-05-25T03-14-00" src="https://github.com/user-attachments/assets/a340dd9d-0fe6-4704-a40e-b0b0a1e37749" />
+  <img width="160" alt="2026-05-25T02-59-00" src="https://github.com/user-attachments/assets/c2a48c28-fef9-46f0-8c67-2b83e9cd68a6" />
+  <img width="160" alt="2026-05-25T03-30-00" src="https://github.com/user-attachments/assets/32eb1d22-447e-4228-b6a2-1fd3c886c92b" />
+  <img width="160" alt="2026-05-25T03-22-00" src="https://github.com/user-attachments/assets/b1c5e5ad-c876-491c-8d08-c9566d6b8682" />
 </p>
 
 ## Key design patterns
