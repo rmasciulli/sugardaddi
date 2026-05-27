@@ -34,15 +34,17 @@ public class RecipeStepMetadata {
     // ========== MEDIA ==========
     private String imageUrl;            // Optional: image showing this step
     private String videoUrl;            // Optional: video demonstration
+    private String localImagePath;      // Local photo for this step (stored in photos/steps/)
 
     // ========== FLAGS ==========
     private boolean isOptional;         // Can this step be skipped? (e.g., garnish)
     private boolean isCritical;         // Is this step critical? (e.g., safety)
 
     // ========== EQUIPMENT ==========
-    private String equipment;           // Equipment needed (usually not translated)
+    // Equipment needed (usually not translated)
     // NOTE: Equipment names like "Oven" are rarely translated in recipes
     // If needed, add to RecipeStepTranslation instead
+    private String equipment;
 
     // ========== TEMPERATURE ==========
     private Integer temperatureCelsius; // Cooking temperature (if relevant)
@@ -121,6 +123,15 @@ public class RecipeStepMetadata {
 
     public void setVideoUrl(String videoUrl) {
         this.videoUrl = videoUrl;
+        touch();
+    }
+
+    public String getLocalImagePath() {
+        return localImagePath;
+    }
+
+    public void setLocalImagePath(String localImagePath) {
+        this.localImagePath = localImagePath;
         touch();
     }
 

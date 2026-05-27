@@ -84,6 +84,11 @@ public class MealEntity {
     // ========== MEDIA ==========
     private String imageUrl;
 
+    // Local photo path for this meal entry (photos/meals/).
+    // Set when the user attaches a camera or gallery photo to the meal.
+    // Null for meals without a photo. Deleted immediately when the meal is deleted.
+    private String localImagePath;
+
     // ========== INGREDIENTS ==========
     private String portionsJson;        // List<FoodPortion> as JSON
 
@@ -157,6 +162,7 @@ public class MealEntity {
         meal.setEstimatedCost(this.estimatedCost);
         meal.setSatisfaction(this.satisfaction);
         meal.setImageUrl(this.imageUrl);
+        meal.setLocalImagePath(this.localImagePath);
 
         // Convert portions from JSON
         if (portionsJson != null) {
@@ -243,6 +249,7 @@ public class MealEntity {
         entity.setEstimatedCost(meal.getEstimatedCost());
         entity.setSatisfaction(meal.getSatisfaction());
         entity.setImageUrl(meal.getImageUrl());
+        entity.setLocalImagePath(meal.getLocalImagePath());
 
         // Convert portions to JSON
         List<FoodPortion> portions = meal.getPortions();
@@ -339,6 +346,9 @@ public class MealEntity {
     // Media
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getLocalImagePath() { return localImagePath; }
+    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
 
     // Ingredients
     public String getPortionsJson() { return portionsJson; }

@@ -82,6 +82,7 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     // ========== METADATA ==========
     private String userId;
     private String imageUrl;
+    private String localImagePath;
     private Set<String> tags = new HashSet<>();
     private float satisfaction = 0.0f;
     private Double estimatedCost;
@@ -830,6 +831,12 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getLocalImagePath() { return localImagePath; }
+
+    public void setLocalImagePath(String localImagePath) {
+        this.localImagePath = localImagePath;
     }
 
     public Set<String> getTags() {

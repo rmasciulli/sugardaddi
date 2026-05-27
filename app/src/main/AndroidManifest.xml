@@ -8,6 +8,18 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Camera — required to launch ACTION_IMAGE_CAPTURE for meal/step photos.
+     maxSdkVersion is not set: the permission is needed on all supported
+     SDK versions (26+). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Declares that the app can use a camera but does not strictly require one.
+         Without required="false", devices without a camera will be filtered out
+         of the Play Store entirely, which is too restrictive for a nutrition app. -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".SugarDaddiApplication"
         android:allowBackup="true"
@@ -93,7 +105,6 @@
             android:label="@string/menu_favorites"
             android:parentActivityName=".ui.activities.MainActivity" />
 
-
         <!-- Import Service -->
         <!-- Reads bundled assets and imports into Room. foregroundServiceType=dataSync -->
         <!-- required for startForegroundService() on API 34+ -->
@@ -106,6 +117,25 @@
             android:name=".data.sources.usda.USDAImportService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- FileProvider — required to share file:// URIs with the camera app
+             on API 24+. Without this, the camera intent throws a FileUriExposedException.
+
+             authorities: must match ImagePickerHelper.FILE_PROVIDER_AUTHORITY exactly.
+             exported="false": the provider is not accessible to other apps directly.
+             grantUriPermissions="true": allows temporary read/write access to the
+               URI granted via the camera intent's FLAG_GRANT_WRITE_URI_PERMISSION.
+             resource: points to res/xml/file_paths.xml which declares the
+               subdirectories this provider is allowed to serve. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="li.masciul.sugardaddi.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

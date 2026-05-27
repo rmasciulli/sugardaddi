@@ -106,9 +106,16 @@ public class FoodProductEntity {
 
     private String searchableText;
 
-    // ========== PRODUCT CHARACTERISTICS ==========
+    // ========== MEDIA ==========
     private String imageUrl;
     private String imageThumbnailUrl;
+
+    // Local image path — either a cached thumbnail (cache/thumbnails/)
+    // or a user-added hero image (photos/products/).
+    // Null until the user favourites the item (thumbnail) or adds a photo (hero).
+    private String localImagePath;
+
+    // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;
     private String ecoScore;
     private String novaGroup;
@@ -221,9 +228,12 @@ public class FoodProductEntity {
         product.setTranslations(this.translations != null ? this.translations : new HashMap<>());
         product.setSearchableText(this.searchableText);
 
-        // Set product characteristics
+        // Set media properties
         product.setImageUrl(this.imageUrl);
         product.setImageThumbnailUrl(this.imageThumbnailUrl);
+        product.setLocalImagePath(this.localImagePath);
+
+        // Set product characteristics
         product.setNutriScore(this.nutriScore);
         product.setEcoScore(this.ecoScore);
         product.setNovaGroup(this.novaGroup);
@@ -324,9 +334,12 @@ public class FoodProductEntity {
         entity.setTranslations(product.getTranslations());
         entity.setSearchableText(product.getSearchableText());
 
-        // Set product characteristics
+        // Set media properties
         entity.setImageUrl(product.getImageUrl());
         entity.setImageThumbnailUrl(product.getImageThumbnailUrl());
+        entity.setLocalImagePath(product.getLocalImagePath());
+
+        // Set product characteristics
         entity.setNutriScore(product.getNutriScore());
         entity.setEcoScore(product.getEcoScore());
         entity.setNovaGroup(product.getNovaGroup());
@@ -487,7 +500,7 @@ public class FoodProductEntity {
     public String getSearchableText() { return searchableText; }
     public void setSearchableText(String searchableText) { this.searchableText = searchableText; }
 
-    // Product characteristics
+    // Media
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
@@ -496,6 +509,10 @@ public class FoodProductEntity {
         this.imageThumbnailUrl = imageThumbnailUrl;
     }
 
+    public String getLocalImagePath() { return localImagePath; }
+    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
+
+    // Product characteristics
     public String getNutriScore() { return nutriScore; }
     public void setNutriScore(String nutriScore) { this.nutriScore = nutriScore; }
 

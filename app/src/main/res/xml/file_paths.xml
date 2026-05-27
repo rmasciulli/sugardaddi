@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    file_paths.xml — FileProvider path declarations for SugarDaddi
+    ===============================================================
+
+    This file is referenced from AndroidManifest.xml:
+        <provider android:name="androidx.core.content.FileProvider"
+                  android:authorities="li.masciul.sugardaddi.fileprovider"
+                  android:resource="@xml/file_paths" ... />
+
+    WHAT THIS DOES
+    ==============
+    FileProvider translates File objects into content:// URIs that can be
+    safely shared with other apps (camera, gallery) without granting broad
+    file system access. Each <external-files-path> entry declares a path
+    under getExternalFilesDir() that the provider is allowed to serve.
+
+    PATH TYPES
+    ==========
+    - <external-files-path> maps to Context.getExternalFilesDir(null).
+      This is the correct type for paths under getExternalFilesDir() — it
+      does NOT require READ/WRITE_EXTERNAL_STORAGE on API 29+.
+
+    WHY ALL SUBDIRECTORIES ARE DECLARED
+    =====================================
+    The camera app receives a content:// URI pointing to a file in one of
+    these subdirectories and must be able to write to it. FileProvider will
+    reject URIs for paths not declared here with a SecurityException.
+
+    We declare each subdirectory explicitly rather than using path="." (root)
+    so that the provider scope is as narrow as possible — following the
+    principle of least privilege.
+
+    DIRECTORY STRUCTURE (mirrors ImageStorageManager constants)
+    ===========================================================
+    getExternalFilesDir(null)/
+    └── sugardaddi/
+        ├── cache/
+        │   └── thumbnails/    ← auto-downloaded favourite thumbnails
+        └── photos/
+            ├── products/      ← user-added hero images for food products
+            ├── meals/         ← user photos attached to meal journal entries
+            └── steps/         ← user photos attached to recipe preparation steps
+-->
+<paths>
+
+    <!--
+        Thumbnail cache directory.
+        Included so that thumbnails can be shared with external viewers if
+        needed in the future. Camera does not write here.
+        path="sugardaddi/cache/thumbnails/" must match ImageStorageManager's
+        DIR_ROOT + DIR_CACHE + DIR_THUMBNAILS constants exactly.
+    -->
+    <external-files-path
+        name="sugardaddi_thumbnails"
+        path="sugardaddi/cache/thumbnails/" />
+
+    <!--
+        Food product hero images directory.
+        The camera app writes a new photo into a UUID-named file here.
+    -->
+    <external-files-path
+        name="sugardaddi_products"
+        path="sugardaddi/photos/products/" />
+
+    <!--
+        Meal journal photo directory.
+        The camera app writes new meal photos here.
+    -->
+    <external-files-path
+        name="sugardaddi_meals"
+        path="sugardaddi/photos/meals/" />
+
+    <!--
+        Recipe step photo directory.
+        The camera app writes new step photos here.
+    -->
+    <external-files-path
+        name="sugardaddi_steps"
+        path="sugardaddi/photos/steps/" />
+
+</paths>

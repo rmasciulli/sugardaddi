@@ -102,6 +102,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     // ========== MEDIA ==========
     private String imageUrl;
     private String videoUrl;
+    private String localImagePath;
 
     // ========== TAGS ==========
     private Set<String> tags = new HashSet<>();
@@ -924,6 +925,9 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; touch(); }
+
+    public String getLocalImagePath() { return localImagePath; }
+    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
 
     // ========== TAGS ==========
 

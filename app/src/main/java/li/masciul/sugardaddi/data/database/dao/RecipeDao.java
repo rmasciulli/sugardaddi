@@ -408,6 +408,32 @@ public interface RecipeDao {
     @Query("UPDATE recipes SET lastUpdated = :timestamp WHERE id = :recipeId")
     int updateLastUpdated(String recipeId, long timestamp);
 
+    /**
+     * Returns all non-null local image paths stored in the recipes table.
+     *
+     * Used by ImagePurgeManager to cross-reference disk files against known Room paths.
+     *
+     * Added in: database v11 (image system migration)
+     */
+    @Query("SELECT localImagePath FROM recipes WHERE localImagePath IS NOT NULL")
+    List<String> getAllLocalImagePaths();
+
+    /**
+     * Returns all recipe entities that have a non-null stepStructure column.
+     *
+     * Used by ImagePurgeManager to scan step photos: Room's
+     * RecipeStepMetadataListConverter automatically deserialises stepStructure
+     * into List<RecipeStepMetadata> when getStepStructure() is called,
+     * so no manual JSON parsing is needed in the purge manager.
+     *
+     * Only recipes with non-null stepStructure are loaded, avoiding unnecessary
+     * object allocation for the majority of simple recipes.
+     *
+     * Added in: database v11 (image system migration)
+     */
+    @Query("SELECT * FROM recipes WHERE stepStructure IS NOT NULL")
+    List<RecipeEntity> getAllWithStepStructure();
+
     // ========== INNER CLASS FOR STATISTICS ==========
 
     /**

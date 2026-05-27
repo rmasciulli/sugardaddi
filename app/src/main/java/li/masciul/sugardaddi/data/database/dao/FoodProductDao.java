@@ -321,6 +321,19 @@ public interface FoodProductDao {
     @Query("DELETE FROM food_products WHERE id = :productId")
     int deleteProductById(String productId);
 
+    /**
+     * Returns all non-null local image paths stored in the food_products table.
+     *
+     * Used by ImagePurgeManager to cross-reference disk files against known Room paths.
+     * Only returns products that actually have a local image — the WHERE clause
+     * avoids loading the full entity for products with no local image, keeping
+     * the result set minimal.
+     *
+     * Added in: database v11 (image system migration)
+     */
+    @Query("SELECT localImagePath FROM food_products WHERE localImagePath IS NOT NULL")
+    List<String> getAllLocalImagePaths();
+
     // ========== DATA QUALITY QUERIES ==========
 
     /**

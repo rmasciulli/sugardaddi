@@ -151,6 +151,11 @@ public class RecipeEntity {
     private String imageUrl;
     private String videoUrl;
 
+    // Local image path - either a cached thumbnail (cache/thumbnails/)
+    // or a user-added hero image override (photos/products/).
+    // Null for all external recipes until the user favourites or overrides.
+    private String localImagePath;
+
     // ========== TAGS ==========
     private String tagsJson; // Set<String> as JSON
 
@@ -247,6 +252,7 @@ public class RecipeEntity {
         // Set media
         recipe.setImageUrl(this.imageUrl);
         recipe.setVideoUrl(this.videoUrl);
+        recipe.setLocalImagePath(this.localImagePath);
 
         // Restore source identification
         recipe.setOriginalId(this.originalId);
@@ -362,6 +368,7 @@ public class RecipeEntity {
         // Set media
         entity.setImageUrl(recipe.getImageUrl());
         entity.setVideoUrl(recipe.getVideoUrl());
+        entity.setLocalImagePath(recipe.getLocalImagePath());
 
         // Persist source identification
         entity.setOriginalId(recipe.getOriginalId());
@@ -538,6 +545,9 @@ public class RecipeEntity {
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+
+    public String getLocalImagePath() { return localImagePath; }
+    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
 
     // Tags
     public String getTagsJson() { return tagsJson; }

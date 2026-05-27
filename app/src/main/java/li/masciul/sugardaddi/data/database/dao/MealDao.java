@@ -77,6 +77,16 @@ public interface MealDao {
     @Query("SELECT COUNT(*) > 0 FROM meals WHERE id = :mealId")
     boolean exists(String mealId);
 
+    /**
+     * Returns all non-null photo paths stored in the meals table.
+     *
+     * Used by ImagePurgeManager to cross-reference disk files against known Room paths.
+     *
+     * Added in: database v11 (image system migration)
+     */
+    @Query("SELECT localImagePath FROM meals WHERE localImagePath IS NOT NULL")
+    List<String> getAllLocalImagePaths();
+
     // ========== DATE-BASED QUERIES (with ASC/DESC options) ==========
 
     // Default DESC (newest first)

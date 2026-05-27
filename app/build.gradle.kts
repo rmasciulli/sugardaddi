@@ -120,6 +120,10 @@ dependencies {
     annotationProcessor(libs.glide.compiler)
     implementation(libs.glide.okhttp3.integration)
 
+    // Image picking and cropping
+    implementation(libs.ucrop)
+    implementation(libs.androidx.exifinterface)
+
     // XML parsing for Ciqual
     implementation(libs.simple.xml)
 

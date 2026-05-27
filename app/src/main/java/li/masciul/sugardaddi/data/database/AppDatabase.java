@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class                 // Recipe storage (v3.0 - hybrid translation + split steps + allergens)
 
         },
-        version = 10, // Add videoUrl column to recipes table
+        version = 11, // Add image system paths (localImagePath, photoPath)
         exportSchema = true
 )
 @TypeConverters({
@@ -114,7 +114,7 @@ public abstract class AppDatabase extends RoomDatabase {
                         context,
                         AppDatabase.class,
                         DATABASE_NAME)
-                .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                 .fallbackToDestructiveMigration()
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
@@ -314,6 +314,49 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from v10 to v11: Image system
+     *
+     * CHANGES:
+     * - food_products: Add localImagePath TEXT (nullable)
+     *   Stores path to locally cached thumbnail or user-added hero image.
+     * - recipes:       Add localImagePath TEXT (nullable)
+     *   Same as above for recipes.
+     * - meals:         Add photoPath TEXT (nullable)
+     *   Stores path to user-attached meal journal photo.
+     * - RecipeStepMetadata.photoPath is NOT a column — it lives inside the
+     *   stepStructure JSON blob. No ALTER TABLE needed; Gson deserialises
+     *   the new field as null for all existing rows automatically.
+     */
+    static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            Log.i(TAG, "Migrating database from v10 to v11 (image system)");
+
+            // food_products: local image path (thumbnail or hero image)
+            database.execSQL(
+                    "ALTER TABLE food_products ADD COLUMN localImagePath TEXT"
+            );
+
+            // recipes: local image path (thumbnail or hero image)
+            database.execSQL(
+                    "ALTER TABLE recipes ADD COLUMN localImagePath TEXT"
+            );
+
+            // meals: user-attached photo path
+            database.execSQL(
+                    "ALTER TABLE meals ADD COLUMN photoPath TEXT"
+            );
+
+            // NOTE: RecipeStepMetadata.photoPath requires no ALTER TABLE.
+            // It is serialised inside recipes.stepStructure (JSON blob).
+            // Gson silently deserialises missing JSON keys as null — existing
+            // rows are unaffected and no data migration is needed.
+
+            Log.i(TAG, "Migration v10→v11 complete: image paths added");
+        }
+    };
+
     // ========== UTILITY METHODS ==========
 
     /**
@@ -342,7 +385,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * Get database version
      */
     public static int getDatabaseVersion() {
-        return 10;
+        return 11;
     }
 
     /**

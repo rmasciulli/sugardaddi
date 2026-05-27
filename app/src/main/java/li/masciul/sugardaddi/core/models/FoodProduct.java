@@ -156,6 +156,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     // ========== PRODUCT CHARACTERISTICS ==========
     private String imageUrl;
     private String imageThumbnailUrl;
+    private String localImagePath;
     private String nutriScore;                  // A-E nutritional rating
     private String ecoScore;                    // A-E environmental rating
     private String novaGroup;                   // 1-4 processing level
@@ -1033,6 +1034,12 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
     public void setImageThumbnailUrl(String imageThumbnailUrl) {
         this.imageThumbnailUrl = imageThumbnailUrl;
+    }
+
+    public String getLocalImagePath() { return localImagePath; }
+
+    public void setLocalImagePath(String localImagePath) {
+        this.localImagePath = localImagePath;
     }
 
     public String getNutriScore() {

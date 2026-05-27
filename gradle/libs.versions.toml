@@ -12,12 +12,14 @@ okhttp = "4.11.0"
 room = "2.5.0"
 recyclerview = "1.3.0"
 glide = "4.15.1"
-junit-ext = "1.1.5"
+ext-junit = "1.1.5"
 play-services-code-scanner = "16.1.0"
 mlkit-language-id = "17.0.4"
 gson = "2.10.1"
 simple-xml = "2.7.1"
 flexbox = "3.0.0"
+ucrop = "2.2.9"
+exifinterface = "1.3.7"
 
 [libraries]
 # Testing
@@ -56,6 +58,8 @@ mlkit-language-id = { group = "com.google.mlkit", name = "language-id", version.
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 simple-xml = { group = "org.simpleframework", name = "simple-xml", version.ref = "simple-xml" }
 flexbox = { group = "com.google.android.flexbox", name = "flexbox", version.ref = "flexbox" }
+ucrop = { group = "com.github.yalantis", name = "ucrop", version.ref = "ucrop" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
