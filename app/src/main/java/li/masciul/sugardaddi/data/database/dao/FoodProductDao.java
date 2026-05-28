@@ -322,16 +322,15 @@ public interface FoodProductDao {
     int deleteProductById(String productId);
 
     /**
-     * Returns all non-null local image paths stored in the food_products table.
+     * Returns all non-null local image paths for food products (thumbnail + hero).
+     * UNION ALL avoids deduplication overhead — the same path cannot appear in both
+     * columns. Used by ImagePurgeManager to cross-reference disk files against Room.
      *
-     * Used by ImagePurgeManager to cross-reference disk files against known Room paths.
-     * Only returns products that actually have a local image — the WHERE clause
-     * avoids loading the full entity for products with no local image, keeping
-     * the result set minimal.
-     *
-     * Added in: database v11 (image system migration)
+     * Added in: database v11. Updated in: v12 (field rename + expansion).
      */
-    @Query("SELECT localImagePath FROM food_products WHERE localImagePath IS NOT NULL")
+    @Query("SELECT thumbnailPath FROM food_products WHERE thumbnailPath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT heroImagePath FROM food_products WHERE heroImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     // ========== DATA QUALITY QUERIES ==========

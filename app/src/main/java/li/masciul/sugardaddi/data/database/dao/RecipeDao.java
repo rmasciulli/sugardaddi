@@ -409,13 +409,15 @@ public interface RecipeDao {
     int updateLastUpdated(String recipeId, long timestamp);
 
     /**
-     * Returns all non-null local image paths stored in the recipes table.
+     * Returns all non-null local image paths for recipes (thumbnail + hero).
+     * UNION ALL is correct here — same path cannot appear in both columns.
+     * Used by ImagePurgeManager.
      *
-     * Used by ImagePurgeManager to cross-reference disk files against known Room paths.
-     *
-     * Added in: database v11 (image system migration)
+     * Added in: database v11. Updated in: v12 (field rename + expansion).
      */
-    @Query("SELECT localImagePath FROM recipes WHERE localImagePath IS NOT NULL")
+    @Query("SELECT thumbnailPath FROM recipes WHERE thumbnailPath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT heroImagePath FROM recipes WHERE heroImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     /**

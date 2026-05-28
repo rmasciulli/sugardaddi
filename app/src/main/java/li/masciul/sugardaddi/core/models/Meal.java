@@ -79,10 +79,12 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     private List<String> categoryHierarchy = new ArrayList<>();
     private int allergenFlags = 0;
 
+    // ========== MEDIA ==========
+    private String imageUrl;
+    private String photoPath;
+
     // ========== METADATA ==========
     private String userId;
-    private String imageUrl;
-    private String localImagePath;
     private Set<String> tags = new HashSet<>();
     private float satisfaction = 0.0f;
     private Double estimatedCost;
@@ -817,14 +819,6 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         this.categoryHierarchy = categoryHierarchy != null ? categoryHierarchy : new ArrayList<>();
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
@@ -833,10 +827,16 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         this.imageUrl = imageUrl;
     }
 
-    public String getLocalImagePath() { return localImagePath; }
+    public String getPhotoPath() { return photoPath; }
 
-    public void setLocalImagePath(String localImagePath) {
-        this.localImagePath = localImagePath;
+    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public Set<String> getTags() {

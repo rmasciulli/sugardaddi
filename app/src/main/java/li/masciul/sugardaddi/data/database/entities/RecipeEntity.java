@@ -151,10 +151,13 @@ public class RecipeEntity {
     private String imageUrl;
     private String videoUrl;
 
-    // Local image path - either a cached thumbnail (cache/thumbnails/)
-    // or a user-added hero image override (photos/products/).
-    // Null for all external recipes until the user favourites or overrides.
-    private String localImagePath;
+    // Locally cached thumbnail — auto-downloaded on favourite, deleted on unfavourite.
+    // Stored in sugardaddi/thumbnails/.
+    private String thumbnailPath;
+
+    // User-added hero image shown in the recipe detail view.
+    // Stored in sugardaddi/recipes/. Set via ImagePickerHelper.
+    private String heroImagePath;
 
     // ========== TAGS ==========
     private String tagsJson; // Set<String> as JSON
@@ -252,7 +255,8 @@ public class RecipeEntity {
         // Set media
         recipe.setImageUrl(this.imageUrl);
         recipe.setVideoUrl(this.videoUrl);
-        recipe.setLocalImagePath(this.localImagePath);
+        recipe.setThumbnailPath(this.thumbnailPath);
+        recipe.setHeroImagePath(this.heroImagePath);
 
         // Restore source identification
         recipe.setOriginalId(this.originalId);
@@ -368,7 +372,8 @@ public class RecipeEntity {
         // Set media
         entity.setImageUrl(recipe.getImageUrl());
         entity.setVideoUrl(recipe.getVideoUrl());
-        entity.setLocalImagePath(recipe.getLocalImagePath());
+        entity.setThumbnailPath(recipe.getThumbnailPath());
+        entity.setHeroImagePath(recipe.getHeroImagePath());
 
         // Persist source identification
         entity.setOriginalId(recipe.getOriginalId());
@@ -546,8 +551,11 @@ public class RecipeEntity {
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 
-    public String getLocalImagePath() { return localImagePath; }
-    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
+    public String getThumbnailPath()  { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath)  { this.thumbnailPath = thumbnailPath; }
+
+    public String getHeroImagePath()  { return heroImagePath; }
+    public void setHeroImagePath(String heroImagePath)  { this.heroImagePath = heroImagePath; }
 
     // Tags
     public String getTagsJson() { return tagsJson; }

@@ -34,7 +34,10 @@ public class RecipeStepMetadata {
     // ========== MEDIA ==========
     private String imageUrl;            // Optional: image showing this step
     private String videoUrl;            // Optional: video demonstration
-    private String localImagePath;      // Local photo for this step (stored in photos/steps/)
+
+    // Local instructional photo for this step — stored in sugardaddi/steps/.
+    // imageUrl is the remote image from TheMealDB/TheCocktailDB (never stored locally).
+    private String stepPhotoPath;
 
     // ========== FLAGS ==========
     private boolean isOptional;         // Can this step be skipped? (e.g., garnish)
@@ -126,12 +129,12 @@ public class RecipeStepMetadata {
         touch();
     }
 
-    public String getLocalImagePath() {
-        return localImagePath;
+    public String getStepPhotoPath() {
+        return stepPhotoPath;
     }
 
-    public void setLocalImagePath(String localImagePath) {
-        this.localImagePath = localImagePath;
+    public void setStepPhotoPath(String stepPhotoPath) {
+        this.stepPhotoPath = stepPhotoPath;
         touch();
     }
 

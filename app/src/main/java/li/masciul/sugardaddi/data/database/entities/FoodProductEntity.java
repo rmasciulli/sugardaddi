@@ -110,10 +110,13 @@ public class FoodProductEntity {
     private String imageUrl;
     private String imageThumbnailUrl;
 
-    // Local image path — either a cached thumbnail (cache/thumbnails/)
-    // or a user-added hero image (photos/products/).
-    // Null until the user favourites the item (thumbnail) or adds a photo (hero).
-    private String localImagePath;
+    // Locally cached thumbnail — auto-downloaded on favourite, deleted on unfavourite.
+    // Stored in sugardaddi/thumbnails/.
+    private String thumbnailPath;
+
+    // User-added hero image shown in the product detail view.
+    // Stored in sugardaddi/products/. Set via ImagePickerHelper.
+    private String heroImagePath;
 
     // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;
@@ -231,7 +234,8 @@ public class FoodProductEntity {
         // Set media properties
         product.setImageUrl(this.imageUrl);
         product.setImageThumbnailUrl(this.imageThumbnailUrl);
-        product.setLocalImagePath(this.localImagePath);
+        product.setThumbnailPath(this.thumbnailPath);
+        product.setHeroImagePath(this.heroImagePath);
 
         // Set product characteristics
         product.setNutriScore(this.nutriScore);
@@ -337,7 +341,8 @@ public class FoodProductEntity {
         // Set media properties
         entity.setImageUrl(product.getImageUrl());
         entity.setImageThumbnailUrl(product.getImageThumbnailUrl());
-        entity.setLocalImagePath(product.getLocalImagePath());
+        entity.setThumbnailPath(product.getThumbnailPath());
+        entity.setHeroImagePath(product.getHeroImagePath());
 
         // Set product characteristics
         entity.setNutriScore(product.getNutriScore());
@@ -509,8 +514,11 @@ public class FoodProductEntity {
         this.imageThumbnailUrl = imageThumbnailUrl;
     }
 
-    public String getLocalImagePath() { return localImagePath; }
-    public void setLocalImagePath(String localImagePath) { this.localImagePath = localImagePath; }
+    public String getThumbnailPath()  { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath)   { this.thumbnailPath  = thumbnailPath;  }
+
+    public String getHeroImagePath()  { return heroImagePath; }
+    public void setHeroImagePath(String heroImagePath)   { this.heroImagePath  = heroImagePath;  }
 
     // Product characteristics
     public String getNutriScore() { return nutriScore; }

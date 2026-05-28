@@ -153,10 +153,13 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private Nutrition nutrition;
     private ServingSize servingSize;
 
-    // ========== PRODUCT CHARACTERISTICS ==========
+    // ========== MEDIA ==========
     private String imageUrl;
     private String imageThumbnailUrl;
-    private String localImagePath;
+    private String thumbnailPath;
+    private String heroImagePath;
+
+    // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;                  // A-E nutritional rating
     private String ecoScore;                    // A-E environmental rating
     private String novaGroup;                   // 1-4 processing level
@@ -1036,11 +1039,13 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         this.imageThumbnailUrl = imageThumbnailUrl;
     }
 
-    public String getLocalImagePath() { return localImagePath; }
+    public String getThumbnailPath()  { return thumbnailPath; }
 
-    public void setLocalImagePath(String localImagePath) {
-        this.localImagePath = localImagePath;
-    }
+    public void setThumbnailPath(String thumbnailPath)  { this.thumbnailPath = thumbnailPath; }
+
+    public String getHeroImagePath()  { return heroImagePath; }
+
+    public void setHeroImagePath(String heroImagePath)  { this.heroImagePath = heroImagePath; }
 
     public String getNutriScore() {
         return nutriScore;
