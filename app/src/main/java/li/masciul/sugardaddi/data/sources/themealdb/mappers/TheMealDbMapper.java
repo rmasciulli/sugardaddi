@@ -178,6 +178,8 @@ public class TheMealDbMapper {
 
         // Keep the raw TheMealDB ID for API lookups (e.g. detail screen refresh)
         recipe.setOriginalId(meal.getIdMeal());
+
+        recipe.setId(TheMealDbConstants.SOURCE_ID + ":" + meal.getIdMeal());
     }
 
     /**

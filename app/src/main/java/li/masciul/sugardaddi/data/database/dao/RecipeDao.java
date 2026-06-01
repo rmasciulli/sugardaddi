@@ -436,6 +436,20 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE stepStructure IS NOT NULL")
     List<RecipeEntity> getAllWithStepStructure();
 
+    /**
+     * Updates the locally cached thumbnail path for a recipe.
+     *
+     * Called by RecipeRepository after a thumbnail download completes
+     * (on favourite) or to clear the path (on unfavourite, pass null).
+     *
+     * Added in: database v12 (image system)
+     *
+     * @param recipeId Source-qualified recipe ID (primary key).
+     * @param path     Absolute local file path, or null to clear.
+     */
+    @Query("UPDATE recipes SET thumbnailPath = :path WHERE id = :recipeId")
+    int updateThumbnailPath(String recipeId, String path);
+
     // ========== INNER CLASS FOR STATISTICS ==========
 
     /**

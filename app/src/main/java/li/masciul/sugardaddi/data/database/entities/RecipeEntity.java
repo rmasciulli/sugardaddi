@@ -313,7 +313,7 @@ public class RecipeEntity {
 
         RecipeEntity entity = new RecipeEntity();
 
-        entity.setId(recipe.getId() != null ? recipe.getId() : UUID.randomUUID().toString());
+        entity.setId(recipe.getSearchableId());
         entity.setAuthorId(recipe.getAuthorId());
         entity.setCreatedAt(recipe.getCreatedAt());
         entity.setLastUpdated(recipe.getLastUpdated());

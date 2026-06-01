@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -20,6 +21,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.managers.DataSourceManager;
+import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -207,8 +209,8 @@ public class RecipeRepository {
         }
 
         if ("USER".equals(sourceId)) {
-            // USER recipes: Room lookup by UUID — originalId IS the Room primary key
-            getRecipe(originalId, callback);
+            // USER recipes: Room lookup by searchableId which is the Room primary key
+            getRecipe(searchableId, callback);
             return;
         }
 
@@ -834,6 +836,13 @@ public class RecipeRepository {
                     existing.touch();
                     recipeDao.update(existing);
 
+                    if (!favorite) {
+                        existing.setThumbnailPath(null);
+                        // second write to clear path
+                        recipeDao.update(existing);
+                    }
+                    handleThumbnailForFavorite(recipe, recipe.getSearchableId(), favorite);
+
                     // Sync memory cache
                     cacheRecipe(recipe);
 
@@ -843,6 +852,7 @@ public class RecipeRepository {
                     runOnMainThread(() -> saveExternalRecipe(recipe, new RecipeCallback() {
                         @Override
                         public void onSuccess(Recipe saved) {
+                            handleThumbnailForFavorite(recipe, recipe.getSearchableId(), favorite);
                             callback.onSuccess();
                         }
                         @Override
@@ -859,6 +869,87 @@ public class RecipeRepository {
             }
         });
     }
+
+    /**
+     * Downloads the thumbnail on favouriting or deletes it on unfavouriting.
+     *
+     * FAVOURITING
+     * ===========
+     * For recipes, imageUrl is the only available image — it is used as both
+     * the search card thumbnail and the detail view hero fallback.
+     * Downloaded once to thumbnails/ and persisted as thumbnailPath.
+     * heroImagePath remains null until the user explicitly sets one.
+     *
+     * UNFAVOURITING
+     * =============
+     * Deletes the cached file from disk. thumbnailPath is cleared in Room
+     * before this method is called (see setExternalRecipeFavorite()).
+     *
+     * @param recipe     Recipe domain object (provides imageUrl).
+     * @param recipeId   Source-qualified ID (Room primary key).
+     * @param isFavorite The new favourite state just written to Room.
+     */
+    private void handleThumbnailForFavorite(
+            @NonNull Recipe recipe,
+            @NonNull String recipeId,
+            boolean isFavorite) {
+
+        ThumbnailDownloader downloader = getThumbnailDownloader();
+        if (downloader == null) return;
+
+        if (isFavorite) {
+            String url = recipe.getImageUrl();
+            if (url == null || url.trim().isEmpty()) {
+                Log.d(TAG, "No image URL available for recipe " + recipeId
+                        + " — skipping thumbnail download");
+                return;
+            }
+
+            downloader.download(url, recipeId, new ThumbnailDownloader.Callback() {
+                @Override
+                public void onSuccess(@NonNull String localPath) {
+                    backgroundExecutor.execute(() -> {
+                        try {
+                            database.recipeDao().updateThumbnailPath(recipeId, localPath);
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "Thumbnail cached for recipe "
+                                        + recipeId + ": " + localPath);
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to persist thumbnailPath for recipe "
+                                    + recipeId, e);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(@NonNull String reason) {
+                    // Non-fatal — Glide will load from the remote URL instead.
+                    Log.d(TAG, "Thumbnail download failed for recipe "
+                            + recipeId + ": " + reason);
+                }
+            });
+
+        } else {
+            // thumbnailPath already cleared in Room before this call.
+            downloader.deleteThumbnail(recipeId);
+        }
+    }
+
+    /**
+     * Returns the application-scoped ThumbnailDownloader singleton.
+     */
+    @Nullable
+    private ThumbnailDownloader getThumbnailDownloader() {
+        if (context.getApplicationContext() instanceof SugarDaddiApplication) {
+            return ((SugarDaddiApplication) context.getApplicationContext())
+                    .getThumbnailDownloader();
+        }
+        Log.e(TAG, "Application context is not SugarDaddiApplication "
+                + "— thumbnail pipeline unavailable");
+        return null;
+    }
+
 
     /**
      * Search the in-memory cache for a recipe by source ID and original ID.

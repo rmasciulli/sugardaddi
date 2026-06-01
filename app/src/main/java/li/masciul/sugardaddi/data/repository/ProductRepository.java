@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
 // Database imports
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
@@ -30,6 +31,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 // Managers and utilities
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
+import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
 
 // Cache
 
@@ -415,7 +417,12 @@ public class ProductRepository {
     }
 
     /**
-     * Toggle favorite status for a product
+     * Toggles the favourite status of a product.
+     *
+     * After the Room write completes, handleThumbnailForFavorite() is called
+     * to download or delete the cached thumbnail in the background. The
+     * FavoriteCallback fires before the thumbnail operation completes — the
+     * UI does not wait for it.
      */
     public void toggleFavorite(FoodProduct product, FavoriteCallback callback) {
         if (product == null || product.getSearchableId() == null) {
@@ -429,35 +436,130 @@ public class ProductRepository {
                 FoodProductEntity entity = database.foodProductDao()
                         .getProductById(productId);
 
+                boolean newStatus;
+
                 if (entity != null) {
-                    // Toggle existing product
-                    boolean newStatus = !entity.isFavorite();
+                    newStatus = !entity.isFavorite();
                     entity.setFavorite(newStatus);
                     entity.setUpdatedAt(System.currentTimeMillis());
+                    // Clear thumbnailPath immediately when unfavouriting so Room
+                    // is consistent before the file is deleted from disk.
+                    if (!newStatus) {
+                        entity.setThumbnailPath(null);
+                    }
                     database.foodProductDao().updateProduct(entity);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Toggled favorite: " + productId + " -> " + newStatus);
-                    }
-
-                    runOnMainThread(() -> callback.onFavoriteToggled(newStatus));
-
                 } else {
-                    // Product not in database - save it as favorite
+                    // Not yet in Room — save as favourite
                     saveProductToDatabase(product, true);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Saved new favorite: " + productId);
-                    }
-
-                    runOnMainThread(() -> callback.onFavoriteToggled(true));
+                    newStatus = true;
                 }
+
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Toggled favorite: " + productId + " → " + newStatus);
+                }
+
+                // Thumbnail download/deletion runs on ThumbnailDownloader's own
+                // executor — does not block this backgroundExecutor thread.
+                handleThumbnailForFavorite(product, productId, newStatus);
+
+                final boolean finalNewStatus = newStatus;
+                runOnMainThread(() -> callback.onFavoriteToggled(finalNewStatus));
 
             } catch (Exception e) {
                 Log.e(TAG, "Database error toggling favorite", e);
                 runOnMainThread(() -> callback.onError("Could not update favorite status"));
             }
         });
+    }
+
+    /**
+     * Downloads the thumbnail on favouriting or deletes it on unfavouriting.
+     *
+     * FAVOURITING
+     * ===========
+     * Prefers imageThumbnailUrl (CDN-optimised small image) over imageUrl.
+     * Falls back to imageUrl if imageThumbnailUrl is absent.
+     * On success: persists the local path to food_products.thumbnailPath.
+     * On failure: logs and continues — Glide falls back to the remote URL.
+     *
+     * UNFAVOURITING
+     * =============
+     * Deletes the cached file from disk via ThumbnailDownloader.deleteThumbnail().
+     * thumbnailPath is already cleared in Room before this method is called.
+     *
+     * @param product    FoodProduct domain object (provides image URLs).
+     * @param productId  Source-qualified ID (Room primary key).
+     * @param isFavorite The new favourite state just written to Room.
+     */
+    private void handleThumbnailForFavorite(
+            @NonNull FoodProduct product,
+            @NonNull String productId,
+            boolean isFavorite) {
+
+        ThumbnailDownloader downloader = getThumbnailDownloader();
+        if (downloader == null) return;
+
+        if (isFavorite) {
+            // Prefer the CDN thumbnail; fall back to the full image URL.
+            String url = product.getImageThumbnailUrl();
+            if (url == null || url.trim().isEmpty()) {
+                url = product.getImageUrl();
+            }
+            if (url == null || url.trim().isEmpty()) {
+                Log.d(TAG, "No image URL available for product " + productId
+                        + " — skipping thumbnail download");
+                return;
+            }
+
+            final String finalUrl = url;
+            downloader.download(finalUrl, productId, new ThumbnailDownloader.Callback() {
+                @Override
+                public void onSuccess(@NonNull String localPath) {
+                    // ThumbnailDownloader delivers this callback on the main thread.
+                    // Room writes must happen on a background thread.
+                    backgroundExecutor.execute(() -> {
+                        try {
+                            database.foodProductDao().updateThumbnailPath(productId, localPath);
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "Thumbnail cached for product "
+                                        + productId + ": " + localPath);
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to persist thumbnailPath for "
+                                    + productId, e);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(@NonNull String reason) {
+                    // Non-fatal — Glide will load from the remote URL instead.
+                    Log.d(TAG, "Thumbnail download failed for product "
+                            + productId + ": " + reason);
+                }
+            });
+
+        } else {
+            // File deletion is handled by ThumbnailDownloader on its own executor.
+            // thumbnailPath is already null in Room (cleared before this call).
+            downloader.deleteThumbnail(productId);
+        }
+    }
+
+    /**
+     * Returns the application-scoped ThumbnailDownloader singleton.
+     * Returns null (and logs) if the context is not SugarDaddiApplication —
+     * should never happen in production.
+     */
+    @Nullable
+    private ThumbnailDownloader getThumbnailDownloader() {
+        if (context.getApplicationContext() instanceof SugarDaddiApplication) {
+            return ((SugarDaddiApplication) context.getApplicationContext())
+                    .getThumbnailDownloader();
+        }
+        Log.e(TAG, "Application context is not SugarDaddiApplication "
+                + "— thumbnail pipeline unavailable");
+        return null;
     }
 
     /**

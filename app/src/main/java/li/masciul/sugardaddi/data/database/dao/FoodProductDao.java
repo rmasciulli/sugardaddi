@@ -333,6 +333,23 @@ public interface FoodProductDao {
             + "SELECT heroImagePath FROM food_products WHERE heroImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
+    /**
+     * Updates the locally cached thumbnail path for a food product.
+     *
+     * Called by ProductRepository after a thumbnail download completes
+     * (on favourite) or to clear the path (on unfavourite, pass null).
+     *
+     * Using a targeted UPDATE rather than a full updateProduct() avoids
+     * loading and re-serialising the entire entity to change one field.
+     *
+     * Added in: database v12 (image system)
+     *
+     * @param productId Source-qualified product ID (primary key).
+     * @param path      Absolute local file path, or null to clear.
+     */
+    @Query("UPDATE food_products SET thumbnailPath = :path WHERE id = :productId")
+    int updateThumbnailPath(String productId, String path);
+
     // ========== DATA QUALITY QUERIES ==========
 
     /**

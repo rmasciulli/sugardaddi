@@ -339,13 +339,45 @@
     <string name="performance_slow_connection">Slow connection detected</string>
     <string name="debug_mode_enabled">Debug mode enabled</string>
 
-    <!-- MainActivity - Missing strings -->
+    <!-- MainActivity strings -->
     <string name="load_more_failed">Failed to load more results</string>
     <string name="long_click_hint">Long press to view details</string>
 
-    <!-- SettingsActivity - Missing strings -->
+    <!-- SettingsActivity strings -->
     <string name="cache_stats">Cache: %1$d products, %2$d favorites</string>
     <string name="cache_stats_failed">Failed to load cache statistics</string>
+
+    <!-- ========== IMAGE LIBRARY CARD ========== -->
+
+    <!-- Image library — section title -->
+    <string name="image_library_title">Image library</string>
+
+    <!-- Storage summary -->
+    <string name="image_library_storage_title">Storage used</string>
+    <string name="image_library_storage_refresh_description">Refresh storage summary</string>
+
+    <string name="image_library_col_images">Images</string>
+    <string name="image_library_col_size">Size</string>
+    <string name="image_library_row_thumbnails">Thumbnails</string>
+    <string name="image_library_row_products">Products</string>
+    <string name="image_library_row_recipes">Recipes</string>
+    <string name="image_library_row_meals">Meals</string>
+    <string name="image_library_row_steps">Steps</string>
+    <string name="image_library_row_total">Total</string>
+
+    <!-- Gallery visibility (products/, recipes/, meals/, steps/) -->
+    <string name="image_library_gallery_visibility_label">Show photos in device gallery</string>
+    <string name="image_library_gallery_visibility_description">Add hero images, meal photos and step photos to your device gallery. Disabling removes them from the gallery but keeps them in the app.</string>
+
+    <!-- Thumbnail gallery visibility (thumbnails/) -->
+    <string name="image_library_thumbnail_visibility_label">Show thumbnails in device gallery</string>
+    <string name="image_library_thumbnail_visibility_description">Add auto-cached favourite thumbnails to your device gallery. These are small images managed automatically by the app. Disabling removes them from the gallery.</string>
+
+    <!-- Purge -->
+    <string name="image_library_purge_button">Clean up unused images</string>
+    <string name="image_library_purge_running">Scanning image library…</string>
+    <string name="image_library_purge_result_clean">Image library is clean</string>
+    <string name="image_library_purge_result_deleted">%1$d unused image(s) removed (%2$s freed)</string>
 
     <!-- ========== DATA SOURCE STRINGS ========== -->
 

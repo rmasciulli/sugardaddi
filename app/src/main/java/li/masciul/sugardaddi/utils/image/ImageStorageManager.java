@@ -1,6 +1,7 @@
 package li.masciul.sugardaddi.utils.image;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -11,7 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * ImageStorageManager — Disk-only image storage for SugarDaddi.
@@ -339,59 +343,164 @@ public class ImageStorageManager {
     // =========================================================================
 
     /**
-     * Adds the given file to the device MediaStore so it appears in gallery apps.
+     * Makes the given file visible in the device gallery by inserting it into
+     * the public MediaStore.Images collection via ContentResolver.
+     *
+     * WHY NOT MediaScannerConnection.scanFile()
+     * ==========================================
+     * Files in getExternalFilesDir() are app-private by design and will not be
+     * indexed by MediaStore — MediaScannerConnection.scanFile() silently does
+     * nothing for these paths. The correct API 29+ approach is to insert the
+     * file content directly into MediaStore via ContentResolver.insert() +
+     * openOutputStream(), which creates a gallery-visible copy.
+     *
+     * HOW IT WORKS
+     * =============
+     * A new MediaStore.Images entry is created and the file bytes are written
+     * into it. The original file in app-private storage is NOT deleted — it
+     * remains the authoritative copy referenced by Room. The MediaStore entry
+     * is what makes the image visible in gallery apps.
+     *
+     * REMOVAL
+     * ========
+     * To remove from the gallery, call unscanFile(). This queries MediaStore
+     * by display name and deletes the entry. If the user has already deleted
+     * the image manually from their gallery, unscanFile() returns false
+     * gracefully — the entry is already gone.
      *
      * NEVER call this for files in thumbnails/ — those are always private.
-     * The operation is asynchronous; the callback fires on a background thread.
      *
-     * @param file     The file to make visible in the gallery.
-     * @param callback Optional; receives the file path and its new MediaStore URI.
-     *                 Called on a background thread — post to main thread if updating UI.
+     * @param file     The app-private file to make visible in the gallery.
+     * @param callback Optional; called with (path, uri) on success or
+     *                 (path, null) on failure. Called on the calling thread —
+     *                 if you need main thread delivery, post it yourself.
      */
     public void scanFile(
             @NonNull File file,
             @Nullable MediaScannerConnection.OnScanCompletedListener callback) {
-        MediaScannerConnection.scanFile(
-                context,
-                new String[]{ file.getAbsolutePath() },
-                new String[]{ "image/jpeg" },
-                callback
-        );
-        Log.d(TAG, "Requested gallery scan: " + file.getName());
+
+        if (!file.exists() || !file.isFile()) {
+            Log.w(TAG, "scanFile: file does not exist: " + file.getName());
+            if (callback != null) {
+                callback.onScanCompleted(file.getAbsolutePath(), null);
+            }
+            return;
+        }
+
+        ContentResolver resolver = context.getContentResolver();
+
+        // Build the MediaStore metadata for the new entry.
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, file.getName());
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.DATE_ADDED,
+                System.currentTimeMillis() / 1000);
+        values.put(MediaStore.Images.Media.IS_PENDING, 1);
+
+        // RELATIVE_PATH places the image in a named album within Pictures/.
+        // Gallery apps (Google Photos, Samsung Gallery, etc.) use this path
+        // to organise images into albums named "SugarDaddi/{Subfolder}".
+        // Ignored on API 26-28 (pre-scoped storage) — images fall back to
+        // the default Pictures/ root on those devices.
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, getGallerySubfolder(file));
+
+        Uri collection = MediaStore.Images.Media.getContentUri(
+                MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        Uri itemUri = resolver.insert(collection, values);
+
+        if (itemUri == null) {
+            Log.w(TAG, "scanFile: MediaStore insert returned null for: "
+                    + file.getName());
+            if (callback != null) {
+                callback.onScanCompleted(file.getAbsolutePath(), null);
+            }
+            return;
+        }
+
+        // Write the file bytes into the MediaStore entry.
+        try (InputStream in  = new FileInputStream(file);
+             OutputStream out = resolver.openOutputStream(itemUri)) {
+
+            if (out == null) {
+                throw new java.io.IOException("openOutputStream returned null");
+            }
+
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+            out.flush();
+
+            // Mark as no longer pending — gallery apps can now show it.
+            values.clear();
+            values.put(MediaStore.Images.Media.IS_PENDING, 0);
+            resolver.update(itemUri, values, null, null);
+
+            Log.d(TAG, "scanFile: added to gallery: " + file.getName());
+            if (callback != null) {
+                callback.onScanCompleted(file.getAbsolutePath(), itemUri);
+            }
+
+        } catch (Exception e) {
+            Log.w(TAG, "scanFile: failed to write to MediaStore: "
+                    + file.getName(), e);
+            // Clean up the orphan MediaStore row.
+            resolver.delete(itemUri, null, null);
+            if (callback != null) {
+                callback.onScanCompleted(file.getAbsolutePath(), null);
+            }
+        }
     }
 
     /**
-     * Removes the given file from the device MediaStore gallery.
+     * Removes the gallery entry for the given file from MediaStore.
      *
-     * Call BEFORE deleting the file from disk when the file was previously
-     * gallery-scanned, to avoid dangling MediaStore entries (broken thumbnails
-     * in gallery apps).
+     * Queries by DISPLAY_NAME (filename) rather than the DATA path because
+     * the MediaStore entry was created via ContentResolver.insert() — its
+     * internal path differs from our app-private file path.
      *
-     * Uses the DATA column for path-based lookup — deprecated for new inserts
-     * on API 29+ but remains valid for querying and deleting app-owned files.
+     * GRACEFUL HANDLING OF PRIOR MANUAL DELETION
+     * ============================================
+     * If the user has already deleted the image from their gallery manually,
+     * the MediaStore entry is already gone. This method returns false in that
+     * case — no crash, no dangling entry, no action needed.
      *
-     * @param file The file to remove from the gallery.
-     * @return true if a MediaStore entry was found and removed.
+     * This method does NOT delete the original app-private file — it only
+     * removes the gallery-visible MediaStore copy. To delete the app-private
+     * file, call deleteFile() separately.
+     *
+     * @param file The file whose gallery entry should be removed.
+     * @return true if a MediaStore entry was found and removed;
+     *         false if already absent (either never scanned or manually deleted).
      */
     public boolean unscanFile(@NonNull File file) {
         ContentResolver resolver = context.getContentResolver();
-        Uri mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        Uri mediaUri = MediaStore.Images.Media.getContentUri(
+                MediaStore.VOLUME_EXTERNAL_PRIMARY);
 
-        String selection = MediaStore.Images.Media.DATA + " = ?";
-        String[] args    = { file.getAbsolutePath() };
+        // Query by display name — this matches the DISPLAY_NAME we set in scanFile().
+        // Using DATA path would not match because the MediaStore entry's DATA path
+        // points to its own internal copy, not our app-private file.
+        String selection = MediaStore.Images.Media.DISPLAY_NAME + " = ?";
+        String[] args    = { file.getName() };
 
         try {
             int removed = resolver.delete(mediaUri, selection, args);
             if (removed > 0) {
-                Log.d(TAG, "Removed from gallery: " + file.getName());
+                Log.d(TAG, "unscanFile: removed from gallery: " + file.getName());
                 return true;
             } else {
-                Log.d(TAG, "Not in gallery (no-op): " + file.getName());
+                // Not in MediaStore — either never scanned, already removed
+                // manually by the user, or previously removed by unscanFile().
+                // All three cases are fine — the desired state (not in gallery)
+                // is already achieved.
+                Log.d(TAG, "unscanFile: not in gallery (no-op): " + file.getName());
                 return false;
             }
         } catch (Exception e) {
-            // Non-fatal — file will still be deleted from disk.
-            Log.w(TAG, "Failed to remove from gallery: " + file.getName(), e);
+            // Non-fatal — log and continue.
+            Log.w(TAG, "unscanFile: failed for: " + file.getName(), e);
             return false;
         }
     }
@@ -426,5 +535,45 @@ public class ImageStorageManager {
     @NonNull
     private String sanitiseId(@NonNull String id) {
         return id.replace(':', '_');
+    }
+
+    /**
+     * Maps an app-private directory to its gallery subfolder path.
+     *
+     * Derives the gallery album name from the file's parent directory name,
+     * which matches our directory constants (thumbnails, products, recipes,
+     * meals, steps). The result is capitalised for clean display in gallery apps.
+     *
+     * Gallery path format: "Pictures/SugarDaddi/{Subfolder}"
+     * Examples:
+     *   .../thumbnails/THEMEALDB_52776.jpg  → "Pictures/SugarDaddi/Thumbnails"
+     *   .../meals/550e8400.jpg              → "Pictures/SugarDaddi/Meals"
+     *   .../steps/7f3b4c1a.jpg             → "Pictures/SugarDaddi/Steps"
+     *
+     * Falls back to "Pictures/SugarDaddi/" for any unrecognised directory,
+     * so images always land somewhere sensible even if the structure changes.
+     *
+     * RELATIVE_PATH is available from API 29+. On API 26-28 (which predates
+     * scoped storage), RELATIVE_PATH is ignored by the system — images are
+     * placed in the default Pictures/ root. This is acceptable since API 26-28
+     * represents a negligible fraction of active Android devices.
+     *
+     * @param file The file being inserted into MediaStore.
+     * @return A RELATIVE_PATH string suitable for MediaStore.Images.Media.RELATIVE_PATH.
+     */
+    @NonNull
+    private String getGallerySubfolder(@NonNull File file) {
+        File parent = file.getParentFile();
+        if (parent == null) return "Pictures/SugarDaddi/";
+
+        // Capitalise the first letter of the directory name for clean display.
+        // e.g. "thumbnails" → "Thumbnails", "meals" → "Meals"
+        String dirName = parent.getName();
+        if (dirName.isEmpty()) return "Pictures/SugarDaddi/";
+
+        String capitalised = dirName.substring(0, 1).toUpperCase()
+                + dirName.substring(1);
+
+        return "Pictures/SugarDaddi/" + capitalised + "/";
     }
 }

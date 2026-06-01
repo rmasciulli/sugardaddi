@@ -168,6 +168,345 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <!-- ═══════════════════════════════════════ -->
+                <!-- IMAGE LIBRARY                           -->
+                <!-- ═══════════════════════════════════════ -->
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp"
+                    app:cardBackgroundColor="?attr/colorSurfaceVariant">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- SECTION TITLE -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/image_library_title"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorPrimary"
+                            android:textAllCaps="true"
+                            android:letterSpacing="0.08"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- STORAGE SUMMARY -->
+
+                        <!-- Header row: label + refresh icon button -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="6dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/image_library_storage_title"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurface" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/refreshStorageButton"
+                                style="@style/Widget.Material3.Button.IconButton"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:contentDescription="@string/image_library_storage_refresh_description"
+                                app:icon="@drawable/ic_refresh"
+                                app:iconTint="?attr/colorOnSurfaceVariant"
+                                app:iconSize="20dp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_rounded_surface"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp"
+                            android:layout_marginBottom="4dp">
+
+                            <TableLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:shrinkColumns="0"
+                                android:stretchColumns="0">
+
+                                <!-- Column headers -->
+                                <TableRow
+                                    android:minHeight="32dp"
+                                    android:gravity="center_vertical">
+
+                                    <TextView
+                                        android:paddingEnd="16dp"
+                                        android:text=""
+                                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                    <TextView
+                                        android:text="@string/image_library_col_images"
+                                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:textStyle="bold"
+                                        android:gravity="end"
+                                        android:paddingEnd="16dp" />
+
+                                    <TextView
+                                        android:text="@string/image_library_col_size"
+                                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:textStyle="bold"
+                                        android:gravity="end" />
+
+                                </TableRow>
+
+                                <!-- Thumbnails -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_thumbnails"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountThumbnails"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeThumbnails"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                                <!-- Products -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_products"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountProducts"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeProducts"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                                <!-- Recipes -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_recipes"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountRecipes"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeRecipes"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                                <!-- Steps -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_steps"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountSteps"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeSteps"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                                <!-- Meals -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_meals"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountMeals"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeMeals"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                                <!-- Separator row - a View spanning all three columns -->
+                                <TableRow android:layout_marginTop="2dp" android:layout_marginBottom="2dp">
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="?attr/colorOutlineVariant"
+                                        android:layout_span="3" />
+                                </TableRow>
+
+                                <!-- Total -->
+                                <TableRow android:minHeight="36dp" android:gravity="center_vertical">
+                                    <TextView android:text="@string/image_library_row_total"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textStyle="bold"
+                                        android:textColor="?attr/colorOnSurface"
+                                        android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageCountTotal"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textStyle="bold"
+                                        android:textColor="?attr/colorOnSurface"
+                                        android:gravity="end" android:paddingEnd="16dp" />
+                                    <TextView android:id="@+id/storageSizeTotal"
+                                        android:textAppearance="?attr/textAppearanceBodySmall"
+                                        android:textStyle="bold"
+                                        android:textColor="?attr/colorOnSurface"
+                                        android:gravity="end" />
+                                </TableRow>
+
+                            </TableLayout>
+
+                        </LinearLayout>
+
+                        <!-- DIVIDER -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- GALLERY VISIBILITY TOGGLE -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/image_library_gallery_visibility_label"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurface" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/image_library_gallery_visibility_description"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/galleryVisibilitySwitch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp" />
+
+                        </LinearLayout>
+
+                        <!-- DIVIDER -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- THUMBNAIL GALLERY TOGGLE -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/image_library_thumbnail_visibility_label"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurface" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/image_library_thumbnail_visibility_description"
+                                    android:textAppearance="?attr/textAppearanceBodySmall"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
+                                    android:layout_marginTop="2dp" />
+
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/thumbnailVisibilitySwitch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp" />
+
+                        </LinearLayout>
+
+                        <!-- DIVIDER -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="?attr/colorOutlineVariant"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- PURGE BUTTON + RESULT -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/purgeImagesButton"
+                            style="@style/Button.SugarDaddi.Outlined"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/image_library_purge_button" />
+
+                        <!-- Hidden until a purge has been run -->
+                        <TextView
+                            android:id="@+id/purgeStatusText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- ═══════════════════════════════════════ -->
                 <!-- DATA SOURCES SECTION HEADER             -->
                 <!-- ═══════════════════════════════════════ -->
 
@@ -187,7 +526,7 @@
                     ============================
                     DataSourceCardManager inflates one item_datasource_card.xml per
                     registered DataSource and adds it here in alphabetical order.
-                    No hardcoded source cards in XML — the list is driven entirely
+                    No hardcoded source cards in XML - the list is driven entirely
                     by DataSourceManager.getAllSources() at runtime.
                 -->
                 <LinearLayout

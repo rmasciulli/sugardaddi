@@ -18,6 +18,7 @@ import androidx.appcompat.widget.Toolbar;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
 import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
@@ -380,6 +381,18 @@ public class RecipeDetailsActivity extends BaseActivity
             videoItem.setVisible(hasVideo);
         }
 
+        // Web button — shown only for sources with a public recipe page
+        MenuItem webItem = menu.findItem(R.id.action_open_web);
+        if (webItem != null) {
+            Recipe recipe = recipeManager.getCurrentRecipe();
+            if (recipe != null) {
+                webItem.setVisible(
+                    RecipeUrlBuilder.hasWebsiteSupport(recipe.getSourceIdentifier()));
+            } else {
+                webItem.setVisible(false);
+            }
+        }
+
         return true;
     }
 
@@ -399,6 +412,9 @@ public class RecipeDetailsActivity extends BaseActivity
         } else if (id == R.id.action_video) {
             openVideo();
             return true;
+        } else if (id == R.id.action_open_web) {
+            openInBrowser();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -407,7 +423,12 @@ public class RecipeDetailsActivity extends BaseActivity
     // ========== SHARE ==========
 
     /**
-     * Share the recipe name, source, and video URL (if present) as plain text.
+     * Shares the recipe name, source attribution, recipe page URL, and
+     * optionally the video URL as plain text.
+     *
+     * Recipe page URL (TheMealDB / TheCocktailDB) is the primary shareable
+     * link — it works for anyone regardless of whether they have the app.
+     * Video URL is appended as a secondary link when available.
      */
     private void shareRecipe() {
         Recipe recipe = recipeManager.getCurrentRecipe();
@@ -418,7 +439,7 @@ public class RecipeDetailsActivity extends BaseActivity
 
         shareText.append(recipe.getDisplayName(language));
 
-        // Append source attribution (e.g. "via TheMealDB")
+        // Source attribution — "via TheMealDB" etc.
         if (recipe.getDataSource() != null) {
             shareText.append("\n")
                     .append(getSafeString(R.string.share_recipe_source_prefix))
@@ -426,7 +447,13 @@ public class RecipeDetailsActivity extends BaseActivity
                     .append(recipe.getDataSource().getDisplayName(this));
         }
 
-        // Append video URL if present
+        // Recipe page URL — primary shareable link
+        String recipeUrl = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        if (recipeUrl != null) {
+            shareText.append("\n").append(recipeUrl);
+        }
+
+        // Video URL — secondary link, appended when present
         if (recipe.getVideoUrl() != null && !recipe.getVideoUrl().trim().isEmpty()) {
             shareText.append("\n").append(recipe.getVideoUrl());
         }
@@ -462,6 +489,37 @@ public class RecipeDetailsActivity extends BaseActivity
                     getSafeString(R.string.browser_open_failed),
                     Toast.LENGTH_SHORT).show();
             logError("Failed to open video URL", e);
+        }
+    }
+
+    // ========== OPEN IN BROWSER ==========
+
+    /**
+     * Opens the recipe's page on TheMealDB or TheCocktailDB in the device browser.
+     *
+     * Only called when the web button is visible — which only happens when
+     * RecipeUrlBuilder.hasWebsiteSupport() returns true for this recipe.
+     * Mirrors ProductDetailsActivity.openInBrowser() exactly.
+     */
+    private void openInBrowser() {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null) return;
+
+        String url = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        if (url == null) {
+            Toast.makeText(this,
+                    getSafeString(R.string.website_not_available),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    getSafeString(R.string.browser_open_failed),
+                    Toast.LENGTH_SHORT).show();
+            logError("Failed to open recipe URL in browser", e);
         }
     }
 }

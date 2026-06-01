@@ -1,10 +1,14 @@
 package li.masciul.sugardaddi.ui.activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -15,21 +19,28 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.navigation.NavigationView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.ThemeManager;
 import li.masciul.sugardaddi.ui.settings.DataSourceCardManager;
+import li.masciul.sugardaddi.utils.image.ImagePurgeManager;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
- * SettingsActivity — v4.0 (Settings refactor)
+ * SettingsActivity - v4.0 (Settings refactor)
  *
  * ARCHITECTURE CHANGE v4.0
  * ========================
@@ -43,7 +54,7 @@ import li.masciul.sugardaddi.ui.settings.DataSourceCardManager;
  *   (alphabetical order from DataSourceManager.getAllSources()). Each manager
  *   inflates item_datasource_card.xml, binds its own SettingsProvider, and
  *   owns its BroadcastReceiver lifecycle. SettingsActivity knows nothing about
- *   any specific source — it just calls onResume/onPause/onDestroy on each
+ *   any specific source - it just calls onResume/onPause/onDestroy on each
  *   manager at the right moment.
  *
  * WHAT REMAINS UNCHANGED
@@ -88,6 +99,33 @@ public class SettingsActivity extends BaseActivity
     private final List<DataSourceCardManager> cardManagers = new ArrayList<>();
 
     // =========================================================================
+    // IMAGE LIBRARY CARD
+    // =========================================================================
+
+    // View references
+    private MaterialButton purgeImagesButton;
+    private TextView       purgeStatusText;
+    private MaterialSwitch galleryVisibilitySwitch;
+    private MaterialSwitch thumbnailVisibilitySwitch;
+
+    // SharedPreferences keys
+    private static final String PREF_KEY_GALLERY_VISIBLE    = "image_gallery_visible";
+    private static final String PREF_KEY_THUMBNAIL_VISIBLE  = "image_thumbnail_visible";
+
+    /**
+     * Stored so onResume() can refresh storage counts when the user navigates
+     * back to Settings (e.g. after favouriting an item).
+     */
+    private Runnable refreshStorageRunnable;
+
+    /**
+     * Dedicated background executor for file listing, MediaScanner calls,
+     * and synchronous purge. Must not run these on the main thread.
+     */
+    private final ExecutorService imageSettingsExecutor =
+            Executors.newSingleThreadExecutor();
+
+    // =========================================================================
     // LIFECYCLE
     // =========================================================================
 
@@ -101,13 +139,14 @@ public class SettingsActivity extends BaseActivity
         setupListeners();
         loadCurrentSettings();
         setupDataSourceCards();
+        setupImageLibraryCard();
 
         logDebug("SettingsActivity v4.0 initialised");
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        // Do not restore radio group state from bundle — we always load
+        // Do not restore radio group state from bundle - we always load
         // fresh from SharedPreferences in loadCurrentSettings() to avoid
         // triggering theme/language change listeners with stale state.
     }
@@ -119,7 +158,7 @@ public class SettingsActivity extends BaseActivity
     @Override
     protected void onActivityResumed() {
         super.onActivityResumed();
-        loadCurrentSettings(); // refresh radio buttons silently via flag
+        loadCurrentSettings();
 
         if (navigationView != null) {
             MenuItem settingsItem = navigationView.getMenu().findItem(R.id.nav_settings);
@@ -132,7 +171,11 @@ public class SettingsActivity extends BaseActivity
             manager.onResume();
         }
 
-        logDebug("SettingsActivity resumed — " + cardManagers.size() + " card(s) refreshed");
+        // Refresh storage summary so counts stay accurate when adding items
+        // as favorites in other screens before navigating back to Settings.
+        if (refreshStorageRunnable != null) refreshStorageRunnable.run();
+
+        logDebug("SettingsActivity resumed - " + cardManagers.size() + " card(s) refreshed");
     }
 
     @Override
@@ -154,6 +197,9 @@ public class SettingsActivity extends BaseActivity
             manager.onDestroy();
         }
         cardManagers.clear();
+
+        // Shut down the image library card's background executor
+        imageSettingsExecutor.shutdown();
     }
 
     // =========================================================================
@@ -203,7 +249,7 @@ public class SettingsActivity extends BaseActivity
         else if (id == R.id.nav_create_meal) startActivity(new Intent(this, CreateMealActivity.class));
         else if (id == R.id.nav_search)      startActivity(new Intent(this, MainActivity.class));
         else if (id == R.id.nav_favorites)   startActivity(new Intent(this, FavoritesActivity.class));
-        // nav_settings: already here — just close drawer
+        // nav_settings: already here - just close drawer
 
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
@@ -329,7 +375,7 @@ public class SettingsActivity extends BaseActivity
                     db.foodProductDao().clearAllProducts();
                     db.nutritionDao().deleteOrphanedNutrition();
                 } catch (Exception dbError) {
-                    logError("DB clear error — falling back to clearAllTables", dbError);
+                    logError("DB clear error - falling back to clearAllTables", dbError);
                     db.clearAllTables();
                 }
 
@@ -380,7 +426,7 @@ public class SettingsActivity extends BaseActivity
      * its card into the dataSourcesContainer LinearLayout.
      *
      * Sources are returned alphabetically by DataSourceManager.getAllSources().
-     * No source-specific code here — each card is driven by its SettingsProvider.
+     * No source-specific code here - each card is driven by its SettingsProvider.
      */
     private void setupDataSourceCards() {
         LinearLayout container = findViewById(R.id.dataSourcesContainer);
@@ -399,6 +445,357 @@ public class SettingsActivity extends BaseActivity
             logDebug("Card created for: " + source.getSourceId());
         }
 
-        logDebug("setupDataSourceCards complete — " + cardManagers.size() + " card(s)");
+        logDebug("setupDataSourceCards complete - " + cardManagers.size() + " card(s)");
+    }
+
+    // =========================================================================
+    // IMAGE LIBRARY CARD
+    // =========================================================================
+
+    /**
+     * Wires all views in the image library settings card.
+     *
+     * STORAGE SUMMARY
+     * ================
+     * Loads immediately on open and on every onResume() so counts stay accurate
+     * after favouriting items. Refresh button re-runs the same calculation.
+     * Calculation runs on imageSettingsExecutor (file I/O, not main thread).
+     *
+     * GALLERY VISIBILITY (products/, recipes/, meals/, steps/)
+     * =========================================================
+     * Persisted preference. On toggle: retroactively scans or unscans all
+     * existing files in those four directories via MediaScannerConnection /
+     * ContentResolver. thumbnails/ is handled by the separate toggle below.
+     *
+     * THUMBNAIL VISIBILITY (thumbnails/)
+     * ====================================
+     * Same mechanism, applied only to the thumbnails/ directory.
+     * Thumbnails are auto-managed small images; exposing them in the gallery
+     * is optional and controlled separately from user-created photos.
+     *
+     * PURGE BUTTON
+     * =============
+     * Calls ImagePurgeManager.purgeOrphansSync() on imageSettingsExecutor.
+     * Shows deleted count + bytes freed in purgeStatusText.
+     * Button is disabled while purge runs to prevent re-entry.
+     */
+    private void setupImageLibraryCard() {
+        // ── Bind views ────────────────────────────────────────────────────────
+        purgeImagesButton        = findViewById(R.id.purgeImagesButton);
+        purgeStatusText          = findViewById(R.id.purgeStatusText);
+        galleryVisibilitySwitch  = findViewById(R.id.galleryVisibilitySwitch);
+        thumbnailVisibilitySwitch = findViewById(R.id.thumbnailVisibilitySwitch);
+
+        MaterialButton refreshStorageButton = findViewById(R.id.refreshStorageButton);
+
+        TextView storageCountThumbnails = findViewById(R.id.storageCountThumbnails);
+        TextView storageSizeThumbnails  = findViewById(R.id.storageSizeThumbnails);
+        TextView storageCountProducts   = findViewById(R.id.storageCountProducts);
+        TextView storageSizeProducts    = findViewById(R.id.storageSizeProducts);
+        TextView storageCountRecipes    = findViewById(R.id.storageCountRecipes);
+        TextView storageSizeRecipes     = findViewById(R.id.storageSizeRecipes);
+        TextView storageCountMeals      = findViewById(R.id.storageCountMeals);
+        TextView storageSizeMeals       = findViewById(R.id.storageSizeMeals);
+        TextView storageCountSteps      = findViewById(R.id.storageCountSteps);
+        TextView storageSizeSteps       = findViewById(R.id.storageSizeSteps);
+        TextView storageCountTotal      = findViewById(R.id.storageCountTotal);
+        TextView storageSizeTotal       = findViewById(R.id.storageSizeTotal);
+
+        if (purgeImagesButton == null || galleryVisibilitySwitch == null
+                || thumbnailVisibilitySwitch == null || refreshStorageButton == null) {
+            Log.w(TAG, "Image library card views not found - skipping setup");
+            return;
+        }
+
+        ImageStorageManager storageManager =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+
+        // ── Storage summary ───────────────────────────────────────────────────
+        refreshStorageRunnable = () -> {
+            imageSettingsExecutor.execute(() -> {
+                // Five directories in display order
+                File[] dirs = {
+                        storageManager.getThumbnailsDir(),
+                        storageManager.getProductsDir(),
+                        storageManager.getRecipesDir(),
+                        storageManager.getMealsDir(),
+                        storageManager.getStepsDir()
+                };
+                String[] labels = { "Thumbnails", "Products", "Recipes", "Meals", "Steps" };
+
+                long[] counts = new long[5];
+                long[] sizes  = new long[5];
+                long totalCount = 0, totalSize = 0;
+
+                for (int i = 0; i < dirs.length; i++) {
+                    if (dirs[i] == null || !dirs[i].exists()) continue;
+                    File[] files = dirs[i].listFiles();
+                    if (files == null) continue;
+                    for (File f : files) {
+                        if (f.isFile() && !f.getName().startsWith(".")) {
+                            counts[i]++;
+                            sizes[i] += f.length();
+                        }
+                    }
+                    totalCount += counts[i];
+                    totalSize  += sizes[i];
+                }
+
+                final long[] fc = counts.clone();
+                final long[] fs = sizes.clone();
+                final long   ftc = totalCount;
+                final long   fts = totalSize;
+                final String[] fl = labels;
+
+                runOnUiThread(() -> {
+                    setStorageRow(storageCountThumbnails, storageSizeThumbnails, fc[0], fs[0]);
+                    setStorageRow(storageCountProducts,   storageSizeProducts,   fc[1], fs[1]);
+                    setStorageRow(storageCountRecipes,    storageSizeRecipes,    fc[2], fs[2]);
+                    setStorageRow(storageCountMeals,      storageSizeMeals,      fc[3], fs[3]);
+                    setStorageRow(storageCountSteps,      storageSizeSteps,      fc[4], fs[4]);
+                    setStorageRow(storageCountTotal,      storageSizeTotal,      ftc,   fts);
+                    // Make total bold explicitly since setStorageRow sets plain text
+                });
+            });
+        };
+
+        // Load immediately on open.
+        refreshStorageRunnable.run();
+
+        // Refresh button re-runs the same runnable.
+        refreshStorageButton.setOnClickListener(v -> refreshStorageRunnable.run());
+
+        // ── Gallery visibility toggle ─────────────────────────────────────────
+        galleryVisibilitySwitch.setChecked(
+                prefs.getBoolean(PREF_KEY_GALLERY_VISIBLE, false));
+
+        galleryVisibilitySwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            prefs.edit().putBoolean(PREF_KEY_GALLERY_VISIBLE, isChecked).apply();
+            applyGalleryVisibility(isChecked, storageManager);
+        });
+
+        // ── Thumbnail visibility toggle ───────────────────────────────────────
+        thumbnailVisibilitySwitch.setChecked(
+                prefs.getBoolean(PREF_KEY_THUMBNAIL_VISIBLE, false));
+
+        thumbnailVisibilitySwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            prefs.edit().putBoolean(PREF_KEY_THUMBNAIL_VISIBLE, isChecked).apply();
+            applyThumbnailVisibility(isChecked, storageManager);
+        });
+
+        // ── Purge button ──────────────────────────────────────────────────────
+        purgeImagesButton.setOnClickListener(v -> {
+            purgeImagesButton.setEnabled(false);
+            purgeStatusText.setText(R.string.image_library_purge_running);
+            purgeStatusText.setVisibility(View.VISIBLE);
+
+            ImagePurgeManager purgeManager =
+                    ((SugarDaddiApplication) getApplication()).getImagePurgeManager();
+
+            // purgeOrphansSync() is @WorkerThread - must run on background thread.
+            imageSettingsExecutor.execute(() -> {
+                // Measure freed space before purge
+                long bytesBefore = getTotalStorageBytes(storageManager);
+                int deleted = purgeManager.purgeOrphansSync();
+                long bytesAfter  = getTotalStorageBytes(storageManager);
+                long bytesFreed  = Math.max(0, bytesBefore - bytesAfter);
+
+                runOnUiThread(() -> {
+                    purgeImagesButton.setEnabled(true);
+
+                    String result = deleted == 0
+                            ? getString(R.string.image_library_purge_result_clean)
+                            : getString(R.string.image_library_purge_result_deleted,
+                            deleted, formatBytes(bytesFreed));
+
+                    purgeStatusText.setText(result);
+                    purgeStatusText.setVisibility(View.VISIBLE);
+
+                    // Refresh storage summary to reflect the freed space.
+                    if (refreshStorageRunnable != null) refreshStorageRunnable.run();
+
+                    Log.i(TAG, "Manual purge: " + deleted + " orphan(s) deleted, "
+                            + formatBytes(bytesFreed) + " freed");
+                });
+            });
+        });
+    }
+
+    /**
+     * Scans or unscans all files in products/, recipes/, meals/, steps/
+     * into/from the device MediaStore. thumbnails/ is NOT touched here -
+     * it is handled by applyThumbnailVisibility().
+     *
+     * Runs on imageSettingsExecutor - file listing and MediaScanner calls
+     * must not block the main thread.
+     */
+    private void applyGalleryVisibility(boolean makeVisible,
+                                        @NonNull ImageStorageManager storageManager) {
+        imageSettingsExecutor.execute(() -> {
+            File[] dirs = {
+                    storageManager.getProductsDir(),
+                    storageManager.getRecipesDir(),
+                    storageManager.getMealsDir(),
+                    storageManager.getStepsDir()
+            };
+            scanOrUnscanDirs(dirs, makeVisible, storageManager,
+                    "Gallery visibility (products/recipes/meals/steps)");
+        });
+    }
+
+    /**
+     * Scans or unscans all files in thumbnails/ into/from the device MediaStore.
+     *
+     * Thumbnails are auto-managed and normally private. This toggle gives the
+     * user explicit control over their gallery visibility.
+     */
+    private void applyThumbnailVisibility(boolean makeVisible,
+                                          @NonNull ImageStorageManager storageManager) {
+        imageSettingsExecutor.execute(() -> {
+            File[] dirs = { storageManager.getThumbnailsDir() };
+            scanOrUnscanDirs(dirs, makeVisible, storageManager,
+                    "Thumbnail visibility");
+        });
+    }
+
+    /**
+     * Scans or unscans all regular files in the given directories.
+     * Must be called from a background thread.
+     *
+     * SCANNING (makeVisible = true)
+     * ==============================
+     * Uses storageManager.scanFile() which inserts file content directly into
+     * MediaStore via ContentResolver.insert(). MediaScannerConnection.scanFile()
+     * cannot be used here because files in getExternalFilesDir() are app-private
+     * and intentionally excluded from MediaStore indexing by Android design.
+     * Each file is processed sequentially - storageManager.scanFile() is blocking.
+     *
+     * UNSCANNING (makeVisible = false)
+     * ==================================
+     * Uses storageManager.unscanFile() which queries MediaStore by display name
+     * and deletes the entry. If the user has already deleted the image manually
+     * from their gallery, unscanFile() returns false gracefully - no crash,
+     * no action needed, the desired state is already achieved.
+     *
+     * @param dirs          Directories to scan. Null entries are skipped.
+     * @param makeVisible   true to add to gallery, false to remove from gallery.
+     * @param storageManager The application-scoped storage manager instance.
+     * @param logLabel      Human-readable label for log messages.
+     */
+    private void scanOrUnscanDirs(@NonNull File[] dirs,
+                                  boolean makeVisible,
+                                  @NonNull ImageStorageManager storageManager,
+                                  @NonNull String logLabel) {
+        // Collect all regular files across all provided directories.
+        java.util.List<String> allPaths = new java.util.ArrayList<>();
+        for (File dir : dirs) {
+            if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
+            File[] files = dir.listFiles();
+            if (files == null) continue;
+            for (File f : files) {
+                if (f.isFile() && !f.getName().startsWith(".")) {
+                    allPaths.add(f.getAbsolutePath());
+                }
+            }
+        }
+
+        if (allPaths.isEmpty()) {
+            Log.d(TAG, logLabel + ": no files found to "
+                    + (makeVisible ? "scan" : "unscan"));
+            return;
+        }
+
+        if (makeVisible) {
+            // MediaScannerConnection.scanFile() does not work for files in
+            // getExternalFilesDir() - those paths are app-private and intentionally
+            // excluded from MediaStore indexing. Use storageManager.scanFile()
+            // which inserts file content directly into MediaStore via
+            // ContentResolver.insert() + openOutputStream().
+            // storageManager.scanFile() is blocking - safe here since we are
+            // already on imageSettingsExecutor (background thread).
+            int scanned = 0;
+            for (String path : allPaths) {
+                File file = new File(path);
+                storageManager.scanFile(file, (scannedPath, uri) -> {
+                    if (uri != null) {
+                        Log.d(TAG, logLabel + " added to gallery: "
+                                + new File(scannedPath).getName());
+                    } else {
+                        Log.w(TAG, logLabel + " failed to add to gallery: "
+                                + new File(scannedPath).getName());
+                    }
+                });
+                scanned++;
+            }
+            Log.d(TAG, logLabel + ": processed " + scanned + " file(s) for gallery");
+
+        } else {
+            // unscanFile() queries MediaStore by display name and deletes the entry.
+            // Returns false gracefully if the entry is already absent (e.g. the user
+            // manually deleted it from their gallery) - no crash, no action needed.
+            int removed = 0;
+            for (String path : allPaths) {
+                if (storageManager.unscanFile(new File(path))) removed++;
+            }
+            Log.d(TAG, logLabel + ": unscanned " + removed
+                    + "/" + allPaths.size() + " file(s)");
+        }
+    }
+
+    /**
+     * Returns the total byte size of all files across all managed directories.
+     * Used to calculate bytes freed after a purge.
+     * Must be called from a background thread.
+     */
+    private long getTotalStorageBytes(@NonNull ImageStorageManager storageManager) {
+        File[] dirs = {
+                storageManager.getThumbnailsDir(),
+                storageManager.getProductsDir(),
+                storageManager.getRecipesDir(),
+                storageManager.getMealsDir(),
+                storageManager.getStepsDir()
+        };
+        long total = 0;
+        for (File dir : dirs) {
+            if (dir == null || !dir.exists()) continue;
+            File[] files = dir.listFiles();
+            if (files == null) continue;
+            for (File f : files) {
+                if (f.isFile()) total += f.length();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Sets the count and size TextViews for one storage row.
+     * Empty directories show "-" in both cells.
+     */
+    private void setStorageRow(@NonNull TextView countView,
+                               @NonNull TextView sizeView,
+                               long count, long bytes) {
+        if (count == 0) {
+            countView.setText("-");
+            sizeView.setText("-");
+        } else {
+            countView.setText(count + " image" + (count == 1 ? "" : "s"));
+            sizeView.setText(formatBytes(bytes));
+        }
+    }
+
+    /**
+     * Converts a byte count to a human-readable string.
+     * Examples: "843 B", "12.3 KB", "4.2 MB", "1.1 GB"
+     */
+    private String formatBytes(long bytes) {
+        if (bytes < 1024)
+            return bytes + " B";
+        if (bytes < 1024L * 1024)
+            return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024 * 1024)
+            return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 }

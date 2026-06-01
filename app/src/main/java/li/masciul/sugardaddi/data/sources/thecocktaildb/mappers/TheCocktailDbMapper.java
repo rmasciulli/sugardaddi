@@ -168,6 +168,8 @@ public class TheCocktailDbMapper {
 
         // Keep the raw TheCocktailDB ID for API lookups (e.g. detail screen refresh)
         recipe.setOriginalId(drink.getIdDrink());
+
+        recipe.setId(TheCocktailDbConstants.SOURCE_ID + ":" + drink.getIdDrink());
     }
 
     /**

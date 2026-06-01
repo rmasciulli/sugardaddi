@@ -343,9 +343,41 @@
     <string name="load_more_failed">Échec du chargement de plus de résultats</string>
     <string name="long_click_hint">Appuyez longuement pour voir les détails</string>
 
-    <!-- SettingsActivity - Missing strings -->
+    <!-- SettingsActivity strings -->
     <string name="cache_stats">Cache : %1$d produits, %2$d favoris</string>
     <string name="cache_stats_failed">Échec du chargement des statistiques du cache</string>
+
+    <!-- ========== IMAGE LIBRARY CARD ========== -->
+
+    <!-- Bibliothèque d'images — titre de section -->
+    <string name="image_library_title">Bibliothèque d\'images</string>
+
+    <!-- Résumé de stockage -->
+    <string name="image_library_storage_title">Espace utilisé</string>
+    <string name="image_library_storage_refresh_description">Actualiser le résumé de stockage</string>
+
+    <string name="image_library_col_images">Images</string>
+    <string name="image_library_col_size">Taille</string>
+    <string name="image_library_row_thumbnails">Miniatures</string>
+    <string name="image_library_row_products">Produits</string>
+    <string name="image_library_row_recipes">Recettes</string>
+    <string name="image_library_row_meals">Repas</string>
+    <string name="image_library_row_steps">Étapes</string>
+    <string name="image_library_row_total">Total</string>
+
+    <!-- Visibilité galerie (products/, recipes/, meals/, steps/) -->
+    <string name="image_library_gallery_visibility_label">Afficher les photos dans la galerie</string>
+    <string name="image_library_gallery_visibility_description">Ajouter les images héros, photos de repas et photos d\'étapes à la galerie de votre appareil. Désactiver supprime ces copies de la galerie mais les conserve dans l\'application.</string>
+
+    <!-- Visibilité miniatures (thumbnails/) -->
+    <string name="image_library_thumbnail_visibility_label">Afficher les miniatures dans la galerie</string>
+    <string name="image_library_thumbnail_visibility_description">Ajouter les miniatures en cache à la galerie de votre appareil. Ces petites images sont gérées automatiquement par l\'application. Désactiver les supprime de la galerie.</string>
+
+    <!-- Nettoyage -->
+    <string name="image_library_purge_button">Nettoyer les images inutilisées</string>
+    <string name="image_library_purge_running">Analyse de la bibliothèque…</string>
+    <string name="image_library_purge_result_clean">La bibliothèque d\'images est propre</string>
+    <string name="image_library_purge_result_deleted">%1$d image(s) inutilisée(s) supprimée(s) (%2$s libérés)</string>
 
     <!-- ========== DATA SOURCE STRINGS ========== -->
 

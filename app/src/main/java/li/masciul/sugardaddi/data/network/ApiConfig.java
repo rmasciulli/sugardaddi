@@ -1,5 +1,7 @@
 package li.masciul.sugardaddi.data.network;
 
+import li.masciul.sugardaddi.BuildConfig;
+
 /**
  * ApiConfig - Centralized SHARED configuration for the entire application
  *
@@ -39,7 +41,7 @@ public final class ApiConfig {
      * Global logging flags
      * Control logging behavior across all components
      */
-    public static final boolean DEBUG_LOGGING = true;
+    public static final boolean DEBUG_LOGGING = BuildConfig.DEBUG;
     public static final String NETWORK_LOG_TAG = "SugarDaddi_Net";
     public static final String SEARCH_LOG_TAG = "SugarDaddi_Search";
     public static final String DATABASE_LOG_TAG = "SugarDaddi_DB";

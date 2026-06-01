@@ -11,6 +11,9 @@ import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.ThemeManager;
+import li.masciul.sugardaddi.utils.image.ImagePurgeManager;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
+import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
 import li.masciul.sugardaddi.utils.language.LanguageDetector;
 
 import java.util.List;
@@ -43,6 +46,31 @@ public class SugarDaddiApplication extends Application {
     private static final String TAG = ApiConfig.UI_LOG_TAG;
 
     // =========================================================================
+    // IMAGE SYSTEM SINGLETONS
+    // =========================================================================
+
+    /**
+     * Application-scoped image storage manager.
+     * Provides directory access and file path construction for all image categories.
+     * Safe to call from any thread after onCreate() completes.
+     */
+    private ImageStorageManager imageStorageManager;
+
+    /**
+     * Application-scoped thumbnail downloader.
+     * Downloads and caches remote thumbnails for favourited items.
+     * Owns a dedicated single-thread executor and OkHttpClient.
+     */
+    private ThumbnailDownloader thumbnailDownloader;
+
+    /**
+     * Application-scoped orphan image purger.
+     * Scans all managed directories at startup and deletes unreferenced files.
+     * Owns a dedicated single-thread executor.
+     */
+    private ImagePurgeManager imagePurgeManager;
+
+    // =========================================================================
     // CONTEXT WRAPPING — must happen before onCreate
     // =========================================================================
 
@@ -66,7 +94,8 @@ public class SugarDaddiApplication extends Application {
         initializeLanguageSystem();
         initializeThemeSystem();
         initializeDatabaseSystem();
-        initializeDataSourceSystem();   // boots DataSourceManager — sources self-configure
+        initializeImageSystem();
+        initializeDataSourceSystem();
         initializeNetworkSystem();
         initializePerformanceMonitoring();
 
@@ -128,6 +157,38 @@ public class SugarDaddiApplication extends Application {
         } catch (Exception e) {
             Log.e(TAG, "Database init failed", e);
         }
+    }
+
+    // =========================================================================
+    // IMAGE SYSTEM
+    // =========================================================================
+
+    /**
+     * Initialises the image system and schedules a background orphan purge.
+     *
+     * Must be called AFTER initializeDatabaseSystem() — ImagePurgeManager
+     * queries Room to cross-reference disk files against known paths.
+     *
+     * Singletons created here are held for the lifetime of the process and
+     * exposed via getters so repositories and activities can access them
+     * without constructing their own instances.
+     */
+    private void initializeImageSystem() {
+        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Initialising image system…");
+
+        // Lightweight — no I/O on construction.
+        imageStorageManager = new ImageStorageManager(this);
+
+        // Owns a dedicated OkHttpClient + single-thread executor.
+        thumbnailDownloader = new ThumbnailDownloader(imageStorageManager);
+
+        // Owns a single-thread executor. Must be created after the database.
+        imagePurgeManager = new ImagePurgeManager(this, imageStorageManager);
+
+        // Fire-and-forget: scans all image directories, deletes orphans.
+        imagePurgeManager.purgeOrphansAsync();
+
+        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Image system initialised — purge scheduled");
     }
 
     // =========================================================================
@@ -215,5 +276,33 @@ public class SugarDaddiApplication extends Application {
         } catch (Exception e) {
             Log.e(TAG, "Cleanup error", e);
         }
+    }
+
+    // =========================================================================
+    // UTILITY METHODS
+    // =========================================================================
+
+    /**
+     * Returns the application-scoped ImageStorageManager singleton.
+     * Never construct a new instance — always use this.
+     */
+    public ImageStorageManager getImageStorageManager() {
+        return imageStorageManager;
+    }
+
+    /**
+     * Returns the application-scoped ThumbnailDownloader singleton.
+     * Holds a shared OkHttpClient and executor — never construct your own.
+     */
+    public ThumbnailDownloader getThumbnailDownloader() {
+        return thumbnailDownloader;
+    }
+
+    /**
+     * Returns the application-scoped ImagePurgeManager singleton.
+     * Exposed primarily for the Settings screen manual purge trigger.
+     */
+    public ImagePurgeManager getImagePurgeManager() {
+        return imagePurgeManager;
     }
 }
