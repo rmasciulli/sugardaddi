@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -138,19 +139,15 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
 
-            // The ImageView is match_parent × 200dp. At inflate time the view
-            // hasn't been measured yet so heroImage.getWidth() returns 0.
-            // We compute the pixel dimensions explicitly instead of letting
-            // Glide measure the view (which would fall back to SIZE_ORIGINAL).
-            android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-            int widthPx  = dm.widthPixels;
-            int heightPx = Math.round(200 * dm.density);  // 200dp → px
+        Object imageSource = resolveProductHeroSource(product);
 
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(widthPx, heightPx)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
@@ -162,6 +159,18 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
             heroImage.setImageResource(R.drawable.ic_food_placeholder);
             heroImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         }
+    }
+
+    @Nullable
+    private Object resolveProductHeroSource(@NonNull FoodProduct product) {
+        String heroPath = product.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        String imageUrl = product.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+        return null;
     }
 
     /**

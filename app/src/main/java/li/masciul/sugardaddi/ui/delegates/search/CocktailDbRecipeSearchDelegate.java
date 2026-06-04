@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -143,11 +144,13 @@ public class CocktailDbRecipeSearchDelegate
      * TheCocktailDB always provides strDrinkThumb for published cocktails.
      */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        String imageUrl = recipe.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+
+        Object imageSource = resolveRecipeThumbnailSource(recipe);
+
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(sizePx, sizePx)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
@@ -159,6 +162,23 @@ public class CocktailDbRecipeSearchDelegate
         } else {
             holder.imageContainer.setVisibility(View.GONE);
         }
+    }
+
+    @Nullable
+    private Object resolveRecipeThumbnailSource(@NonNull Recipe recipe) {
+        String localThumb = recipe.getThumbnailPath();
+        if (localThumb != null && !localThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(localThumb);
+            if (f.exists()) return f;
+        }
+        String imageUrl = recipe.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+        String heroPath = recipe.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        return null;
     }
 
     /**

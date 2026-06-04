@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -90,7 +91,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
     @NonNull
     @Override
     public View inflate(@NonNull LayoutInflater inflater, @NonNull ViewGroup container) {
-        // Inflate our dedicated layout — do NOT attach to container here,
+        // Inflate our dedicated layout - do NOT attach to container here,
         // ProductDetailsActivity does that after receiving the view.
         return inflater.inflate(R.layout.detail_off_product, container, false);
     }
@@ -105,7 +106,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
         populateScores(view, product);
         populateAllergens(view, product);
         populateNutrition(view, product, language);
-        // Attribution panel last — informational, never obscures critical content
+        // Attribution panel last - informational, never obscures critical content
         DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
@@ -156,19 +157,17 @@ public class OffProductDetailRenderer implements DetailRenderer {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
 
-            // The ImageView is match_parent × 200dp. At inflate time the view
-            // hasn't been measured yet so heroImage.getWidth() returns 0.
-            // We compute the pixel dimensions explicitly instead of letting
-            // Glide measure the view (which would fall back to SIZE_ORIGINAL).
-            android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-            int widthPx  = dm.widthPixels;
-            int heightPx = Math.round(200 * dm.density);  // 200dp → px
+        // Local-first: heroImagePath → imageUrl → placeholder
+        // thumbnailPath NOT in hero chain - it's CDN-sized, wrong for full-width.
+        Object imageSource = resolveProductHeroSource(product);
 
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(widthPx, heightPx)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
@@ -183,13 +182,34 @@ public class OffProductDetailRenderer implements DetailRenderer {
     }
 
     /**
+     * Resolves thumbnail source for a food product.
+     * Priority: thumbnailPath → imageThumbnailUrl → imageUrl → heroImagePath → null
+     * heroImagePath is last resort so Ciqual/USDA products with a user-set
+     * hero image show something meaningful in the search card.
+     */
+    @Nullable
+    private Object resolveProductHeroSource(@NonNull FoodProduct product) {
+        // 1. User-set local hero image takes priority
+        String heroPath = product.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+
+        // 2. Remote full-size image
+        String imageUrl = product.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+        return null;
+    }
+
+    /**
      * Populate the header card: product name, brand, quantity, category.
      * Each field is hidden (GONE) when not available to avoid empty-space gaps.
      */
     private void populateHeader(@NonNull View view, @NonNull FoodProduct product,
                                 @NonNull String language) {
 
-        // Product name — always shown (fallback to string resource)
+        // Product name - always shown (fallback to string resource)
         TextView productName = view.findViewById(R.id.productName);
         if (productName != null) {
             String name = product.getDisplayName(language);
@@ -246,7 +266,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
      *
      * The scores live in a left-aligned horizontal strip inside the product card.
      * scoresRow is GONE by default; we make it VISIBLE here.
-     * No scoreDivider in v3 — the score strip flows directly under the product info
+     * No scoreDivider in v3 - the score strip flows directly under the product info
      * with only paddingBottom separating it from the next section divider.
      */
     private void populateScores(@NonNull View view, @NonNull FoodProduct product) {
@@ -264,7 +284,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
      * The nutriScoreStickerContainer in the layout has a fixed height of 64dp.
      * We add the sticker as a child with MATCH_PARENT height so it fills that box,
      * and WRAP_CONTENT width so the sticker scales its width from its aspect ratio.
-     * We must NOT set the container itself to MATCH_PARENT or WRAP_CONTENT height —
+     * We must NOT set the container itself to MATCH_PARENT or WRAP_CONTENT height -
      * the XML 64dp declaration is the authoritative constraint.
      */
     private void populateNutriScore(@NonNull View view, @NonNull FoodProduct product) {
@@ -296,7 +316,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
      * The greenScoreSticker ImageView in the layout has a fixed height of 64dp,
      * wrap_content width, adjustViewBounds=true, and fitCenter scaleType.
      * This means the drawable naturally scales its width from its aspect ratio
-     * within the 64dp height box — no programmatic sizing needed.
+     * within the 64dp height box - no programmatic sizing needed.
      *
      * We only set the drawable. Calling setupStickerImageView() here would override
      * the XML height to 48dp, fighting the intended layout constraint.
@@ -345,9 +365,9 @@ public class OffProductDetailRenderer implements DetailRenderer {
      * Populate the allergens section inside the main content card.
      *
      * Three views are toggled together:
-     *   allergenDivider  — 1dp line above the section
-     *   allergenSection  — LinearLayout containing the header label + icon grid
-     *   allergenIconsContainer — FrameLayout inside allergenSection
+     *   allergenDivider  - 1dp line above the section
+     *   allergenSection  - LinearLayout containing the header label + icon grid
+     *   allergenIconsContainer - FrameLayout inside allergenSection
      *
      * All three are GONE by default in the layout. When allergenFlags == 0,
      * they all stay hidden. When flags are present, all three become VISIBLE.

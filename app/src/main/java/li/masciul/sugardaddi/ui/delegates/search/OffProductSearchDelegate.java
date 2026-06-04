@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -185,14 +186,16 @@ public class OffProductSearchDelegate
     }
 
     private void bindImage(ViewHolder holder, FoodProduct product) {
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
 
+        // Local-first: thumbnailPath → imageThumbnailUrl → imageUrl → placeholder
+        Object imageSource = resolveProductThumbnailSource(product);
+
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(sizePx, sizePx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL) // cache both source and resized
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
                     .error(R.drawable.ic_food_error)
                     .centerCrop()
@@ -201,6 +204,38 @@ public class OffProductSearchDelegate
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
+    }
+
+    /**
+     * Resolves thumbnail source for a food product.
+     * Priority: thumbnailPath → imageThumbnailUrl → imageUrl → heroImagePath → null
+     * heroImagePath is last resort so Ciqual/USDA products with a user-set
+     * hero image show something meaningful in the search card.
+     */
+    @Nullable
+    private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
+        // 1. Local cached thumbnail
+        String localThumb = product.getThumbnailPath();
+        if (localThumb != null && !localThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(localThumb);
+            if (f.exists()) return f;
+        }
+
+        // 2. Remote CDN thumbnail (small, fast)
+        String thumbUrl = product.getImageThumbnailUrl();
+        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
+
+        // 3. Remote full image (fallback)
+        String imageUrl = product.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+
+        // Last resort: user-set hero image (relevant for Ciqual/USDA products)
+        String heroPath = product.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        return null;
     }
 
     // Compact score dimensions for search result cards.

@@ -6,12 +6,16 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -88,6 +92,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         if (!(item instanceof FoodProduct)) return;
         FoodProduct product = (FoodProduct) item;
 
+        populateHeroImage(view, product);
         populateHeader(view, product, language);
         populateNutrition(view, product, language);
         // Attribution panel last — informational, never obscures critical content
@@ -127,6 +132,46 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
     }
 
     // ========== POPULATE HELPERS ==========
+
+    private void populateHeroImage(@NonNull View view, @NonNull FoodProduct product) {
+        View heroContainer = view.findViewById(R.id.heroImageContainer);
+        ImageView heroImage = view.findViewById(R.id.heroImage);
+
+        // Views may not exist yet in detail_ciqual_product.xml — no-op until added.
+        if (heroContainer == null || heroImage == null) return;
+
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
+
+        // Ciqual has no remote image URL and no auto-downloaded thumbnail.
+        // Only heroImagePath is checked — set by the user via ImagePickerHelper.
+        Object source = resolveCiqualHeroSource(product);
+        if (source != null) {
+            Glide.with(context)
+                    .load(source)
+                    .override(widthPx, heightPx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_food_placeholder)
+                    .error(R.drawable.ic_food_error)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(heroImage);
+            heroContainer.setVisibility(View.VISIBLE);
+        } else {
+            heroContainer.setVisibility(View.GONE);
+        }
+    }
+
+    @Nullable
+    private Object resolveCiqualHeroSource(@NonNull FoodProduct product) {
+        String heroPath = product.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        return null;
+    }
 
     /**
      * Populate the header card: product name, category, serving size.

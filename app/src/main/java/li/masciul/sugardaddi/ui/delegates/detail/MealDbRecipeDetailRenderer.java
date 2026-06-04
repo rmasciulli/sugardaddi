@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -113,25 +114,23 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Hero image: full-width, 220dp tall.
+     * Hero image: full-width, 200dp tall.
      * Container is GONE by default - shown only when imageUrl is present.
      */
     private void populateHeroImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
-        String imageUrl = recipe.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            // The ImageView is match_parent × 220dp. At inflate time the view
-            // hasn't been measured yet so heroImage.getWidth() returns 0.
-            // We compute the pixel dimensions explicitly instead of letting
-            // Glide measure the view (which would fall back to SIZE_ORIGINAL).
-            android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-            int widthPx  = dm.widthPixels;
-            int heightPx = Math.round(220 * dm.density);  // 220dp → px
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
 
+        // heroImagePath → thumbnailPath (offline copy of imageUrl) → imageUrl → hide
+        Object imageSource = resolveRecipeHeroSource(recipe);
+
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(widthPx, heightPx)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
@@ -143,6 +142,29 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
+    }
+
+    @Nullable
+    private Object resolveRecipeHeroSource(@NonNull Recipe recipe) {
+        // 1. User-set local hero image
+        String heroPath = recipe.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+
+        // 2. Cached thumbnail - for recipes this IS the offline copy of imageUrl.
+        // Used as hero fallback when no explicit hero image has been set.
+        String thumbPath = recipe.getThumbnailPath();
+        if (thumbPath != null && !thumbPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(thumbPath);
+            if (f.exists()) return f;
+        }
+
+        // 3. Remote image URL
+        String imageUrl = recipe.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+        return null;
     }
 
     /**

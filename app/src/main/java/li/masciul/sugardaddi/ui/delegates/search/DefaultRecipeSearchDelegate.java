@@ -5,7 +5,12 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -95,6 +100,54 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         } else {
             holder.recipeDescription.setVisibility(View.GONE);
         }
+    }
+
+    /*
+    // Placeholder method for when users will be able to add their own thumbnails to recipes
+    private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
+        // User recipes have no remote URL and no auto-downloaded thumbnail.
+        // Only show an image if the user has explicitly set one.
+        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+        Object source = resolveUserRecipeThumbnailSource(recipe);
+        if (source != null && holder.recipeImage != null) {
+            Glide.with(context)
+                    .load(source)
+                    .override(sizePx, sizePx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_food_placeholder)
+                    .error(R.drawable.ic_food_error)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(holder.recipeImage);
+            if (holder.imageContainer != null) {
+                holder.imageContainer.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (holder.imageContainer != null) {
+                holder.imageContainer.setVisibility(View.GONE);
+            }
+        }
+    }
+    */
+
+    /**
+     * For user recipes, only local paths are checked — no remote URL exists.
+     * thumbnailPath would be set if the user replaced the auto-cached image.
+     * heroImagePath would be set if the user explicitly assigned one.
+     */
+    @Nullable
+    private Object resolveUserRecipeThumbnailSource(@NonNull Recipe recipe) {
+        String thumbPath = recipe.getThumbnailPath();
+        if (thumbPath != null && !thumbPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(thumbPath);
+            if (f.exists()) return f;
+        }
+        String heroPath = recipe.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        return null;
     }
 
     private void bindTime(ViewHolder holder, Recipe recipe) {

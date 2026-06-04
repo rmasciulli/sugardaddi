@@ -4,10 +4,16 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -19,7 +25,7 @@ import li.masciul.sugardaddi.core.models.RecipeStep;
 import java.util.List;
 
 /**
- * DefaultRecipeDetailRenderer — Catch-all detail renderer for Recipe items.
+ * DefaultRecipeDetailRenderer - Catch-all detail renderer for Recipe items.
  *
  * HANDLES: All Recipe items not matched by a more specific renderer.
  * Currently: DataSourceType.USER (user-created recipes).
@@ -27,14 +33,14 @@ import java.util.List;
  *
  * DISPLAYS:
  *   - Name, cuisine, difficulty, prep/cook time, servings
- *   - Ingredient list (FoodPortion list — resolved or stub)
+ *   - Ingredient list (FoodPortion list - resolved or stub)
  *   - Step-by-step instructions (RecipeStep list via recipe.getSteps())
  *   - Notes (when present)
  *   - "No nutrition data" placeholder (user recipes start with no nutrition)
  *
  * WHAT IS NOT SHOWN:
  *   - Hero image (user recipes don't currently support images)
- *   - Edit button (deferred — editing UI not yet implemented)
+ *   - Edit button (deferred - editing UI not yet implemented)
  *   - Attribution (user-created content needs none)
  *
  * REGISTRATION: Must be last in RecipeDetailsActivity's renderer registry
@@ -54,7 +60,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
     /**
      * Catch-all: handles any Recipe item not matched by a more specific renderer.
-     * Checks ProductType.RECIPE only — DataSourceType is intentionally not checked.
+     * Checks ProductType.RECIPE only - DataSourceType is intentionally not checked.
      */
     @Override
     public boolean supports(@NonNull Searchable item) {
@@ -72,6 +78,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         if (!(item instanceof Recipe)) return;
         Recipe recipe = (Recipe) item;
 
+        populateHeroImage(view, recipe);
         populateHeader(view, recipe, language);
         populateIngredients(view, recipe, language);
         populateInstructions(view, recipe, language);
@@ -92,14 +99,62 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         return null;
     }
 
-    // destroy() default no-op is sufficient — no TextWatchers or heavy resources held.
+    // destroy() default no-op is sufficient - no TextWatchers or heavy resources held.
 
     // ========== POPULATE HELPERS ==========
+
+    private void populateHeroImage(@NonNull View view, @NonNull Recipe recipe) {
+        View heroContainer = view.findViewById(R.id.heroImageContainer);
+        ImageView heroImage = view.findViewById(R.id.heroImage);
+
+        // Both views may not exist yet in detail_default_recipe.xml
+        // - this method is a no-op until the layout is updated.
+        if (heroContainer == null || heroImage == null) return;
+
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
+
+        // User recipes: only local paths, no remote URL
+        Object source = resolveUserRecipeHeroSource(recipe);
+        if (source != null) {
+            Glide.with(context)
+                    .load(source)
+                    .override(widthPx, heightPx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_food_placeholder)
+                    .error(R.drawable.ic_food_error)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(heroImage);
+            heroContainer.setVisibility(View.VISIBLE);
+        } else {
+            heroContainer.setVisibility(View.GONE);
+        }
+    }
+
+    @Nullable
+    private Object resolveUserRecipeHeroSource(@NonNull Recipe recipe) {
+        // User-set explicit hero image - first choice
+        String heroPath = recipe.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+        // Cached thumbnail - only present if user replaced the default
+        String thumbPath = recipe.getThumbnailPath();
+        if (thumbPath != null && !thumbPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(thumbPath);
+            if (f.exists()) return f;
+        }
+        // No remote URL for user recipes - return null (hero container hidden)
+        return null;
+    }
 
     /**
      * Header: name, cuisine, and the metadata row (difficulty · time · servings).
      *
-     * The metadata row is GONE when all three fields are absent — avoids an
+     * The metadata row is GONE when all three fields are absent - avoids an
      * empty horizontal strip for sparse user recipes.
      */
     private void populateHeader(@NonNull View view, @NonNull Recipe recipe,
@@ -113,7 +168,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         TextView separator2      = view.findViewById(R.id.metadataSeparator2);
         TextView servingsView    = view.findViewById(R.id.recipeServings);
 
-        // Name — always shown
+        // Name - always shown
         String name = recipe.getDisplayName(language);
         nameView.setText(name != null ? name : "");
 
@@ -233,7 +288,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         LayoutInflater inflater = LayoutInflater.from(context);
 
         if (steps != null && !steps.isEmpty()) {
-            // Structured steps — inflate one view per step
+            // Structured steps - inflate one view per step
             instructionsCard.setVisibility(View.VISIBLE);
             for (RecipeStep step : steps) {
                 addStepRow(inflater, stepsContainer, step);

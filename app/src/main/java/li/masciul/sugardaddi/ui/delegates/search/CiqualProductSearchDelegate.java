@@ -8,6 +8,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -80,6 +84,7 @@ public class CiqualProductSearchDelegate
         bindSourceBadge(holder);
         bindProductType(holder);
         bindCategory(holder, product, language);
+
         bindNutritionSummary(holder, product, language);
         bindKcalBadge(holder, product);
     }
@@ -130,6 +135,34 @@ public class CiqualProductSearchDelegate
             holder.category.setVisibility(View.GONE);
         }
     }
+
+    /*
+    // Placeholder method for when users will be able to add their own thumbnails to products
+    private void bindImage(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
+        // heroImagePath only — Ciqual has no remote URL, no auto-thumbnail.
+        String heroPath = product.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists() && holder.productImage != null) {
+                int sizePx = Math.round(72 *
+                        context.getResources().getDisplayMetrics().density);
+                Glide.with(context)
+                        .load(f)
+                        .override(sizePx, sizePx)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.ic_food_placeholder)
+                        .error(R.drawable.ic_food_error)
+                        .centerCrop()
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(holder.productImage);
+                return;
+            }
+        }
+        if (holder.productImage != null) {
+            holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
+        }
+    }
+    */
 
     /**
      * Carbohydrates summary: "x.xg carbohydrates per 100g" (EN) / "x.xg glucides per 100g" (FR).

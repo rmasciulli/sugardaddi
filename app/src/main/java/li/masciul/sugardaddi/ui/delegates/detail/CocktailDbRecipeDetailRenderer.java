@@ -10,6 +10,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -27,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * CocktailDbRecipeDetailRenderer — Detail renderer for TheCocktailDB cocktails.
+ * CocktailDbRecipeDetailRenderer - Detail renderer for TheCocktailDB cocktails.
  *
  * HANDLES: Recipe items with DataSourceType.THECOCKTAILDB.
  *
@@ -35,14 +36,14 @@ import java.util.Set;
  *   - Hero image (full-width, 200dp)
  *   - Name + category·alcoholic status description
  *   - Glass type row (shown when tag "glass:*" is present)
- *   - Ingredient list (unresolved FoodPortion stubs — name + measure string)
+ *   - Ingredient list (unresolved FoodPortion stubs - name + measure string)
  *   - Preparation instructions (parsed into structured steps)
  *   - TheCocktailDB attribution
  *
  * DOES NOT DISPLAY:
  *   - Nutrition (TheCocktailDB provides none)
  *   - Difficulty / prep time / cook time (not available from this source)
- *   - Edit button (external recipe — read-only)
+ *   - Edit button (external recipe - read-only)
  *
  * GLASS TYPE:
  *   Stored as a tag with prefix "glass:" by TheCocktailDbMapper.
@@ -115,13 +116,13 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
         return null;
     }
 
-    // destroy() default no-op is sufficient — no TextWatchers or heavy resources held.
+    // destroy() default no-op is sufficient - no TextWatchers or heavy resources held.
 
     // ========== POPULATE HELPERS ==========
 
     /**
      * Hero image: full-width, 200dp tall.
-     * Container is GONE by default — shown only when imageUrl is present.
+     * Container is GONE by default - shown only when imageUrl is present.
      *
      * Uses explicit pixel override to avoid Glide measuring an unmeasured view
      * and falling back to SIZE_ORIGINAL (which causes slow decode and blur).
@@ -130,14 +131,15 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
-        String imageUrl = recipe.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            DisplayMetrics dm = context.getResources().getDisplayMetrics();
-            int widthPx  = dm.widthPixels;
-            int heightPx = Math.round(200 * dm.density);  // 200dp → px
+        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
+        int widthPx  = dm.widthPixels;
+        int heightPx = Math.round(200 * dm.density);
 
+        Object imageSource = resolveRecipeHeroSource(recipe);
+
+        if (imageSource != null) {
             Glide.with(context)
-                    .load(imageUrl)
+                    .load(imageSource)
                     .override(widthPx, heightPx)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_food_placeholder)
@@ -149,6 +151,25 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
+    }
+
+    @Nullable
+    private Object resolveRecipeHeroSource(@NonNull Recipe recipe) {
+        String heroPath = recipe.getHeroImagePath();
+        if (heroPath != null && !heroPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(heroPath);
+            if (f.exists()) return f;
+        }
+
+        String thumbPath = recipe.getThumbnailPath();
+        if (thumbPath != null && !thumbPath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(thumbPath);
+            if (f.exists()) return f;
+        }
+
+        String imageUrl = recipe.getImageUrl();
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+        return null;
     }
 
     /**
@@ -199,8 +220,8 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
      * Ingredients: one row per FoodPortion stub, inflated into ingredientsContainer.
      *
      * Each row shows:
-     *   LEFT  — ingredient name (portion.getItemId())
-     *   RIGHT — measure string (portion.getServing().getDisplayText())
+     *   LEFT  - ingredient name (portion.getItemId())
+     *   RIGHT - measure string (portion.getServing().getDisplayText())
      *
      * Rows are sorted by orderIndex (API order).
      */
@@ -260,7 +281,7 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
         LayoutInflater inflater = LayoutInflater.from(context);
 
         if (steps != null && !steps.isEmpty()) {
-            // Structured steps — inflate item_recipe_step for each
+            // Structured steps - inflate item_recipe_step for each
             for (RecipeStep step : steps) {
                 View row = inflater.inflate(R.layout.item_recipe_step, container, false);
 
@@ -280,7 +301,7 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
                 container.addView(row);
             }
         } else {
-            // Plain-text fallback — inflate item_instruction_text
+            // Plain-text fallback - inflate item_instruction_text
             String raw = recipe.getInstructions(language);
             if (raw != null && !raw.trim().isEmpty()) {
                 View fallbackRow = inflater.inflate(
@@ -293,7 +314,7 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
     }
 
     /**
-     * Attribution panel — TheCocktailDB credit.
+     * Attribution panel - TheCocktailDB credit.
      * Uses the shared DetailRendererUtils helper.
      */
     private void populateAttribution(@NonNull View view, @NonNull Recipe recipe) {
