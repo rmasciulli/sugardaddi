@@ -23,17 +23,22 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 1. HERO IMAGE (optional) -->
-        <ImageView
-            android:id="@+id/heroImage"
+        <!-- 1. HERO IMAGE (optional, GONE when no image available) -->
+        <FrameLayout
+            android:id="@+id/heroImageContainer"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:background="?attr/colorSurfaceVariant"
-            android:contentDescription="@string/product_image_description"
-            android:scaleType="centerCrop"
-            android:visibility="gone"
-            tools:src="@drawable/ic_food_placeholder"
-            tools:visibility="visible" />
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/heroImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/product_image_description"
+                android:scaleType="centerCrop"
+                tools:src="@drawable/ic_food_placeholder" />
+
+        </FrameLayout>
 
         <!-- 2. MAIN CONTENT CARD -->
         <com.google.android.material.card.MaterialCardView

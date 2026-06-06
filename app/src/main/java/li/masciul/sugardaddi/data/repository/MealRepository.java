@@ -649,7 +649,7 @@ public class MealRepository {
                 newMeal.setMealType(template.getMealType());
                 newMeal.setUserId(template.getUserId());
                 newMeal.setCurrentLanguage(template.getCurrentLanguage());
-                newMeal.setImageUrl(template.getImageUrl());
+                newMeal.setUserImagePath(template.getUserImagePath());
 
                 // Copy all translations (contains all language data)
                 newMeal.setTranslations(new HashMap<>(template.getTranslations()));

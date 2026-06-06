@@ -409,15 +409,26 @@ public interface RecipeDao {
     int updateLastUpdated(String recipeId, long timestamp);
 
     /**
-     * Returns all non-null local image paths for recipes (thumbnail + hero).
-     * UNION ALL is correct here — same path cannot appear in both columns.
-     * Used by ImagePurgeManager.
+     * Returns all non-null local image paths for recipes.
      *
-     * Added in: database v11. Updated in: v12 (field rename + expansion).
+     * Covers all four local path columns:
+     *   thumbnailPath     — auto-cached thumbnail (downloaded on favourite)
+     *   imagePath         — auto-cached full-size (future use, currently NULL)
+     *   userThumbnailPath — user-defined thumbnail override ({id}_custom.jpg)
+     *   userImagePath     — user-defined full-size override
+     *
+     * Does NOT cover step photos — those are extracted from the stepStructure
+     * JSON blob separately via getAllWithStepStructure() + extractStepPhotoPaths().
+     *
+     * Updated in: database v13 (media field rename + expansion)
      */
     @Query("SELECT thumbnailPath FROM recipes WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "
-            + "SELECT heroImagePath FROM recipes WHERE heroImagePath IS NOT NULL")
+            + "SELECT imagePath FROM recipes WHERE imagePath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT userThumbnailPath FROM recipes WHERE userThumbnailPath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT userImagePath FROM recipes WHERE userImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     /**
@@ -449,6 +460,29 @@ public interface RecipeDao {
      */
     @Query("UPDATE recipes SET thumbnailPath = :path WHERE id = :recipeId")
     int updateThumbnailPath(String recipeId, String path);
+
+    /**
+     * Updates the auto-cached full-size image path for a recipe.
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE recipes SET imagePath = :path WHERE id = :recipeId")
+    int updateImagePath(String recipeId, String path);
+
+    /**
+     * Updates the user-defined thumbnail path for a recipe.
+     * Pass null to clear (restores auto-cached thumbnail display).
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE recipes SET userThumbnailPath = :path WHERE id = :recipeId")
+    int updateUserThumbnailPath(String recipeId, String path);
+
+    /**
+     * Updates the user-defined full-size image path for a recipe.
+     * Pass null to clear (restores remote imageUrl display).
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE recipes SET userImagePath = :path WHERE id = :recipeId")
+    int updateUserImagePath(String recipeId, String path);
 
     // ========== INNER CLASS FOR STATISTICS ==========
 

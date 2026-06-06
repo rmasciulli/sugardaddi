@@ -179,7 +179,7 @@ public class SearchAliciousMapper {
                     ? hit.getImageFrontSmallUrl()
                     : hit.getImageSmallUrl();
             if (thumbUrl != null) {
-                product.setImageThumbnailUrl(thumbUrl);
+                product.setThumbnailUrl(thumbUrl);
             }
         }
     }

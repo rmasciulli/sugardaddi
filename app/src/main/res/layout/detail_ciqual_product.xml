@@ -8,7 +8,8 @@
            b. Nutrition Facts section
       2. Attribution card (amber, separate, tappable)
 
-    No image, no scores, no allergens for Ciqual products.
+    Hero image shown only when user sets one via ImagePickerHelper (no remote source image).
+    No scores, no allergens for Ciqual products.
 -->
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -24,7 +25,24 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 1. MAIN CONTENT CARD -->
+        <!-- 1. HERO IMAGE (optional, GONE when no user-defined image available) -->
+        <!-- Ciqual has no remote image URL - shown only when set via ImagePickerHelper. -->
+        <FrameLayout
+            android:id="@+id/heroImageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/heroImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/product_image_description"
+                android:scaleType="centerCrop" />
+
+        </FrameLayout>
+
+        <!-- 2. MAIN CONTENT CARD -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

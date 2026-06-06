@@ -101,7 +101,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
         if (!(item instanceof FoodProduct)) return;
         FoodProduct product = (FoodProduct) item;
 
-        populateHeroImage(view, product);
+        populateImage(view, product);
         populateHeader(view, product, language);
         populateScores(view, product);
         populateAllergens(view, product);
@@ -150,10 +150,10 @@ public class OffProductDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Load the product hero image via Glide.
-     * Falls back to ic_food_placeholder when imageUrl is null or empty.
+     * Load the full-size product image via Glide.
+     * Local-first: userImagePath → imagePath → imageUrl → placeholder.
      */
-    private void populateHeroImage(@NonNull View view, @NonNull FoodProduct product) {
+    private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
@@ -161,9 +161,9 @@ public class OffProductDetailRenderer implements DetailRenderer {
         int widthPx  = dm.widthPixels;
         int heightPx = Math.round(200 * dm.density);
 
-        // Local-first: heroImagePath → imageUrl → placeholder
+        // Local-first: userImagePath → imagePath → imageUrl → placeholder.
         // thumbnailPath NOT in hero chain - it's CDN-sized, wrong for full-width.
-        Object imageSource = resolveProductHeroSource(product);
+        Object imageSource = resolveProductImageSource(product);
 
         if (imageSource != null) {
             Glide.with(context)
@@ -182,23 +182,29 @@ public class OffProductDetailRenderer implements DetailRenderer {
     }
 
     /**
-     * Resolves thumbnail source for a food product.
-     * Priority: thumbnailPath → imageThumbnailUrl → imageUrl → heroImagePath → null
-     * heroImagePath is last resort so Ciqual/USDA products with a user-set
-     * hero image show something meaningful in the search card.
+     * Resolves full-size image source for a food product.
+     * Priority: userImagePath → imagePath → imageUrl → null
      */
     @Nullable
-    private Object resolveProductHeroSource(@NonNull FoodProduct product) {
-        // 1. User-set local hero image takes priority
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveProductImageSource(@NonNull FoodProduct product) {
+        // 1. User-defined full-size image takes priority.
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
 
-        // 2. Remote full-size image
+        // 2. Auto-cached full-size image (currently unused — imagePath always null).
+        String imagePath = product.getImagePath();
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(imagePath);
+            if (f.exists()) return f;
+        }
+
+        // 3. Remote full-size image URL.
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+
         return null;
     }
 

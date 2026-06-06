@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    detail_usda_product.xml — Detail layout for USDA FoodData Central products.
+    detail_usda_product.xml - Detail layout for USDA FoodData Central products.
 
     CARD STRUCTURE (mirrors detail_ciqual_product.xml):
       1. Main content card:
@@ -8,7 +8,8 @@
            b. Nutrition Facts section (NutritionLabelManager, DETAILED mode)
       2. Attribution card (amber, separate, tappable → fdc.nal.usda.gov)
 
-    No image, no scores, no allergens — same constraints as Ciqual.
+    Hero image shown only when user sets one via ImagePickerHelper (no remote source image).
+    No scores, no allergens - same constraints as Ciqual.
     USDA FoodData Central is a US government public-domain scientific database.
 -->
 <androidx.core.widget.NestedScrollView
@@ -25,7 +26,24 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 1. MAIN CONTENT CARD -->
+        <!-- 1. HERO IMAGE (optional, GONE when no user-defined image available) -->
+        <!-- USDA has no remote image URL - shown only when set via ImagePickerHelper. -->
+        <FrameLayout
+            android:id="@+id/heroImageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/heroImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/product_image_description"
+                android:scaleType="centerCrop" />
+
+        </FrameLayout>
+
+        <!-- 2. MAIN CONTENT CARD -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -138,7 +156,7 @@
                     android:layout_marginEnd="14dp"
                     android:background="?attr/colorOutlineVariant" />
 
-                <!-- b. Nutrition Facts section — managed by NutritionLabelManager -->
+                <!-- b. Nutrition Facts section - managed by NutritionLabelManager -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

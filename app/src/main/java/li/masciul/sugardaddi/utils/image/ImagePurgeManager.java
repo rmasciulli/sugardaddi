@@ -47,11 +47,12 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  *
  * DIRECTORY COVERAGE — five directories, each cross-referenced independently:
  *
- *   sugardaddi/thumbnails/  → food_products.thumbnailPath + recipes.thumbnailPath
- *   sugardaddi/products/    → food_products.heroImagePath
- *   sugardaddi/recipes/     → recipes.heroImagePath
- *   sugardaddi/meals/       → meals.photoPath
- *   sugardaddi/steps/       → all recipes.stepStructure[*].stepPhotoPath (JSON)
+ *   sugardaddi/thumbnails/  → food_products.thumbnailPath + userThumbnailPath
+ *                             + recipes.thumbnailPath + userThumbnailPath
+ *   sugardaddi/products/    → food_products.imagePath + userImagePath
+ *   sugardaddi/recipes/     → recipes.imagePath + userImagePath
+ *   sugardaddi/meals/       → meals.userImagePath
+ *   sugardaddi/steps/       → all recipes.stepStructure[*].userImagePath (JSON)
  *
  * STEP PHOTO CROSS-REFERENCING
  * =============================
@@ -332,11 +333,16 @@ public class ImagePurgeManager {
             if (steps == null || steps.isEmpty()) continue;
 
             for (RecipeStepMetadata step : steps) {
-                // stepPhotoPath — local user photo for this step (steps/)
-                // imageUrl      — remote image from TheMealDB/TheCocktailDB, never local
-                String stepPhotoPath = step.getStepPhotoPath();
-                if (stepPhotoPath != null && !stepPhotoPath.trim().isEmpty()) {
-                    paths.add(stepPhotoPath);
+                // imageUrl      — remote image from TheMealDB/TheCocktailDB, never stored locally
+                // imagePath     — auto-cached local copy of imageUrl (downloaded on favourite)
+                // userImagePath — user-defined local photo set via ImagePickerHelper
+                String imagePath = step.getImagePath();
+                if (imagePath != null && !imagePath.trim().isEmpty()) {
+                    paths.add(imagePath);
+                }
+                String userImagePath = step.getUserImagePath();
+                if (userImagePath != null && !userImagePath.trim().isEmpty()) {
+                    paths.add(userImagePath);
                 }
             }
         }

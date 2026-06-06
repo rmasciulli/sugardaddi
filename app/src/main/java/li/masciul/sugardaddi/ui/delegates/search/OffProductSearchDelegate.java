@@ -208,33 +208,42 @@ public class OffProductSearchDelegate
 
     /**
      * Resolves thumbnail source for a food product.
-     * Priority: thumbnailPath → imageThumbnailUrl → imageUrl → heroImagePath → null
-     * heroImagePath is last resort so Ciqual/USDA products with a user-set
-     * hero image show something meaningful in the search card.
+     * Local-first: userThumbnailPath → thumbnailPath → thumbnailUrl → imageUrl → userImagePath
+     * userImagePath is last resort so Ciqual/USDA products with a user-set image show something
+     * meaningful in the search card.
      */
     @Nullable
     private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
-        // 1. Local cached thumbnail
+        // 1. User-defined thumbnail override ({id}_custom.jpg).
+        String userThumb = product.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
+        // 2. Auto-cached thumbnail (downloaded on favourite).
         String localThumb = product.getThumbnailPath();
         if (localThumb != null && !localThumb.trim().isEmpty()) {
             java.io.File f = new java.io.File(localThumb);
             if (f.exists()) return f;
         }
 
-        // 2. Remote CDN thumbnail (small, fast)
-        String thumbUrl = product.getImageThumbnailUrl();
+        // 3. Remote CDN thumbnail URL (small, fast).
+        String thumbUrl = product.getThumbnailUrl();
         if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
 
-        // 3. Remote full image (fallback)
+        // 4. Remote full-size image URL.
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
 
-        // Last resort: user-set hero image (relevant for Ciqual/USDA products)
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+        // 5. User-defined full-size image — last resort for Ciqual/USDA products
+        //    that have no remote URL but may have a user-set image.
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
         return null;
     }
 

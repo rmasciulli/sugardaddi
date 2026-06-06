@@ -173,24 +173,39 @@ public class MealDbRecipeSearchDelegate
 
     /**
      * Resolves thumbnail source for a recipe.
-     * Priority: thumbnailPath → imageUrl → heroImagePath → null
-     * heroImagePath last because it's full-size; correct for detail, acceptable
-     * for search card if nothing else is available.
+     * Priority: userThumbnailPath → thumbnailPath → thumbnailUrl → imageUrl → userImagePath → null
      */
     @Nullable
     private Object resolveRecipeThumbnailSource(@NonNull Recipe recipe) {
+        // 1. User-defined thumbnail override.
+        String userThumb = recipe.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
+        // 2. Auto-cached thumbnail (downloaded on favourite).
         String localThumb = recipe.getThumbnailPath();
         if (localThumb != null && !localThumb.trim().isEmpty()) {
             java.io.File f = new java.io.File(localThumb);
             if (f.exists()) return f;
         }
+
+        // 3. Remote thumbnail URL (symmetry slot, currently unused for TheMealDB).
+        String thumbUrl = recipe.getThumbnailUrl();
+        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
+
+        // 4. Remote full-size image URL.
         String imageUrl = recipe.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
-        String heroPath = recipe.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+
+        // 5. User-defined full-size image — last resort.
+        String userImage = recipe.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
         return null;
     }
 

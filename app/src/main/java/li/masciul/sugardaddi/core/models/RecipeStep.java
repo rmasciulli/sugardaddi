@@ -26,6 +26,8 @@ public class RecipeStep {
     private Integer durationMinutes;
     private String imageUrl;
     private String videoUrl;
+    private String imagePath;
+    private String userImagePath;
     private boolean isOptional;
     private boolean isCritical;
     private String equipment;
@@ -50,6 +52,8 @@ public class RecipeStep {
             this.durationMinutes = metadata.getDurationMinutes();
             this.imageUrl = metadata.getImageUrl();
             this.videoUrl = metadata.getVideoUrl();
+            this.imagePath = metadata.getImagePath();
+            this.userImagePath = metadata.getUserImagePath();
             this.isOptional = metadata.isOptional();
             this.isCritical = metadata.isCritical();
             this.equipment = metadata.getEquipment();
@@ -121,6 +125,22 @@ public class RecipeStep {
         this.videoUrl = videoUrl;
     }
 
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    public String getUserImagePath() {
+        return userImagePath;
+    }
+
+    public void setUserImagePath(String userImagePath) {
+        this.userImagePath = userImagePath;
+    }
+
     public boolean isOptional() {
         return isOptional;
     }
@@ -165,7 +185,9 @@ public class RecipeStep {
 
     public boolean hasMedia() {
         return (imageUrl != null && !imageUrl.isEmpty()) ||
-                (videoUrl != null && !videoUrl.isEmpty());
+                (videoUrl != null && !videoUrl.isEmpty()) ||
+                (imagePath != null && !imagePath.isEmpty()) ||
+                (userImagePath != null && !userImagePath.isEmpty());
     }
 
     public boolean hasTiming() {

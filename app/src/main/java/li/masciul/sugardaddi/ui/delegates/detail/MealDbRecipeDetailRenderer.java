@@ -90,7 +90,7 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         if (!(item instanceof Recipe)) return;
         Recipe recipe = (Recipe) item;
 
-        populateHeroImage(view, recipe);
+        populateImage(view, recipe);
         populateHeader(view, recipe, language);
         populateIngredients(view, recipe, language);
         populateInstructions(view, recipe, language);
@@ -114,10 +114,10 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Hero image: full-width, 200dp tall.
-     * Container is GONE by default - shown only when imageUrl is present.
+     * Load the full-size recipe image via Glide.
+     * Local-first: userImagePath → imagePath → thumbnailPath → imageUrl → hide.
      */
-    private void populateHeroImage(@NonNull View view, @NonNull Recipe recipe) {
+    private void populateImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
@@ -125,8 +125,8 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         int widthPx  = dm.widthPixels;
         int heightPx = Math.round(200 * dm.density);
 
-        // heroImagePath → thumbnailPath (offline copy of imageUrl) → imageUrl → hide
-        Object imageSource = resolveRecipeHeroSource(recipe);
+        // Local-first: userImagePath → imagePath → thumbnailPath → imageUrl → hide
+        Object imageSource = resolveRecipeImageSource(recipe);
 
         if (imageSource != null) {
             Glide.with(context)
@@ -145,25 +145,32 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
     }
 
     @Nullable
-    private Object resolveRecipeHeroSource(@NonNull Recipe recipe) {
-        // 1. User-set local hero image
-        String heroPath = recipe.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveRecipeImageSource(@NonNull Recipe recipe) {
+        // 1. User-defined full-size image takes priority.
+        String userImage = recipe.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
 
-        // 2. Cached thumbnail - for recipes this IS the offline copy of imageUrl.
-        // Used as hero fallback when no explicit hero image has been set.
+        // 2. Auto-cached full-size image (currently unused — imagePath always null).
+        String imagePath = recipe.getImagePath();
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(imagePath);
+            if (f.exists()) return f;
+        }
+
+        // 3. Cached thumbnail — offline copy of imageUrl, acceptable as hero fallback.
         String thumbPath = recipe.getThumbnailPath();
         if (thumbPath != null && !thumbPath.trim().isEmpty()) {
             java.io.File f = new java.io.File(thumbPath);
             if (f.exists()) return f;
         }
 
-        // 3. Remote image URL
+        // 4. Remote image URL.
         String imageUrl = recipe.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+
         return null;
     }
 

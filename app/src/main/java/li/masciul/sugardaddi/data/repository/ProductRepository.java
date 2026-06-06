@@ -500,8 +500,8 @@ public class ProductRepository {
         if (downloader == null) return;
 
         if (isFavorite) {
-            // Prefer the CDN thumbnail; fall back to the full image URL.
-            String url = product.getImageThumbnailUrl();
+            // Prefer the CDN thumbnail URL; fall back to the full image URL.
+            String url = product.getThumbnailUrl();
             if (url == null || url.trim().isEmpty()) {
                 url = product.getImageUrl();
             }

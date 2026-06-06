@@ -80,8 +80,12 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     private int allergenFlags = 0;
 
     // ========== MEDIA ==========
-    private String imageUrl;
-    private String photoPath;
+    /**
+     * User-defined photo attached to this meal entry.
+     * Stored in "sugardaddi/meals/". Set via ImagePickerHelper.
+     * Deleted when the meal is deleted.
+     */
+    private String userImagePath;
 
     // ========== METADATA ==========
     private String userId;
@@ -819,17 +823,9 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         this.categoryHierarchy = categoryHierarchy != null ? categoryHierarchy : new ArrayList<>();
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public String getPhotoPath() { return photoPath; }
-
-    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
+    // Media
+    public String getUserImagePath() { return userImagePath; }
+    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
     public String getUserId() {
         return userId;
@@ -891,7 +887,7 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     }
 
     public boolean hasImage() {
-        return imageUrl != null && !imageUrl.isEmpty();
+        return userImagePath != null && !userImagePath.isEmpty();
     }
 
     public void calculateCompleteness() {
@@ -950,7 +946,7 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         }
 
         // Copy metadata
-        copy.imageUrl = this.imageUrl;
+        copy.userImagePath = this.userImagePath;
         copy.tags = new HashSet<>(this.tags);
         copy.satisfaction = this.satisfaction;
         copy.estimatedCost = this.estimatedCost;

@@ -94,7 +94,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         if (!(item instanceof FoodProduct)) return;
         FoodProduct product = (FoodProduct) item;
 
-        populateHeroImage(view, product);
+        populateImage(view, product);
         populateHeader(view, product, language);
         populateScores(view, product);
         populateAllergens(view, product);
@@ -135,7 +135,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
      * Hero image: shown only when imageUrl is non-null and non-empty.
      * The ImageView is GONE by default in the layout; we set it VISIBLE here.
      */
-    private void populateHeroImage(@NonNull View view, @NonNull FoodProduct product) {
+    private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
@@ -143,7 +143,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         int widthPx  = dm.widthPixels;
         int heightPx = Math.round(200 * dm.density);
 
-        Object imageSource = resolveProductHeroSource(product);
+        Object imageSource = resolveProductImageSource(product);
 
         if (imageSource != null) {
             Glide.with(context)
@@ -161,15 +161,27 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         }
     }
 
+    /**
+     * Resolves image source for a food product.
+     * Local-first: userImagePath → imagePath → imageUrl
+     */
     @Nullable
-    private Object resolveProductHeroSource(@NonNull FoodProduct product) {
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveProductImageSource(@NonNull FoodProduct product) {
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
+        String imagePath = product.getImagePath();
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            java.io.File f = new java.io.File(imagePath);
+            if (f.exists()) return f;
+        }
+
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
+
         return null;
     }
 

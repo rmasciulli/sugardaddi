@@ -78,7 +78,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         if (!(item instanceof Recipe)) return;
         Recipe recipe = (Recipe) item;
 
-        populateHeroImage(view, recipe);
+        populateImage(view, recipe);
         populateHeader(view, recipe, language);
         populateIngredients(view, recipe, language);
         populateInstructions(view, recipe, language);
@@ -103,7 +103,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
     // ========== POPULATE HELPERS ==========
 
-    private void populateHeroImage(@NonNull View view, @NonNull Recipe recipe) {
+    private void populateImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
@@ -115,8 +115,8 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         int widthPx  = dm.widthPixels;
         int heightPx = Math.round(200 * dm.density);
 
-        // User recipes: only local paths, no remote URL
-        Object source = resolveUserRecipeHeroSource(recipe);
+        // User recipes: only local paths, no remote URL.
+        Object source = resolveRecipeImageSource(recipe);
         if (source != null) {
             Glide.with(context)
                     .load(source)
@@ -134,20 +134,22 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
     }
 
     @Nullable
-    private Object resolveUserRecipeHeroSource(@NonNull Recipe recipe) {
-        // User-set explicit hero image - first choice
-        String heroPath = recipe.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveRecipeImageSource(@NonNull Recipe recipe) {
+        // 1. User-defined full-size image - first choice.
+        String userImage = recipe.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
-        // Cached thumbnail - only present if user replaced the default
-        String thumbPath = recipe.getThumbnailPath();
-        if (thumbPath != null && !thumbPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(thumbPath);
+        
+        // 2. User-defined thumbnail - acceptable fallback for hero display.
+        String userThumb = recipe.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
             if (f.exists()) return f;
         }
-        // No remote URL for user recipes - return null (hero container hidden)
+        
+        // No remote URL for user recipes - return null (hero container hidden).
         return null;
     }
 

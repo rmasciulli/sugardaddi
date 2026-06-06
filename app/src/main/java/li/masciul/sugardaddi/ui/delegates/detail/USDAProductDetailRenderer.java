@@ -32,7 +32,7 @@ import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import java.util.Locale;
 
 /**
- * USDAProductDetailRenderer — Detail screen for USDA FoodData Central products.
+ * USDAProductDetailRenderer - Detail screen for USDA FoodData Central products.
  *
  * USDA FoodData Central is a US government scientific database. Its products are:
  *   - Scientific food compositions (raw agricultural commodities and ingredients)
@@ -53,7 +53,7 @@ import java.util.Locale;
  *   - Score section (Nutri-Score, Green-Score, Nova absent)
  *   - Allergens (not part of USDA FDC dataset)
  *
- * Mirrors CiqualProductDetailRenderer exactly — same structure, same populate
+ * Mirrors CiqualProductDetailRenderer exactly - same structure, same populate
  * helpers, different source check and layout reference.
  *
  * @version 1.0
@@ -95,10 +95,10 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         if (!(item instanceof FoodProduct)) return;
         FoodProduct product = (FoodProduct) item;
 
-        populateHeroImage(view, product);
+        populateImage(view, product);
         populateHeader(view, product, language);
         populateNutrition(view, product, language);
-        // Attribution panel last — informational, never obscures critical content
+        // Attribution panel last - informational, never obscures critical content
         DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
@@ -132,11 +132,11 @@ public class USDAProductDetailRenderer implements DetailRenderer {
 
     // ========== POPULATE HELPERS ==========
 
-    private void populateHeroImage(@NonNull View view, @NonNull FoodProduct product) {
+    private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
-        // Views may not exist yet in detail_usda_product.xml — no-op until added.
+        // Views may not exist yet in detail_usda_product.xml - no-op until added.
         if (heroContainer == null || heroImage == null) return;
 
         android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
@@ -144,8 +144,8 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         int heightPx = Math.round(200 * dm.density);
 
         // USDA has no remote image URL and no auto-downloaded thumbnail.
-        // Only heroImagePath is checked — set by the user via ImagePickerHelper.
-        Object source = resolveUSDAHeroSource(product);
+        // Only user-defined paths are checked (userImagePath, userThumbnailPath).
+        Object source = resolveProductImageSource(product);
         if (source != null) {
             Glide.with(context)
                     .load(source)
@@ -162,13 +162,25 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         }
     }
 
+    /**
+     * Resolves image source for a food product.
+     * USDA has no remote image URL and no auto-downloaded thumbnail.
+     * Only user-defined paths are checked (userImagePath, userThumbnailPath).
+     */
     @Nullable
-    private Object resolveUSDAHeroSource(@NonNull FoodProduct product) {
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveProductImageSource(@NonNull FoodProduct product) {
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
+        String userThumb = product.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
         return null;
     }
 
@@ -176,7 +188,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
      * Populate the header card: product name, category, serving size,
      * and quick nutrition summary (carbs + kcal).
      *
-     * Brand is not shown — USDA describes generic/raw foods, not branded products.
+     * Brand is not shown - USDA describes generic/raw foods, not branded products.
      */
     private void populateHeader(@NonNull View view, @NonNull FoodProduct product,
                                 @NonNull String language) {
@@ -190,7 +202,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
                     : context.getString(R.string.unknown_product));
         }
 
-        // USDA food category — flat string, no breadcrumb formatting needed
+        // USDA food category - flat string, no breadcrumb formatting needed
         TextView categoryText = view.findViewById(R.id.categoryText);
         if (categoryText != null) {
             String rawCat = product.getCategoriesText(language);
@@ -205,7 +217,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
             }
         }
 
-        // Serving size — Foundation Foods occasionally provide portion data
+        // Serving size - Foundation Foods occasionally provide portion data
         TextView servingSizeText = view.findViewById(R.id.servingSizeText);
         if (servingSizeText != null) {
             ServingSize serving = product.getServingSize();

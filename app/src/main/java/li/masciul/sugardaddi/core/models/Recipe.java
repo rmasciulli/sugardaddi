@@ -100,10 +100,19 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private boolean isTemplate = false;
 
     // ========== MEDIA ==========
+
+    // Remote URLs - provided by the data source.
+    private String thumbnailUrl;
     private String imageUrl;
     private String videoUrl;
+
+    // Auto-cached local paths - managed by ThumbnailDownloader / future ImageCacheManager.
     private String thumbnailPath;
-    private String heroImagePath;
+    private String imagePath;
+
+    // User-defined local paths - set via ImagePickerHelper. Take display priority.
+    private String userThumbnailPath;
+    private String userImagePath;
 
     // ========== TAGS ==========
     private Set<String> tags = new HashSet<>();
@@ -921,17 +930,29 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     // ========== MEDIA ==========
 
+    // Media - remote URLs
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; touch(); }
+    
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; touch(); }
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; touch(); }
+    
+    // Media - auto-cached local paths
+    public String getThumbnailPath() { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
 
-    public String getThumbnailPath()  { return thumbnailPath; }
-    public void setThumbnailPath(String thumbnailPath)  { this.thumbnailPath = thumbnailPath; }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
-    public String getHeroImagePath()  { return heroImagePath; }
-    public void setHeroImagePath(String heroImagePath)  { this.heroImagePath = heroImagePath; }
+    // Media - user-defined local paths
+    public String getUserThumbnailPath() { return userThumbnailPath; }
+    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
+
+    public String getUserImagePath() { return userImagePath; }
+    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
     // ========== TAGS ==========
 
@@ -1038,7 +1059,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     @Override
     public String getSearchableId() {
         // Return the source-qualified ID ("SOURCE:originalId") when available.
-        // This ensures cross-source collision safety — "USER:uuid" and
+        // This ensures cross-source collision safety - "USER:uuid" and
         // "THEMEALDB:52772" are always distinct even if originalIds were equal.
         // Falls back to the local UUID for safety, but this should never happen
         // in practice since the constructor always initialises sourceIdentifier.

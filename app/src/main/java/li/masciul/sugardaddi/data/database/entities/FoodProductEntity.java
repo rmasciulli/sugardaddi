@@ -107,16 +107,26 @@ public class FoodProductEntity {
     private String searchableText;
 
     // ========== MEDIA ==========
+
+    // Remote URLs - provided by the data source, never written to disk.
+    private String thumbnailUrl;
     private String imageUrl;
-    private String imageThumbnailUrl;
 
-    // Locally cached thumbnail — auto-downloaded on favourite, deleted on unfavourite.
-    // Stored in sugardaddi/thumbnails/.
+    /**
+     * Auto-cached local paths - managed by ThumbnailDownloader / future ImageCacheManager.
+     * Downloaded automatically (e.g. on favourite). Deleted when no longer needed.
+     * Stored in "sugardaddi/thumbnails/" and "sugardaddi/products/" respectively.
+     */
     private String thumbnailPath;
+    private String imagePath;
 
-    // User-added hero image shown in the product detail view.
-    // Stored in sugardaddi/products/. Set via ImagePickerHelper.
-    private String heroImagePath;
+    /**
+     * User-defined local paths - set explicitly via ImagePickerHelper.
+     * Co-exist with the auto-cached counterparts; take display priority over them.
+     * Stored in "sugardaddi/thumbnails/({id}_custom.jpg)" and "sugardaddi/products/".
+     */
+    private String userThumbnailPath;
+    private String userImagePath;
 
     // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;
@@ -232,10 +242,12 @@ public class FoodProductEntity {
         product.setSearchableText(this.searchableText);
 
         // Set media properties
+        product.setThumbnailUrl(this.thumbnailUrl);
         product.setImageUrl(this.imageUrl);
-        product.setImageThumbnailUrl(this.imageThumbnailUrl);
         product.setThumbnailPath(this.thumbnailPath);
-        product.setHeroImagePath(this.heroImagePath);
+        product.setImagePath(this.imagePath);
+        product.setUserThumbnailPath(this.userThumbnailPath);
+        product.setUserImagePath(this.userImagePath);
 
         // Set product characteristics
         product.setNutriScore(this.nutriScore);
@@ -284,7 +296,7 @@ public class FoodProductEntity {
         }
 
         // Recalculate completeness from current field state rather than relying
-        // on the stored value — ensures correctness regardless of when/how the
+        // on the stored value - ensures correctness regardless of when/how the
         // entity was originally created (XML importer, API mapper, etc.)
         product.calculateCompleteness();
 
@@ -339,10 +351,12 @@ public class FoodProductEntity {
         entity.setSearchableText(product.getSearchableText());
 
         // Set media properties
+        entity.setThumbnailUrl(product.getThumbnailUrl());
         entity.setImageUrl(product.getImageUrl());
-        entity.setImageThumbnailUrl(product.getImageThumbnailUrl());
         entity.setThumbnailPath(product.getThumbnailPath());
-        entity.setHeroImagePath(product.getHeroImagePath());
+        entity.setImagePath(product.getImagePath());
+        entity.setUserThumbnailPath(product.getUserThumbnailPath());
+        entity.setUserImagePath(product.getUserImagePath());
 
         // Set product characteristics
         entity.setNutriScore(product.getNutriScore());
@@ -505,20 +519,26 @@ public class FoodProductEntity {
     public String getSearchableText() { return searchableText; }
     public void setSearchableText(String searchableText) { this.searchableText = searchableText; }
 
-    // Media
+    // Media - remote URLs
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getImageThumbnailUrl() { return imageThumbnailUrl; }
-    public void setImageThumbnailUrl(String imageThumbnailUrl) {
-        this.imageThumbnailUrl = imageThumbnailUrl;
-    }
+    // Media - auto-cached local paths
+    public String getThumbnailPath() { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
 
-    public String getThumbnailPath()  { return thumbnailPath; }
-    public void setThumbnailPath(String thumbnailPath)   { this.thumbnailPath  = thumbnailPath;  }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
-    public String getHeroImagePath()  { return heroImagePath; }
-    public void setHeroImagePath(String heroImagePath)   { this.heroImagePath  = heroImagePath;  }
+    // Media - user defined local paths
+    public String getUserThumbnailPath() { return userThumbnailPath; }
+    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
+
+    public String getUserImagePath() { return userImagePath; }
+    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
     // Product characteristics
     public String getNutriScore() { return nutriScore; }

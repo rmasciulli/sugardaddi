@@ -85,7 +85,7 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
 
     private void bindName(ViewHolder holder, Recipe recipe, String language) {
         String name = recipe.getDisplayName(language);
-        holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "—");
+        holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "-");
     }
 
     private void bindDescription(ViewHolder holder, Recipe recipe, String language) {
@@ -131,22 +131,32 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
     */
 
     /**
-     * For user recipes, only local paths are checked — no remote URL exists.
-     * thumbnailPath would be set if the user replaced the auto-cached image.
-     * heroImagePath would be set if the user explicitly assigned one.
+     * For user recipes, only local paths are checked - no remote URL exists.
+     * userThumbnailPath would be set if the user replaced the auto-cached thumbnail.
+     * userImagePath would be set if the user explicitly assigned a full-size image.
      */
     @Nullable
-    private Object resolveUserRecipeThumbnailSource(@NonNull Recipe recipe) {
+    private Object resolveRecipeThumbnailSource(@NonNull Recipe recipe) {
+        // User recipes have no remote URL and no auto-downloaded thumbnail.
+        // Only local paths are checked.
+        String userThumb = recipe.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+        
         String thumbPath = recipe.getThumbnailPath();
         if (thumbPath != null && !thumbPath.trim().isEmpty()) {
             java.io.File f = new java.io.File(thumbPath);
             if (f.exists()) return f;
         }
-        String heroPath = recipe.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+        
+        String userImage = recipe.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+        
         return null;
     }
 

@@ -78,12 +78,15 @@ public interface MealDao {
     boolean exists(String mealId);
 
     /**
-     * Returns all non-null meal photo paths.
-     * Used by ImagePurgeManager.
+     * Returns all non-null user image paths for meals.
+     * Used by ImagePurgeManager to cross-reference disk files against Room.
      *
-     * Added in: database v11. Updated in: v12 (field renamed localImagePath → photoPath).
+     * Column renamed from photoPath to userImagePath in v13.
+     * Method name kept as getAllLocalImagePaths() to avoid updating all callers.
+     *
+     * Updated in: database v13 (media field rename)
      */
-    @Query("SELECT photoPath FROM meals WHERE photoPath IS NOT NULL")
+    @Query("SELECT userImagePath FROM meals WHERE userImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     // ========== DATE-BASED QUERIES (with ASC/DESC options) ==========

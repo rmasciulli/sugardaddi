@@ -28,6 +28,26 @@
         android:paddingBottom="24dp">
 
         <!-- ================================================= -->
+        <!-- HERO IMAGE — GONE when no local image available   -->
+        <!-- User recipes have no remote URL; shown only when  -->
+        <!-- set via ImagePickerHelper.                        -->
+        <!-- ================================================= -->
+        <FrameLayout
+            android:id="@+id/heroImageContainer"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/heroImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/recipe_image_content_description"
+                android:scaleType="centerCrop" />
+
+        </FrameLayout>
+
+        <!-- ================================================= -->
         <!-- HEADER CARD: name, metadata                       -->
         <!-- ================================================= -->
         <com.google.android.material.card.MaterialCardView

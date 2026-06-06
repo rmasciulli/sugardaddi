@@ -166,18 +166,30 @@ public class CocktailDbRecipeSearchDelegate
 
     @Nullable
     private Object resolveRecipeThumbnailSource(@NonNull Recipe recipe) {
+        String userThumb = recipe.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
         String localThumb = recipe.getThumbnailPath();
         if (localThumb != null && !localThumb.trim().isEmpty()) {
             java.io.File f = new java.io.File(localThumb);
             if (f.exists()) return f;
         }
+
+        String thumbUrl = recipe.getThumbnailUrl();
+        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
+
         String imageUrl = recipe.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
-        String heroPath = recipe.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+
+        String userImage = recipe.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
         return null;
     }
 

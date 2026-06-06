@@ -41,7 +41,6 @@ import java.io.OutputStream;
  *   getExternalFilesDir(null)/
  *   └── sugardaddi/
  *       ├── thumbnails/    ← auto-cached remote thumbnails, all item types
- *       │                    Never gallery-scanned. Managed by ThumbnailDownloader.
  *       ├── products/      ← user-added hero images for food products
  *       ├── recipes/       ← user-added hero images for recipes
  *       ├── meals/         ← photos attached to meal journal entries
@@ -209,6 +208,37 @@ public class ImageStorageManager {
         File dir = getThumbnailsDir();
         if (dir == null) return null;
         return new File(dir, sanitiseId(sourceQualifiedId) + ".jpg");
+    }
+
+    /**
+     * Constructs the File for a user-defined thumbnail override.
+     *
+     * Naming convention: {sanitised_source_id}_custom.jpg
+     * Example: "OFF:3617644000029" → thumbnails/OFF_3617644000029_custom.jpg
+     *
+     * The "_custom" suffix distinguishes user-set thumbnails from auto-cached
+     * ones ({id}.jpg), allowing both to co-exist on disk. The purge manager
+     * uses this suffix to correctly attribute orphan detection.
+     *
+     * @param sourceQualifiedId The item's source-qualified ID, e.g. "OFF:3617644000029".
+     * @return A File pointing to the expected user thumbnail location, or null if unavailable.
+     */
+    @Nullable
+    public File getUserThumbnailFile(@NonNull String sourceQualifiedId) {
+        File dir = getThumbnailsDir();
+        if (dir == null) return null;
+        return new File(dir, sanitiseId(sourceQualifiedId) + "_custom.jpg");
+    }
+
+    /**
+     * Returns true if the given path corresponds to a user-defined thumbnail
+     * (i.e. ends with "_custom.jpg"). Used for overflow menu visibility checks.
+     *
+     * @param thumbnailPath The path stored in userThumbnailPath, or null.
+     * @return true if the path is a user-defined custom thumbnail.
+     */
+    public static boolean isUserDefinedThumbnail(@Nullable String thumbnailPath) {
+        return thumbnailPath != null && thumbnailPath.endsWith("_custom.jpg");
     }
 
     /**

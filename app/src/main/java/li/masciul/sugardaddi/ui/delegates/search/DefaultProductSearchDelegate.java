@@ -177,24 +177,38 @@ public class DefaultProductSearchDelegate
         }
     }
 
+    /**
+     * Resolves thumbnail source for a food product.
+     * Local-first: userThumbnailPath → thumbnailPath → thumbnailUrl → imageUrl → userImagePath
+     * userImagePath is last resort so Ciqual/USDA products with a user-set image show something
+     * meaningful in the search card.
+     */
     @Nullable
     private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
+        String userThumb = product.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
         String localThumb = product.getThumbnailPath();
         if (localThumb != null && !localThumb.trim().isEmpty()) {
             java.io.File f = new java.io.File(localThumb);
             if (f.exists()) return f;
         }
-        String thumbUrl = product.getImageThumbnailUrl();
+
+        String thumbUrl = product.getThumbnailUrl();
         if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
 
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
 
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
         return null;
     }
 

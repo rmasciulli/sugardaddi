@@ -2,9 +2,11 @@ package li.masciul.sugardaddi.ui.delegates.search;
 
 import android.content.Context;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -131,32 +133,58 @@ public class USDAProductSearchDelegate
         }
     }
 
-    /*
-    // Placeholder method for when users will be able to add their own thumbnails to products
+    /**
+     * Loads the product thumbnail via Glide.
+     * USDA has no remote image URL and no auto-downloaded thumbnail.
+     * Only user-defined paths are checked.
+     *
+     * Requires: productImage view in item_search_product_usda.xml.
+     * Also add bindImage(holder, product) call in bind().
+     */
     private void bindImage(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
-            if (f.exists() && holder.productImage != null) {
-                int sizePx = Math.round(72 *
-                        context.getResources().getDisplayMetrics().density);
-                Glide.with(context)
-                        .load(f)
-                        .override(sizePx, sizePx)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.drawable.ic_food_placeholder)
-                        .error(R.drawable.ic_food_error)
-                        .centerCrop()
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                        .into(holder.productImage);
-                return;
-            }
-        }
-        if (holder.productImage != null) {
+        if (holder.productImage == null) return;
+        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
+
+        // Local-first: userThumbnailPath → userImagePath → placeholder
+        Object imageSource = resolveProductThumbnailSource(product);
+
+        if (imageSource != null) {
+            Glide.with(context)
+                    .load(imageSource)
+                    .override(sizePx, sizePx)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_food_placeholder)
+                    .error(R.drawable.ic_food_error)
+                    .centerCrop()
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .into(holder.productImage);
+        } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
     }
-    */
+
+    /**
+     * Resolves thumbnail source for a USDA product.
+     * Priority: userThumbnailPath → userImagePath → null
+     * No remote URL, no auto-cached thumbnail — USDA FoodData Central provides
+     * no product images. Only user-defined images are shown.
+     */
+    @Nullable
+    private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
+        // 1. User-defined thumbnail override.
+        String userThumb = product.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+        // 2. User-defined full-size image — acceptable for thumbnail display.
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
+            if (f.exists()) return f;
+        }
+        return null;
+    }
 
     /**
      * Carbohydrate summary: "x.xg carbohydrates per 100g" (EN) / "x.xg glucides per 100g" (FR).
@@ -200,16 +228,17 @@ public class USDAProductSearchDelegate
 
     // ========== VIEW HOLDER ==========
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-
+    static class ViewHolder extends RecyclerView.ViewHolder {
         final TextView productName;
         final TextView sourceBadge;
         final TextView productType;
         final TextView category;
         final TextView nutritionSummary;
         final TextView kcalBadge;
+        // Null until productImage is added to item_search_product_ciqual.xml
+        @Nullable final ImageView productImage;
 
-        public ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView) {
             super(itemView);
             productName      = itemView.findViewById(R.id.productName);
             sourceBadge      = itemView.findViewById(R.id.sourceBadge);
@@ -217,6 +246,7 @@ public class USDAProductSearchDelegate
             category         = itemView.findViewById(R.id.category);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
+            productImage     = itemView.findViewById(R.id.productImage); // returns null until layout updated
         }
     }
 }

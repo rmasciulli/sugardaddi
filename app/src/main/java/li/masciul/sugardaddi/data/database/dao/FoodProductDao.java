@@ -322,15 +322,27 @@ public interface FoodProductDao {
     int deleteProductById(String productId);
 
     /**
-     * Returns all non-null local image paths for food products (thumbnail + hero).
-     * UNION ALL avoids deduplication overhead — the same path cannot appear in both
-     * columns. Used by ImagePurgeManager to cross-reference disk files against Room.
+     * Returns all non-null local image paths for food products.
      *
-     * Added in: database v11. Updated in: v12 (field rename + expansion).
+     * Covers all four local path columns:
+     *   thumbnailPath     — auto-cached thumbnail (downloaded on favourite)
+     *   imagePath         — auto-cached full-size (future use, currently NULL)
+     *   userThumbnailPath — user-defined thumbnail override ({id}_custom.jpg)
+     *   userImagePath     — user-defined full-size override
+     *
+     * UNION ALL is correct — the same path cannot appear in multiple columns
+     * by design (_custom suffix distinguishes userThumbnailPath from thumbnailPath).
+     * Used by ImagePurgeManager to cross-reference disk files against Room.
+     *
+     * Updated in: database v13 (media field rename + expansion)
      */
     @Query("SELECT thumbnailPath FROM food_products WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "
-            + "SELECT heroImagePath FROM food_products WHERE heroImagePath IS NOT NULL")
+            + "SELECT imagePath FROM food_products WHERE imagePath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT userThumbnailPath FROM food_products WHERE userThumbnailPath IS NOT NULL "
+            + "UNION ALL "
+            + "SELECT userImagePath FROM food_products WHERE userImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     /**
@@ -349,6 +361,32 @@ public interface FoodProductDao {
      */
     @Query("UPDATE food_products SET thumbnailPath = :path WHERE id = :productId")
     int updateThumbnailPath(String productId, String path);
+
+    /**
+     * Updates the auto-cached full-size image path for a product.
+     * Called by a future ImageCacheManager when a full-size image is downloaded.
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE food_products SET imagePath = :path WHERE id = :productId")
+    void updateImagePath(String productId, String path);
+
+    /**
+     * Updates the user-defined thumbnail path for a product.
+     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path.
+     * Pass null to clear the user thumbnail (restores auto-cached thumbnail display).
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE food_products SET userThumbnailPath = :path WHERE id = :productId")
+    void updateUserThumbnailPath(String productId, String path);
+
+    /**
+     * Updates the user-defined full-size image path for a product.
+     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path.
+     * Pass null to clear the user image (restores remote imageUrl display).
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE food_products SET userImagePath = :path WHERE id = :productId")
+    void updateUserImagePath(String productId, String path);
 
     // ========== DATA QUALITY QUERIES ==========
 

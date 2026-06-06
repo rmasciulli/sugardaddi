@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import java.util.concurrent.Executors;
 
 /**
- * AppDatabase - Main Room database configuration (v12.0 - Image field rename)
+ * AppDatabase - Main Room database configuration (v13.0 - Media field rename + expansion)
  *
  * ARCHITECTURE UPDATE v6.0:
  * - Added allergenFlags persistence to FoodProductEntity, RecipeEntity, MealEntity
@@ -48,7 +48,7 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class                 // Recipe storage (v3.0 - hybrid translation + split steps + allergens)
 
         },
-        version = 12, // Image field rename + expansion (v12)
+        version = 13, // Media field rename + expansion (v13)
         exportSchema = true
 )
 @TypeConverters({
@@ -115,7 +115,8 @@ public abstract class AppDatabase extends RoomDatabase {
                         AppDatabase.class,
                         DATABASE_NAME)
                 .addMigrations(MIGRATION_4_5, MIGRATION_7_8, MIGRATION_8_9,
-                               MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                               MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+                               MIGRATION_12_13)
                 .fallbackToDestructiveMigration()
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
@@ -658,6 +659,373 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /**
+     * Migration from v12 to v13: Media field rename + expansion
+     *
+     * WHAT CHANGES
+     * ============
+     * food_products:
+     *   RENAMED  imageThumbnailUrl  →  thumbnailUrl
+     *   RENAMED  heroImagePath      →  userImagePath
+     *   ADDED    imagePath          TEXT  (auto-cached full-size, initially NULL)
+     *   ADDED    userThumbnailPath  TEXT  (user-defined thumbnail override, initially NULL)
+     *
+     * recipes:
+     *   RENAMED  heroImagePath      →  userImagePath
+     *   ADDED    thumbnailUrl       TEXT  (remote thumbnail URL symmetry slot, initially NULL)
+     *   ADDED    imagePath          TEXT  (auto-cached full-size, initially NULL)
+     *   ADDED    userThumbnailPath  TEXT  (user-defined thumbnail override, initially NULL)
+     *
+     * meals:
+     *   RENAMED  photoPath          →  userImagePath
+     *
+     * WHY TABLE RECREATION (not ALTER TABLE RENAME COLUMN)
+     * ====================================================
+     * RENAME COLUMN requires SQLite 3.25+, which maps to Android API 30+.
+     * SugarDaddi targets API 26 (Android 8), so we use the safe copy-recreate
+     * pattern for all three tables. This is the same pattern used in v12.
+     *
+     * DATA SAFETY
+     * ===========
+     * All existing data is copied verbatim. Only column names change — no
+     * type changes, no default value changes, no dropped non-null columns.
+     * New columns are all nullable TEXT so no DEFAULT is required.
+     *
+     * NUTRITION TABLE
+     * ===============
+     * Not touched — no media fields in that table.
+     */
+    static final Migration MIGRATION_12_13 = new Migration(12, 13) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            Log.i(TAG, "Migrating database from v12 to v13 (media field rename + expansion)");
+            migrateFoodProducts(database);
+            migrateRecipes(database);
+            migrateMeals(database);
+            Log.i(TAG, "Migration v12→v13 complete");
+        }
+
+        // ── food_products ─────────────────────────────────────────────────────
+
+        private void migrateFoodProducts(@NonNull SupportSQLiteDatabase db) {
+
+            // Step 1: Create the new table.
+            //
+            // Column order follows the v12 schema JSON exactly, with:
+            //   imageThumbnailUrl  →  thumbnailUrl         (renamed, same position)
+            //   heroImagePath      →  userImagePath        (renamed, same position)
+            //   imagePath          TEXT                    (new, after userImagePath)
+            //   userThumbnailPath  TEXT                    (new, after imagePath)
+            //
+            // All NOT NULL constraints and PRIMARY KEY are preserved verbatim.
+            db.execSQL("CREATE TABLE IF NOT EXISTS `food_products_new` ("
+                    + "`id` TEXT NOT NULL, "
+                    + "`barcode` TEXT, "
+                    + "`originalId` TEXT, "
+                    + "`sourceId` TEXT, "
+                    + "`productType` TEXT, "
+                    + "`scientific_name` TEXT, "
+                    + "`category_code` TEXT, "
+                    + "`name` TEXT, "
+                    + "`genericName` TEXT, "
+                    + "`brand` TEXT, "
+                    + "`description` TEXT, "
+                    + "`ingredients` TEXT, "
+                    + "`categoriesText` TEXT, "
+                    + "`packaging` TEXT, "
+                    + "`origins` TEXT, "
+                    + "`stores` TEXT, "
+                    + "`currentLanguage` TEXT, "
+                    + "`needsDefaultLanguageUpdate` INTEGER NOT NULL, "
+                    + "`translations` TEXT, "
+                    + "`searchableText` TEXT, "
+                    + "`imageUrl` TEXT, "
+                    + "`thumbnailUrl` TEXT, "          // was: imageThumbnailUrl
+                    + "`thumbnailPath` TEXT, "
+                    + "`userImagePath` TEXT, "         // was: heroImagePath
+                    + "`imagePath` TEXT, "             // new: auto-cached full-size
+                    + "`userThumbnailPath` TEXT, "     // new: user-defined thumbnail
+                    + "`nutriScore` TEXT, "
+                    + "`ecoScore` TEXT, "
+                    + "`novaGroup` TEXT, "
+                    + "`quantity` TEXT, "
+                    + "`isLiquid` INTEGER NOT NULL, "
+                    + "`density` REAL, "
+                    + "`isOrganic` INTEGER NOT NULL, "
+                    + "`isVegan` INTEGER NOT NULL, "
+                    + "`isVegetarian` INTEGER NOT NULL, "
+                    + "`isGlutenFree` INTEGER NOT NULL, "
+                    + "`isPalmOilFree` INTEGER NOT NULL, "
+                    + "`isFairTrade` INTEGER NOT NULL, "
+                    + "`allergenFlags` INTEGER NOT NULL, "
+                    + "`servingSize` TEXT, "
+                    + "`tags` TEXT, "
+                    + "`dataCompleteness` REAL NOT NULL, "
+                    + "`dataQualityScore` INTEGER NOT NULL, "
+                    + "`isFavorite` INTEGER NOT NULL, "
+                    + "`accessCount` INTEGER NOT NULL, "
+                    + "`lastUpdated` INTEGER NOT NULL, "
+                    + "`createdAt` INTEGER NOT NULL, "
+                    + "`updatedAt` INTEGER NOT NULL, "
+                    + "PRIMARY KEY(`id`))");
+
+            // Step 2: Copy all existing data.
+            //
+            // imageThumbnailUrl → thumbnailUrl  : existing remote thumbnail URLs preserved
+            // heroImagePath     → userImagePath : existing local hero paths preserved
+            // imagePath         : NULL for all existing rows (no auto-cached full-size yet)
+            // userThumbnailPath : NULL for all existing rows (no user thumbnails yet)
+            db.execSQL("INSERT INTO food_products_new ("
+                    + "id, barcode, originalId, sourceId, productType, scientific_name, "
+                    + "category_code, name, genericName, brand, description, ingredients, "
+                    + "categoriesText, packaging, origins, stores, currentLanguage, "
+                    + "needsDefaultLanguageUpdate, translations, searchableText, "
+                    + "imageUrl, thumbnailUrl, thumbnailPath, userImagePath, "
+                    + "imagePath, userThumbnailPath, "
+                    + "nutriScore, ecoScore, novaGroup, quantity, isLiquid, density, "
+                    + "isOrganic, isVegan, isVegetarian, isGlutenFree, isPalmOilFree, "
+                    + "isFairTrade, allergenFlags, servingSize, tags, dataCompleteness, "
+                    + "dataQualityScore, isFavorite, accessCount, lastUpdated, createdAt, updatedAt"
+                    + ") SELECT "
+                    + "id, barcode, originalId, sourceId, productType, scientific_name, "
+                    + "category_code, name, genericName, brand, description, ingredients, "
+                    + "categoriesText, packaging, origins, stores, currentLanguage, "
+                    + "needsDefaultLanguageUpdate, translations, searchableText, "
+                    + "imageUrl, imageThumbnailUrl, thumbnailPath, heroImagePath, "  // old → new
+                    + "NULL, NULL, "                                                  // imagePath, userThumbnailPath
+                    + "nutriScore, ecoScore, novaGroup, quantity, isLiquid, density, "
+                    + "isOrganic, isVegan, isVegetarian, isGlutenFree, isPalmOilFree, "
+                    + "isFairTrade, allergenFlags, servingSize, tags, dataCompleteness, "
+                    + "dataQualityScore, isFavorite, accessCount, lastUpdated, createdAt, updatedAt "
+                    + "FROM food_products");
+
+            // Step 3: Swap tables.
+            db.execSQL("DROP TABLE food_products");
+            db.execSQL("ALTER TABLE food_products_new RENAME TO food_products");
+
+            // Step 4: Recreate all indices from v12 schema JSON.
+            // These are identical to v12 — no index references renamed columns.
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_food_products_barcode` "
+                    + "ON `food_products` (`barcode`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_sourceId_originalId` "
+                    + "ON `food_products` (`sourceId`, `originalId`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_isFavorite` "
+                    + "ON `food_products` (`isFavorite`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_lastUpdated` "
+                    + "ON `food_products` (`lastUpdated`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_accessCount` "
+                    + "ON `food_products` (`accessCount`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_category_code` "
+                    + "ON `food_products` (`category_code`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_food_products_sourceId_category_code` "
+                    + "ON `food_products` (`sourceId`, `category_code`)");
+
+            Log.d(TAG, "  food_products migrated");
+        }
+
+        // ── recipes ───────────────────────────────────────────────────────────
+
+        private void migrateRecipes(@NonNull SupportSQLiteDatabase db) {
+
+            // Step 1: Create the new table.
+            //
+            // Column order follows the v12 schema JSON exactly, with:
+            //   heroImagePath  →  userImagePath      (renamed, same position)
+            //   thumbnailUrl   TEXT                  (new symmetry slot, after imageUrl/videoUrl)
+            //   imagePath      TEXT                  (new, after thumbnailPath/userImagePath)
+            //   userThumbnailPath TEXT               (new, after imagePath)
+            //
+            // New columns are placed after the existing media block for clarity.
+            db.execSQL("CREATE TABLE IF NOT EXISTS `recipes_new` ("
+                    + "`id` TEXT NOT NULL, "
+                    + "`authorId` TEXT, "
+                    + "`dataSource` TEXT NOT NULL, "
+                    + "`originalId` TEXT, "
+                    + "`sourceId` TEXT, "
+                    + "`name` TEXT, "
+                    + "`description` TEXT, "
+                    + "`instructions` TEXT, "
+                    + "`cuisine` TEXT, "
+                    + "`notes` TEXT, "
+                    + "`yieldDescription` TEXT, "
+                    + "`recipeSource` TEXT, "
+                    + "`equipmentNeeded` TEXT, "
+                    + "`cookingTips` TEXT, "
+                    + "`stepStructure` TEXT, "
+                    + "`stepTranslations` TEXT, "
+                    + "`currentLanguage` TEXT, "
+                    + "`needsDefaultLanguageUpdate` INTEGER NOT NULL, "
+                    + "`translations` TEXT, "
+                    + "`searchableText` TEXT, "
+                    + "`servings` INTEGER NOT NULL, "
+                    + "`prepTimeMinutes` INTEGER NOT NULL, "
+                    + "`cookTimeMinutes` INTEGER NOT NULL, "
+                    + "`difficulty` TEXT, "
+                    + "`portionsJson` TEXT, "
+                    + "`isVegan` INTEGER NOT NULL, "
+                    + "`isVegetarian` INTEGER NOT NULL, "
+                    + "`isGlutenFree` INTEGER NOT NULL, "
+                    + "`isDairyFree` INTEGER NOT NULL, "
+                    + "`isKeto` INTEGER NOT NULL, "
+                    + "`isPaleo` INTEGER NOT NULL, "
+                    + "`allergenFlags` INTEGER NOT NULL, "
+                    + "`isPublic` INTEGER NOT NULL, "
+                    + "`isFavorite` INTEGER NOT NULL, "
+                    + "`isTemplate` INTEGER NOT NULL, "
+                    + "`rating` REAL NOT NULL, "
+                    + "`ratingCount` INTEGER NOT NULL, "
+                    + "`imageUrl` TEXT, "
+                    + "`videoUrl` TEXT, "
+                    + "`thumbnailUrl` TEXT, "          // new: remote thumbnail symmetry slot
+                    + "`thumbnailPath` TEXT, "
+                    + "`userImagePath` TEXT, "         // was: heroImagePath
+                    + "`imagePath` TEXT, "             // new: auto-cached full-size
+                    + "`userThumbnailPath` TEXT, "     // new: user-defined thumbnail
+                    + "`tagsJson` TEXT, "
+                    + "`completenessScore` REAL NOT NULL, "
+                    + "`accessCount` INTEGER NOT NULL, "
+                    + "`createdAt` INTEGER NOT NULL, "
+                    + "`lastUpdated` INTEGER NOT NULL, "
+                    + "PRIMARY KEY(`id`))");
+
+            // Step 2: Copy all existing data.
+            //
+            // heroImagePath → userImagePath : existing user-set hero paths preserved
+            // thumbnailUrl  : NULL (no source currently provides a separate thumbnail URL)
+            // imagePath     : NULL (no auto-cached full-size yet)
+            // userThumbnailPath : NULL (no user thumbnails yet)
+            db.execSQL("INSERT INTO recipes_new ("
+                    + "id, authorId, dataSource, originalId, sourceId, "
+                    + "name, description, instructions, cuisine, notes, "
+                    + "yieldDescription, recipeSource, equipmentNeeded, cookingTips, "
+                    + "stepStructure, stepTranslations, currentLanguage, needsDefaultLanguageUpdate, "
+                    + "translations, searchableText, servings, prepTimeMinutes, cookTimeMinutes, "
+                    + "difficulty, portionsJson, isVegan, isVegetarian, isGlutenFree, isDairyFree, "
+                    + "isKeto, isPaleo, allergenFlags, isPublic, isFavorite, isTemplate, "
+                    + "rating, ratingCount, "
+                    + "imageUrl, videoUrl, thumbnailUrl, thumbnailPath, userImagePath, "
+                    + "imagePath, userThumbnailPath, "
+                    + "tagsJson, completenessScore, accessCount, createdAt, lastUpdated"
+                    + ") SELECT "
+                    + "id, authorId, dataSource, originalId, sourceId, "
+                    + "name, description, instructions, cuisine, notes, "
+                    + "yieldDescription, recipeSource, equipmentNeeded, cookingTips, "
+                    + "stepStructure, stepTranslations, currentLanguage, needsDefaultLanguageUpdate, "
+                    + "translations, searchableText, servings, prepTimeMinutes, cookTimeMinutes, "
+                    + "difficulty, portionsJson, isVegan, isVegetarian, isGlutenFree, isDairyFree, "
+                    + "isKeto, isPaleo, allergenFlags, isPublic, isFavorite, isTemplate, "
+                    + "rating, ratingCount, "
+                    + "imageUrl, videoUrl, NULL, thumbnailPath, heroImagePath, "  // thumbnailUrl=NULL, heroImagePath→userImagePath
+                    + "NULL, NULL, "                                               // imagePath, userThumbnailPath
+                    + "tagsJson, completenessScore, accessCount, createdAt, lastUpdated "
+                    + "FROM recipes");
+
+            // Step 3: Swap tables.
+            db.execSQL("DROP TABLE recipes");
+            db.execSQL("ALTER TABLE recipes_new RENAME TO recipes");
+
+            // Step 4: Recreate all indices from v12 schema JSON.
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_authorId` "
+                    + "ON `recipes` (`authorId`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_dataSource` "
+                    + "ON `recipes` (`dataSource`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_isFavorite` "
+                    + "ON `recipes` (`isFavorite`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_isPublic` "
+                    + "ON `recipes` (`isPublic`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_isTemplate` "
+                    + "ON `recipes` (`isTemplate`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_recipes_lastUpdated` "
+                    + "ON `recipes` (`lastUpdated`)");
+
+            Log.d(TAG, "  recipes migrated");
+        }
+
+        // ── meals ─────────────────────────────────────────────────────────────
+
+        private void migrateMeals(@NonNull SupportSQLiteDatabase db) {
+
+            // Step 1: Create the new table.
+            //
+            // Meals are always user-created — no remote data source produces Meal
+            // objects with image URLs. The media section therefore contains only
+            // userImagePath (renamed from photoPath).
+            //
+            // imageUrl and imagePath are intentionally absent — they have no
+            // concrete use case for meals and would be dead weight in the schema.
+            //
+            // Column order follows the v12 schema JSON exactly, with:
+            //   photoPath  →  userImagePath    (renamed, same position)
+            //   imageUrl                       (REMOVED — was dead weight in v12)
+            db.execSQL("CREATE TABLE IF NOT EXISTS `meals_new` ("
+                    + "`id` TEXT NOT NULL, "
+                    + "`userId` TEXT, "
+                    + "`name` TEXT, "
+                    + "`description` TEXT, "
+                    + "`notes` TEXT, "
+                    + "`occasion` TEXT, "
+                    + "`location` TEXT, "
+                    + "`currentLanguage` TEXT, "
+                    + "`needsDefaultLanguageUpdate` INTEGER NOT NULL, "
+                    + "`translations` TEXT, "
+                    + "`searchableText` TEXT, "
+                    + "`mealType` TEXT, "
+                    + "`mealDateTime` INTEGER NOT NULL, "
+                    + "`isPlanned` INTEGER NOT NULL, "
+                    + "`isTemplate` INTEGER NOT NULL, "
+                    + "`isHomeMade` INTEGER NOT NULL, "
+                    + "`allergenFlags` INTEGER NOT NULL, "
+                    + "`estimatedCost` REAL, "
+                    + "`satisfaction` REAL NOT NULL, "
+                    + "`userImagePath` TEXT, "    // was: photoPath; imageUrl dropped entirely
+                    + "`portionsJson` TEXT, "
+                    + "`tagsJson` TEXT, "
+                    + "`completenessScore` REAL NOT NULL, "
+                    + "`accessCount` INTEGER NOT NULL, "
+                    + "`createdAt` INTEGER NOT NULL, "
+                    + "`lastUpdated` INTEGER NOT NULL, "
+                    + "PRIMARY KEY(`id`))");
+
+            // Step 2: Copy all existing data.
+            //
+            // photoPath → userImagePath : existing meal photos preserved
+            // imageUrl deliberately not copied — data is discarded (was never set)
+            db.execSQL("INSERT INTO meals_new ("
+                    + "id, userId, name, description, notes, occasion, location, "
+                    + "currentLanguage, needsDefaultLanguageUpdate, translations, searchableText, "
+                    + "mealType, mealDateTime, isPlanned, isTemplate, isHomeMade, allergenFlags, "
+                    + "estimatedCost, satisfaction, "
+                    + "userImagePath, "
+                    + "portionsJson, tagsJson, completenessScore, accessCount, createdAt, lastUpdated"
+                    + ") SELECT "
+                    + "id, userId, name, description, notes, occasion, location, "
+                    + "currentLanguage, needsDefaultLanguageUpdate, translations, searchableText, "
+                    + "mealType, mealDateTime, isPlanned, isTemplate, isHomeMade, allergenFlags, "
+                    + "estimatedCost, satisfaction, "
+                    + "photoPath, "   // photoPath → userImagePath; imageUrl silently dropped
+                    + "portionsJson, tagsJson, completenessScore, accessCount, createdAt, lastUpdated "
+                    + "FROM meals");
+
+            // Step 3: Swap tables.
+            db.execSQL("DROP TABLE meals");
+            db.execSQL("ALTER TABLE meals_new RENAME TO meals");
+
+            // Step 4: Recreate all indices from v12 schema JSON.
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_meals_userId` "
+                    + "ON `meals` (`userId`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_meals_mealDateTime` "
+                    + "ON `meals` (`mealDateTime`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_meals_mealType` "
+                    + "ON `meals` (`mealType`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_meals_isTemplate` "
+                    + "ON `meals` (`isTemplate`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_meals_lastUpdated` "
+                    + "ON `meals` (`lastUpdated`)");
+
+            Log.d(TAG, "  meals migrated");
+        }
+    };
+
     // ========== UTILITY METHODS ==========
 
     /**
@@ -686,7 +1054,7 @@ public abstract class AppDatabase extends RoomDatabase {
      * Get database version
      */
     public static int getDatabaseVersion() {
-        return 12;
+        return 13;
     }
 
     /**

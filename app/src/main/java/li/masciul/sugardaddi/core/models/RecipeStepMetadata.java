@@ -32,12 +32,10 @@ public class RecipeStepMetadata {
     private Integer durationMinutes;    // Time for this step (null = unknown)
 
     // ========== MEDIA ==========
-    private String imageUrl;            // Optional: image showing this step
-    private String videoUrl;            // Optional: video demonstration
-
-    // Local instructional photo for this step — stored in sugardaddi/steps/.
-    // imageUrl is the remote image from TheMealDB/TheCocktailDB (never stored locally).
-    private String stepPhotoPath;
+    private String imageUrl;        // Remote step image from source (TheMealDB etc.)
+    private String videoUrl;        // Remote step video from source
+    private String imagePath;       // Auto-cached local copy of imageUrl (downloaded on favourite)
+    private String userImagePath;   // User-defined local photo (set via ImagePickerHelper)
 
     // ========== FLAGS ==========
     private boolean isOptional;         // Can this step be skipped? (e.g., garnish)
@@ -129,12 +127,21 @@ public class RecipeStepMetadata {
         touch();
     }
 
-    public String getStepPhotoPath() {
-        return stepPhotoPath;
+    public String getImagePath() {
+        return imagePath;
     }
 
-    public void setStepPhotoPath(String stepPhotoPath) {
-        this.stepPhotoPath = stepPhotoPath;
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+        touch();
+    }
+
+    public String getUserImagePath() {
+        return userImagePath;
+    }
+
+    public void setUserImagePath(String userImagePath) {
+        this.userImagePath = userImagePath;
         touch();
     }
 
@@ -209,11 +216,14 @@ public class RecipeStepMetadata {
     }
 
     /**
-     * Check if this step has media (image or video)
+     * Returns true if this step has any media content — remote or local.
+     * Used by RecipeStepMetadataListConverter.getStepsWithMediaCount().
      */
     public boolean hasMedia() {
         return (imageUrl != null && !imageUrl.trim().isEmpty()) ||
-                (videoUrl != null && !videoUrl.trim().isEmpty());
+                (videoUrl != null && !videoUrl.trim().isEmpty()) ||
+                (imagePath != null && !imagePath.trim().isEmpty()) ||
+                (userImagePath != null && !userImagePath.trim().isEmpty());
     }
 
     /**
@@ -348,13 +358,23 @@ public class RecipeStepMetadata {
             return this;
         }
 
-        public Builder image(String url) {
+        public Builder imageUrl(String url) {
             metadata.setImageUrl(url);
             return this;
         }
 
-        public Builder video(String url) {
+        public Builder videoUrl(String url) {
             metadata.setVideoUrl(url);
+            return this;
+        }
+
+        public Builder imagePath(String path) {
+            metadata.setImagePath(path);
+            return this;
+        }
+
+        public Builder userImagePath(String path) {
+            metadata.setUserImagePath(path);
             return this;
         }
 

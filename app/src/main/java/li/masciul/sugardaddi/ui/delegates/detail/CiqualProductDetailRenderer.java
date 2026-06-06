@@ -92,7 +92,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         if (!(item instanceof FoodProduct)) return;
         FoodProduct product = (FoodProduct) item;
 
-        populateHeroImage(view, product);
+        populateImage(view, product);
         populateHeader(view, product, language);
         populateNutrition(view, product, language);
         // Attribution panel last — informational, never obscures critical content
@@ -133,7 +133,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
 
     // ========== POPULATE HELPERS ==========
 
-    private void populateHeroImage(@NonNull View view, @NonNull FoodProduct product) {
+    private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
@@ -145,8 +145,8 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         int heightPx = Math.round(200 * dm.density);
 
         // Ciqual has no remote image URL and no auto-downloaded thumbnail.
-        // Only heroImagePath is checked — set by the user via ImagePickerHelper.
-        Object source = resolveCiqualHeroSource(product);
+        // Only user-defined paths are checked (userImagePath, userThumbnailPath).
+        Object source = resolveProductImageSource(product);
         if (source != null) {
             Glide.with(context)
                     .load(source)
@@ -163,13 +163,25 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         }
     }
 
+    /**
+     * Resolves image source for a food product.
+     * Ciqual has no remote image URL and no auto-downloaded thumbnail.
+     * Only user-defined paths are checked (userImagePath, userThumbnailPath).
+     */
     @Nullable
-    private Object resolveCiqualHeroSource(@NonNull FoodProduct product) {
-        String heroPath = product.getHeroImagePath();
-        if (heroPath != null && !heroPath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(heroPath);
+    private Object resolveProductImageSource(@NonNull FoodProduct product) {
+        String userImage = product.getUserImagePath();
+        if (userImage != null && !userImage.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userImage);
             if (f.exists()) return f;
         }
+
+        String userThumb = product.getUserThumbnailPath();
+        if (userThumb != null && !userThumb.trim().isEmpty()) {
+            java.io.File f = new java.io.File(userThumb);
+            if (f.exists()) return f;
+        }
+
         return null;
     }
 

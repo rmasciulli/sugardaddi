@@ -58,7 +58,7 @@ public class RecipeEntity {
 
     /**
      * Data source that provided this recipe.
-     * Stored as DataSource.getId() string — e.g. "USER", "THEMEALDB".
+     * Stored as DataSource.getId() string - e.g. "USER", "THEMEALDB".
      * Defaults to "USER" for user-created recipes and for all pre-migration rows.
      * NOT NULL to allow efficient indexed queries by source.
      */
@@ -68,7 +68,7 @@ public class RecipeEntity {
     /**
      * Original ID from the source.
      * TheMealDB: strIdMeal (e.g. "52772")
-     * USER recipes: null — their Room PK (id) is their only identifier.
+     * USER recipes: null - their Room PK (id) is their only identifier.
      * Used to fetch from the external source after persistence (e.g. detail refresh).
      */
     @Nullable
@@ -132,6 +132,7 @@ public class RecipeEntity {
     private boolean isPaleo = false;
 
     // ========== ALLERGEN FLAGS (NEW v3.0) ==========
+    
     /**
      * Combined allergen flags from all recipe ingredients
      * Calculated by aggregating allergenFlags from all FoodProducts in portions
@@ -148,16 +149,25 @@ public class RecipeEntity {
     private int ratingCount = 0;
 
     // ========== MEDIA ==========
+
+    // Remote URLs - provided by the data source.
+    private String thumbnailUrl;
     private String imageUrl;
     private String videoUrl;
 
-    // Locally cached thumbnail — auto-downloaded on favourite, deleted on unfavourite.
-    // Stored in sugardaddi/thumbnails/.
+    /**
+     * Auto-cached local paths - managed automatically.
+     * Stored in "sugardaddi/thumbnails/" and "sugardaddi/recipes/" respectively.
+     */
     private String thumbnailPath;
+    private String imagePath;
 
-    // User-added hero image shown in the recipe detail view.
-    // Stored in sugardaddi/recipes/. Set via ImagePickerHelper.
-    private String heroImagePath;
+    /**
+     * User-defined local paths - set explicitly via ImagePickerHelper.
+     * Co-exist with auto-cached counterparts; take display priority over them.
+     */
+    private String userThumbnailPath;
+    private String userImagePath;
 
     // ========== TAGS ==========
     private String tagsJson; // Set<String> as JSON
@@ -253,10 +263,13 @@ public class RecipeEntity {
         recipe.setRatingCount(this.ratingCount);
 
         // Set media
+        recipe.setThumbnailUrl(this.thumbnailUrl);
         recipe.setImageUrl(this.imageUrl);
         recipe.setVideoUrl(this.videoUrl);
         recipe.setThumbnailPath(this.thumbnailPath);
-        recipe.setHeroImagePath(this.heroImagePath);
+        recipe.setImagePath(this.imagePath);
+        recipe.setUserThumbnailPath(this.userThumbnailPath);
+        recipe.setUserImagePath(this.userImagePath);
 
         // Restore source identification
         recipe.setOriginalId(this.originalId);
@@ -265,7 +278,7 @@ public class RecipeEntity {
             recipe.setSourceIdentifier(new SourceIdentifier(this.sourceId, this.originalId));
         }
 
-        // Restore data source — null-safe, defaults to USER for pre-migration rows
+        // Restore data source - null-safe, defaults to USER for pre-migration rows
         DataSourceType ds = DataSourceType.fromString(this.dataSource);
         recipe.setDataSource(ds != null ? ds : DataSourceType.USER);
 
@@ -370,10 +383,13 @@ public class RecipeEntity {
         entity.setRatingCount(recipe.getRatingCount());
 
         // Set media
+        entity.setThumbnailUrl(recipe.getThumbnailUrl());
         entity.setImageUrl(recipe.getImageUrl());
         entity.setVideoUrl(recipe.getVideoUrl());
         entity.setThumbnailPath(recipe.getThumbnailPath());
-        entity.setHeroImagePath(recipe.getHeroImagePath());
+        entity.setImagePath(recipe.getImagePath());
+        entity.setUserThumbnailPath(recipe.getUserThumbnailPath());
+        entity.setUserImagePath(recipe.getUserImagePath());
 
         // Persist source identification
         entity.setOriginalId(recipe.getOriginalId());
@@ -544,18 +560,29 @@ public class RecipeEntity {
     public int getRatingCount() { return ratingCount; }
     public void setRatingCount(int ratingCount) { this.ratingCount = ratingCount; }
 
-    // Media
+    // Media - remote URLs (imageUrl and videoUrl getters already exist above)
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
 
     public String getVideoUrl() { return videoUrl; }
     public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
 
-    public String getThumbnailPath()  { return thumbnailPath; }
-    public void setThumbnailPath(String thumbnailPath)  { this.thumbnailPath = thumbnailPath; }
+    // Media - auto-cached local paths
+    public String getThumbnailPath() { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
 
-    public String getHeroImagePath()  { return heroImagePath; }
-    public void setHeroImagePath(String heroImagePath)  { this.heroImagePath = heroImagePath; }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+
+    // Media - user defined local paths
+    public String getUserThumbnailPath() { return userThumbnailPath; }
+    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
+
+    public String getUserImagePath() { return userImagePath; }
+    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
     // Tags
     public String getTagsJson() { return tagsJson; }

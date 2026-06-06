@@ -288,7 +288,7 @@ public class OpenFoodFactsMapper {
         }
 
         if (thumbnailUrl != null && !thumbnailUrl.trim().isEmpty()) {
-            product.setImageThumbnailUrl(thumbnailUrl);
+            product.setThumbnailUrl(thumbnailUrl);
         }
     }
 

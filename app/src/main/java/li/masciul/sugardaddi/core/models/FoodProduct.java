@@ -154,10 +154,18 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private ServingSize servingSize;
 
     // ========== MEDIA ==========
+    
+    // Remote URLs - provided by the data source.
+    private String thumbnailUrl;
     private String imageUrl;
-    private String imageThumbnailUrl;
+
+    // Auto-cached local paths - managed by ThumbnailDownloader / future ImageCacheManager.
     private String thumbnailPath;
-    private String heroImagePath;
+    private String imagePath;
+
+    // User-defined local paths - set via ImagePickerHelper. Take display priority.
+    private String userThumbnailPath;
+    private String userImagePath;
 
     // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;                  // A-E nutritional rating
@@ -849,7 +857,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         // First try categoriesText which has proper translation support.
         // IMPORTANT: do NOT split on comma. categoriesText stores a single agribalyse
         // name (e.g. "Biscuit (cookie), with chocolate, prepacked") or a cleaned taxonomy
-        // tag — never a comma-separated list. Splitting truncates at the first internal comma.
+        // tag - never a comma-separated list. Splitting truncates at the first internal comma.
         String categoryText = getCategoriesText(language);
 
         if (categoryText != null && !categoryText.isEmpty()) {
@@ -1023,29 +1031,26 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         this.servingSize = servingSize;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
+    // Media - remote URLs
+    public String getThumbnailUrl() { return thumbnailUrl; }
+    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+    // Media - auto-cached local paths
+    public String getThumbnailPath() { return thumbnailPath; }
+    public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
 
-    public String getImageThumbnailUrl() {
-        return imageThumbnailUrl;
-    }
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
-    public void setImageThumbnailUrl(String imageThumbnailUrl) {
-        this.imageThumbnailUrl = imageThumbnailUrl;
-    }
+    // Media - user-defined local paths
+    public String getUserThumbnailPath() { return userThumbnailPath; }
+    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
 
-    public String getThumbnailPath()  { return thumbnailPath; }
-
-    public void setThumbnailPath(String thumbnailPath)  { this.thumbnailPath = thumbnailPath; }
-
-    public String getHeroImagePath()  { return heroImagePath; }
-
-    public void setHeroImagePath(String heroImagePath)  { this.heroImagePath = heroImagePath; }
+    public String getUserImagePath() { return userImagePath; }
+    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
     public String getNutriScore() {
         return nutriScore;
@@ -1209,7 +1214,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     public void enrichWith(FoodProduct richer) {
         if (richer == null) return;
 
-        // No quality gate here — the caller (enrichSearchResultsFromDatabase) is
+        // No quality gate here - the caller (enrichSearchResultsFromDatabase) is
         // responsible for deciding WHEN to call enrichWith. It calls enrichWith only
         // when it found a DB-cached version of this product, meaning the user previously
         // fetched the full detail from OFF v2. That version is always authoritative
@@ -1249,8 +1254,8 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         if (isEnrichable(this.imageUrl, richer.imageUrl)) {
             this.imageUrl = richer.imageUrl;
         }
-        if (isEnrichable(this.imageThumbnailUrl, richer.imageThumbnailUrl)) {
-            this.imageThumbnailUrl = richer.imageThumbnailUrl;
+        if (isEnrichable(this.thumbnailUrl, richer.thumbnailUrl)) {
+            this.thumbnailUrl = richer.thumbnailUrl;
         }
 
         // --- Nutrition ---
@@ -1280,10 +1285,10 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
             ProductTranslation existing = this.translations.get(lang);
             if (existing == null) {
-                // Language not present at all — add it
+                // Language not present at all - add it
                 this.translations.put(lang, richTranslation);
             } else {
-                // Language present — merge missing fields only (don't overwrite existing)
+                // Language present - merge missing fields only (don't overwrite existing)
                 existing.mergeFrom(richTranslation);
             }
         }
@@ -1314,7 +1319,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
      * Check if a field should be replaced by the richer product's value.
      *
      * Since enrichWith() is only called when richer has higher dataCompleteness,
-     * we prefer richer's value whenever it is non-null/non-empty — regardless of
+     * we prefer richer's value whenever it is non-null/non-empty - regardless of
      * whether this product already has a value. This is "richer wins", not "fill gaps".
      *
      * The only constraint: never replace with null or empty (never downgrade to nothing).
