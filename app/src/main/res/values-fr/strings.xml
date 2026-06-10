@@ -220,8 +220,6 @@
     <string name="menu_search">Rechercher</string>
     <string name="menu_clear_cache">Vider le cache</string>
     <string name="menu_test_barcode">Tester le code-barres</string>
-    <string name="menu_share">Partager</string>
-    <string name="menu_open_web">Ouvrir dans le navigateur</string>
     <string name="menu_about">À propos</string>
 
     <!-- Actions -->
@@ -297,6 +295,23 @@
     <string name="share_failed">Échec du partage du produit</string>
     <string name="share_no_data">Aucune donnée disponible à partager</string>
     <string name="browser_open_failed">Impossible d\'ouvrir le navigateur</string>
+
+    <!-- Gestion des images — menu contextuel des écrans de détail -->
+    <string name="menu_share">Partager</string>
+    <string name="menu_open_web">Ouvrir dans le navigateur</string>
+    <string name="menu_replace_image">Remplacer l\'image</string>
+    <string name="menu_replace_thumbnail">Remplacer la miniature</string>
+    <string name="menu_remove_image">Supprimer l\'image</string>
+    <string name="menu_remove_thumbnail">Supprimer la miniature</string>
+    <string name="image_replaced">Image mise à jour</string>
+    <string name="image_removed">Image supprimée</string>
+    <string name="thumbnail_replaced">Miniature mise à jour</string>
+    <string name="thumbnail_removed">Miniature supprimée</string>
+    <string name="image_picker_camera">Appareil photo</string>
+    <string name="image_picker_gallery">Galerie</string>
+    <string name="image_picker_choose_source">Choisir la source</string>
+    <string name="image_storage_unavailable">Stockage d\'images indisponible</string>
+    <string name="image_processing_failed">Échec du traitement de l\'image</string>
 
     <!-- Accessibility - Content Descriptions -->
     <string name="content_description_search_icon">Rechercher des produits</string>

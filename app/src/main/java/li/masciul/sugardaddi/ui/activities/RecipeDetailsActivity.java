@@ -15,10 +15,15 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 
+import java.io.File;
+import java.util.concurrent.Executors;
+
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
+import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
 import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
@@ -26,6 +31,9 @@ import li.masciul.sugardaddi.ui.delegates.detail.DefaultRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
+import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
+import li.masciul.sugardaddi.utils.image.ImageProcessor;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
  * RecipeDetailsActivity — Detail screen for Recipe items.
@@ -103,11 +111,16 @@ public class RecipeDetailsActivity extends BaseActivity
     // ========== BUSINESS LOGIC ==========
 
     private RecipeManager recipeManager;
+    private ImagePickerHelper imagePicker;
 
     // ========== LIFECYCLE ==========
 
     @Override
     protected void onBaseActivityCreated(Bundle savedInstanceState) {
+        // Register ActivityResultLaunchers before onStart() — safe here because
+        // onBaseActivityCreated() is called from BaseActivity.onCreate().
+        imagePicker = new ImagePickerHelper(this);
+
         setContentView(R.layout.activity_product_details);
 
         setupToolbar();
@@ -191,6 +204,7 @@ public class RecipeDetailsActivity extends BaseActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (imagePicker != null) imagePicker.shutdown();
 
         if (activeRenderer != null) {
             activeRenderer.destroy();
@@ -393,6 +407,24 @@ public class RecipeDetailsActivity extends BaseActivity
             }
         }
 
+        // Remove image — shown only when user has set a custom full-size image.
+        MenuItem removeImageItem = menu.findItem(R.id.action_remove_image);
+        if (removeImageItem != null) {
+            Recipe recipe = recipeManager.getCurrentRecipe();
+            removeImageItem.setVisible(recipe != null
+                    && recipe.getUserImagePath() != null
+                    && !recipe.getUserImagePath().trim().isEmpty());
+        }
+
+        // Remove thumbnail — shown only when user has set a custom thumbnail.
+        MenuItem removeThumbnailItem = menu.findItem(R.id.action_remove_thumbnail);
+        if (removeThumbnailItem != null) {
+            Recipe recipe = recipeManager.getCurrentRecipe();
+            removeThumbnailItem.setVisible(recipe != null
+                    && ImageStorageManager.isUserDefinedThumbnail(
+                    recipe.getUserThumbnailPath()));
+        }
+
         return true;
     }
 
@@ -415,9 +447,166 @@ public class RecipeDetailsActivity extends BaseActivity
         } else if (id == R.id.action_open_web) {
             openInBrowser();
             return true;
+        } else if (id == R.id.action_replace_image) {
+            showImageSourceDialog(false);
+            return true;
+        } else if (id == R.id.action_replace_thumbnail) {
+            showImageSourceDialog(true);
+            return true;
+        } else if (id == R.id.action_remove_image) {
+            removeImage();
+            return true;
+        } else if (id == R.id.action_remove_thumbnail) {
+            removeThumbnail();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // ========== IMAGE MANAGEMENT ==========
+
+    /**
+     * Shows a dialog asking whether to use the camera or gallery,
+     * then launches ImagePickerHelper with the appropriate destination file.
+     *
+     * @param isThumbnail true when replacing the thumbnail (userThumbnailPath),
+     *                    false when replacing the full-size image (userImagePath).
+     */
+    private void showImageSourceDialog(boolean isThumbnail) {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null) return;
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+
+        File destinationFile;
+        int  maxDimension;
+        int  jpegQuality;
+
+        if (isThumbnail) {
+            // Deterministic name: {id}_custom.jpg — co-exists with auto-cached thumbnail.
+            destinationFile = storage.getUserThumbnailFile(recipe.getSearchableId());
+            maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
+            jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
+        } else {
+            destinationFile = storage.getUserRecipeHeroFile(recipe.getSearchableId());
+            maxDimension    = ImageProcessor.MAX_DIMENSION_HERO;
+            jpegQuality     = ImageProcessor.JPEG_QUALITY_HERO;
+        }
+
+        if (destinationFile == null) {
+            Toast.makeText(this, getSafeString(R.string.image_storage_unavailable),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final File dest     = destinationFile;
+        final int     maxDim   = maxDimension;
+        final int     quality  = jpegQuality;
+        final boolean isThumb  = isThumbnail;
+
+        ImagePickerHelper.Callback callback = new ImagePickerHelper.Callback() {
+            @Override
+            public void onImageReady(@NonNull String localPath) {
+                persistImage(localPath, isThumb);
+            }
+
+            @Override
+            public void onCancelled(@NonNull String reason) {
+                logDebug("Image pick cancelled: " + reason);
+            }
+        };
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(getSafeString(R.string.image_picker_choose_source))
+                .setPositiveButton(getSafeString(R.string.image_picker_camera),
+                        (d, w) -> imagePicker.showCamera(dest, maxDim, quality, callback))
+                .setNegativeButton(getSafeString(R.string.image_picker_gallery),
+                        (d, w) -> imagePicker.showGallery(dest, maxDim, quality, callback))
+                .show();
+    }
+
+    /**
+     * Persists the picked image path to Room via a targeted DAO update,
+     * then reloads the detail view to reflect the change.
+     */
+    private void persistImage(@NonNull String localPath, boolean isThumbnail) {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null) return;
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            if (isThumbnail) {
+                db.recipeDao().updateUserThumbnailPath(recipe.getSearchableId(), localPath);
+            } else {
+                db.recipeDao().updateUserImagePath(recipe.getSearchableId(), localPath);
+            }
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(isThumbnail
+                                ? R.string.thumbnail_replaced
+                                : R.string.image_replaced),
+                        Toast.LENGTH_SHORT).show();
+                if (isThumbnail) {
+                    recipeManager.updateLocalImagePaths(null, localPath);
+                } else {
+                    recipeManager.updateLocalImagePaths(localPath, null);
+                }
+                invalidateOptionsMenu();
+            });
+        });
+    }
+
+    /**
+     * Deletes the user-defined full-size image and clears userImagePath in Room.
+     */
+    private void removeImage() {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null || recipe.getUserImagePath() == null) return;
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+        storage.deleteFile(recipe.getUserImagePath());
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase.getInstance(this)
+                    .recipeDao()
+                    .updateUserImagePath(recipe.getSearchableId(), null);
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(R.string.image_removed),
+                        Toast.LENGTH_SHORT).show();
+                recipeManager.updateLocalImagePaths(null, null);
+                invalidateOptionsMenu();
+            });
+        });
+    }
+
+    /**
+     * Deletes the user-defined thumbnail and clears userThumbnailPath in Room.
+     * The auto-cached thumbnail (thumbnailPath) remains and resumes display.
+     */
+    private void removeThumbnail() {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null || recipe.getUserThumbnailPath() == null) return;
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+        storage.deleteFile(recipe.getUserThumbnailPath());
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase.getInstance(this)
+                    .recipeDao()
+                    .updateUserThumbnailPath(recipe.getSearchableId(), null);
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(R.string.thumbnail_removed),
+                        Toast.LENGTH_SHORT).show();
+                recipeManager.updateLocalImagePaths(recipeManager.getCurrentRecipe().getUserImagePath(), null);
+                invalidateOptionsMenu();
+            });
+        });
     }
 
     // ========== SHARE ==========

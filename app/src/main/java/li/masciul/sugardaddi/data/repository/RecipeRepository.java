@@ -49,7 +49,7 @@ public class RecipeRepository {
     private final Executor backgroundExecutor;
 
     /**
-     * Shared DataSourceManager singleton — same instance used by ProductRepository.
+     * Shared DataSourceManager singleton - same instance used by ProductRepository.
      * Recipe detail fetches call source.getRecipe() on any registered DataSource,
      * exactly as ProductRepository calls source.getProduct().
      */
@@ -89,7 +89,7 @@ public class RecipeRepository {
         this.database = AppDatabase.getInstance(context);
         this.recipeDao = database.recipeDao();
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
-        // Use the shared DataSourceManager singleton — sources are already initialised
+        // Use the shared DataSourceManager singleton - sources are already initialised
         // at app startup. No separate initialisation needed here.
         this.dataSourceManager = DataSourceManager.getInstance(this.context);
 
@@ -176,7 +176,7 @@ public class RecipeRepository {
      *
      * PRIMARY ENTRY POINT for RecipeDetailsActivity. Accepts the "SOURCE:id"
      * format returned by {@link Recipe#getSearchableId()} and routes to the
-     * correct backend — identical pattern to
+     * correct backend - identical pattern to
      * {@link ProductRepository#loadProductFromSource}:
      *
      *   "USER:some-uuid"   → Room lookup (user-created recipe)
@@ -227,14 +227,14 @@ public class RecipeRepository {
         if (!source.isAvailable()) {
             Log.w(TAG, "Data source not yet available: " + sourceId);
             callback.onError("Data source not ready: " + sourceId
-                    + " — it may still be initialising. Please retry.");
+                    + " - it may still be initialising. Please retry.");
             return;
         }
 
         String language = li.masciul.sugardaddi.managers.LanguageManager
                 .getCurrentLanguage(context).getCode();
 
-        // Check Room cache first — avoids a network round-trip for previously-viewed recipes
+        // Check Room cache first - avoids a network round-trip for previously-viewed recipes
         getCachedExternalRecipe(sourceId, originalId, new RecipeCallback() {
             @Override
             public void onSuccess(Recipe recipe) {
@@ -243,15 +243,20 @@ public class RecipeRepository {
 
             @Override
             public void onError(String cacheError) {
-                // Not in Room — fetch live from the source via the standard interface
+                // Not in Room - fetch live from the source via the standard interface
                 if (ApiConfig.DEBUG_LOGGING) {
                     Log.d(TAG, "Room miss for " + sourceId + ":" + originalId
-                            + " — fetching from network");
+                            + " - fetching from network");
                 }
                 source.getRecipe(originalId, language, new DataSourceCallback<Recipe>() {
                     @Override
                     public void onSuccess(Recipe recipe) {
-                        callback.onSuccess(recipe);
+                        // Enrich with local image paths on a background thread -
+                        // Room cannot be accessed on the main thread.
+                        backgroundExecutor.execute(() -> {
+                            enrichWithLocalImagePaths(recipe);
+                            runOnMainThread(() -> callback.onSuccess(recipe));
+                        });
                     }
 
                     @Override
@@ -266,6 +271,38 @@ public class RecipeRepository {
                 });
             }
         });
+    }
+
+    /**
+     * Reads local image paths from the Room row for this recipe and applies
+     * them to the in-memory domain object.
+     *
+     * Called after a network fetch to ensure the renderer receives the correct
+     * local paths even though the API response has no knowledge of local files.
+     *
+     * Must be called from a background thread - performs a synchronous Room read.
+     */
+    private void enrichWithLocalImagePaths(@NonNull Recipe recipe) {
+        try {
+            RecipeEntity existing = recipeDao.getById(recipe.getSearchableId());
+            if (existing == null) return;
+
+            if (existing.getThumbnailPath() != null) {
+                recipe.setThumbnailPath(existing.getThumbnailPath());
+            }
+            if (existing.getImagePath() != null) {
+                recipe.setImagePath(existing.getImagePath());
+            }
+            if (existing.getUserThumbnailPath() != null) {
+                recipe.setUserThumbnailPath(existing.getUserThumbnailPath());
+            }
+            if (existing.getUserImagePath() != null) {
+                recipe.setUserImagePath(existing.getUserImagePath());
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "enrichWithLocalImagePaths failed for "
+                    + recipe.getSearchableId() + ": " + e.getMessage());
+        }
     }
     
     /**
@@ -655,6 +692,31 @@ public class RecipeRepository {
                 }
 
                 RecipeEntity entity = RecipeEntity.fromRecipe(recipe);
+
+                // Preserve local image paths from any existing cached row.
+                // A network refresh must never wipe user-set or auto-cached
+                // local paths - the API response has no knowledge of local files.
+                RecipeEntity existingEntity = recipeDao.getById(recipe.getSearchableId());
+                if (existingEntity != null) {
+                    if (existingEntity.getThumbnailPath() != null) {
+                        entity.setThumbnailPath(existingEntity.getThumbnailPath());
+                    }
+                    if (existingEntity.getImagePath() != null) {
+                        entity.setImagePath(existingEntity.getImagePath());
+                    }
+                    if (existingEntity.getUserThumbnailPath() != null) {
+                        entity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
+                    }
+                    if (existingEntity.getUserImagePath() != null) {
+                        entity.setUserImagePath(existingEntity.getUserImagePath());
+                    }
+                    // Also preserve isFavorite - saveExternalRecipe() is called
+                    // on every detail view open and must not unfavourite a product.
+                    if (existingEntity.isFavorite()) {
+                        entity.setFavorite(true);
+                    }
+                }
+
                 recipeDao.insert(entity); // REPLACE on conflict
 
                 // Populate memory cache
@@ -875,7 +937,7 @@ public class RecipeRepository {
      *
      * FAVOURITING
      * ===========
-     * For recipes, imageUrl is the only available image — it is used as both
+     * For recipes, imageUrl is the only available image - it is used as both
      * the search card thumbnail and the detail view hero fallback.
      * Downloaded once to thumbnails/ and persisted as thumbnailPath.
      * heroImagePath remains null until the user explicitly sets one.
@@ -901,7 +963,7 @@ public class RecipeRepository {
             String url = recipe.getImageUrl();
             if (url == null || url.trim().isEmpty()) {
                 Log.d(TAG, "No image URL available for recipe " + recipeId
-                        + " — skipping thumbnail download");
+                        + " - skipping thumbnail download");
                 return;
             }
 
@@ -924,7 +986,7 @@ public class RecipeRepository {
 
                 @Override
                 public void onError(@NonNull String reason) {
-                    // Non-fatal — Glide will load from the remote URL instead.
+                    // Non-fatal - Glide will load from the remote URL instead.
                     Log.d(TAG, "Thumbnail download failed for recipe "
                             + recipeId + ": " + reason);
                 }
@@ -946,7 +1008,7 @@ public class RecipeRepository {
                     .getThumbnailDownloader();
         }
         Log.e(TAG, "Application context is not SugarDaddiApplication "
-                + "— thumbnail pipeline unavailable");
+                + "- thumbnail pipeline unavailable");
         return null;
     }
 

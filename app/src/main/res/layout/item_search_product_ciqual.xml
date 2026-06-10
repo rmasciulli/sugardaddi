@@ -88,60 +88,103 @@
             tools:visibility="visible"
             tools:text="Food product" />
 
-        <!-- ROW 3: category (primary metadata for Ciqual entries) -->
-        <TextView
-            android:id="@+id/category"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:fontFamily="@font/roboto_condensed"
-            android:fontWeight="300"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="Dairy products › dairy desserts" />
-
-        <!-- ROW 4: nutrition row - carbs left, kcal badge right -->
+        <!-- ROW 3: optional image (GONE by default) + content column -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/nutritionSummary"
+            <!--
+                User-defined image — shown only when the user has explicitly set
+                one via ImagePickerHelper. GONE by default; bindImage() makes it
+                VISIBLE when userThumbnailPath or userImagePath is non-null.
+                Ciqual has no remote image URL and no auto-downloaded thumbnail.
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/imageContainer"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginEnd="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
+
+                <ImageView
+                    android:id="@+id/productImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/product_image_description"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/ic_food_placeholder" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Content column: category + nutrition row -->
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="@font/roboto_condensed"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="58.0g carbohydrates per 100g" />
+                android:orientation="vertical"
+                android:gravity="center_vertical">
 
-            <!-- kcal pill: tertiary container -->
-            <TextView
-                android:id="@+id/kcalBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:fontFamily="@font/inter"
-                android:fontWeight="500"
-                android:textAppearance="?attr/textAppearanceLabelMedium"
-                android:textColor="?attr/colorPrimary"
-                android:background="@drawable/rounded_corner_8dp"
-                android:backgroundTint="?attr/colorPrimaryContainer"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="492 kcal" />
+                <!-- Category (primary metadata for Ciqual entries) -->
+                <TextView
+                    android:id="@+id/category"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp"
+                    android:fontFamily="@font/roboto_condensed"
+                    android:fontWeight="300"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="Dairy products › dairy desserts" />
+
+                <!-- Nutrition row: carbs left, kcal badge right -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/nutritionSummary"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/roboto_condensed"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="20.3g carbohydrates per 100g" />
+
+                    <TextView
+                        android:id="@+id/kcalBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="2dp"
+                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:background="@drawable/rounded_corner_8dp"
+                        android:backgroundTint="?attr/colorTertiaryContainer"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="155 kcal" />
+
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
 

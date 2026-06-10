@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.google.android.material.card.MaterialCardView;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -90,6 +91,7 @@ public class USDAProductSearchDelegate
         bindCategory(holder, product, language);
         bindNutritionSummary(holder, product, language);
         bindKcalBadge(holder, product);
+        bindImage(holder, product);
     }
 
     // ========== BINDING HELPERS ==========
@@ -149,6 +151,10 @@ public class USDAProductSearchDelegate
         Object imageSource = resolveProductThumbnailSource(product);
 
         if (imageSource != null) {
+            if (holder.imageContainer != null) {
+                holder.imageContainer.setVisibility(View.VISIBLE);
+            }
+
             Glide.with(context)
                     .load(imageSource)
                     .override(sizePx, sizePx)
@@ -159,7 +165,9 @@ public class USDAProductSearchDelegate
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .into(holder.productImage);
         } else {
-            holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
+            if (holder.imageContainer != null) {
+                holder.imageContainer.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -235,8 +243,10 @@ public class USDAProductSearchDelegate
         final TextView category;
         final TextView nutritionSummary;
         final TextView kcalBadge;
-        // Null until productImage is added to item_search_product_ciqual.xml
-        @Nullable final ImageView productImage;
+        @Nullable
+        final MaterialCardView imageContainer;
+        @Nullable
+        final ImageView productImage;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -246,7 +256,8 @@ public class USDAProductSearchDelegate
             category         = itemView.findViewById(R.id.category);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
-            productImage     = itemView.findViewById(R.id.productImage); // returns null until layout updated
+            imageContainer = itemView.findViewById(R.id.imageContainer);
+            productImage   = itemView.findViewById(R.id.productImage);
         }
     }
 }

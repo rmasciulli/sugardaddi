@@ -2,6 +2,8 @@ package li.masciul.sugardaddi.managers;
 
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -246,7 +248,7 @@ public class ProductManager {
     }
 
     /**
-     * ✅ NEW: Load product using standard barcode
+     * Load product using standard barcode
      *
      * Handles standard barcodes like "3017620422003" using
      * the existing repository barcode loading logic.
@@ -284,6 +286,38 @@ public class ProductManager {
                 // Already handled
             }
         });
+    }
+
+    /**
+     * Updates a local image path on the currently-loaded product without
+     * triggering a network fetch or a full Room save.
+     *
+     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path
+     * and the targeted DAO update (updateUserImagePath / updateUserThumbnailPath)
+     * has already written it to Room. This method syncs the in-memory product
+     * state and re-notifies the listener so the UI reflects the change.
+     *
+     * @param userImagePath     New userImagePath value, or null to clear it.
+     * @param userThumbnailPath New userThumbnailPath value, or null to clear it.
+     */
+    public void updateLocalImagePaths(
+            @Nullable String userImagePath,
+            @Nullable String userThumbnailPath) {
+        if (currentProduct == null) return;
+
+        if (userImagePath != null || currentProduct.getUserImagePath() != null) {
+            currentProduct.setUserImagePath(userImagePath);
+        }
+        if (userThumbnailPath != null || currentProduct.getUserThumbnailPath() != null) {
+            currentProduct.setUserThumbnailPath(userThumbnailPath);
+        }
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Local image paths updated in-memory: userImagePath="
+                    + userImagePath + ", userThumbnailPath=" + userThumbnailPath);
+        }
+
+        notifyProductLoaded(currentProduct);
     }
 
     /**

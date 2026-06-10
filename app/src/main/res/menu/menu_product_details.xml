@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    menu_recipe_details.xml — Toolbar menu for RecipeDetailsActivity.
+    menu_product_details.xml — Toolbar menu for ProductDetailsActivity.
     ALWAYS VISIBLE:
       - Favourite : toggles border/filled star
     OVERFLOW (⋮):
       - Share
       - Open in browser   hidden when source has no website
-      - Watch video       hidden when recipe has no videoUrl
-      - Replace image     always shown
+      - Replace image     always shown (caller guards unavailable storage)
       - Replace thumbnail always shown
       - Remove image      hidden when userImagePath is null
       - Remove thumbnail  hidden when userThumbnailPath is null
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <!-- Favourite (toggles between border and filled star) -->
+    <!-- Favourite (toggles between border and filled) -->
     <item
         android:id="@+id/action_favorite"
         android:icon="@drawable/ic_favorite_rounded_border"
@@ -24,29 +23,19 @@
 
     <!-- ── Overflow items ──────────────────────────────────────────────── -->
 
-    <!-- Share recipe name, source URL, and video link as plain text -->
+    <!-- Share product info as plain text -->
     <item
         android:id="@+id/action_share"
         android:title="@string/menu_share"
         app:showAsAction="never" />
 
     <!--
-        Open recipe page on TheMealDB / TheCocktailDB.
-        Hidden when RecipeUrlBuilder.hasWebsiteSupport() returns false.
+        Open product page (e.g. OpenFoodFacts).
+        Hidden when ProductUrlBuilder.hasWebsiteSupport() returns false.
     -->
     <item
         android:id="@+id/action_open_web"
         android:title="@string/menu_open_web"
-        android:visible="false"
-        app:showAsAction="never" />
-
-    <!--
-        Watch video — hidden when recipe has no videoUrl.
-        Shown in onPrepareOptionsMenu() only when videoUrl is non-null.
-    -->
-    <item
-        android:id="@+id/action_video"
-        android:title="@string/menu_watch_video"
         android:visible="false"
         app:showAsAction="never" />
 
@@ -62,6 +51,7 @@
     <!--
         Replace thumbnail — always shown.
         Triggers camera/gallery picker → ImagePickerHelper → userThumbnailPath.
+        Writes to thumbnails/{id}_custom.jpg (deterministic, co-exists with auto-cached).
     -->
     <item
         android:id="@+id/action_replace_thumbnail"
@@ -70,7 +60,7 @@
 
     <!--
         Remove user-defined full-size image.
-        Hidden when userImagePath is null.
+        Hidden when userImagePath is null — shown in onPrepareOptionsMenu().
     -->
     <item
         android:id="@+id/action_remove_image"
@@ -80,7 +70,7 @@
 
     <!--
         Remove user-defined thumbnail.
-        Hidden when userThumbnailPath is null.
+        Hidden when userThumbnailPath is null — shown in onPrepareOptionsMenu().
     -->
     <item
         android:id="@+id/action_remove_thumbnail"

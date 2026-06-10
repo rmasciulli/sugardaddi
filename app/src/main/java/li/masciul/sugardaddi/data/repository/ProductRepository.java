@@ -311,12 +311,16 @@ public class ProductRepository {
                             cleanSourceId, product.getName()));
                 }
 
-                // Save to database for future lookups
-                // (if product has a barcode, it can be found later via barcode search)
+                // Save to database - preserves existing local image paths.
                 saveProductToDatabase(product, false);
 
+                // Enrich with local image paths from Room on a background thread,
+                // then deliver the result on the main thread.
                 isOperationInProgress = false;
-                callback.onSuccess(product);
+                backgroundExecutor.execute(() -> {
+                    enrichWithLocalImagePaths(product);
+                    runOnMainThread(() -> callback.onSuccess(product));
+                });
             }
 
             @Override
@@ -333,6 +337,41 @@ public class ProductRepository {
                 // Already handled by callback.onLoading() above
             }
         });
+    }
+
+    /**
+     * Reads local image paths (thumbnailPath, imagePath, userThumbnailPath,
+     * userImagePath) from the Room row for this product and applies them to
+     * the in-memory domain object.
+     *
+     * Called after a network fetch to ensure the renderer receives the correct
+     * local paths even though the API response has no knowledge of local files.
+     *
+     * Must be called from a background thread - performs a synchronous Room read.
+     */
+    private void enrichWithLocalImagePaths(@NonNull FoodProduct product) {
+        try {
+            FoodProductEntity existing = database.foodProductDao()
+                    .getProductById(product.getSearchableId());
+            if (existing == null) return;
+
+            if (existing.getThumbnailPath() != null) {
+                product.setThumbnailPath(existing.getThumbnailPath());
+            }
+            if (existing.getImagePath() != null) {
+                product.setImagePath(existing.getImagePath());
+            }
+            if (existing.getUserThumbnailPath() != null) {
+                product.setUserThumbnailPath(existing.getUserThumbnailPath());
+            }
+            if (existing.getUserImagePath() != null) {
+                product.setUserImagePath(existing.getUserImagePath());
+            }
+        } catch (Exception e) {
+            // Non-critical - log and continue. Renderer will just show no local image.
+            Log.w(TAG, "enrichWithLocalImagePaths failed for "
+                    + product.getSearchableId() + ": " + e.getMessage());
+        }
     }
 
     /**
@@ -421,7 +460,7 @@ public class ProductRepository {
      *
      * After the Room write completes, handleThumbnailForFavorite() is called
      * to download or delete the cached thumbnail in the background. The
-     * FavoriteCallback fires before the thumbnail operation completes — the
+     * FavoriteCallback fires before the thumbnail operation completes - the
      * UI does not wait for it.
      */
     public void toggleFavorite(FoodProduct product, FavoriteCallback callback) {
@@ -449,7 +488,7 @@ public class ProductRepository {
                     }
                     database.foodProductDao().updateProduct(entity);
                 } else {
-                    // Not yet in Room — save as favourite
+                    // Not yet in Room - save as favourite
                     saveProductToDatabase(product, true);
                     newStatus = true;
                 }
@@ -459,7 +498,7 @@ public class ProductRepository {
                 }
 
                 // Thumbnail download/deletion runs on ThumbnailDownloader's own
-                // executor — does not block this backgroundExecutor thread.
+                // executor - does not block this backgroundExecutor thread.
                 handleThumbnailForFavorite(product, productId, newStatus);
 
                 final boolean finalNewStatus = newStatus;
@@ -480,7 +519,7 @@ public class ProductRepository {
      * Prefers imageThumbnailUrl (CDN-optimised small image) over imageUrl.
      * Falls back to imageUrl if imageThumbnailUrl is absent.
      * On success: persists the local path to food_products.thumbnailPath.
-     * On failure: logs and continues — Glide falls back to the remote URL.
+     * On failure: logs and continues - Glide falls back to the remote URL.
      *
      * UNFAVOURITING
      * =============
@@ -507,7 +546,7 @@ public class ProductRepository {
             }
             if (url == null || url.trim().isEmpty()) {
                 Log.d(TAG, "No image URL available for product " + productId
-                        + " — skipping thumbnail download");
+                        + " - skipping thumbnail download");
                 return;
             }
 
@@ -533,7 +572,7 @@ public class ProductRepository {
 
                 @Override
                 public void onError(@NonNull String reason) {
-                    // Non-fatal — Glide will load from the remote URL instead.
+                    // Non-fatal - Glide will load from the remote URL instead.
                     Log.d(TAG, "Thumbnail download failed for product "
                             + productId + ": " + reason);
                 }
@@ -548,7 +587,7 @@ public class ProductRepository {
 
     /**
      * Returns the application-scoped ThumbnailDownloader singleton.
-     * Returns null (and logs) if the context is not SugarDaddiApplication —
+     * Returns null (and logs) if the context is not SugarDaddiApplication -
      * should never happen in production.
      */
     @Nullable
@@ -558,7 +597,7 @@ public class ProductRepository {
                     .getThumbnailDownloader();
         }
         Log.e(TAG, "Application context is not SugarDaddiApplication "
-                + "— thumbnail pipeline unavailable");
+                + "- thumbnail pipeline unavailable");
         return null;
     }
 
@@ -772,7 +811,9 @@ public class ProductRepository {
 
         backgroundExecutor.execute(() -> {
             try {
-                // 1. Check if product already exists and preserve favorite status
+                // 1. Check if product already exists - preserve user-set fields
+                //    that must never be overwritten by a fresh network fetch:
+                //    isFavorite, thumbnailPath, imagePath, userThumbnailPath, userImagePath.
                 FoodProductEntity existingEntity = database.foodProductDao()
                         .getProductById(product.getSearchableId());
                 boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
@@ -782,6 +823,25 @@ public class ProductRepository {
                 if (asFavorite || preserveFavorite) {
                     productEntity.setFavorite(true);
                 }
+
+                // Carry forward all local image paths from the existing row.
+                // These are user-set or auto-cached - a network refresh must never
+                // wipe them. The API response has no knowledge of local files.
+                if (existingEntity != null) {
+                    if (existingEntity.getThumbnailPath() != null) {
+                        productEntity.setThumbnailPath(existingEntity.getThumbnailPath());
+                    }
+                    if (existingEntity.getImagePath() != null) {
+                        productEntity.setImagePath(existingEntity.getImagePath());
+                    }
+                    if (existingEntity.getUserThumbnailPath() != null) {
+                        productEntity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
+                    }
+                    if (existingEntity.getUserImagePath() != null) {
+                        productEntity.setUserImagePath(existingEntity.getUserImagePath());
+                    }
+                }
+
                 productEntity.markAsUpdated();
 
                 database.foodProductDao().insertProduct(productEntity);

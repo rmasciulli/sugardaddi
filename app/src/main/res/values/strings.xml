@@ -220,8 +220,6 @@
     <string name="menu_search">Search</string>
     <string name="menu_clear_cache">Clear Cache</string>
     <string name="menu_test_barcode">Test Barcode</string>
-    <string name="menu_share">Share</string>
-    <string name="menu_open_web">Open in Browser</string>
     <string name="menu_about">About</string>
 
     <!-- Actions -->
@@ -297,6 +295,23 @@
     <string name="share_failed">Failed to share product</string>
     <string name="share_no_data">No data available to share</string>
     <string name="browser_open_failed">Cannot open browser</string>
+
+    <!-- Image management — detail activity overflow menu -->
+    <string name="menu_share">Share</string>
+    <string name="menu_open_web">Open in browser</string>
+    <string name="menu_replace_image">Replace image</string>
+    <string name="menu_replace_thumbnail">Replace thumbnail</string>
+    <string name="menu_remove_image">Remove image</string>
+    <string name="menu_remove_thumbnail">Remove thumbnail</string>
+    <string name="image_replaced">Image updated</string>
+    <string name="image_removed">Image removed</string>
+    <string name="thumbnail_replaced">Thumbnail updated</string>
+    <string name="thumbnail_removed">Thumbnail removed</string>
+    <string name="image_picker_camera">Camera</string>
+    <string name="image_picker_gallery">Gallery</string>
+    <string name="image_picker_choose_source">Choose source</string>
+    <string name="image_storage_unavailable">Image storage unavailable</string>
+    <string name="image_processing_failed">Image processing failed</string>
 
     <!-- Accessibility - Content Descriptions -->
     <string name="content_description_search_icon">Search for products</string>

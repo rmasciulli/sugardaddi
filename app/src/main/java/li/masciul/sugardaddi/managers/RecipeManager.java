@@ -221,6 +221,33 @@ public class RecipeManager {
     }
 
     /**
+     * Updates a local image path on the currently-loaded recipe without
+     * triggering a network fetch or a full Room save.
+     *
+     * @param userImagePath     New userImagePath value, or null to clear it.
+     * @param userThumbnailPath New userThumbnailPath value, or null to clear it.
+     */
+    public void updateLocalImagePaths(
+            @Nullable String userImagePath,
+            @Nullable String userThumbnailPath) {
+        if (currentRecipe == null) return;
+
+        if (userImagePath != null || currentRecipe.getUserImagePath() != null) {
+            currentRecipe.setUserImagePath(userImagePath);
+        }
+        if (userThumbnailPath != null || currentRecipe.getUserThumbnailPath() != null) {
+            currentRecipe.setUserThumbnailPath(userThumbnailPath);
+        }
+
+        if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Local image paths updated in-memory: userImagePath="
+                    + userImagePath + ", userThumbnailPath=" + userThumbnailPath);
+        }
+
+        notifyRecipeLoaded(currentRecipe);
+    }
+
+    /**
      * Toggle the favourite state of the currently-loaded recipe.
      *
      * Handles both user-created and external (TheMealDB) recipes:

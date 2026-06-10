@@ -16,10 +16,15 @@ import androidx.appcompat.widget.Toolbar;
 
 import androidx.annotation.NonNull;
 
+import java.io.File;
+import java.util.concurrent.Executors;
+
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
+import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.network.NetworkManager;
 import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.repository.ProductRepository;
@@ -33,6 +38,9 @@ import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
+import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
+import li.masciul.sugardaddi.utils.image.ImageProcessor;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
  * ProductDetailsActivity - REFACTORED THIN SHELL (v5.1)
@@ -123,6 +131,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     // ========== BUSINESS LOGIC ==========
 
     private ProductManager productManager;
+    private ImagePickerHelper imagePicker;
     private ProductRepository productRepository;
 
     // Meal context — set when launched with RETURN_TO_MEAL intent extra
@@ -132,6 +141,10 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
     @Override
     protected void onBaseActivityCreated(Bundle savedInstanceState) {
+        // Register ActivityResultLaunchers before onStart() — safe here because
+        // onBaseActivityCreated() is called from BaseActivity.onCreate().
+        imagePicker = new ImagePickerHelper(this);
+
         setContentView(R.layout.activity_product_details);
 
         setupToolbar();
@@ -221,6 +234,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (imagePicker != null) imagePicker.shutdown();
 
         // Destroy the active renderer to release any held resources
         if (activeRenderer != null) {
@@ -445,7 +459,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_item_details, menu);
+        getMenuInflater().inflate(R.menu.menu_product_details, menu);
 
         // Favorite icon: filled vs outline depending on current state
         MenuItem favoriteItem = menu.findItem(R.id.action_favorite);
@@ -472,6 +486,24 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
             }
         }
 
+        // Remove image — shown only when user has set a custom full-size image.
+        MenuItem removeImageItem = menu.findItem(R.id.action_remove_image);
+        if (removeImageItem != null) {
+            FoodProduct product = productManager.getCurrentProduct();
+            removeImageItem.setVisible(product != null
+                    && product.getUserImagePath() != null
+                    && !product.getUserImagePath().trim().isEmpty());
+        }
+
+        // Remove thumbnail — shown only when user has set a custom thumbnail.
+        MenuItem removeThumbnailItem = menu.findItem(R.id.action_remove_thumbnail);
+        if (removeThumbnailItem != null) {
+            FoodProduct product = productManager.getCurrentProduct();
+            removeThumbnailItem.setVisible(product != null
+                    && ImageStorageManager.isUserDefinedThumbnail(
+                    product.getUserThumbnailPath()));
+        }
+
         return true;
     }
 
@@ -491,9 +523,195 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         } else if (id == R.id.action_open_web) {
             openInBrowser();
             return true;
+        } else if (id == R.id.action_replace_image) {
+            showImageSourceDialog(false);
+            return true;
+        } else if (id == R.id.action_replace_thumbnail) {
+            showImageSourceDialog(true);
+            return true;
+        } else if (id == R.id.action_remove_image) {
+            removeImage();
+            return true;
+        } else if (id == R.id.action_remove_thumbnail) {
+            removeThumbnail();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // ========== IMAGE MANAGEMENT ==========
+
+    /**
+     * Shows a dialog asking whether to use the camera or gallery,
+     * then launches ImagePickerHelper with the appropriate destination file.
+     *
+     * @param isThumbnail true when replacing the thumbnail (userThumbnailPath),
+     *                    false when replacing the full-size image (userImagePath).
+     */
+    private void showImageSourceDialog(boolean isThumbnail) {
+        FoodProduct product = productManager.getCurrentProduct();
+        if (product == null) return;
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+
+        // Construct the destination file — caller's responsibility per ImagePickerHelper contract.
+        File destinationFile;
+        int  maxDimension;
+        int  jpegQuality;
+
+        if (isThumbnail) {
+            // Deterministic name: {id}_custom.jpg — co-exists with auto-cached thumbnail.
+            destinationFile = storage.getUserThumbnailFile(product.getSearchableId());
+            maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
+            jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
+        } else {
+            destinationFile = storage.getUserProductHeroFile(product.getSearchableId());
+            maxDimension    = ImageProcessor.MAX_DIMENSION_HERO;
+            jpegQuality     = ImageProcessor.JPEG_QUALITY_HERO;
+        }
+
+        if (destinationFile == null) {
+            Toast.makeText(this, getSafeString(R.string.image_storage_unavailable),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Capture finals for lambda capture.
+        final File   dest     = destinationFile;
+        final int    maxDim   = maxDimension;
+        final int    quality  = jpegQuality;
+        final boolean isThumb = isThumbnail;
+
+        ImagePickerHelper.Callback callback = new ImagePickerHelper.Callback() {
+            @Override
+            public void onImageReady(@NonNull String localPath) {
+                persistImage(localPath, isThumb);
+            }
+
+            @Override
+            public void onCancelled(@NonNull String reason) {
+                // No UI feedback for plain cancellation — user intentionally exited.
+                logDebug("Image pick cancelled: " + reason);
+            }
+        };
+
+        // Ask camera vs gallery.
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(getSafeString(R.string.image_picker_choose_source))
+                .setPositiveButton(getSafeString(R.string.image_picker_camera),
+                        (d, w) -> imagePicker.showCamera(dest, maxDim, quality, callback))
+                .setNegativeButton(getSafeString(R.string.image_picker_gallery),
+                        (d, w) -> imagePicker.showGallery(dest, maxDim, quality, callback))
+                .show();
+    }
+
+    /**
+     * Persists the picked image path to Room via a targeted DAO update,
+     * then reloads the detail view to reflect the change.
+     *
+     * @param localPath   Absolute path delivered by ImagePickerHelper.
+     * @param isThumbnail true → update userThumbnailPath; false → update userImagePath.
+     */
+    private void persistImage(@NonNull String localPath, boolean isThumbnail) {
+        FoodProduct product = productManager.getCurrentProduct();
+        if (product == null) return;
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            if (isThumbnail) {
+                db.foodProductDao().updateUserThumbnailPath(product.getSearchableId(), localPath);
+            } else {
+                db.foodProductDao().updateUserImagePath(product.getSearchableId(), localPath);
+            }
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(isThumbnail
+                                ? R.string.thumbnail_replaced
+                                : R.string.image_replaced),
+                        Toast.LENGTH_SHORT).show();
+                if (isThumbnail) {
+                    productManager.updateLocalImagePaths(null, localPath);
+                } else {
+                    productManager.updateLocalImagePaths(localPath, null);
+                }
+                invalidateOptionsMenu();
+            });
+        });
+    }
+
+    /**
+     * Deletes the user-defined full-size image and clears userImagePath in Room.
+     * Only called when userImagePath is confirmed non-null (menu item is hidden otherwise).
+     */
+    private void removeImage() {
+        FoodProduct product = productManager.getCurrentProduct();
+        if (product == null || product.getUserImagePath() == null) return;
+
+        // Capture path before clearing — currentProduct.getUserImagePath()
+        // will be null by the time runOnUiThread() fires.
+        final String pathToDelete = product.getUserImagePath();
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+
+        // Clear in-memory state immediately on the main thread so that
+        // onActivityResumed() (triggered by menu dismissal) renders the
+        // correct state before the background thread completes.
+        productManager.updateLocalImagePaths(null, null);
+
+        // Move deleteFile() to the background thread alongside the DAO update —
+        // keeps the entire remove operation atomic and avoids a race with
+        // onActivityResumed() which re-renders with the stale product if
+        // deleteFile() runs on the main thread before updateLocalImagePaths() fires.
+        Executors.newSingleThreadExecutor().execute(() -> {
+            storage.deleteFile(pathToDelete);
+            AppDatabase.getInstance(this)
+                    .foodProductDao()
+                    .updateUserImagePath(product.getSearchableId(), null);
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(R.string.image_removed),
+                        Toast.LENGTH_SHORT).show();
+                invalidateOptionsMenu();
+            });
+        });
+    }
+
+    /**
+     * Deletes the user-defined thumbnail and clears userThumbnailPath in Room.
+     * The auto-cached thumbnail (thumbnailPath) remains on disk and resumes display.
+     * Only called when userThumbnailPath is confirmed non-null.
+     */
+    private void removeThumbnail() {
+        FoodProduct product = productManager.getCurrentProduct();
+        if (product == null || product.getUserThumbnailPath() == null) return;
+
+        // Capture paths before clearing — both will be null by the time
+        // runOnUiThread() fires so we capture them here on the main thread.
+        final String pathToDelete       = product.getUserThumbnailPath();
+        final String currentUserImage   = product.getUserImagePath();
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+
+        // deleteFile() moved to background thread — keeps the entire remove
+        // operation atomic and avoids a race with onActivityResumed().
+        Executors.newSingleThreadExecutor().execute(() -> {
+            storage.deleteFile(pathToDelete);
+            AppDatabase.getInstance(this)
+                    .foodProductDao()
+                    .updateUserThumbnailPath(product.getSearchableId(), null);
+            runOnUiThread(() -> {
+                Toast.makeText(this,
+                        getSafeString(R.string.thumbnail_removed),
+                        Toast.LENGTH_SHORT).show();
+                // Preserve userImagePath — we're only removing the thumbnail.
+                productManager.updateLocalImagePaths(currentUserImage, null);
+                invalidateOptionsMenu();
+            });
+        });
     }
 
     // ========== SHARE ==========

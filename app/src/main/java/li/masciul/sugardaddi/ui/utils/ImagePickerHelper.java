@@ -17,7 +17,6 @@ import androidx.core.content.FileProvider;
 import com.yalantis.ucrop.UCrop;
 
 import java.io.File;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,7 +24,7 @@ import li.masciul.sugardaddi.utils.image.ImageProcessor;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
- * ImagePickerHelper — UI layer handler for picking and processing user photos.
+ * ImagePickerHelper - UI layer handler for picking and processing user photos.
  *
  * RESPONSIBILITIES
  * ================
@@ -38,12 +37,30 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *
  * WHAT THIS CLASS DOES NOT DO
  * ============================
- * - No disk path management        → ImageStorageManager
+ * - No disk path management        → ImageStorageManager (caller's responsibility)
  * - No image resizing/compression  → ImageProcessor
  * - No thumbnail downloading       → ThumbnailDownloader
  * - No database access             → caller persists the returned path in Room
+ * - No filename generation         → caller constructs the destination File
  *
- * LIFECYCLE CONTRACT — CRITICAL
+ * DESIGN PRINCIPLE - CALLER OWNS THE PATH
+ * ========================================
+ * The caller is responsible for constructing the destination File before calling
+ * showCamera() or showGallery(). This keeps ImagePickerHelper truly path-agnostic:
+ * it does not know whether the image is a product hero, recipe thumbnail, meal photo,
+ * or step photo - that is the caller's concern.
+ *
+ * Example (product hero image):
+ *   File dest = storageManager.getProductHeroFile(UUID.randomUUID() + ".jpg");
+ *   imagePicker.showCamera(dest, ImageProcessor.MAX_DIMENSION_HERO,
+ *                          ImageProcessor.JPEG_QUALITY_HERO, callback);
+ *
+ * Example (user thumbnail override, deterministic filename):
+ *   File dest = storageManager.getUserThumbnailFile(product.getSearchableId());
+ *   imagePicker.showGallery(dest, ImageProcessor.MAX_DIMENSION_THUMBNAIL,
+ *                           ImageProcessor.JPEG_QUALITY_THUMBNAIL, callback);
+ *
+ * LIFECYCLE CONTRACT - CRITICAL
  * ==============================
  * ActivityResultLaunchers MUST be registered before onStart(). This class must
  * therefore be instantiated inside Activity.onCreate(), before super.onCreate()
@@ -53,7 +70,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  * CORRECT USAGE
  * =============
  * <pre>
- * public class MealDetailActivity extends AppCompatActivity {
+ * public class ProductDetailsActivity extends AppCompatActivity {
  *
  *     private ImagePickerHelper imagePicker;
  *
@@ -61,16 +78,20 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *     protected void onCreate(Bundle savedInstanceState) {
  *         super.onCreate(savedInstanceState);
  *
- *         // Must be created here — registers launchers before onStart()
- *         ImageStorageManager storageManager =
+ *         // Must be created here - registers launchers before onStart()
+ *         imagePicker = new ImagePickerHelper(this);
+ *
+ *         setContentView(R.layout.activity_product_details);
+ *     }
+ *
+ *     private void replaceHeroImage() {
+ *         ImageStorageManager storage =
  *             ((SugarDaddiApplication) getApplication()).getImageStorageManager();
- *         imagePicker = new ImagePickerHelper(
- *             this, storageManager, ImagePickerHelper.Target.MEAL);
- *
- *         setContentView(R.layout.activity_meal_detail);
- *
- *         addPhotoButton.setOnClickListener(v ->
- *             imagePicker.showCamera(myCallback)); // safe any time after onCreate
+ *         File dest = storage.getProductHeroFile(UUID.randomUUID() + ".jpg");
+ *         imagePicker.showGallery(dest,
+ *             ImageProcessor.MAX_DIMENSION_HERO,
+ *             ImageProcessor.JPEG_QUALITY_HERO,
+ *             path -> persistHeroImage(path));
  *     }
  *
  *     {@literal @}Override
@@ -83,14 +104,14 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *
  * PICK FLOW
  * =========
- *   showCamera()  ─┐
- *                  ├─▶ uCrop (mandatory crop/confirm step)
- *   showGallery() ─┘        │
- *                            ▼
- *                     ImageProcessor.process()   (background thread)
- *                            │
- *                            ▼
- *                     Callback.onImageReady(path) (main thread)
+ *   showCamera(dest, ...)  ─┐
+ *                           ├─▶ uCrop (mandatory crop/confirm step, writes to dest)
+ *   showGallery(dest, ...) ─┘        │
+ *                                    ▼
+ *                             ImageProcessor.process()   (background thread, in-place)
+ *                                    │
+ *                                    ▼
+ *                             Callback.onImageReady(path) (main thread)
  *
  * UCROP CONFIGURATION
  * ====================
@@ -107,33 +128,9 @@ public class ImagePickerHelper {
 
     private static final String TAG = "SugarDaddi_Images";
 
-    /** FileProvider authority — must match AndroidManifest.xml exactly. */
+    /** FileProvider authority - must match AndroidManifest.xml exactly. */
     public static final String FILE_PROVIDER_AUTHORITY =
             "li.masciul.sugardaddi.fileprovider";
-
-    // =========================================================================
-    // TARGET — determines which directory the processed image is saved to
-    // =========================================================================
-
-    /**
-     * Determines the destination directory for the processed image.
-     *
-     * Matches the directory structure in ImageStorageManager:
-     *   PRODUCT_HERO → sugardaddi/products/
-     *   RECIPE_HERO  → sugardaddi/recipes/
-     *   MEAL         → sugardaddi/meals/
-     *   STEP         → sugardaddi/steps/
-     */
-    public enum Target {
-        /** Hero image for a food product — stored in products/. */
-        PRODUCT_HERO,
-        /** Hero image for a recipe — stored in recipes/. */
-        RECIPE_HERO,
-        /** Photo attached to a meal journal entry — stored in meals/. */
-        MEAL,
-        /** Instructional photo for a recipe preparation step — stored in steps/. */
-        STEP
-    }
 
     // =========================================================================
     // CALLBACK INTERFACE
@@ -156,7 +153,7 @@ public class ImagePickerHelper {
         /**
          * Called when the pick was cancelled or failed at any step.
          *
-         * Cancellation is normal user behaviour — simply keep the existing
+         * Cancellation is normal user behaviour - simply keep the existing
          * image state unchanged. Only log errors, don't show an error UI
          * for plain cancellations.
          *
@@ -169,18 +166,16 @@ public class ImagePickerHelper {
     // STATE
     // =========================================================================
 
-    private final AppCompatActivity  activity;
-    private final ImageStorageManager storageManager;
-    private final Target              target;
-    private final Handler             mainHandler;
-    private final ExecutorService     processingExecutor;
+    private final AppCompatActivity activity;
+    private final Handler           mainHandler;
+    private final ExecutorService   processingExecutor;
 
     /**
      * The URI passed to the camera intent. Must survive between the launch
-     * and the result — stored as a field for exactly that reason.
+     * and the result - stored as a field for exactly that reason.
      * Null when no camera session is in progress.
      */
-    @Nullable private Uri  pendingCameraUri;
+    @Nullable private Uri pendingCameraUri;
 
     /**
      * The File backing pendingCameraUri. Kept separately so we can hand it
@@ -189,10 +184,11 @@ public class ImagePickerHelper {
     @Nullable private File pendingCameraFile;
 
     /**
-     * The File uCrop should write its cropped output to.
-     * Created fresh per pick session (UUID-based name in the target directory).
+     * The caller-provided destination file. uCrop writes its cropped output
+     * here; ImageProcessor then processes it in-place.
+     * Set at the start of each pick session; cleared after delivery.
      */
-    @Nullable private File pendingCropOutputFile;
+    @Nullable private File pendingDestinationFile;
 
     /**
      * The active result callback. Set by showCamera()/showGallery(),
@@ -200,24 +196,43 @@ public class ImagePickerHelper {
      */
     @Nullable private Callback pendingCallback;
 
+    /**
+     * Maximum dimension (px) for the processed image.
+     * Set by the caller per session - determines resize behaviour in ImageProcessor.
+     */
+    private int pendingMaxDimension;
+
+    /**
+     * JPEG quality (1–100) for the processed image.
+     * Set by the caller per session.
+     */
+    private int pendingJpegQuality;
+
     // =========================================================================
     // ACTIVITY RESULT LAUNCHERS
     // =========================================================================
 
-    /** Camera launcher — TakePicture contract. Registered unconditionally in onCreate(). */
+    // Camera launcher - TakePicture contract. Registered unconditionally in onCreate().
     private final ActivityResultLauncher<Uri>    cameraLauncher;
 
-    /** Gallery launcher — GetContent contract. Registered unconditionally in onCreate(). */
+    // Gallery launcher - GetContent contract. Registered unconditionally in onCreate().
     private final ActivityResultLauncher<String> galleryLauncher;
 
     /**
-     * uCrop launcher — StartActivityForResult contract.
+     * uCrop launcher - StartActivityForResult contract.
      * uCrop uses a plain Activity intent; we wrap it and parse the result ourselves.
      */
     private final ActivityResultLauncher<Intent> cropLauncher;
 
+    /**
+     * Camera permission launcher — requests android.permission.CAMERA at runtime.
+     * On grant, resumes the pending camera session. On deny, delivers cancelled.
+     * Must be registered unconditionally in onCreate() alongside the other launchers.
+     */
+    private final ActivityResultLauncher<String> cameraPermissionLauncher;
+
     // =========================================================================
-    // CONSTRUCTOR — MUST be called inside Activity.onCreate()
+    // CONSTRUCTOR - MUST be called inside Activity.onCreate()
     // =========================================================================
 
     /**
@@ -226,19 +241,13 @@ public class ImagePickerHelper {
      * MUST be called inside {@code Activity.onCreate()}, before {@code onStart()}.
      * Violating this constraint throws {@link IllegalStateException}.
      *
-     * @param activity       The host Activity.
-     * @param storageManager Used to construct destination file paths.
-     *                       Use the application-scoped singleton from SugarDaddiApplication.
-     * @param target         Determines which directory the processed image is saved to.
+     * The caller is fully responsible for constructing destination Files before
+     * calling showCamera() or showGallery(). Use ImageStorageManager for paths.
+     *
+     * @param activity The host Activity.
      */
-    public ImagePickerHelper(
-            @NonNull AppCompatActivity activity,
-            @NonNull ImageStorageManager storageManager,
-            @NonNull Target target) {
-
+    public ImagePickerHelper(@NonNull AppCompatActivity activity) {
         this.activity           = activity;
-        this.storageManager     = storageManager;
-        this.target             = target;
         this.mainHandler        = new Handler(Looper.getMainLooper());
         this.processingExecutor = Executors.newSingleThreadExecutor();
 
@@ -257,7 +266,24 @@ public class ImagePickerHelper {
                 new ActivityResultContracts.StartActivityForResult(),
                 this::onCropResult);
 
-        Log.d(TAG, "ImagePickerHelper initialised for target: " + target.name());
+        // RequestPermission: requests CAMERA at runtime (API 23+).
+        // On grant → resume pending camera session.
+        // On deny → deliver cancelled and clear pending state.
+        this.cameraPermissionLauncher = activity.registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        // Permission just granted — resume the pending session.
+                        if (pendingDestinationFile != null && pendingCallback != null) {
+                            launchCameraInternal();
+                        }
+                    } else {
+                        deliverCancelled(pendingCallback, "Camera permission denied");
+                        clearPendingState();
+                    }
+                });
+
+        Log.d(TAG, "ImagePickerHelper initialised");
     }
 
     // =========================================================================
@@ -267,41 +293,66 @@ public class ImagePickerHelper {
     /**
      * Launches the system camera.
      *
-     * Creates a destination file in the target directory, wraps it in a
-     * FileProvider URI (required on API 24+), and launches ACTION_IMAGE_CAPTURE.
-     * On success the photo flows through uCrop → ImageProcessor before the
-     * callback fires.
+     * Wraps the destination file in a FileProvider URI (required on API 24+)
+     * and launches ACTION_IMAGE_CAPTURE. On success the photo flows through
+     * uCrop → ImageProcessor before the callback fires.
      *
      * Safe to call from any thread after onCreate() has completed.
      *
-     * @param callback Result callback. Must not be null.
+     * @param destinationFile The file where the final processed image will be saved.
+     *                        The caller constructs this via ImageStorageManager.
+     *                        Must be in a directory covered by file_paths.xml.
+     * @param maxDimension    Maximum pixel dimension for the longer edge after processing.
+     *                        Use {@link ImageProcessor#MAX_DIMENSION_HERO} or
+     *                        {@link ImageProcessor#MAX_DIMENSION_THUMBNAIL}.
+     * @param jpegQuality     JPEG compression quality (1–100).
+     *                        Use {@link ImageProcessor#JPEG_QUALITY_HERO} or
+     *                        {@link ImageProcessor#JPEG_QUALITY_THUMBNAIL}.
+     * @param callback        Result callback. Must not be null.
      */
-    public void showCamera(@NonNull Callback callback) {
-        this.pendingCallback = callback;
+    public void showCamera(
+            @NonNull File destinationFile,
+            int maxDimension,
+            int jpegQuality,
+            @NonNull Callback callback) {
 
-        // UUID filename avoids collisions between sessions.
-        String filename   = UUID.randomUUID().toString() + "_raw.jpg";
-        File   cameraFile = resolveFileForTarget(filename);
+        // Store pending session state regardless of permission outcome —
+        // launchCameraInternal() and the permission callback both rely on it.
+        this.pendingCallback        = callback;
+        this.pendingDestinationFile = destinationFile;
+        this.pendingMaxDimension    = maxDimension;
+        this.pendingJpegQuality     = jpegQuality;
 
-        if (cameraFile == null) {
-            deliverCancelled(callback, "Could not create camera output file");
+        // On API 23+, CAMERA is a runtime permission — check before launching.
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                activity, android.Manifest.permission.CAMERA)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "CAMERA permission not granted — requesting");
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA);
             return;
         }
 
-        // Camera app requires a pre-existing file URI.
-        File created = storageManager.createEmptyFile(cameraFile);
-        if (created == null) {
-            deliverCancelled(callback, "Could not prepare camera output file");
+        launchCameraInternal();
+    }
+
+    /**
+     * Internal camera launch — called after CAMERA permission is confirmed.
+     * Shared by showCamera() (permission already held) and the permission
+     * result callback (permission just granted).
+     */
+    private void launchCameraInternal() {
+        if (!ensureFileExists(pendingDestinationFile)) {
+            deliverCancelled(pendingCallback, "Could not prepare camera output file");
             return;
         }
 
         Uri cameraUri = FileProvider.getUriForFile(
-                activity, FILE_PROVIDER_AUTHORITY, created);
+                activity, FILE_PROVIDER_AUTHORITY, pendingDestinationFile);
 
         this.pendingCameraUri  = cameraUri;
-        this.pendingCameraFile = created;
+        this.pendingCameraFile = pendingDestinationFile;
 
-        Log.d(TAG, "Launching camera → " + created.getName());
+        Log.d(TAG, "Launching camera → " + pendingDestinationFile.getName());
         cameraLauncher.launch(cameraUri);
     }
 
@@ -309,15 +360,28 @@ public class ImagePickerHelper {
      * Launches the system gallery / image picker.
      *
      * The selected image flows through uCrop → ImageProcessor before the
-     * callback fires.
+     * callback fires. The processed result is written to {@code destinationFile}.
      *
      * Safe to call from any thread after onCreate() has completed.
      *
-     * @param callback Result callback. Must not be null.
+     * @param destinationFile The file where the final processed image will be saved.
+     *                        The caller constructs this via ImageStorageManager.
+     * @param maxDimension    Maximum pixel dimension for the longer edge after processing.
+     * @param jpegQuality     JPEG compression quality (1–100).
+     * @param callback        Result callback. Must not be null.
      */
-    public void showGallery(@NonNull Callback callback) {
-        this.pendingCallback = callback;
-        Log.d(TAG, "Launching gallery picker");
+    public void showGallery(
+            @NonNull File destinationFile,
+            int maxDimension,
+            int jpegQuality,
+            @NonNull Callback callback) {
+
+        this.pendingCallback        = callback;
+        this.pendingDestinationFile = destinationFile;
+        this.pendingMaxDimension    = maxDimension;
+        this.pendingJpegQuality     = jpegQuality;
+
+        Log.d(TAG, "Launching gallery picker → " + destinationFile.getName());
         galleryLauncher.launch("image/*");
     }
 
@@ -340,6 +404,8 @@ public class ImagePickerHelper {
             return;
         }
         Log.d(TAG, "Camera photo received: " + pendingCameraFile.getName());
+        // Camera wrote to pendingCameraFile, which is also pendingDestinationFile.
+        // Pass it directly to uCrop - no separate raw file to manage.
         launchCrop(Uri.fromFile(pendingCameraFile));
     }
 
@@ -357,14 +423,14 @@ public class ImagePickerHelper {
                 && result.getData() != null) {
 
             Uri croppedUri = UCrop.getOutput(result.getData());
-            if (croppedUri == null || pendingCropOutputFile == null) {
+            if (croppedUri == null || pendingDestinationFile == null) {
                 cleanupPendingFiles();
                 deliverCancelled(pendingCallback, "uCrop returned no output URI");
                 return;
             }
 
-            Log.d(TAG, "Crop complete: " + pendingCropOutputFile.getName());
-            processAndDeliver(pendingCropOutputFile, pendingCallback);
+            Log.d(TAG, "Crop complete → " + pendingDestinationFile.getName());
+            processAndDeliver(pendingDestinationFile, pendingCallback);
 
         } else if (result.getData() != null) {
             Throwable error = UCrop.getError(result.getData());
@@ -385,24 +451,22 @@ public class ImagePickerHelper {
     /**
      * Launches uCrop with the given source URI.
      *
-     * Creates a fresh UUID-named output file in the target directory for uCrop
-     * to write into. Source may be file:// (camera) or content:// (gallery).
+     * uCrop writes its cropped output directly to the caller-provided destination
+     * file. Source may be file:// (camera) or content:// (gallery).
      */
     private void launchCrop(@NonNull Uri sourceUri) {
-        String outputFilename  = UUID.randomUUID().toString() + ".jpg";
-        File   outputFile      = resolveFileForTarget(outputFilename);
-
-        if (outputFile == null) {
-            cleanupPendingFiles();
-            deliverCancelled(pendingCallback, "Could not create crop output file");
+        if (pendingDestinationFile == null) {
+            deliverCancelled(pendingCallback, "No destination file set for crop");
             return;
         }
 
-        this.pendingCropOutputFile = outputFile;
-        Uri outputUri = Uri.fromFile(outputFile);
+        // Ensure the destination file exists so uCrop can write to it.
+        ensureFileExists(pendingDestinationFile);
+
+        Uri outputUri = Uri.fromFile(pendingDestinationFile);
 
         UCrop.Options options = new UCrop.Options();
-        // Free-style crop — no fixed ratio. Crop frame initially covers the full
+        // Free-style crop - no fixed ratio. Crop frame initially covers the full
         // image so the user can accept immediately or adjust freely.
         options.setFreeStyleCropEnabled(true);
         options.setShowCropGrid(true);
@@ -411,7 +475,8 @@ public class ImagePickerHelper {
                 .withOptions(options)
                 .getIntent(activity);
 
-        Log.d(TAG, "Launching uCrop: " + sourceUri + " → " + outputFile.getName());
+        Log.d(TAG, "Launching uCrop: " + sourceUri
+                + " → " + pendingDestinationFile.getName());
         cropLauncher.launch(cropIntent);
     }
 
@@ -423,23 +488,24 @@ public class ImagePickerHelper {
      * Compresses and resizes the cropped file on a background thread, then
      * delivers the result path via callback on the main thread.
      *
-     * Processes in-place (source == destination) — ImageProcessor is safe for this
+     * Processes in-place (source == destination) - ImageProcessor is safe for this
      * because the bitmap is fully decoded into memory before the output stream opens.
+     *
+     * Uses the maxDimension and jpegQuality provided by the caller at session start.
      */
-    private void processAndDeliver(@NonNull File croppedFile, @Nullable Callback callback) {
+    private void processAndDeliver(@NonNull File destinationFile,
+                                   @Nullable Callback callback) {
+        // Capture session-level sizing params before clearing pending state.
+        final int maxDimension = this.pendingMaxDimension;
+        final int jpegQuality  = this.pendingJpegQuality;
+
         processingExecutor.execute(() -> {
             File result = ImageProcessor.process(
-                    croppedFile,
-                    croppedFile,   // in-place: no intermediate file needed
-                    ImageProcessor.MAX_DIMENSION_USER_PHOTO,
-                    ImageProcessor.JPEG_QUALITY_USER_PHOTO);
+                    destinationFile,
+                    destinationFile,   // in-place: no intermediate file needed
+                    maxDimension,
+                    jpegQuality);
 
-            // Delete raw camera file if it differs from the crop output.
-            if (pendingCameraFile != null
-                    && pendingCameraFile.exists()
-                    && !pendingCameraFile.equals(croppedFile)) {
-                pendingCameraFile.delete();
-            }
             clearPendingState();
 
             if (result != null) {
@@ -459,55 +525,62 @@ public class ImagePickerHelper {
     // =========================================================================
 
     /**
-     * Resolves the correct destination File for the current Target.
+     * Ensures the given file exists on disk, creating it and its parent directories
+     * if necessary. Required before handing the URI to the camera or uCrop.
      *
-     * Does NOT create the file on disk — use ImageStorageManager.createEmptyFile()
-     * when the file must exist before being handed to an external app (camera).
+     * @return true if the file exists (or was created); false on failure.
      */
-    @Nullable
-    private File resolveFileForTarget(@NonNull String filename) {
-        switch (target) {
-            case PRODUCT_HERO: return storageManager.getProductHeroFile(filename);
-            case RECIPE_HERO:  return storageManager.getRecipeHeroFile(filename);
-            case MEAL:         return storageManager.getMealPhotoFile(filename);
-            case STEP:         return storageManager.getStepPhotoFile(filename);
-            default:
-                Log.e(TAG, "Unknown target: " + target);
-                return null;
+    private boolean ensureFileExists(@NonNull File file) {
+        try {
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists()) {
+                if (!parent.mkdirs()) {
+                    Log.e(TAG, "Failed to create parent dirs for: "
+                            + file.getAbsolutePath());
+                    return false;
+                }
+            }
+            if (!file.exists()) {
+                boolean created = file.createNewFile();
+                if (!created) {
+                    // File may already exist after a crash/retry - acceptable.
+                    Log.d(TAG, "File already exists: " + file.getAbsolutePath());
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to ensure file exists: " + file.getAbsolutePath(), e);
+            return false;
         }
     }
 
     /** Deletes any temporary files from a pick session that did not complete. */
     private void cleanupPendingFiles() {
-        if (pendingCameraFile != null && pendingCameraFile.exists()) {
-            pendingCameraFile.delete();
-            Log.d(TAG, "Cleaned up camera temp: " + pendingCameraFile.getName());
-        }
-        if (pendingCropOutputFile != null && pendingCropOutputFile.exists()) {
-            pendingCropOutputFile.delete();
-            Log.d(TAG, "Cleaned up crop output: " + pendingCropOutputFile.getName());
+        // For camera sessions, pendingCameraFile == pendingDestinationFile.
+        // If the session was cancelled we clean up the partial/empty destination.
+        if (pendingDestinationFile != null && pendingDestinationFile.exists()) {
+            pendingDestinationFile.delete();
+            Log.d(TAG, "Cleaned up destination file: "
+                    + pendingDestinationFile.getName());
         }
         clearPendingState();
     }
 
-    /** Clears all pending session state. */
+    /** Clears all pending session state without deleting files. */
     private void clearPendingState() {
-        pendingCameraUri      = null;
-        pendingCameraFile     = null;
-        pendingCropOutputFile = null;
-        pendingCallback       = null;
+        pendingCameraUri        = null;
+        pendingCameraFile       = null;
+        pendingDestinationFile  = null;
+        pendingCallback         = null;
+        pendingMaxDimension     = 0;
+        pendingJpegQuality      = 0;
     }
 
-    // =========================================================================
-    // CALLBACK DELIVERY
-    // =========================================================================
-
-    private void deliverCancelled(@Nullable Callback callback, @NonNull String reason) {
-        Log.d(TAG, "Pick cancelled/failed: " + reason);
-        if (callback == null) return;
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            callback.onCancelled(reason);
-        } else {
+    /** Delivers a cancellation via the given callback on the main thread. */
+    private void deliverCancelled(@Nullable Callback callback,
+                                  @NonNull String reason) {
+        Log.d(TAG, "Pick cancelled: " + reason);
+        if (callback != null) {
             mainHandler.post(() -> callback.onCancelled(reason));
         }
     }
