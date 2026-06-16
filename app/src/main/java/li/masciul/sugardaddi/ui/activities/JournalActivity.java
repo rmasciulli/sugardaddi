@@ -253,16 +253,19 @@ public class JournalActivity extends BaseActivity implements
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.nav_journal) {
+        if (id == R.id.nav_search) {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_journal) {
             // Already on journal - just close drawer
         } else if (id == R.id.nav_create_meal) {
             Intent intent = new Intent(this, CreateMealActivity.class);
             startActivity(intent);
-        } else if (id == R.id.nav_search) {
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
         } else if (id == R.id.nav_favorites) {
             Intent intent = new Intent(this, FavoritesActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_data_sources) {
+            Intent intent = new Intent(this, DataSourcesActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);

@@ -570,6 +570,8 @@ public class MainActivity extends BaseActivity implements
                 intent.putExtra("RETURN_TO_MEAL", returnToMealId);
             }
             startActivity(intent);
+        } else if (id == R.id.nav_data_sources) {
+            startActivity(new Intent(this, DataSourcesActivity.class));
         } else if (id == R.id.nav_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
         }

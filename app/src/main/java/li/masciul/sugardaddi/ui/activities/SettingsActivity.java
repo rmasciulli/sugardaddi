@@ -88,15 +88,14 @@ public class SettingsActivity extends BaseActivity
     private MaterialButton clearCacheButton;
 
     // =========================================================================
-    // DATA SOURCE CARDS
+    // CACHE CARD
     // =========================================================================
 
-    /**
-     * One manager per registered DataSource, in alphabetical order.
-     * Created once in onCreate; their lifecycle hooks are called in
-     * onActivityResumed / onPause / onDestroy.
-     */
-    private final List<DataSourceCardManager> cardManagers = new ArrayList<>();
+    private TextView       cacheProductCount;
+    private TextView       cacheRecipeCount;
+    private MaterialButton clearProductCacheButton;
+    private MaterialButton clearRecipeCacheButton;
+    private MaterialButton clearAllCacheButton;
 
     // =========================================================================
     // IMAGE LIBRARY CARD
@@ -138,7 +137,7 @@ public class SettingsActivity extends BaseActivity
         initializeViews();
         setupListeners();
         loadCurrentSettings();
-        setupDataSourceCards();
+        setupCacheCard();
         setupImageLibraryCard();
 
         logDebug("SettingsActivity v4.0 initialised");
@@ -167,36 +166,21 @@ public class SettingsActivity extends BaseActivity
             }
         }
 
-        for (DataSourceCardManager manager : cardManagers) {
-            manager.onResume();
-        }
+        refreshCacheCounts();
 
         // Refresh storage summary so counts stay accurate when adding items
         // as favorites in other screens before navigating back to Settings.
         if (refreshStorageRunnable != null) refreshStorageRunnable.run();
-
-        logDebug("SettingsActivity resumed - " + cardManagers.size() + " card(s) refreshed");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
-        // Unregister all import receivers to prevent leaks
-        for (DataSourceCardManager manager : cardManagers) {
-            manager.onPause();
-        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        // Shut down each card's background executor
-        for (DataSourceCardManager manager : cardManagers) {
-            manager.onDestroy();
-        }
-        cardManagers.clear();
 
         // Shut down the image library card's background executor
         imageSettingsExecutor.shutdown();
@@ -249,6 +233,7 @@ public class SettingsActivity extends BaseActivity
         else if (id == R.id.nav_create_meal) startActivity(new Intent(this, CreateMealActivity.class));
         else if (id == R.id.nav_search)      startActivity(new Intent(this, MainActivity.class));
         else if (id == R.id.nav_favorites)   startActivity(new Intent(this, FavoritesActivity.class));
+        else if (id == R.id.nav_data_sources) startActivity(new Intent(this, DataSourcesActivity.class));
         // nav_settings: already here - just close drawer
 
         drawerLayout.closeDrawer(GravityCompat.START);
@@ -271,11 +256,6 @@ public class SettingsActivity extends BaseActivity
     private void initializeViews() {
         languageRadioGroup = findViewById(R.id.languageRadioGroup);
         themeRadioGroup    = findViewById(R.id.themeRadioGroup);
-        clearCacheButton   = findViewById(R.id.clearCacheButton);
-
-        if (clearCacheButton != null) {
-            clearCacheButton.setText(getSafeString(R.string.menu_clear_cache));
-        }
     }
 
     private void loadCurrentSettings() {
@@ -312,7 +292,6 @@ public class SettingsActivity extends BaseActivity
     private void setupListeners() {
         setupLanguageListener();
         setupThemeListener();
-        setupCacheButton();
     }
 
     private void setupLanguageListener() {
@@ -344,108 +323,152 @@ public class SettingsActivity extends BaseActivity
         });
     }
 
-    private void setupCacheButton() {
-        if (clearCacheButton != null) {
-            clearCacheButton.setOnClickListener(v -> clearApplicationCache());
-        }
-    }
-
     // =========================================================================
-    // CACHE MANAGEMENT
+    // CACHE CARD
     // =========================================================================
 
     /**
-     * Clears all food products and orphaned nutrition rows from Room.
-     *
-     * After clearing, each DataSourceCardManager.onResume() will call
-     * SettingsProvider.isDatabaseReady() which now returns false, so the cards
-     * automatically reflect the empty state on next resume.
+     * Wires the cache management card views and sets up click listeners
+     * for the three clear buttons (products, recipes, all).
      */
-    private void clearApplicationCache() {
-        logDebug("Cache clear initiated");
-        clearCacheButton.setEnabled(false);
-        clearCacheButton.setText(getSafeString(R.string.clearing_cache));
+    private void setupCacheCard() {
+        cacheProductCount       = findViewById(R.id.cacheProductCount);
+        cacheRecipeCount        = findViewById(R.id.cacheRecipeCount);
+        clearProductCacheButton = findViewById(R.id.clearProductCacheButton);
+        clearRecipeCacheButton  = findViewById(R.id.clearRecipeCacheButton);
+        clearAllCacheButton     = findViewById(R.id.clearAllCacheButton);
 
-        new Thread(() -> {
+        if (clearProductCacheButton != null) {
+            clearProductCacheButton.setOnClickListener(v -> clearProductCache());
+        }
+        if (clearRecipeCacheButton != null) {
+            clearRecipeCacheButton.setOnClickListener(v -> clearRecipeCache());
+        }
+        if (clearAllCacheButton != null) {
+            clearAllCacheButton.setOnClickListener(v -> clearAllCache());
+        }
+
+        refreshCacheCounts();
+    }
+
+    /**
+     * Loads the current product and recipe counts from Room on a background
+     * thread and updates the count TextViews on the main thread.
+     * Called on every onActivityResumed() so counts stay accurate.
+     */
+    private void refreshCacheCounts() {
+        imageSettingsExecutor.execute(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
-                int count = db.foodProductDao().getProductCount();
+                int productCount = db.foodProductDao().getProductCount();
+                int recipeCount  = db.recipeDao().getCount();
 
-                try {
-                    db.foodProductDao().clearAllProducts();
-                    db.nutritionDao().deleteOrphanedNutrition();
-                } catch (Exception dbError) {
-                    logError("DB clear error - falling back to clearAllTables", dbError);
-                    db.clearAllTables();
-                }
+                String productText = getString(R.string.cache_count_format, productCount);
+                String recipeText  = getString(R.string.cache_count_format, recipeCount);
 
-                // After clearing, each source's SettingsProvider.resetDatabaseState()
-                // must be called so isDatabaseReady() returns false for local-DB sources.
-                // We do this by calling it on every registered source.
-                for (DataSourceCardManager manager : cardManagers) {
-                    // resetDatabaseState is a no-op for sources without a local DB
-                    // (OpenFoodFacts) and meaningful for Ciqual / USDA.
-                    // DataSourceCardManager exposes a package-private resetState() for this.
-                    manager.resetSourceDatabaseState(this);
-                }
-
-                final int cleared = count;
                 runOnUiThread(() -> {
-                    clearCacheButton.setEnabled(true);
-                    clearCacheButton.setText(getSafeString(R.string.menu_clear_cache));
-                    Toast.makeText(this,
-                            getSafeString(R.string.cache_cleared_items, cleared),
-                            Toast.LENGTH_LONG).show();
-                    logDebug("Cache cleared: " + cleared + " products removed");
-
-                    // Refresh all cards to show updated (empty) DB state
-                    for (DataSourceCardManager mgr : cardManagers) {
-                        mgr.refresh();
-                    }
+                    if (cacheProductCount != null) cacheProductCount.setText(productText);
+                    if (cacheRecipeCount  != null) cacheRecipeCount.setText(recipeText);
                 });
-
             } catch (Exception e) {
-                logError("Cache clear failed", e);
-                runOnUiThread(() -> {
-                    clearCacheButton.setEnabled(true);
-                    clearCacheButton.setText(getSafeString(R.string.menu_clear_cache));
-                    Toast.makeText(this,
-                            getSafeString(R.string.cache_clear_failed),
-                            Toast.LENGTH_SHORT).show();
-                });
+                logError("refreshCacheCounts failed", e);
             }
-        }).start();
+        });
     }
 
-    // =========================================================================
-    // DATA SOURCE CARDS
-    // =========================================================================
+    /**
+     * Clears all cached food products (and their orphaned nutrition rows)
+     * from Room. Does not affect recipes, meals, or user-created content.
+     */
+    private void clearProductCache() {
+        clearProductCacheButton.setEnabled(false);
+        imageSettingsExecutor.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                db.foodProductDao().clearAllProducts();
+                db.nutritionDao().deleteOrphanedNutrition();
+
+                // Reset database state for all local-DB sources (e.g. Ciqual, USDA).
+                List<DataSource> sources =
+                        DataSourceManager.getInstance(this).getAllSources();
+                for (DataSource source : sources) {
+                    if (source.getSettingsProvider() != null) {
+                        source.getSettingsProvider().resetDatabaseState(this);
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    clearProductCacheButton.setEnabled(true);
+                    android.widget.Toast.makeText(this,
+                            getSafeString(R.string.cache_cleared_products),
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    refreshCacheCounts();
+                });
+            } catch (Exception e) {
+                logError("clearProductCache failed", e);
+                runOnUiThread(() -> clearProductCacheButton.setEnabled(true));
+            }
+        });
+    }
 
     /**
-     * Creates one DataSourceCardManager per registered DataSource and inflates
-     * its card into the dataSourcesContainer LinearLayout.
-     *
-     * Sources are returned alphabetically by DataSourceManager.getAllSources().
-     * No source-specific code here - each card is driven by its SettingsProvider.
+     * Clears all cached recipes from Room.
+     * Does not affect food products, meals, or user-created content.
      */
-    private void setupDataSourceCards() {
-        LinearLayout container = findViewById(R.id.dataSourcesContainer);
-        if (container == null) {
-            logError("dataSourcesContainer not found in layout", null);
-            return;
-        }
+    private void clearRecipeCache() {
+        clearRecipeCacheButton.setEnabled(false);
+        imageSettingsExecutor.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                db.recipeDao().deleteAll();
 
-        List<DataSource> sources = DataSourceManager.getInstance(this).getAllSources();
+                runOnUiThread(() -> {
+                    clearRecipeCacheButton.setEnabled(true);
+                    android.widget.Toast.makeText(this,
+                            getSafeString(R.string.cache_cleared_recipes),
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    refreshCacheCounts();
+                });
+            } catch (Exception e) {
+                logError("clearRecipeCache failed", e);
+                runOnUiThread(() -> clearRecipeCacheButton.setEnabled(true));
+            }
+        });
+    }
 
-        for (DataSource source : sources) {
-            DataSourceCardManager manager =
-                    new DataSourceCardManager(source, getApplicationContext());
-            manager.attach(container);
-            cardManagers.add(manager);
-            logDebug("Card created for: " + source.getSourceId());
-        }
+    /**
+     * Clears all cached food products and recipes from Room.
+     */
+    private void clearAllCache() {
+        clearAllCacheButton.setEnabled(false);
+        imageSettingsExecutor.execute(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                db.foodProductDao().clearAllProducts();
+                db.nutritionDao().deleteOrphanedNutrition();
+                db.recipeDao().deleteAll();
 
-        logDebug("setupDataSourceCards complete - " + cardManagers.size() + " card(s)");
+                // Reset database state for all local-DB sources.
+                List<DataSource> sources =
+                        DataSourceManager.getInstance(this).getAllSources();
+                for (DataSource source : sources) {
+                    if (source.getSettingsProvider() != null) {
+                        source.getSettingsProvider().resetDatabaseState(this);
+                    }
+                }
+
+                runOnUiThread(() -> {
+                    clearAllCacheButton.setEnabled(true);
+                    android.widget.Toast.makeText(this,
+                            getSafeString(R.string.cache_cleared_all),
+                            android.widget.Toast.LENGTH_SHORT).show();
+                    refreshCacheCounts();
+                });
+            } catch (Exception e) {
+                logError("clearAllCache failed", e);
+                runOnUiThread(() -> clearAllCacheButton.setEnabled(true));
+            }
+        });
     }
 
     // =========================================================================

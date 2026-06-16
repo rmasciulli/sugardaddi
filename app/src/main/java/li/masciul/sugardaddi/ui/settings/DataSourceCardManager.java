@@ -30,7 +30,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * DataSourceCardManager — inflates and manages one data source settings card.
+ * DataSourceCardManager - inflates and manages one data source settings card.
  *
  * LIFECYCLE
  * =========
@@ -40,15 +40,15 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  *   mgr.attach(container);   // inflate + bind + add to parent
  *
  * Then in SettingsActivity:
- *   onResume()  → mgr.onResume()   — register broadcast receiver, refresh status
- *   onPause()   → mgr.onPause()    — unregister receiver (prevents leaks)
- *   onDestroy() → mgr.onDestroy()  — shut down background executor
+ *   onResume()  → mgr.onResume()   - register broadcast receiver, refresh status
+ *   onPause()   → mgr.onPause()    - unregister receiver (prevents leaks)
+ *   onDestroy() → mgr.onDestroy()  - shut down background executor
  *
  * WHAT THIS CLASS KNOWS ABOUT SOURCES
  * =====================================
  * Nothing source-specific. It calls methods on DataSource and SettingsProvider
  * interfaces only. Adding a new source (USDA, TheMealDB, …) requires zero
- * changes here — the source provides its own SettingsProvider implementation.
+ * changes here - the source provides its own SettingsProvider implementation.
  *
  * THREADING
  * =========
@@ -67,7 +67,7 @@ public class DataSourceCardManager {
     private final DataSource source;
     @Nullable
     private final SettingsProvider settings;
-    private final Context context; // Application context — never Activity
+    private final Context context; // Application context - never Activity
 
     // =========================================================================
     // VIEWS (set in attach())
@@ -114,7 +114,7 @@ public class DataSourceCardManager {
 
     /**
      * @param source  The DataSource this card represents
-     * @param context Application context (NOT Activity context — avoids leaks)
+     * @param context Application context (NOT Activity context - avoids leaks)
      */
     public DataSourceCardManager(@NonNull DataSource source, @NonNull Context context) {
         this.source   = source;
@@ -123,7 +123,7 @@ public class DataSourceCardManager {
     }
 
     // =========================================================================
-    // ATTACH — inflate, bind, add to parent
+    // ATTACH - inflate, bind, add to parent
     // =========================================================================
 
     /**
@@ -221,12 +221,18 @@ public class DataSourceCardManager {
             });
         }
 
-        // Description from strings.xml — card manager looks up the resource by convention:
-        // "source_description_{SOURCE_ID_LOWERCASE}" e.g. source_description_ciqual
+        // Attribution text from strings.xml - same string shown in the
+        // product/recipe detail activity attribution panel, for consistency.
+        // Falls back to the short description if no full attribution exists
+        // (e.g. USER, CUSTOM, IMPORTED sources have no full attribution).
         if (descriptionText != null) {
-            String desc = getStringByConvention("source_description_"
+            String attribution = getStringByConvention("source_full_attribution_"
                     + source.getSourceId().toLowerCase());
-            descriptionText.setText(desc != null ? desc : source.getSourceName());
+            if (attribution == null) {
+                attribution = getStringByConvention("source_description_"
+                        + source.getSourceId().toLowerCase());
+            }
+            descriptionText.setText(attribution != null ? attribution : source.getSourceName());
         }
 
         // ── Credential section ────────────────────────────────────────────────
@@ -424,7 +430,7 @@ public class DataSourceCardManager {
     public void resetSourceDatabaseState(@NonNull Context context) {
         if (settings != null && settings.hasLocalDatabase()) {
             settings.resetDatabaseState(context.getApplicationContext());
-            // refresh() touches views — must run on main thread
+            // refresh() touches views - must run on main thread
             postToMain(this::refresh);
         }
     }
@@ -494,7 +500,7 @@ public class DataSourceCardManager {
                     if (products == 0) {
                         verdict = s(R.string.ds_db_integrity_empty);
                         colour  = 0xFFE53935; // red
-                        // DB empty — reset import prefs so status dot reflects reality
+                        // DB empty - reset import prefs so status dot reflects reality
                         if (settings != null) settings.resetDatabaseState(context);
                         refresh();
                     } else {
@@ -545,12 +551,12 @@ public class DataSourceCardManager {
         }
         if (dbIntegrityResult != null) dbIntegrityResult.setVisibility(View.GONE);
 
-        // Delegate — the source's SettingsProvider starts its own service
+        // Delegate - the source's SettingsProvider starts its own service
         settings.startImport(context);
     }
 
     // =========================================================================
-    // BROADCAST RECEIVER — import progress
+    // BROADCAST RECEIVER - import progress
     // =========================================================================
 
     private void registerReceiver() {
@@ -599,7 +605,7 @@ public class DataSourceCardManager {
         try {
             context.unregisterReceiver(importReceiver);
         } catch (IllegalArgumentException ignored) {
-            // Receiver was not registered — safe to ignore
+            // Receiver was not registered - safe to ignore
         }
         importReceiver = null;
         Log.d(TAG, source.getSourceId() + " broadcast receiver unregistered");

@@ -296,7 +296,7 @@
     <string name="share_no_data">No data available to share</string>
     <string name="browser_open_failed">Cannot open browser</string>
 
-    <!-- Image management — detail activity overflow menu -->
+    <!-- Image management - detail activity overflow menu -->
     <string name="menu_share">Share</string>
     <string name="menu_open_web">Open in browser</string>
     <string name="menu_replace_image">Replace image</string>
@@ -364,7 +364,7 @@
 
     <!-- ========== IMAGE LIBRARY CARD ========== -->
 
-    <!-- Image library — section title -->
+    <!-- Image library - section title -->
     <string name="image_library_title">Image library</string>
 
     <!-- Storage summary -->
@@ -396,6 +396,24 @@
 
     <!-- ========== DATA SOURCE STRINGS ========== -->
 
+    <!-- Data sources activity -->
+    <string name="data_sources_title">Data sources</string>
+    <string name="data_sources_subtitle">Manage the sources used to search for products and recipes</string>
+    <string name="menu_data_sources">Data sources</string>
+
+    <!-- Settings - cache card -->
+    <string name="cache_card_title">Cache</string>
+    <string name="cache_products_label">Cached products</string>
+    <string name="cache_recipes_label">Cached recipes</string>
+    <string name="cache_clear">Clear</string>
+    <string name="cache_clear_products">Clear products</string>
+    <string name="cache_clear_recipes">Clear recipes</string>
+    <string name="cache_clear_all">Clear all cache</string>
+    <string name="cache_cleared_products">Products cache cleared</string>
+    <string name="cache_cleared_recipes">Recipes cache cleared</string>
+    <string name="cache_cleared_all">Cache cleared</string>
+    <string name="cache_count_format">%d items</string>
+    
     <!-- Data Source UI Labels -->
     <string name="label_data_source">Data Source</string>
     <string name="label_attribution">Attribution</string>
@@ -769,7 +787,7 @@
     <string name="error_loading_recipe">Could not load recipe</string>
     <string name="menu_watch_video">Watch video</string>
     <string name="share_recipe_source_prefix">via</string>
-    <string name="share_recipe_subject">%s — SugarDaddi recipe</string>
+    <string name="share_recipe_subject">%s - SugarDaddi recipe</string>
     <string name="recipe_section_ingredients">Ingredients</string>
     <string name="recipe_section_instructions">Instructions</string>
     <string name="recipe_section_notes">Notes</string>

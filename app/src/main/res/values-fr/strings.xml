@@ -396,6 +396,24 @@
 
     <!-- ========== DATA SOURCE STRINGS ========== -->
 
+    <!-- Activité sources de données -->
+    <string name="data_sources_title">Sources de données</string>
+    <string name="data_sources_subtitle">Gérez les sources utilisées pour rechercher des produits et des recettes</string>
+    <string name="menu_data_sources">Sources de données</string>
+
+    <!-- Paramètres — carte cache -->
+    <string name="cache_card_title">Cache</string>
+    <string name="cache_products_label">Produits en cache</string>
+    <string name="cache_recipes_label">Recettes en cache</string>
+    <string name="cache_clear">Vider</string>
+    <string name="cache_clear_products">Vider les produits</string>
+    <string name="cache_clear_recipes">Vider les recettes</string>
+    <string name="cache_clear_all">Vider tout le cache</string>
+    <string name="cache_cleared_products">Cache des produits vidé</string>
+    <string name="cache_cleared_recipes">Cache des recettes vidé</string>
+    <string name="cache_cleared_all">Cache vidé</string>
+    <string name="cache_count_format">%d éléments</string>
+
     <!-- Libellés UI des Sources de Données -->
     <string name="label_data_source">Source de Données</string>
     <string name="label_attribution">Attribution</string>
