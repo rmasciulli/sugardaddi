@@ -114,11 +114,11 @@ public class OpenFoodFactsProduct {
     @SerializedName("nutriscore_score")
     private Integer nutriscoreScore;
 
-    /** NOVA group (1-4) — food processing classification */
+    /** NOVA group (1-4) - food processing classification */
     @SerializedName("nova_group")
     private String novaGroup;
 
-    /** EcoScore/Green-Score grade (A-E) — environmental impact */
+    /** EcoScore/Green-Score grade (A-E) - environmental impact */
     @SerializedName("ecoscore_grade")
     private String ecoscoreGrade;
 
@@ -185,10 +185,10 @@ public class OpenFoodFactsProduct {
     // ========== NESTED DTOs ==========
 
     /**
-     * EcoScoreData — maps the ecoscore_data JSON object from OFF v2.
+     * EcoScoreData - maps the ecoscore_data JSON object from OFF v2.
      *
      * The full object contains packaging scores, per-country grades, adjustments, etc.
-     * We only map the agribalyse block — Gson silently ignores unknown fields.
+     * We only map the agribalyse block - Gson silently ignores unknown fields.
      *
      * Identical structure to SearchAliciousHit.EcoScoreData; kept separate
      * because they belong to different DTO classes in different packages.
@@ -196,7 +196,7 @@ public class OpenFoodFactsProduct {
     public static class EcoScoreData {
 
         /**
-         * Agribalyse data block — cross-source category bridge.
+         * Agribalyse data block - cross-source category bridge.
          * Present when the product has been matched to an Agribalyse/Ciqual food entry.
          * NOTE: OFF v2 does not always return this even when the product has a Green-Score.
          */
@@ -210,7 +210,7 @@ public class OpenFoodFactsProduct {
     }
 
     /**
-     * AgribalyseData — maps the ecoscore_data.agribalyse JSON object from OFF v2.
+     * AgribalyseData - maps the ecoscore_data.agribalyse JSON object from OFF v2.
      *
      * Agribalyse is the ADEME/ANSES Life Cycle Assessment database, built on Ciqual.
      * The numeric code is the shared key between OFF products and Ciqual entries:
@@ -235,7 +235,7 @@ public class OpenFoodFactsProduct {
         private String code;
 
         /**
-         * Exact Agribalyse food code — set when an exact Ciqual match exists.
+         * Exact Agribalyse food code - set when an exact Ciqual match exists.
          * More precise than proxy. Prefer this over agribalyse_proxy_food_code.
          */
         @SerializedName("agribalyse_food_code")
@@ -243,7 +243,7 @@ public class OpenFoodFactsProduct {
         private String agribalyseFoodCode;
 
         /**
-         * Proxy Agribalyse food code — used when no exact Ciqual match exists.
+         * Proxy Agribalyse food code - used when no exact Ciqual match exists.
          * The product is categorized under an approximate food type.
          */
         @SerializedName("agribalyse_proxy_food_code")
@@ -253,7 +253,7 @@ public class OpenFoodFactsProduct {
         /**
          * Agribalyse category name in English.
          * Example: "Biscuit (cookie), with chocolate, prepacked"
-         * Official ANSES scientific label — more precise than OFF taxonomy tags.
+         * Official ANSES scientific label - more precise than OFF taxonomy tags.
          */
         @SerializedName("name_en")
         @Nullable

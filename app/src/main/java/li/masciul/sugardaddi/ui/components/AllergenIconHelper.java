@@ -400,7 +400,7 @@ public class AllergenIconHelper {
             int column = position % spanCount;
 
             // Vertical spacing between rows is fixed at 5dp regardless of horizontal spacing.
-            // The horizontal spacing fills the row width evenly — using that same value
+            // The horizontal spacing fills the row width evenly - using that same value
             // vertically caused excessively large gaps between rows when icons are large.
             float density = view.getContext().getResources().getDisplayMetrics().density;
             int verticalSpacing = (int) (5 * density);

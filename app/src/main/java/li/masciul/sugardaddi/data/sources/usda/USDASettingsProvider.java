@@ -13,7 +13,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * USDASettingsProvider — SettingsProvider for the USDA FoodData Central settings card.
+ * USDASettingsProvider - SettingsProvider for the USDA FoodData Central settings card.
  *
  * CARD SECTIONS SHOWN:
  * ┌─────────────────────────────────────┐
@@ -22,11 +22,11 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * ├─────────────────────────────────────│
  * │ API CREDENTIALS                     │
  * │ [API key input field]               │
- * │ ⚠ Rate limited — register for key  │  ← shown when DEMO_KEY active
+ * │ ⚠ Rate limited - register for key  │  ← shown when DEMO_KEY active
  * │ [Save]                              │
  * ├─────────────────────────────────────│
  * │ LOCAL DATABASE                      │
- * │ Not downloaded — online API active  │
+ * │ Not downloaded - online API active  │
  * │ [Check integrity] [result]          │
  * │ [Download database]                 │  ← user-initiated, Wifi-appropriate
  * └─────────────────────────────────────┘
@@ -83,7 +83,7 @@ public class USDASettingsProvider implements SettingsProvider {
     @Nullable
     @Override
     public String getCredentialWarning() {
-        return "⚠ Rate limited (30 req/h) — register for a free key at fdc.nal.usda.gov";
+        return "⚠ Rate limited (30 req/h) - register for a free key at fdc.nal.usda.gov";
     }
 
     // ===== LOCAL DATABASE SECTION =====

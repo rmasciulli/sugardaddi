@@ -14,7 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
- * ImageProcessor — Pure image resizing and JPEG compression utility.
+ * ImageProcessor - Pure image resizing and JPEG compression utility.
  *
  * RESPONSIBILITIES
  * ================
@@ -67,7 +67,7 @@ public final class ImageProcessor {
     private static final String TAG = "SugarDaddi_Images";
 
     // =========================================================================
-    // PUBLIC CONSTANTS — callers use these to keep settings centralised
+    // PUBLIC CONSTANTS - callers use these to keep settings centralised
     // =========================================================================
 
     /**
@@ -86,20 +86,20 @@ public final class ImageProcessor {
 
     /**
      * Maximum dimension (px) for user-defined thumbnail overrides.
-     * Thumbnails are displayed at 72dp in search cards — 512px is sufficient
+     * Thumbnails are displayed at 72dp in search cards - 512px is sufficient
      * for all current screen densities (up to xxxhdpi = 4× = 288px).
      */
     public static final int MAX_DIMENSION_THUMBNAIL = 512;
 
     /**
      * JPEG quality for user-defined thumbnails (0–100).
-     * Slightly lower than hero quality — thumbnails are small enough that
+     * Slightly lower than hero quality - thumbnails are small enough that
      * the quality difference is imperceptible at typical display sizes.
      */
     public static final int JPEG_QUALITY_THUMBNAIL = 78;
 
     // =========================================================================
-    // CONSTRUCTOR — utility class, not instantiable
+    // CONSTRUCTOR - utility class, not instantiable
     // =========================================================================
 
     private ImageProcessor() {
@@ -115,11 +115,11 @@ public final class ImageProcessor {
      * the longest side exceeds {@code maxDimension}, compresses as JPEG at
      * {@code jpegQuality}, and writes the result to {@code destination}.
      *
-     * The source and destination may be the same file — the bitmap is fully
+     * The source and destination may be the same file - the bitmap is fully
      * decoded into memory before the output stream is opened, so there is no
      * risk of corrupting the source during writing.
      *
-     * @param source       The input image file (JPEG, PNG, WebP — anything
+     * @param source       The input image file (JPEG, PNG, WebP - anything
      *                     BitmapFactory can decode). Must exist and be readable.
      * @param destination  The output file to write the processed JPEG into.
      *                     The parent directory must already exist. ImagePickerHelper
@@ -263,10 +263,10 @@ public final class ImageProcessor {
                 default:                                   return 0;
             }
         } catch (IOException e) {
-            // Non-fatal — EXIF is best-effort. Photos without EXIF (e.g. gallery PNG)
+            // Non-fatal - EXIF is best-effort. Photos without EXIF (e.g. gallery PNG)
             // are assumed to be correctly oriented.
             Log.w(TAG, "Could not read EXIF orientation from " + file.getName()
-                    + " — assuming 0°: " + e.getMessage());
+                    + " - assuming 0°: " + e.getMessage());
             return 0;
         }
     }
@@ -274,7 +274,7 @@ public final class ImageProcessor {
     /**
      * Applies a clockwise rotation to the bitmap using a Matrix transformation.
      *
-     * Returns the original bitmap unchanged if {@code degrees} is 0 — no new
+     * Returns the original bitmap unchanged if {@code degrees} is 0 - no new
      * bitmap is allocated in that case. For non-zero rotations, the original
      * bitmap is NOT recycled here; the caller is responsible for recycling it
      * once it has finished using the returned bitmap.
@@ -301,7 +301,7 @@ public final class ImageProcessor {
      * Scales the bitmap down so its longest side is ≤ {@code maxDimension}.
      *
      * Maintains the original aspect ratio exactly.
-     * Returns the original bitmap unchanged if it already fits within the limit —
+     * Returns the original bitmap unchanged if it already fits within the limit -
      * no new bitmap is allocated in that case.
      *
      * @param bitmap       The source bitmap.
@@ -315,7 +315,7 @@ public final class ImageProcessor {
         int longest = Math.max(width, height);
 
         if (longest <= maxDimension) {
-            // Already within bounds — return as-is, no allocation.
+            // Already within bounds - return as-is, no allocation.
             return bitmap;
         }
 

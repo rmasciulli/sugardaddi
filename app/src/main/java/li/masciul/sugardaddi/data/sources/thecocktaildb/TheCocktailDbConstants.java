@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.data.sources.thecocktaildb;
 
 /**
- * TheCocktailDbConstants — All TheCocktailDB data source constants.
+ * TheCocktailDbConstants - All TheCocktailDB data source constants.
  *
  * API NOTES
  * =========
@@ -20,7 +20,7 @@ package li.masciul.sugardaddi.data.sources.thecocktaildb;
  *   - Root JSON key is "drinks" (not "meals")
  *   - ID/name/thumbnail fields are prefixed "Drink" (not "Meal")
  *   - 15 ingredient slots (not 20)
- *   - No strArea field — cocktails have no geographic origin
+ *   - No strArea field - cocktails have no geographic origin
  *   - Extra fields: strAlcoholic, strGlass
  *
  * Despite the similarity, TheCocktailDB is a fully independent data source
@@ -28,9 +28,9 @@ package li.masciul.sugardaddi.data.sources.thecocktaildb;
  *
  * API KEY PRIORITY (same pattern as TheMealDB and USDA)
  * ======================================================
- * 1. SharedPreferences — user entered their own key in Settings
- * 2. BuildConfig.THECOCKTAILDB_API_KEY — from local.properties at compile time
- * 3. DEMO_KEY ("1") — hardcoded fallback, always works for development
+ * 1. SharedPreferences - user entered their own key in Settings
+ * 2. BuildConfig.THECOCKTAILDB_API_KEY - from local.properties at compile time
+ * 3. DEMO_KEY ("1") - hardcoded fallback, always works for development
  *
  * BASE URL CONSTRUCTION
  * =====================
@@ -54,7 +54,7 @@ public final class TheCocktailDbConstants {
 
     // ===== SOURCE IDENTIFICATION =====
 
-    /** Stable source ID — used as Room sourceId discriminator and DataSourceManager key. */
+    /** Stable source ID - used as Room sourceId discriminator and DataSourceManager key. */
     public static final String SOURCE_ID   = "THECOCKTAILDB";
 
     /** Human-readable source name for logging and display. */
@@ -67,7 +67,7 @@ public final class TheCocktailDbConstants {
 
     /**
      * Base URL template. The {key} placeholder is replaced by the active API key.
-     * The key is a PATH SEGMENT — not a query parameter.
+     * The key is a PATH SEGMENT - not a query parameter.
      * Format: https://www.thecocktaildb.com/api/json/v1/{key}/
      */
     public static final String BASE_URL_TEMPLATE =
@@ -75,7 +75,7 @@ public final class TheCocktailDbConstants {
 
     /**
      * TheCocktailDB's public development key.
-     * Documented for open development use — safe to hardcode.
+     * Documented for open development use - safe to hardcode.
      * Sufficient for search and lookup on the free v1 tier.
      */
     public static final String DEMO_KEY = "1";
@@ -122,7 +122,7 @@ public final class TheCocktailDbConstants {
 
     /**
      * TheCocktailDB uses exactly 15 parallel ingredient/measure field pairs.
-     * Note: TheMealDB uses 20 — this is a deliberate difference in the API.
+     * Note: TheMealDB uses 20 - this is a deliberate difference in the API.
      * Used by the mapper when iterating strIngredient1..15.
      */
     public static final int MAX_INGREDIENTS = 15;

@@ -10,17 +10,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * AggregatedSearchResult — Container for results merged from all active data sources.
+ * AggregatedSearchResult - Container for results merged from all active data sources.
  *
  * PAGINATION AWARENESS (v4.0)
  * ===========================
  * Two new fields support the pagination refactor:
  *
- *   hasMore          — true if at least one source still has pages beyond this one.
+ *   hasMore          - true if at least one source still has pages beyond this one.
  *                      SearchManager reads this to update its own hasMorePages flag
  *                      instead of guessing from items.size() >= PAGE_SIZE.
  *
- *   sourceHasMore    — per-source exhaustion map (sourceId → hasMore).
+ *   sourceHasMore    - per-source exhaustion map (sourceId → hasMore).
  *                      SearchManager adds exhausted sources (value=false) to its
  *                      exhaustedSources set so the aggregator skips them on the
  *                      next page call.
@@ -217,7 +217,7 @@ public class AggregatedSearchResult {
 
         /**
          * Error message if this source failed, null if it succeeded.
-         * Errors are non-fatal — other sources' results are still delivered.
+         * Errors are non-fatal - other sources' results are still delivered.
          */
         public final String error;
 

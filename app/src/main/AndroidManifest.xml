@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Camera — required to launch ACTION_IMAGE_CAPTURE for meal/step photos.
+    <!-- Camera - required to launch ACTION_IMAGE_CAPTURE for meal/step photos.
      maxSdkVersion is not set: the permission is needed on all supported
      SDK versions (26+). -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -90,7 +90,7 @@
             android:parentActivityName=".ui.activities.MainActivity"
             android:theme="@style/Theme.SugarDaddi" />
 
-        <!-- uCrop — required for the image crop step in ImagePickerHelper -->
+        <!-- uCrop - required for the image crop step in ImagePickerHelper -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="unspecified"
@@ -132,7 +132,7 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- FileProvider — required to share file:// URIs with the camera app
+        <!-- FileProvider - required to share file:// URIs with the camera app
              on API 24+. Without this, the camera intent throws a FileUriExposedException.
 
              authorities: must match ImagePickerHelper.FILE_PROVIDER_AUTHORITY exactly.

@@ -6,18 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * FDCSearchFood — One food item returned by GET /foods/search.
+ * FDCSearchFood - One food item returned by GET /foods/search.
  *
  * IMPORTANT: Search results include only a SUBSET of nutrients.
  * The set varies but usually covers energy, protein, fat, carbohydrates.
  * For a complete nutrient profile, call GET /food/{fdcId} → FDCFoodDetail.
  *
  * FIELD NOTES:
- * - fdcId       — stable integer identifier, used for detail lookups
- * - description — food name (English only, USDA database is en-only)
- * - dataType    — "Foundation", "SR Legacy", "Survey (FNDDS)", or "Branded"
- * - score       — relevance score from FDC Elasticsearch, higher = more relevant
- * - foodNutrients — inline nutrient summary (not exhaustive)
+ * - fdcId       - stable integer identifier, used for detail lookups
+ * - description - food name (English only, USDA database is en-only)
+ * - dataType    - "Foundation", "SR Legacy", "Survey (FNDDS)", or "Branded"
+ * - score       - relevance score from FDC Elasticsearch, higher = more relevant
+ * - foodNutrients - inline nutrient summary (not exhaustive)
  */
 public class FDCSearchFood {
 
@@ -40,11 +40,11 @@ public class FDCSearchFood {
     @Nullable
     private String publishedDate;
 
-    /** Elasticsearch relevance score — higher is better */
+    /** Elasticsearch relevance score - higher is better */
     @SerializedName("score")
     private double score;
 
-    /** Inline nutrient summary (partial — not all nutrients) */
+    /** Inline nutrient summary (partial - not all nutrients) */
     @SerializedName("foodNutrients")
     @Nullable
     private List<FDCSearchNutrient> foodNutrients;

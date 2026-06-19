@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * CocktailDbIngredient — A single ingredient extracted from TheCocktailDB's flat field schema.
+ * CocktailDbIngredient - A single ingredient extracted from TheCocktailDB's flat field schema.
  *
  * TheCocktailDB does not return ingredients as a JSON array. Instead the API uses
  * 15 parallel string fields on the drink object:
@@ -44,8 +44,8 @@ public class CocktailDbIngredient {
     /**
      * Constructor. Called by {@link CocktailDbDrink#getIngredients()} only.
      *
-     * @param name    Ingredient name — must not be null or blank
-     * @param measure Measure string — may be null or empty
+     * @param name    Ingredient name - must not be null or blank
+     * @param measure Measure string - may be null or empty
      */
     public CocktailDbIngredient(@NonNull String name, @Nullable String measure) {
         this.name = name;
@@ -63,7 +63,7 @@ public class CocktailDbIngredient {
 
     /**
      * @return Measure string (e.g. "1 3/4 shot"), or null if none was provided.
-     *         Null means "unspecified quantity" — treat as "to taste" in the UI.
+     *         Null means "unspecified quantity" - treat as "to taste" in the UI.
      */
     @Nullable
     public String getMeasure() {

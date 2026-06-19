@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * FDCFoodDetail — Full food detail from GET /food/{fdcId}?format=full
+ * FDCFoodDetail - Full food detail from GET /food/{fdcId}?format=full
  *
  * This response contains the complete nutrient profile for a single food,
  * compared to FDCSearchFood which only has a subset of key nutrients.
@@ -27,7 +27,7 @@ import java.util.List;
  *   ]
  * }
  *
- * NOTE: publicationDate vs publishedDate — the detail endpoint uses "publicationDate",
+ * NOTE: publicationDate vs publishedDate - the detail endpoint uses "publicationDate",
  * the search endpoint uses "publishedDate". Different field names, same concept.
  */
 public class FDCFoodDetail {
@@ -110,63 +110,63 @@ public class FDCFoodDetail {
         return null;
     }
 
-    /** Convenience accessor — energy in kcal (nutrient 1008) */
+    /** Convenience accessor - energy in kcal (nutrient 1008) */
     @Nullable
     public Double getEnergyKcal() {
         FDCFoodNutrient n = getNutrientById(1008);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — energy in kJ (nutrient 2047) */
+    /** Convenience accessor - energy in kJ (nutrient 2047) */
     @Nullable
     public Double getEnergyKj() {
         FDCFoodNutrient n = getNutrientById(2047);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — protein in g (nutrient 1003) */
+    /** Convenience accessor - protein in g (nutrient 1003) */
     @Nullable
     public Double getProtein() {
         FDCFoodNutrient n = getNutrientById(1003);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — total fat in g (nutrient 1004) */
+    /** Convenience accessor - total fat in g (nutrient 1004) */
     @Nullable
     public Double getFat() {
         FDCFoodNutrient n = getNutrientById(1004);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — carbohydrates in g (nutrient 1005) */
+    /** Convenience accessor - carbohydrates in g (nutrient 1005) */
     @Nullable
     public Double getCarbohydrates() {
         FDCFoodNutrient n = getNutrientById(1005);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — dietary fiber in g (nutrient 1079) */
+    /** Convenience accessor - dietary fiber in g (nutrient 1079) */
     @Nullable
     public Double getFiber() {
         FDCFoodNutrient n = getNutrientById(1079);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — total sugars in g (nutrient 2000) */
+    /** Convenience accessor - total sugars in g (nutrient 2000) */
     @Nullable
     public Double getSugars() {
         FDCFoodNutrient n = getNutrientById(2000);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — saturated fat in g (nutrient 1258) */
+    /** Convenience accessor - saturated fat in g (nutrient 1258) */
     @Nullable
     public Double getSaturatedFat() {
         FDCFoodNutrient n = getNutrientById(1258);
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor — sodium in mg (nutrient 1093) */
+    /** Convenience accessor - sodium in mg (nutrient 1093) */
     @Nullable
     public Double getSodium() {
         FDCFoodNutrient n = getNutrientById(1093);
@@ -220,7 +220,7 @@ public class FDCFoodDetail {
      * }
      *
      * Note: Foundation Foods also include "min", "max", "median", "dataPoints"
-     * for statistical context. We capture amount only — the mean value.
+     * for statistical context. We capture amount only - the mean value.
      */
     public static class FDCFoodNutrient {
 

@@ -5,7 +5,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 /**
- * USDAScorer — Scoring strategy for USDA FoodData Central products.
+ * USDAScorer - Scoring strategy for USDA FoodData Central products.
  *
  * VALUES WHAT USDA PROVIDES:
  * - Scientific food names (precise USDA nomenclature, e.g. "Broccoli, raw")
@@ -20,9 +20,9 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * - Serving size (Foundation Foods have portions, SR Legacy rarely)
  *
  * SCORING BREAKDOWN (max 100 points):
- * - Name matching:        0–40 pts (base — exact/starts-with/contains)
+ * - Name matching:        0–40 pts (base - exact/starts-with/contains)
  * - Category matching:   0–20 pts (base)
- * - Nutrition quality:   0–25 pts (USDA-specific — more nutrients = higher)
+ * - Nutrition quality:   0–25 pts (USDA-specific - more nutrients = higher)
  * - Data type bonus:     0–10 pts (Foundation=10, SR Legacy=7, Survey=3)
  * - Favorite bonus:      +15 pts (common across all sources)
  *
@@ -30,7 +30,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * MAXIMUM WITH FAVORITE: 110 points
  *
  * WHY 95 MAX (vs Ciqual's 100, OFF's 120):
- * USDA scores similarly to Ciqual — both are scientific databases covering
+ * USDA scores similarly to Ciqual - both are scientific databases covering
  * generic foods with excellent nutrient data. USDA has slightly fewer bonus
  * factors (no generic name field like Ciqual) but the data type bonus makes
  * up for it for Foundation Foods.
@@ -76,9 +76,9 @@ public class USDAScorer extends BaseScorer<FoodProduct> {
      * Score USDA-specific attributes.
      *
      * Two dimensions unique to USDA:
-     * 1. Nutrition completeness — Foundation Foods have exhaustive profiles.
+     * 1. Nutrition completeness - Foundation Foods have exhaustive profiles.
      *    More nutrients filled in = higher score (mirrors Ciqual's approach).
-     * 2. Data type bonus — Foundation > SR Legacy > Survey in scientific rigour.
+     * 2. Data type bonus - Foundation > SR Legacy > Survey in scientific rigour.
      *    Helps surface the highest-quality records when multiple match.
      */
     @Override
@@ -128,7 +128,7 @@ public class USDAScorer extends BaseScorer<FoodProduct> {
 
     /**
      * Score nutrition completeness based on how many key nutrients are filled.
-     * Mirrors CiqualScorer's approach — USDA and Ciqual both shine in nutrient depth.
+     * Mirrors CiqualScorer's approach - USDA and Ciqual both shine in nutrient depth.
      *
      * Checks 5 key nutrients (energy, protein, fat, carbs, fiber):
      *   5 present → 25 pts

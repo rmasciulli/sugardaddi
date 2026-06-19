@@ -55,7 +55,7 @@
             android:contentDescription="@string/content_description_main_content"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <!-- Search bar — plain colored background, no card -->
+            <!-- Search bar - plain colored background, no card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -114,14 +114,14 @@
 
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Filter pills — type and source filters, shown below the search input -->
+                    <!-- Filter pills - type and source filters, shown below the search input -->
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/filterRow"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp">
 
-                        <!-- Item type filter pill — anchored to parent start, sizes to text -->
+                        <!-- Item type filter pill - anchored to parent start, sizes to text -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/filterTypeButton"
                             style="@style/Widget.Material3.Button.OutlinedButton"
@@ -144,7 +144,7 @@
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
-                        <!-- Data source filter pill — anchored to type button end, sizes to text, capped at row end -->
+                        <!-- Data source filter pill - anchored to type button end, sizes to text, capped at row end -->
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/filterSourceButton"
                             style="@style/Widget.Material3.Button.OutlinedButton"

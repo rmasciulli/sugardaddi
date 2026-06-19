@@ -236,7 +236,7 @@ public class OffProductSearchDelegate
         String imageUrl = product.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
 
-        // 5. User-defined full-size image — last resort for Ciqual/USDA products
+        // 5. User-defined full-size image - last resort for Ciqual/USDA products
         //    that have no remote URL but may have a user-set image.
         String userImage = product.getUserImagePath();
         if (userImage != null && !userImage.trim().isEmpty()) {

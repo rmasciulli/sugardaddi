@@ -4,9 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * DataSourceInfo — Immutable diagnostic snapshot of a data source's runtime state.
+ * DataSourceInfo - Immutable diagnostic snapshot of a data source's runtime state.
  *
- * ARCHITECTURE v3.0 — Settings refactor
+ * ARCHITECTURE v3.0 - Settings refactor
  * ======================================
  * REMOVED: {@code priority} field.
  *   Priority was used by DataSourceConfig to sort search results. DataSourceConfig
@@ -16,18 +16,18 @@ import androidx.annotation.Nullable;
  * KEPT: {@code enabled} field (as a read-only snapshot).
  *   The live source of truth for enabled state is each source's own
  *   SharedPreferences (read via DataSource.isEnabled()). This field captures
- *   that value at the moment getSourceInfo() is called — useful for logging
+ *   that value at the moment getSourceInfo() is called - useful for logging
  *   and diagnostics. It is NOT used to make routing decisions.
  *
  * PURPOSE
  * =======
  * This object is built fresh by BaseDataSource.getSourceInfo() and is intended
  * for diagnostics, logging, and the status summary in the settings card header.
- * It is NOT a configuration object — nothing routes or filters based on its fields.
+ * It is NOT a configuration object - nothing routes or filters based on its fields.
  *
  * IMMUTABILITY
  * ============
- * All fields are final. To "update" info, call getSourceInfo() again — it builds
+ * All fields are final. To "update" info, call getSourceInfo() again - it builds
  * a new snapshot from current runtime state.
  */
 public class DataSourceInfo {
@@ -165,13 +165,13 @@ public class DataSourceInfo {
 
     /**
      * One-line status suitable for a settings card subtitle.
-     * Examples: "Healthy", "Disabled", "Degraded — high error rate".
+     * Examples: "Healthy", "Disabled", "Degraded - high error rate".
      */
     @NonNull
     public String getStatusSummary() {
         if (!enabled) return "Disabled";
         return health.getDisplayText()
-                + (healthMessage != null ? " — " + healthMessage : "");
+                + (healthMessage != null ? " - " + healthMessage : "");
     }
 
     // =========================================================================

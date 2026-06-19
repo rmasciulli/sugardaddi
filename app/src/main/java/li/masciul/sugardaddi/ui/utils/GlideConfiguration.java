@@ -20,7 +20,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import okhttp3.OkHttpClient;
 
 /**
- * GlideConfiguration — Custom Glide module for SugarDaddi.
+ * GlideConfiguration - Custom Glide module for SugarDaddi.
  *
  * Replaces Glide's default HttpUrlConnection networking with a custom
  * OkHttp client. This gives us:
@@ -55,7 +55,7 @@ public class GlideConfiguration extends AppGlideModule {
                 .writeTimeout(15, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true);
 
-        // Request/response logging — only in debug builds to avoid logcat noise in production
+        // Request/response logging - only in debug builds to avoid logcat noise in production
         if (ApiConfig.DEBUG_LOGGING) {
             clientBuilder.addInterceptor(chain -> {
                 okhttp3.Request request = chain.request();
@@ -64,12 +64,12 @@ public class GlideConfiguration extends AppGlideModule {
                     okhttp3.Response response = chain.proceed(request);
                     if (!response.isSuccessful()) {
                         Log.w(TAG, "Image load failed: HTTP " + response.code()
-                                + " — " + request.url());
+                                + " - " + request.url());
                     }
                     return response;
                 } catch (Exception e) {
                     // Log the URL at WARN; the full stack trace comes from Glide's own error path
-                    Log.w(TAG, "Image load error: " + request.url() + " — " + e.getMessage());
+                    Log.w(TAG, "Image load error: " + request.url() + " - " + e.getMessage());
                     throw e;
                 }
             });
@@ -78,7 +78,7 @@ public class GlideConfiguration extends AppGlideModule {
         registry.replace(GlideUrl.class, InputStream.class,
                 new OkHttpUrlLoader.Factory((okhttp3.Call.Factory) clientBuilder.build()));
 
-        Log.i(TAG, "Glide configured — OkHttp client ready (connect 15s, read 30s, retry enabled)");
+        Log.i(TAG, "Glide configured - OkHttp client ready (connect 15s, read 30s, retry enabled)");
     }
 
     @Override

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    menu_product_details.xml — Toolbar menu for ProductDetailsActivity.
+    menu_product_details.xml - Toolbar menu for ProductDetailsActivity.
     ALWAYS VISIBLE:
       - Favourite : toggles border/filled star
     OVERFLOW (⋮):
@@ -40,7 +40,7 @@
         app:showAsAction="never" />
 
     <!--
-        Replace full-size image — always shown.
+        Replace full-size image - always shown.
         Triggers camera/gallery picker → ImagePickerHelper → userImagePath.
     -->
     <item
@@ -49,7 +49,7 @@
         app:showAsAction="never" />
 
     <!--
-        Replace thumbnail — always shown.
+        Replace thumbnail - always shown.
         Triggers camera/gallery picker → ImagePickerHelper → userThumbnailPath.
         Writes to thumbnails/{id}_custom.jpg (deterministic, co-exists with auto-cached).
     -->
@@ -60,7 +60,7 @@
 
     <!--
         Remove user-defined full-size image.
-        Hidden when userImagePath is null — shown in onPrepareOptionsMenu().
+        Hidden when userImagePath is null - shown in onPrepareOptionsMenu().
     -->
     <item
         android:id="@+id/action_remove_image"
@@ -70,7 +70,7 @@
 
     <!--
         Remove user-defined thumbnail.
-        Hidden when userThumbnailPath is null — shown in onPrepareOptionsMenu().
+        Hidden when userThumbnailPath is null - shown in onPrepareOptionsMenu().
     -->
     <item
         android:id="@+id/action_remove_thumbnail"

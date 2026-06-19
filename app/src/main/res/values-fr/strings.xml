@@ -296,7 +296,7 @@
     <string name="share_no_data">Aucune donnée disponible à partager</string>
     <string name="browser_open_failed">Impossible d\'ouvrir le navigateur</string>
 
-    <!-- Gestion des images — menu contextuel des écrans de détail -->
+    <!-- Gestion des images - menu contextuel des écrans de détail -->
     <string name="menu_share">Partager</string>
     <string name="menu_open_web">Ouvrir dans le navigateur</string>
     <string name="menu_replace_image">Remplacer l\'image</string>
@@ -364,7 +364,7 @@
 
     <!-- ========== IMAGE LIBRARY CARD ========== -->
 
-    <!-- Bibliothèque d'images — titre de section -->
+    <!-- Bibliothèque d'images - titre de section -->
     <string name="image_library_title">Bibliothèque d\'images</string>
 
     <!-- Résumé de stockage -->
@@ -401,7 +401,7 @@
     <string name="data_sources_subtitle">Gérez les sources utilisées pour rechercher des produits et des recettes</string>
     <string name="menu_data_sources">Sources de données</string>
 
-    <!-- Paramètres — carte cache -->
+    <!-- Paramètres - carte cache -->
     <string name="cache_card_title">Cache</string>
     <string name="cache_products_label">Produits en cache</string>
     <string name="cache_recipes_label">Recettes en cache</string>
@@ -764,7 +764,7 @@
     <string name="error_loading_recipe">Impossible de charger la recette</string>
     <string name="menu_watch_video">Voir la vidéo</string>
     <string name="share_recipe_source_prefix">via</string>
-    <string name="share_recipe_subject">%s — recette SugarDaddi</string>
+    <string name="share_recipe_subject">%s - recette SugarDaddi</string>
     <string name="recipe_section_ingredients">Ingrédients</string>
     <string name="recipe_section_instructions">Instructions</string>
     <string name="recipe_section_notes">Notes</string>

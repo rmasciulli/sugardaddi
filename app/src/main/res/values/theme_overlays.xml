@@ -2,7 +2,7 @@
 <resources>
 
     <!-- =====================================================================
-         CONTRAST OVERLAYS — light theme variants
+         CONTRAST OVERLAYS - light theme variants
          Applied automatically by Android 14+ when user sets system contrast.
          Rename from AppTheme to SugarDaddi for consistency.
          ===================================================================== -->
@@ -117,7 +117,7 @@
 
 
     <!-- =====================================================================
-         COMPONENT STYLES — declared here to avoid duplication with themes.xml
+         COMPONENT STYLES - declared here to avoid duplication with themes.xml
          These are referenced from both light and dark themes.
          ===================================================================== -->
 

@@ -16,7 +16,7 @@
     Notes:
     - Ingredient count and video indicator on the same line
     - Tag chips on the third metadata line (below ingredient row)
-    - Chips are compact — Widget.Material3.Chip.Filter style
+    - Chips are compact - Widget.Material3.Chip.Filter style
     - Video indicator only shown when strYoutube is set
     - Tags ChipGroup hidden when no displayable tags
 
@@ -96,7 +96,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Thumbnail: 72x72dp — identical to OFF cards -->
+            <!-- Thumbnail: 72x72dp - identical to OFF cards -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/imageContainer"
                 android:layout_width="72dp"
@@ -151,7 +151,7 @@
                     tools:visibility="visible"
                     tools:text="8 ingredients" />
 
-                <!-- Tag chips — compact, on the third metadata line -->
+                <!-- Tag chips - compact, on the third metadata line -->
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/tagsChipGroup"
                     android:layout_width="match_parent"

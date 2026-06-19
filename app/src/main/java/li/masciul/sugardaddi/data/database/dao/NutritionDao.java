@@ -257,7 +257,7 @@ public interface NutritionDao {
         public int withProteins;
         public int withVitamins;
     }
-    // ========== CATEGORY CODE STATS (v7 — Ciqual taxonomy) ==========
+    // ========== CATEGORY CODE STATS (v7 - Ciqual taxonomy) ==========
 
     /**
      * Delete all nutrition rows from a specific data source.
@@ -287,7 +287,7 @@ public interface NutritionDao {
 
     /**
      * Find healthier alternatives using categoryCode JOIN.
-     * More structured than findHealthierAlternatives() — uses the indexed categoryCode.
+     * More structured than findHealthierAlternatives() - uses the indexed categoryCode.
      */
     @Query("SELECT n.* FROM nutrition n " +
             "INNER JOIN food_products fp ON fp.id = n.sourceId " +

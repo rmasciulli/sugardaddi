@@ -199,15 +199,15 @@ public class NutritionEntity {
     private Double taurine;         // mg per 100g/ml
     private Double organicAcids;    // g per 100g/ml
 
-    // ========== VITAMIN D SUBFORMS (v7) ==========
+    // ========== VITAMIN D SUBFORMS ==========
     private Double vitaminD2;       // µg/100g - Ergocalciferol
     private Double vitaminD3;       // µg/100g - Cholecalciferol
 
-    // ========== FOLATE SUBFORMS (v7) ==========
+    // ========== FOLATE SUBFORMS ==========
     private Double intrinsicFolate; // µg/100g - Natural folate
     private Double folicAcid;       // µg/100g - Fortification folate
 
-    // ========== DATA QUALITY TIER (v8) ==========
+    // ========== DATA QUALITY TIER ==========
     private DataConfidence dataConfidence;
 
     // ========== QUALITY METRICS ==========
@@ -739,15 +739,15 @@ public class NutritionEntity {
         nutrition.setTaurine(this.taurine);
         nutrition.setOrganicAcids(this.organicAcids);
 
-        // Vitamin D subforms (v7)
+        // Vitamin D subforms
         nutrition.setVitaminD2(this.vitaminD2);
         nutrition.setVitaminD3(this.vitaminD3);
 
-        // Folate subforms (v7)
+        // Folate subforms
         nutrition.setIntrinsicFolate(this.intrinsicFolate);
         nutrition.setFolicAcid(this.folicAcid);
 
-        // Data quality (v8)
+        // Data quality
         nutrition.setDataConfidence(this.dataConfidence);
 
         // Metadata
@@ -894,15 +894,15 @@ public class NutritionEntity {
             entity.setTaurine(nutrition.getTaurine());
             entity.setOrganicAcids(nutrition.getOrganicAcids());
 
-            // Vitamin D subforms (v7)
+            // Vitamin D subforms
             entity.setVitaminD2(nutrition.getVitaminD2());
             entity.setVitaminD3(nutrition.getVitaminD3());
 
-            // Folate subforms (v7)
+            // Folate subforms
             entity.setIntrinsicFolate(nutrition.getIntrinsicFolate());
             entity.setFolicAcid(nutrition.getFolicAcid());
 
-            // Data quality (v8)
+            // Data quality
             entity.setDataConfidence(nutrition.getDataConfidence());
 
             // Metadata
@@ -913,19 +913,19 @@ public class NutritionEntity {
         entity.calculateCompleteness();
         return entity;
     }
-    // ===== VITAMIN D SUBFORMS (v7) =====
+    // ===== VITAMIN D SUBFORMS =====
     public Double getVitaminD2() { return vitaminD2; }
     public void setVitaminD2(Double v) { this.vitaminD2 = v; }
     public Double getVitaminD3() { return vitaminD3; }
     public void setVitaminD3(Double v) { this.vitaminD3 = v; }
 
-    // ===== FOLATE SUBFORMS (v7) =====
+    // ===== FOLATE SUBFORMS =====
     public Double getIntrinsicFolate() { return intrinsicFolate; }
     public void setIntrinsicFolate(Double v) { this.intrinsicFolate = v; }
     public Double getFolicAcid() { return folicAcid; }
     public void setFolicAcid(Double v) { this.folicAcid = v; }
 
-    // ===== DATA QUALITY TIER (v8) =====
+    // ===== DATA QUALITY TIER =====
     public DataConfidence getDataConfidence() { return dataConfidence; }
     public void setDataConfidence(DataConfidence v) { this.dataConfidence = v; }
 }

@@ -19,15 +19,15 @@ import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchFood;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
 
 /**
- * USDAMapper — Maps USDA FoodData Central DTOs to FoodProduct domain models.
+ * USDAMapper - Maps USDA FoodData Central DTOs to FoodProduct domain models.
  *
  * TWO MAPPING PATHS
  * =================
- * 1. mapSearchResponse() — FDCSearchResponse → List<FoodProduct>
+ * 1. mapSearchResponse() - FDCSearchResponse → List<FoodProduct>
  *    Lightweight: name, category, fdcId, subset of nutrients from search result.
  *    Used by USDADataSource.search() and autocomplete().
  *
- * 2. mapFoodDetail() — FDCFoodDetail → FoodProduct
+ * 2. mapFoodDetail() - FDCFoodDetail → FoodProduct
  *    Comprehensive: full nutrient profile from the detail endpoint.
  *    Used by USDADataSource.getProduct().
  *
@@ -63,7 +63,7 @@ public final class USDAMapper {
      * Filters out foods with no description (rare but possible).
      *
      * @param response  FDC search API response
-     * @param language  User language (ignored — FDC is EN-only)
+     * @param language  User language (ignored - FDC is EN-only)
      * @return List of FoodProduct, never null, may be empty
      */
     @NonNull
@@ -127,7 +127,7 @@ public final class USDAMapper {
         }
 
         // USDA has no product images or Nutri-Score
-        // No barcode — FDC uses fdcId, not EAN/UPC
+        // No barcode - FDC uses fdcId, not EAN/UPC
 
         return product;
     }
@@ -146,7 +146,7 @@ public final class USDAMapper {
             @NonNull String language) {
 
         if (!detail.isValid()) {
-            Log.w(TAG, "Invalid FDCFoodDetail — fdcId=" + detail.getFdcId());
+            Log.w(TAG, "Invalid FDCFoodDetail - fdcId=" + detail.getFdcId());
             return null;
         }
 
@@ -208,7 +208,7 @@ public final class USDAMapper {
     /**
      * Map the full nutrient list from a food detail response.
      * Uses FDC nutrient IDs (stable INFOODS identifiers) for mapping,
-     * not string matching — more reliable than name patterns.
+     * not string matching - more reliable than name patterns.
      */
     @NonNull
     private static Nutrition mapDetailNutrition(@NonNull FDCFoodDetail detail) {
@@ -223,7 +223,7 @@ public final class USDAMapper {
         }
 
         // All USDA FDC data types (Foundation, SR Legacy, Survey) are lab-measured
-        // by USDA nutritionists — SCIENTIFIC confidence for all.
+        // by USDA nutritionists - SCIENTIFIC confidence for all.
         n.setDataConfidence(DataConfidence.SCIENTIFIC);
         return n;
     }
@@ -233,7 +233,7 @@ public final class USDAMapper {
      * IDs are INFOODS-based and stable across USDA releases.
      *
      * Units: all values are in the nutrient's native unit (g, mg, µg, kcal).
-     * Sodium is in mg — convert to g for our model (same as Ciqual convention).
+     * Sodium is in mg - convert to g for our model (same as Ciqual convention).
      */
     public static void mapNutrientById(@NonNull Nutrition n, int id, double val) {
         switch (id) {
@@ -262,10 +262,10 @@ public final class USDAMapper {
 
             // Specific omega fatty acids (g)
             case 1404: n.setALA(val);  break; // 18:3 n-3 (ALA)
-            case 1405: n.setEPA(val);  break; // 20:5 n-3 (EPA)  — rare in Foundation
+            case 1405: n.setEPA(val);  break; // 20:5 n-3 (EPA)  - rare in Foundation
             case 1406: n.setDHA(val);  break; // 22:6 n-3 (DHA)
 
-            // Minerals — mg in FDC, converted to g for our model
+            // Minerals - mg in FDC, converted to g for our model
             case 1093: n.setSodium(val / 1000.0);    break; // mg → g
             case 1087: n.setCalcium(val / 1000.0);   break;
             case 1089: n.setIron(val / 1000.0);      break;
@@ -294,7 +294,7 @@ public final class USDAMapper {
             case 1162: n.setVitaminC(val);    break; // mg
 
             default:
-                break; // Unmapped nutrient — silently skip
+                break; // Unmapped nutrient - silently skip
         }
     }
 
@@ -306,7 +306,7 @@ public final class USDAMapper {
      * Convert USDA ALL-CAPS description to sentence case.
      * "BROCCOLI, RAW" → "Broccoli, raw"
      * Preserves acronyms after the first word (heuristic: if a word is ≤3 chars
-     * and all caps, leave it — handles "RAW", "NFS", "NS").
+     * and all caps, leave it - handles "RAW", "NFS", "NS").
      * Simple approach: lowercase everything, capitalise first character.
      */
     @NonNull

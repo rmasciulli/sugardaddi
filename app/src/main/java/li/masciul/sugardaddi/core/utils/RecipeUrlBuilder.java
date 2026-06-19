@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 
 /**
- * RecipeUrlBuilder — Centralised URL generation for recipe source websites.
+ * RecipeUrlBuilder - Centralised URL generation for recipe source websites.
  *
  * Mirrors ProductUrlBuilder exactly in structure and pattern.
  * Builds external website URLs for recipes from TheMealDB and TheCocktailDB.
@@ -16,7 +16,7 @@ import li.masciul.sugardaddi.core.models.SourceIdentifier;
  * - TheCocktailDB: https://www.thecocktaildb.com/drink/{id}
  *
  * Both URLs are publicly accessible and display the full recipe page
- * with ingredients, instructions, and images — suitable for sharing.
+ * with ingredients, instructions, and images - suitable for sharing.
  *
  * USAGE
  * =====
@@ -56,7 +56,7 @@ public final class RecipeUrlBuilder {
     private static final String THECOCKTAILDB_URL_PATTERN =
             "https://www.thecocktaildb.com/drink/%s";
 
-    // Private constructor — utility class
+    // Private constructor - utility class
     private RecipeUrlBuilder() {
         throw new UnsupportedOperationException("RecipeUrlBuilder is a utility class");
     }

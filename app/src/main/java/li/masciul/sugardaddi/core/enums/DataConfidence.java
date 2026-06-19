@@ -3,7 +3,7 @@ package li.masciul.sugardaddi.core.enums;
 import androidx.annotation.Nullable;
 
 /**
- * DataConfidence — Describes the provenance and reliability of nutrition data.
+ * DataConfidence - Describes the provenance and reliability of nutrition data.
  *
  * Attached to every {@link li.masciul.sugardaddi.core.models.Nutrition} object
  * to give users and the app transparency about how trustworthy a nutrition value is.
@@ -13,11 +13,11 @@ import androidx.annotation.Nullable;
  * UI USAGE
  * ========
  * Each level maps to a distinct indicator in the detail screen:
- *   SCIENTIFIC  → 🔬 (lab flask) — "Scientific reference data"
- *   DECLARED    → 🏷️ (label tag)  — "Declared by manufacturer"
- *   COMPUTED    → 🧮 (calculator) — "Calculated from ingredients"
- *   ESTIMATED   → ~ (tilde)       — "Estimated value"
- *   USER        → ✏️ (pencil)     — "User-entered value"
+ *   SCIENTIFIC  → 🔬 (lab flask) - "Scientific reference data"
+ *   DECLARED    → 🏷️ (label tag)  - "Declared by manufacturer"
+ *   COMPUTED    → 🧮 (calculator) - "Calculated from ingredients"
+ *   ESTIMATED   → ~ (tilde)       - "Estimated value"
+ *   USER        → ✏️ (pencil)     - "User-entered value"
  *
  * SOURCE MAPPING
  * ==============
@@ -34,10 +34,10 @@ import androidx.annotation.Nullable;
  * CIQUAL QUALITY CODE MAPPING
  * ===========================
  * Ciqual uses its own A/B/C/D confidence system:
- *   A — Representative French data, recent measurement → SCIENTIFIC
- *   B — Data from other EU countries, well-documented  → SCIENTIFIC
- *   C — Data from literature, calculation              → ESTIMATED
- *   D — Data older than 10 years, low confidence       → ESTIMATED
+ *   A - Representative French data, recent measurement → SCIENTIFIC
+ *   B - Data from other EU countries, well-documented  → SCIENTIFIC
+ *   C - Data from literature, calculation              → ESTIMATED
+ *   D - Data older than 10 years, low confidence       → ESTIMATED
  *
  * This mapping is applied in CiqualMapper per nutrient.
  * The Nutrition object carries the lowest confidence code across all nutrients.
@@ -54,7 +54,7 @@ public enum DataConfidence {
      * Sources: Ciqual (ANSES), USDA Foundation Foods, USDA SR Legacy,
      * USDA Survey (FNDDS).
      *
-     * Most reliable — values measured under controlled conditions,
+     * Most reliable - values measured under controlled conditions,
      * peer-reviewed methodology.
      */
     SCIENTIFIC,
@@ -74,13 +74,13 @@ public enum DataConfidence {
      * Sources: user-created recipes, composite meals.
      *
      * Accuracy depends on the quality of the underlying ingredient data.
-     * Each ingredient's own confidence level propagates upward — a recipe
+     * Each ingredient's own confidence level propagates upward - a recipe
      * with all SCIENTIFIC ingredients is more reliable than one mixing sources.
      */
     COMPUTED,
 
     /**
-     * Approximated — fuzzy ingredient match, partial data, or low-confidence
+     * Approximated - fuzzy ingredient match, partial data, or low-confidence
      * source measurement.
      * Sources: unresolved ingredient matches, Ciqual C/D quality codes,
      * incomplete product entries.
@@ -93,7 +93,7 @@ public enum DataConfidence {
      * Entered manually by the user with no external source verification.
      * Sources: custom foods, manual recipe overrides.
      *
-     * No validation — treat as personal reference only.
+     * No validation - treat as personal reference only.
      */
     USER;
 
@@ -103,7 +103,7 @@ public enum DataConfidence {
 
     /**
      * True if this confidence level is suitable for scientific or medical use.
-     * Only SCIENTIFIC qualifies — declared values have ±20% tolerance,
+     * Only SCIENTIFIC qualifies - declared values have ±20% tolerance,
      * computed values have cumulative uncertainty.
      */
     public boolean isHighConfidence() {
@@ -119,7 +119,7 @@ public enum DataConfidence {
     }
 
     /**
-     * Ordinal-based comparison — returns the lower (less confident) of two levels.
+     * Ordinal-based comparison - returns the lower (less confident) of two levels.
      * Useful when aggregating confidence across nutrients or ingredients:
      * the composite confidence is the lowest individual confidence.
      *
@@ -135,12 +135,12 @@ public enum DataConfidence {
     /**
      * Map a Ciqual quality code (A/B/C/D) to the appropriate DataConfidence level.
      *
-     * ALL four codes represent scientifically-sourced data — none are industrial
+     * ALL four codes represent scientifically-sourced data - none are industrial
      * or declared values. The distinction is about measurement quality:
-     *   A — Analyzed, recent, representative French samples
-     *   B — Analyzed, from other reliable EU/international sources
-     *   C — Calculated, from literature, or lower representativeness
-     *   D — Old data (>10 years), foreign sources, high variability
+     *   A - Analyzed, recent, representative French samples
+     *   B - Analyzed, from other reliable EU/international sources
+     *   C - Calculated, from literature, or lower representativeness
+     *   D - Old data (>10 years), foreign sources, high variability
      *
      * C and D map to ESTIMATED because precision/representativeness is lower,
      * not because the data origin is different.
@@ -183,10 +183,10 @@ public enum DataConfidence {
             case THEMEALDB:
                 // TheMealDB provides no nutrition data directly.
                 // Any nutrition attached to a MealDB recipe is calculated by the
-                // recipe engine from its resolved ingredients — that is COMPUTED,
+                // recipe engine from its resolved ingredients - that is COMPUTED,
                 // not declared or measured. ESTIMATED would apply only at the
                 // individual ingredient level if resolution is fuzzy, which the
-                // engine handles via lowest() propagation — not here.
+                // engine handles via lowest() propagation - not here.
                 return COMPUTED;
             default:
                 return ESTIMATED;

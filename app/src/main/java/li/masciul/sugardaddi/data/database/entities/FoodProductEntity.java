@@ -25,9 +25,9 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import android.util.Log;
 
 /**
- * FoodProductEntity - Database entity for food products (v3.0 - Hybrid Translation)
+ * FoodProductEntity - Database entity for food products (Hybrid Translation)
  *
- * ARCHITECTURE UPDATE v3.0:
+ * ARCHITECTURE UPDATE:
  * - Nutrition data stored separately in NutritionEntity table
  * - NEW: Hybrid translation system replacing LocalizedContent
  * - Primary fields store content in currentLanguage (direct access)
@@ -71,7 +71,7 @@ public class FoodProductEntity {
     private String sourceId;
     private String productType;  // Stored as String for Room compatibility
 
-    // ========== EXTENDED IDENTIFICATION (v7) ==========
+    // ========== EXTENDED IDENTIFICATION ==========
     /**
      * Scientific name. Null for most products.
      * Populated for Ciqual aquatic/fruit/veg entries from alim_nom_sci.
@@ -167,9 +167,16 @@ public class FoodProductEntity {
     // ========== CACHE METADATA ==========
     private boolean isFavorite = false;
     private int accessCount = 0;
-    private long lastUpdated;
+
+    // True for rows populated by a downloaded dataset (Ciqual / USDA bulk import).
+    // Such rows are exempt from TTL eviction - they're dataset members, not
+    // on-demand cache - and are removed only via Settings ▸ cache management.
+    private boolean localImport = false;
+
+    // ========== TIMESTAMPS ==========
     private long createdAt;
-    private long updatedAt;
+    private long lastUpdated;   // last successful network sync - drives staleness
+    private long lastViewed;    // last detail-screen open - drives eviction
 
     // ========== CONSTRUCTORS ==========
 
@@ -178,7 +185,7 @@ public class FoodProductEntity {
         this.tags = new HashSet<>();
         this.createdAt = System.currentTimeMillis();
         this.lastUpdated = this.createdAt;
-        this.updatedAt = this.createdAt;
+        this.lastViewed = System.currentTimeMillis();
     }
 
     // ========== CONVERSION METHODS ==========
@@ -283,7 +290,7 @@ public class FoodProductEntity {
         product.setCreatedAt(this.createdAt);
         product.setAccessCount(this.accessCount);
 
-        // Extended identification (v7)
+        // Extended identification
         product.setScientificName(this.scientificName);
         product.setCategoryCode(this.categoryCode);
 
@@ -388,14 +395,13 @@ public class FoodProductEntity {
         entity.setDataQualityScore(product.getDataQualityScore());
 
         // Set metadata
-        entity.setLastUpdated(product.getLastUpdated() > 0 ?
-                product.getLastUpdated() : System.currentTimeMillis());
         entity.setCreatedAt(product.getCreatedAt() > 0 ?
                 product.getCreatedAt() : System.currentTimeMillis());
-        entity.setUpdatedAt(System.currentTimeMillis());
+        entity.setLastUpdated(product.getLastUpdated() > 0 ?
+                product.getLastUpdated() : System.currentTimeMillis());
         entity.setAccessCount(product.getAccessCount());
 
-        // Extended identification (v7)
+        // Extended identification
         entity.setScientificName(product.getScientificName());
         entity.setCategoryCode(product.getCategoryCode());
 
@@ -410,7 +416,7 @@ public class FoodProductEntity {
 
     public void recordAccess() {
         this.accessCount++;
-        this.updatedAt = System.currentTimeMillis();
+        this.lastViewed = System.currentTimeMillis();
     }
 
     public boolean isStale(long maxAgeMillis) {
@@ -418,9 +424,8 @@ public class FoodProductEntity {
         return age > maxAgeMillis;
     }
 
-    public void markAsUpdated() {
+    public void touch() {
         this.lastUpdated = System.currentTimeMillis();
-        this.updatedAt = System.currentTimeMillis();
     }
 
     // ========== UTILITY METHODS ==========
@@ -607,19 +612,23 @@ public class FoodProductEntity {
     public int getAccessCount() { return accessCount; }
     public void setAccessCount(int accessCount) { this.accessCount = accessCount; }
 
-    public long getLastUpdated() { return lastUpdated; }
-    public void setLastUpdated(long lastUpdated) { this.lastUpdated = lastUpdated; }
+    public boolean isLocalImport() { return localImport; }
+    public void setLocalImport(boolean localImport) { this.localImport = localImport; }
 
+    // Timestamps
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
-    public long getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
-    // ========== EXTENDED IDENTIFICATION (v7) ==========
+    public long getLastUpdated() { return lastUpdated; }
+    public void setLastUpdated(long lastUpdated) { this.lastUpdated = lastUpdated; }
+
+    public long getLastViewed() { return lastViewed; }
+    public void setLastViewed(long lastViewed) { this.lastViewed = lastViewed; }
+
+    // ========== EXTENDED IDENTIFICATION ==========
     public String getScientificName() { return scientificName; }
     public void setScientificName(String scientificName) { this.scientificName = scientificName; }
 
     public String getCategoryCode() { return categoryCode; }
     public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
-
 }

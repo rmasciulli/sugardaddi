@@ -95,7 +95,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         populateImage(view, product);
         populateHeader(view, product, language);
         populateNutrition(view, product, language);
-        // Attribution panel last — informational, never obscures critical content
+        // Attribution panel last - informational, never obscures critical content
         DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 
@@ -137,7 +137,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
 
-        // Views may not exist yet in detail_ciqual_product.xml — no-op until added.
+        // Views may not exist yet in detail_ciqual_product.xml - no-op until added.
         if (heroContainer == null || heroImage == null) return;
 
         android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
@@ -204,7 +204,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
                     : context.getString(R.string.unknown_product));
         }
 
-        // Category — last 2 breadcrumb levels, matching search card style
+        // Category - last 2 breadcrumb levels, matching search card style
         TextView categoryText = view.findViewById(R.id.categoryText);
         if (categoryText != null) {
             String rawCat = product.getCategoriesText(language);
@@ -220,7 +220,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
             }
         }
 
-        // Nutrition summary row — carbs + kcal, same style as search card
+        // Nutrition summary row - carbs + kcal, same style as search card
         android.widget.LinearLayout nutritionSummaryRow =
                 view.findViewById(R.id.nutritionSummaryRow);
         TextView nutritionSummary = view.findViewById(R.id.nutritionSummary);
@@ -254,7 +254,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
             nutritionSummaryRow.setVisibility(View.GONE);
         }
 
-        // Serving size — show when defined by the data source
+        // Serving size - show when defined by the data source
         TextView servingSizeText = view.findViewById(R.id.servingSizeText);
         if (servingSizeText != null) {
             ServingSize serving = product.getServingSize();
@@ -277,7 +277,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
     /**
      * Set up the NutritionLabelManager and custom amount input.
      *
-     * Ciqual products have rich micro-nutrient data — DETAILED mode shows all of it
+     * Ciqual products have rich micro-nutrient data - DETAILED mode shows all of it
      * including the expandable vitamins/minerals section.
      */
     private void populateNutrition(@NonNull View view, @NonNull FoodProduct product,

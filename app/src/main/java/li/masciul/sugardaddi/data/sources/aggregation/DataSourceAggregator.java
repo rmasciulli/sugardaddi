@@ -30,12 +30,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * DataSourceAggregator — Parallel search across all active data sources.
+ * DataSourceAggregator - Parallel search across all active data sources.
  *
- * ARCHITECTURE v4.0 — Unified pipeline
+ * ARCHITECTURE v4.0 - Unified pipeline
  * ======================================
  * Single entry point: searchAll(query, limit, page, exhaustedSources, callback).
- * All previous overloads are gone — no backward compatibility kept.
+ * All previous overloads are gone - no backward compatibility kept.
  *
  * The aggregator is stateless across calls. All pagination state (current page,
  * exhausted sources, seen IDs) lives in SearchManager, which owns the search
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * =================
  * SearchManager passes a Set<String> of source IDs that have already reported
  * hasMore=false for the current query. The aggregator skips those sources
- * entirely — they are not counted toward the active latch, so they add zero
+ * entirely - they are not counted toward the active latch, so they add zero
  * latency. This is the correct fix for non-paginating sources (e.g. TheMealDB):
  * they self-exhaust on page 1 and are never called again for the same query.
  *
@@ -55,13 +55,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * mergeAndDeliver() computes both fields by scanning raw SearchResult objects
  * before passing them to SmartMergeStrategy:
  *
- *   sourceHasMore — Map<sourceId, Boolean>. false = exhausted for this query.
+ *   sourceHasMore - Map<sourceId, Boolean>. false = exhausted for this query.
  *                   SearchManager reads this to update its exhaustedSources set.
  *
- *   hasMore       — true if any non-exhausted source still has pages.
+ *   hasMore       - true if any non-exhausted source still has pages.
  *                   SearchManager uses this to control hasMorePages / UI footer.
  *
- * Errored and timed-out sources are treated as exhausted (hasMore=false) —
+ * Errored and timed-out sources are treated as exhausted (hasMore=false) -
  * no point retrying them on the next page for the same query.
  *
  * SEARCH FLOW
@@ -139,7 +139,7 @@ public class DataSourceAggregator {
     }
 
     // =========================================================================
-    // PUBLIC API — single entry point
+    // PUBLIC API - single entry point
     // =========================================================================
 
     /**
@@ -149,7 +149,7 @@ public class DataSourceAggregator {
      * ----------
      * @param query            Search string (min length enforced upstream by SearchManager)
      * @param limit            Max results requested per source per page
-     * @param page             1-based page number — passed to each source's search()
+     * @param page             1-based page number - passed to each source's search()
      * @param exhaustedSources Source IDs to skip for this call. Pass
      *                         {@link Collections#emptySet()} for page 1.
      *                         SearchManager builds this from previous pages'
@@ -209,7 +209,7 @@ public class DataSourceAggregator {
         // Set counter AFTER filtering so it matches the sources we'll actually wait for
         activeSearches.set(sourcesToSearch.size());
 
-        // Thread-safe result containers — written by executor threads, read by finally block
+        // Thread-safe result containers - written by executor threads, read by finally block
         final Map<String, DataSource.SearchResult> results       = new ConcurrentHashMap<>();
         final Map<String, Long>                    responseTimes = new ConcurrentHashMap<>();
         final Map<String, String>                  errors        = new ConcurrentHashMap<>();
@@ -220,7 +220,7 @@ public class DataSourceAggregator {
 
             searchExecutor.submit(() -> {
                 if (cancelRequested) {
-                    // Cancelled before this thread even started — skip and decrement
+                    // Cancelled before this thread even started - skip and decrement
                     int remaining = activeSearches.decrementAndGet();
                     if (remaining == 0 && !cancelRequested) {
                         mergeAndDeliver(results, errors, responseTimes,
@@ -232,7 +232,7 @@ public class DataSourceAggregator {
                 final long sourceStart = System.currentTimeMillis();
 
                 try {
-                    // One latch per source — blocks this executor thread until the
+                    // One latch per source - blocks this executor thread until the
                     // source calls onSuccess or onError (or we time out)
                     final CountDownLatch latch = new CountDownLatch(1);
                     final DataSource.SearchResult[] resultHolder = new DataSource.SearchResult[1];
@@ -254,7 +254,7 @@ public class DataSourceAggregator {
 
                                 @Override
                                 public void onLoading() {
-                                    // Progress signal only — latch stays open
+                                    // Progress signal only - latch stays open
                                 }
                             });
 
@@ -287,7 +287,7 @@ public class DataSourceAggregator {
                                     resultHolder[0].hasMore));
                         }
 
-                        // Fire partial result on main thread immediately — the UI can show
+                        // Fire partial result on main thread immediately - the UI can show
                         // the first fast source (e.g. OFF) without waiting for slower ones
                         if (!cancelRequested) {
                             final DataSource.SearchResult partial = resultHolder[0];
@@ -315,12 +315,12 @@ public class DataSourceAggregator {
                     final int remaining = activeSearches.decrementAndGet();
                     final int completed = sourcesToSearch.size() - remaining;
 
-                    // Progress update — always delivered, even on error/timeout
+                    // Progress update - always delivered, even on error/timeout
                     mainHandler.post(() ->
                             callback.onSearchProgress(sourceId, completed,
                                     sourcesToSearch.size()));
 
-                    // Last source finished — merge and deliver the final result
+                    // Last source finished - merge and deliver the final result
                     if (remaining == 0 && !cancelRequested) {
                         mergeAndDeliver(results, errors, responseTimes,
                                 query, language, startTime, callback);
@@ -339,7 +339,7 @@ public class DataSourceAggregator {
      *
      * Sets cancelRequested so that pending main-thread posts and mergeAndDeliver
      * are suppressed. Also calls cancelOperations() on every registered source
-     * (not just active ones — a source may have just become active mid-search).
+     * (not just active ones - a source may have just become active mid-search).
      *
      * Safe to call from any thread.
      */
@@ -391,7 +391,7 @@ public class DataSourceAggregator {
         try {
             // ── Step 1: Compute per-source hasMore flags ──────────────────────
             // Done before merge because SmartMergeStrategy doesn't surface this.
-            // Sources that errored or timed out are treated as exhausted — no
+            // Sources that errored or timed out are treated as exhausted - no
             // benefit in retrying them for the same query on the next page.
             final Map<String, Boolean> sourceHasMore = new HashMap<>();
             boolean anyHasMore = false;
@@ -500,14 +500,14 @@ public class DataSourceAggregator {
 
         /**
          * Called if the aggregation itself fails (e.g. no sources available).
-         * Individual source errors are silently folded into SourceStats — they
+         * Individual source errors are silently folded into SourceStats - they
          * do not trigger this method.
          */
         void onSearchError(@NonNull String error);
 
         /**
          * Called immediately when one source finishes, before the others.
-         * Use this to show partial results early — the UI doesn't need to wait
+         * Use this to show partial results early - the UI doesn't need to wait
          * for the slowest source before displaying anything.
          *
          * Default no-op so callers that don't need early results can ignore it.

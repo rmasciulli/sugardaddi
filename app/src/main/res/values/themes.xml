@@ -2,7 +2,7 @@
 <resources>
 
     <!-- =====================================================================
-         MAIN APP THEME — LIGHT
+         MAIN APP THEME - LIGHT
          Parent: Theme.Material3.Light.NoActionBar
          Colors come from values/colors.xml (md_theme_* names).
          values-night/colors.xml overrides the same names for dark mode.
@@ -10,7 +10,7 @@
 
     <style name="Theme.SugarDaddi" parent="Theme.Material3.Light.NoActionBar">
 
-        <!-- ===== M3 COLOR ROLES — from Material Theme Builder export ===== -->
+        <!-- ===== M3 COLOR ROLES - from Material Theme Builder export ===== -->
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
@@ -77,7 +77,7 @@
         <item name="colorControlActivated">@color/md_theme_primary</item>
         <item name="colorControlHighlight">@color/ripple_primary</item>
 
-        <!-- ===== TYPE SCALE — Inter + Roboto Condensed ===== -->
+        <!-- ===== TYPE SCALE - Inter + Roboto Condensed ===== -->
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.SugarDaddi.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.SugarDaddi.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.SugarDaddi.DisplaySmall</item>

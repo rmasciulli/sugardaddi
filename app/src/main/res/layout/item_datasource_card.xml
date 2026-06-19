@@ -10,13 +10,13 @@
     DESIGN DECISIONS v2.0
     ──────────────────────
     - "Check integrity" and "Reinitialise database" are text links (underlined,
-      left-aligned) rather than Material buttons — lighter visual weight.
+      left-aligned) rather than Material buttons - lighter visual weight.
     - "Save" credential is also a text link for consistency.
     - Integrity result sits on its own full-width row BELOW the link so it can
       wrap naturally. breakStrategy="balanced" splits the text evenly across 2 lines,
       avoiding a second line that is much shorter than the first.
     - Status dot now has a tiny "Status" label next to it for discoverability.
-    - paintFlags="8" corresponds to Paint.UNDERLINE_TEXT_FLAG — the cleanest way
+    - paintFlags="8" corresponds to Paint.UNDERLINE_TEXT_FLAG - the cleanest way
       to underline a TextView without a SpannableString in XML.
 -->
 <com.google.android.material.card.MaterialCardView
@@ -38,7 +38,7 @@
         android:padding="16dp">
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SECTION 1 — HEADER                                                  -->
+        <!-- SECTION 1 - HEADER                                                  -->
         <!-- Layout: [Source Name ·····] [Status label · dot] [Switch]          -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
 
@@ -99,7 +99,7 @@
         </LinearLayout>
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SECTION 2 — DESCRIPTION                                             -->
+        <!-- SECTION 2 - DESCRIPTION                                             -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
 
         <TextView
@@ -123,7 +123,7 @@
             android:alpha="0.2" />
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SECTION 4 — CREDENTIALS (GONE by default)                          -->
+        <!-- SECTION 4 - CREDENTIALS (GONE by default)                          -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
 
         <LinearLayout
@@ -171,10 +171,10 @@
                 android:layout_marginBottom="8dp"
                 android:visibility="gone"
                 tools:visibility="visible"
-                tools:text="⚠ Rate limited — register for a free key for unlimited access" />
+                tools:text="⚠ Rate limited - register for a free key for unlimited access" />
 
             <!--
-                "Save" as a text link — 48dp effective tap target via padding.
+                "Save" as a text link - 48dp effective tap target via padding.
                 paintFlags="8" = Paint.UNDERLINE_TEXT_FLAG
             -->
             <com.google.android.material.button.MaterialButton
@@ -198,7 +198,7 @@
             android:visibility="gone" />
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SECTION 6 — LOCAL DATABASE (GONE by default)                       -->
+        <!-- SECTION 6 - LOCAL DATABASE (GONE by default)                       -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
 
         <LinearLayout
@@ -228,7 +228,7 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="2dp"
-                tools:text="Local database ready — offline search active" />
+                tools:text="Local database ready - offline search active" />
 
             <TextView
                 android:id="@+id/dsDbVersionText"

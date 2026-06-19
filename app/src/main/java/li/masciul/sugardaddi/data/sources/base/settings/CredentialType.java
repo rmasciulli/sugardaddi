@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.data.sources.base.settings;
 
 /**
- * CredentialType — The kind of credential a data source may require.
+ * CredentialType - The kind of credential a data source may require.
  *
  * Used by {@link SettingsProvider} to tell {@code DataSourceCardManager}
  * how to render the credential input section and how to label it.
@@ -25,13 +25,13 @@ public enum CredentialType {
     API_KEY("API key"),
 
     /**
-     * HTTP Basic Authentication — username + password pair.
+     * HTTP Basic Authentication - username + password pair.
      * UI renders two fields: "Username" and "Password" (password masked).
      */
     BASIC_AUTH("Username / Password"),
 
     /**
-     * Bearer token — a longer-lived JWT or OAuth token pasted by the user.
+     * Bearer token - a longer-lived JWT or OAuth token pasted by the user.
      * UI renders a single multi-line text field labelled "Bearer token".
      */
     BEARER("Bearer token");

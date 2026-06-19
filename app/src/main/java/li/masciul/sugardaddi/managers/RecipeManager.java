@@ -11,7 +11,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 
 /**
- * RecipeManager — Orchestration layer for recipe detail operations.
+ * RecipeManager - Orchestration layer for recipe detail operations.
  *
  * Mirrors the design of {@link ProductManager}: sits between the UI layer
  * (RecipeDetailsActivity) and the data layer (RecipeRepository), providing
@@ -19,7 +19,7 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  *
  * IDENTIFIER HANDLING
  * ===================
- * Accepts source-qualified searchable IDs — the same string returned by
+ * Accepts source-qualified searchable IDs - the same string returned by
  * {@link Recipe#getSearchableId()}:
  *
  *   "USER:some-uuid"  → Room lookup (user-created recipe)
@@ -39,13 +39,12 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  * FAVOURITE HANDLING
  * ==================
  * External recipes (e.g. TheMealDB) are persisted to Room on first
- * favourite interaction via RecipeRepository.setExternalRecipeFavorite().
- * User recipes use RecipeRepository.updateRecipe() directly.
+ * favourite interaction via RecipeRepository.setRecipeFavorite().
  *
  * NOTE ON DATASOURCE INSTANCE
  * ============================
  * RecipeRepository creates its own TheMealDbDataSource instance. This means
- * two instances exist alongside the one in DataSourceManager — each with a
+ * two instances exist alongside the one in DataSourceManager - each with a
  * separate LRU cache. This is a known limitation and should be resolved in a
  * future refactor by injecting the shared DataSourceManager instance into the
  * repository instead of constructing its own.
@@ -77,7 +76,7 @@ public class RecipeManager {
      * Listener interface for recipe detail lifecycle events.
      *
      * Implemented by RecipeDetailsActivity. Each method maps directly to a
-     * UI state transition — loading spinner, content display, or error screen.
+     * UI state transition - loading spinner, content display, or error screen.
      */
     public interface RecipeListener {
 
@@ -175,7 +174,7 @@ public class RecipeManager {
         // Ignore duplicate load request for the currently-loading ID
         if (isLoading && cleanId.equals(currentSearchableId)) {
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Recipe " + cleanId + " already loading — ignoring duplicate");
+                Log.d(TAG, "Recipe " + cleanId + " already loading - ignoring duplicate");
             }
             return;
         }
@@ -249,14 +248,9 @@ public class RecipeManager {
 
     /**
      * Toggle the favourite state of the currently-loaded recipe.
-     *
-     * Handles both user-created and external (TheMealDB) recipes:
-     * - External recipes are persisted to Room on first toggle via
-     *   {@link RecipeRepository#setExternalRecipeFavorite}.
-     * - User recipes are updated directly via
-     *   {@link RecipeRepository#updateRecipe}.
-     *
-     * Does nothing if no recipe is currently loaded.
+     * Recipes are persisted to Room on first toggle via
+     * {@link RecipeRepository#setRecipeFavorite}. Does nothing if
+     * no recipe is currently loaded.
      */
     public void toggleFavorite() {
         if (currentRecipe == null) {
@@ -271,7 +265,7 @@ public class RecipeManager {
 
         boolean newFavoriteState = !currentRecipe.isFavorite();
 
-        repository.setExternalRecipeFavorite(
+        repository.setRecipeFavorite(
                 currentRecipe,
                 newFavoriteState,
                 new RecipeRepository.RecipeOperationCallback() {
@@ -329,7 +323,7 @@ public class RecipeManager {
 
     /**
      * Cancel any in-progress operations.
-     * Safe to call at any time — no-op if nothing is loading.
+     * Safe to call at any time - no-op if nothing is loading.
      */
     public void cancelOperations() {
         if (isLoading) {
@@ -371,7 +365,7 @@ public class RecipeManager {
         if (currentRecipe == null) return;
 
         // For in-memory external recipes not yet persisted, the flag on the
-        // Recipe object is already correct — use it directly without a DB call.
+        // Recipe object is already correct - use it directly without a DB call.
         boolean flag = currentRecipe.isFavorite();
         isFavorite = flag;
         notifyFavoriteStatusChanged(flag);

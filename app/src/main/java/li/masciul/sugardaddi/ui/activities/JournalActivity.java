@@ -529,9 +529,9 @@ public class JournalActivity extends BaseActivity implements
      * regardless of what the NestedScrollView does internally.
      */
     private void setupTimelineSwipeGesture() {
-        // Swipe detection thresholds — tuned for natural thumb gestures
+        // Swipe detection thresholds - tuned for natural thumb gestures
         final int SWIPE_THRESHOLD_DP = 25;          // Min distance (~6mm physical)
-        final int SWIPE_VELOCITY_THRESHOLD_DP = 50;  // Min speed — catches even slow drags
+        final int SWIPE_VELOCITY_THRESHOLD_DP = 50;  // Min speed - catches even slow drags
         float density = getResources().getDisplayMetrics().density;
         final float swipeThreshold = SWIPE_THRESHOLD_DP * density;
         final float velocityThreshold = SWIPE_VELOCITY_THRESHOLD_DP * density;
@@ -577,7 +577,7 @@ public class JournalActivity extends BaseActivity implements
      * swipes are detected even though the NestedScrollView would normally
      * intercept and alter the touch sequence.
      *
-     * The event is never consumed here — it always continues to the normal
+     * The event is never consumed here - it always continues to the normal
      * dispatch chain so vertical scrolling and all other touch handling works.
      */
     @Override

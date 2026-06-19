@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ResultPipeline — Scores, ranks, and diversifies search results using
+ * ResultPipeline - Scores, ranks, and diversifies search results using
  * source-specific scoring and a diversity strategy that ensures fair
  * representation across all active data sources.
  *
@@ -35,10 +35,10 @@ import java.util.List;
  *   - Recipe      → RecipeScorer (regardless of the recipe's DataSource)
  *
  * THE PIPELINE (four steps):
- *   1. Quality gate        — drop items that don't meet minimum display requirements
- *   2. Scorer resolution   — route each item to the right scorer via getScorer()
- *   3. Diversity strategy  — guarantee minimum representation per source, then quality fill
- *   4. Result capping      — trim to ApiConfig.MAX_RESULTS
+ *   1. Quality gate        - drop items that don't meet minimum display requirements
+ *   2. Scorer resolution   - route each item to the right scorer via getScorer()
+ *   3. Diversity strategy  - guarantee minimum representation per source, then quality fill
+ *   4. Result capping      - trim to ApiConfig.MAX_RESULTS
  *
  * QUALITY GATES
  * =============
@@ -46,20 +46,20 @@ import java.util.List;
  * Recipe:      must have a display name + at least one ingredient + at least one
  *              instruction step (or non-empty raw instructions blob).
  *
- * These gates are intentionally lightweight — they drop structurally incomplete
+ * These gates are intentionally lightweight - they drop structurally incomplete
  * items that would render poorly in the UI, not items that merely scored low.
  * Score-based filtering is handled by scorer.getMinimumScore().
  *
  * SCORER RESOLUTION
  * =================
  * getScorer() handles both FoodProduct and Recipe via instanceof dispatch.
- * Adding support for a new Searchable type requires only a new branch there —
+ * Adding support for a new Searchable type requires only a new branch there -
  * process() does not need to change.
  *
  * LANGUAGE
  * ========
  * Language must always be passed explicitly. There is no language inference
- * fallback — callers are responsible for providing the user's current language
+ * fallback - callers are responsible for providing the user's current language
  * via LanguageManager.
  *
  * THREAD SAFETY
@@ -97,7 +97,7 @@ public class ResultPipeline {
                                            @NonNull String query,
                                            @NonNull String language) {
         if (items.isEmpty()) {
-            Log.d(TAG, "process: empty input — nothing to process");
+            Log.d(TAG, "process: empty input - nothing to process");
             return new ArrayList<>();
         }
 
@@ -109,13 +109,13 @@ public class ResultPipeline {
 
         for (Searchable item : items) {
 
-            // ── 1. Quality gate — type-specific ─────────────────────────────
+            // ── 1. Quality gate - type-specific ─────────────────────────────
             if (item instanceof FoodProduct) {
                 if (!meetsQualityRequirements((FoodProduct) item, language)) continue;
             } else if (item instanceof Recipe) {
                 if (!meetsQualityRequirements((Recipe) item, language)) continue;
             }
-            // Additional Searchable types — extend meetsQualityRequirements() when needed
+            // Additional Searchable types - extend meetsQualityRequirements() when needed
 
             // ── 2. Scorer resolution + scoring ───────────────────────────────
             @SuppressWarnings("unchecked")
@@ -199,7 +199,7 @@ public class ResultPipeline {
      * - It has neither structured steps nor a raw instructions blob
      *   (a recipe with no preparation guidance is not displayable)
      *
-     * Note: image absence is NOT a gate criterion — it is a scoring bonus in
+     * Note: image absence is NOT a gate criterion - it is a scoring bonus in
      * RecipeScorer. A text-only recipe is perfectly valid.
      *
      * @param recipe   Recipe to evaluate. Never null.
@@ -277,9 +277,9 @@ public class ResultPipeline {
             }
         }
 
-        // Unknown type or unrecognised source — safe default
+        // Unknown type or unrecognised source - safe default
         Log.w(TAG, "getScorer: unhandled Searchable type "
-                + item.getClass().getSimpleName() + " — using OFF scorer as fallback");
+                + item.getClass().getSimpleName() + " - using OFF scorer as fallback");
         return (SourceSpecificScorer<Searchable>) (SourceSpecificScorer<?>)
                 OpenFoodFactsScorer.getInstance();
     }
@@ -292,13 +292,13 @@ public class ResultPipeline {
      * Normalise a search query for consistent matching across all scorers.
      *
      * Trims whitespace, converts to lowercase, and collapses multiple spaces
-     * into one. Diacritics are preserved — scorers handle language-specific
+     * into one. Diacritics are preserved - scorers handle language-specific
      * normalisation internally.
      *
      * Called once per search in process() and also used directly by scorers
      * for consistent text normalisation.
      *
-     * @param query Raw query from the user. Null-safe — returns "" for null.
+     * @param query Raw query from the user. Null-safe - returns "" for null.
      * @return Normalised query string. Never null.
      */
     @NonNull

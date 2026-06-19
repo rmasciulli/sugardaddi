@@ -23,8 +23,8 @@ import java.util.List;
  * KEY DIFFERENCES FROM OpenFoodFactsMapper:
  * - SearchAlicious returns PARTIAL data (optimized for search performance)
  * - Field names differ (nutrition_grades vs nutrition_grade)
- * - Brands is an array — take first element via getBrand()
- * - No comprehensive nutrition data — use OFF v2 API for product details
+ * - Brands is an array - take first element via getBrand()
+ * - No comprehensive nutrition data - use OFF v2 API for product details
  * - Has ES-specific fields (completeness, _score)
  *
  * CATEGORY STRATEGY:
@@ -38,7 +38,7 @@ import java.util.List;
  * categories_tags[last], cleaned from its "en:" prefix.
  *
  * CATEGORY HIERARCHY:
- * categories_tags from Searchalicious is a stale snapshot — a subset of what
+ * categories_tags from Searchalicious is a stale snapshot - a subset of what
  * OFF v2 categories_hierarchy returns. We store it as the hierarchy for now, but
  * the full hierarchy is only available from the OFF v2 detail call.
  *
@@ -154,7 +154,7 @@ public class SearchAliciousMapper {
             product.setName(otherName, otherLang);
         }
 
-        // Brand (language-independent — take first from brands array)
+        // Brand (language-independent - take first from brands array)
         String brand = hit.getBrand();
         if (brand != null && !brand.trim().isEmpty()) {
             product.setBrand(brand, language);
@@ -229,7 +229,7 @@ public class SearchAliciousMapper {
      *
      * HIERARCHY:
      * categories_tags is stored as the category hierarchy. Note: this is a stale
-     * snapshot — the full hierarchy is only available from the OFF v2 detail call.
+     * snapshot - the full hierarchy is only available from the OFF v2 detail call.
      * category_hierarchy is populated but NOTE: it is not persisted to the DB yet
      * (Phase 2 will add the column).
      *
@@ -247,7 +247,7 @@ public class SearchAliciousMapper {
                 product.setCategoriesText(primaryCategory, language);
             }
 
-            // Store the other language directly via setCategoriesText — it routes into
+            // Store the other language directly via setCategoriesText - it routes into
             // translations map automatically when lang != primary language.
             String otherLang = "en".equals(language) ? "fr" : "en";
             String otherCategory = hit.getLocalizedAgribalyseName(otherLang);
@@ -264,7 +264,7 @@ public class SearchAliciousMapper {
 
         } else {
             // === FALLBACK PATH: most specific real-English tag from categories_tags ===
-            // categories_tags[last] is NOT safe — OFF allows French contributors to
+            // categories_tags[last] is NOT safe - OFF allows French contributors to
             // enter French words via the English interface, producing tags like
             // "en:petales-de-ble-chocolates" that have "en:" prefix but French content.
             // We walk backwards from the last tag to find the last genuinely English one.
@@ -279,7 +279,7 @@ public class SearchAliciousMapper {
 
         // Store categories_tags as the hierarchy (independent of display category).
         // This gives us the taxonomy breadcrumb even when not displayed.
-        // BUG FIX: separate from categoriesText — do not overwrite the display category.
+        // BUG FIX: separate from categoriesText - do not overwrite the display category.
         if (hit.getCategoriesTags() != null && !hit.getCategoriesTags().isEmpty()) {
             product.setCategoryHierarchy(hit.getCategoriesTags());
         }
@@ -316,7 +316,7 @@ public class SearchAliciousMapper {
      * - "fr:produits-laitiers"          → "Produits laitiers"
      * - "en:plain-skyrs"                → "Plain skyrs"
      *
-     * Note: Sentence case (only first word) is intentional — these are category names,
+     * Note: Sentence case (only first word) is intentional - these are category names,
      * not titles. Title case (every word capitalized) looks odd for long category names.
      *
      * @param categoryTag Raw category tag from OFF/Searchalicious

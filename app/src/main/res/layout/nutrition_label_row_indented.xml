@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_row_indented.xml — Indented nutrient row (indent level 1).
+    nutrition_label_row_indented.xml - Indented nutrient row (indent level 1).
     Examples: "of which saturated", "of which sugars".
 
     TYPOGRAPHY:
-      Nutrient name: textAppearanceBodySmall (12sp regular) — visually subordinate
+      Nutrient name: textAppearanceBodySmall (12sp regular) - visually subordinate
       to level-0 rows. colorOnSurfaceVariant signals secondary content.
       Values: autoSize 11–13sp.
 
@@ -30,7 +30,7 @@
         android:gravity="center_vertical"
         android:minHeight="32dp">
 
-        <!-- Column 1: Nutrient name — 16dp indent signals sub-nutrient -->
+        <!-- Column 1: Nutrient name - 16dp indent signals sub-nutrient -->
         <TextView
             android:id="@+id/nutrientName"
             android:layout_width="0dp"

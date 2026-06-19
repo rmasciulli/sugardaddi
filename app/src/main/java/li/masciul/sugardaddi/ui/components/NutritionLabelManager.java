@@ -569,7 +569,7 @@ public class NutritionLabelManager {
         params.setMargins(24, 24, 24, 24);
         toggleButton.setLayoutParams(params);
 
-        // Resolve colors from the current theme — adapts automatically to light/dark mode
+        // Resolve colors from the current theme - adapts automatically to light/dark mode
         int textColor = MaterialColors.getColor(context,
                 com.google.android.material.R.attr.colorOnSurface,
                 ContextCompat.getColor(context, R.color.md_theme_onSurface));

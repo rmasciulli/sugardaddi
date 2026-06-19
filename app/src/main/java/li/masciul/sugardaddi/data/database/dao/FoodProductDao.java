@@ -274,7 +274,7 @@ public interface FoodProductDao {
     /**
      * Get recently accessed products
      */
-    @Query("SELECT * FROM food_products WHERE accessCount > 0 ORDER BY lastUpdated DESC LIMIT :limit")
+    @Query("SELECT * FROM food_products WHERE accessCount > 0 ORDER BY lastViewed DESC LIMIT :limit")
     List<FoodProductEntity> getRecentlyAccessedProducts(int limit);
 
     // ========== CACHE MAINTENANCE ==========
@@ -325,16 +325,14 @@ public interface FoodProductDao {
      * Returns all non-null local image paths for food products.
      *
      * Covers all four local path columns:
-     *   thumbnailPath     — auto-cached thumbnail (downloaded on favourite)
-     *   imagePath         — auto-cached full-size (future use, currently NULL)
-     *   userThumbnailPath — user-defined thumbnail override ({id}_custom.jpg)
-     *   userImagePath     — user-defined full-size override
+     *   thumbnailPath     - auto-cached thumbnail (downloaded on favourite)
+     *   imagePath         - auto-cached full-size (future use, currently NULL)
+     *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
+     *   userImagePath     - user-defined full-size override
      *
-     * UNION ALL is correct — the same path cannot appear in multiple columns
+     * UNION ALL is correct - the same path cannot appear in multiple columns
      * by design (_custom suffix distinguishes userThumbnailPath from thumbnailPath).
      * Used by ImagePurgeManager to cross-reference disk files against Room.
-     *
-     * Updated in: database v13 (media field rename + expansion)
      */
     @Query("SELECT thumbnailPath FROM food_products WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "

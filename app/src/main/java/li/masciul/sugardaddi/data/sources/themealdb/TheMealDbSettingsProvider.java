@@ -11,7 +11,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * TheMealDbSettingsProvider — SettingsProvider for the TheMealDB settings card.
+ * TheMealDbSettingsProvider - SettingsProvider for the TheMealDB settings card.
  *
  * CARD LAYOUT
  * ===========
@@ -21,12 +21,12 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * ├─────────────────────────────────────┤
  * │ API CREDENTIALS                     │
  * │ [API key input field]               │
- * │ ⚠ Using free key — Patreon key      │  ← shown when DEMO_KEY ("1") active
+ * │ ⚠ Using free key - Patreon key      │  ← shown when DEMO_KEY ("1") active
  * │   required for public release       │
  * │ [Save]                              │
  * └─────────────────────────────────────┘
  *
- * TheMealDB has NO local database — all data is fetched on demand.
+ * TheMealDB has NO local database - all data is fetched on demand.
  * The local DB section is hidden entirely (hasLocalDatabase() = false).
  *
  * CREDENTIAL LIFECYCLE
@@ -41,7 +41,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * Because the TheMealDB API key is a PATH SEGMENT in the base URL, saving a new
  * key requires rebuilding the Retrofit instance. TheMealDbDataSource.reinitialize()
  * handles this. TheMealDbSettingsProvider calls it after saving via the optional
- * ReinitializeCallback — wired up by DataSourceManager at registration time.
+ * ReinitializeCallback - wired up by DataSourceManager at registration time.
  */
 public class TheMealDbSettingsProvider implements SettingsProvider {
 
@@ -75,7 +75,7 @@ public class TheMealDbSettingsProvider implements SettingsProvider {
 
     @Override
     public boolean hasCredentials() {
-        // TheMealDB has an API key — it's free/public by default ("1"),
+        // TheMealDB has an API key - it's free/public by default ("1"),
         // but users with a Patreon key can enter it here for public release builds.
         return true;
     }
@@ -102,7 +102,7 @@ public class TheMealDbSettingsProvider implements SettingsProvider {
                 .putString(TheMealDbConstants.PREF_API_KEY, value.trim())
                 .apply();
 
-        // Trigger Retrofit reinitialize — the key is part of the base URL path
+        // Trigger Retrofit reinitialize - the key is part of the base URL path
         if (reinitializeCallback != null) {
             reinitializeCallback.onKeyChanged();
         }
@@ -111,20 +111,20 @@ public class TheMealDbSettingsProvider implements SettingsProvider {
     @Nullable
     @Override
     public String getDefaultCredential() {
-        // The public development key — safe to show as the default value
+        // The public development key - safe to show as the default value
         return TheMealDbConstants.DEMO_KEY;
     }
 
     @Nullable
     @Override
     public String getCredentialWarning() {
-        // Shown when the demo key is active — reminds users that a Patreon
+        // Shown when the demo key is active - reminds users that a Patreon
         // key is required for public app store distribution
-        return "⚠ Free development key active — a Patreon key is required for public release";
+        return "⚠ Free development key active - a Patreon key is required for public release";
     }
 
     // =========================================================================
-    // LOCAL DATABASE — none
+    // LOCAL DATABASE - none
     // =========================================================================
 
     @Override
@@ -157,16 +157,16 @@ public class TheMealDbSettingsProvider implements SettingsProvider {
 
     @Override
     public void startImport(@NonNull Context context) {
-        // No-op — no import pipeline
+        // No-op - no import pipeline
     }
 
     @Override
     public void resetDatabaseState(@NonNull Context context) {
-        // No-op — no persistent database state to reset
+        // No-op - no persistent database state to reset
     }
 
     // =========================================================================
-    // BROADCAST KEYS — not applicable (no import service)
+    // BROADCAST KEYS - not applicable (no import service)
     // =========================================================================
 
     @NonNull

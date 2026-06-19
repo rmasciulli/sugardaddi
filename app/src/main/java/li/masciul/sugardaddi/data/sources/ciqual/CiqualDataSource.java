@@ -286,7 +286,7 @@ public class CiqualDataSource extends BaseDataSource {
      * STAGE 2: Category lookup (~50ms, also background)
      * - Loads alim_grp asset into CiqualCategoryLookup
      * - Enables breadcrumb category display in search cards
-     * - Non-fatal if it fails — flat category names are used as fallback
+     * - Non-fatal if it fails - flat category names are used as fallback
      *
      * Local DB import (Phase 3) is triggered separately from
      * MainActivity.onActivityResumed() to guarantee the app is in the
@@ -302,7 +302,7 @@ public class CiqualDataSource extends BaseDataSource {
         // STAGE 2: Category hierarchy from bundled asset (fast, background)
         initializeCategoryLookupAsync();
 
-        logInfo("Ciqual initialized — API ready, category lookup loading");
+        logInfo("Ciqual initialized - API ready, category lookup loading");
     }
 
     /**
@@ -342,7 +342,7 @@ public class CiqualDataSource extends BaseDataSource {
     /**
      * Initialize the category hierarchy lookup from the bundled asset file.
      *
-     * Reads alim_grp_2025_11_03.xml from assets — a flat 80KB XML file containing
+     * Reads alim_grp_2025_11_03.xml from assets - a flat 80KB XML file containing
      * all 138 Ciqual food group/subgroup/sub-subgroup entries.
      *
      * This is SEPARATE from the full XML parser (Phase 2B) and much lighter:
@@ -350,7 +350,7 @@ public class CiqualDataSource extends BaseDataSource {
      * - Completes in <50ms on any device
      * - Enables getCategoryHierarchy() in CiqualElasticsearchMapper immediately
      *
-     * Safe to call multiple times — CiqualCategoryLookup.parseFromAssets() is idempotent.
+     * Safe to call multiple times - CiqualCategoryLookup.parseFromAssets() is idempotent.
      */
     private void initializeCategoryLookupAsync() {
         backgroundExecutor.execute(() -> {
@@ -370,7 +370,7 @@ public class CiqualDataSource extends BaseDataSource {
      *   - The stored version doesn't match CiqualConstants.DATASET_VERSION
      *
      * Uses startForegroundService so the OS allows it from a background thread.
-     * The import runs in its own foreground service — this call returns immediately.
+     * The import runs in its own foreground service - this call returns immediately.
      * search() continues using the ES API as fallback until the import completes.
      */
     /**
@@ -383,12 +383,12 @@ public class CiqualDataSource extends BaseDataSource {
      */
     public void triggerImportIfNeeded() {
         if (!CiqualImportService.needsUpdate(context)) {
-            logDebug("Ciqual DB is current (v" + CiqualImportService.getImportedVersion(context) + ") — skipping import");
+            logDebug("Ciqual DB is current (v" + CiqualImportService.getImportedVersion(context) + ") - skipping import");
             return;
         }
         logInfo("Ciqual DB needs import (stored=" + CiqualImportService.getImportedVersion(context)
                 + ", current=" + CiqualConstants.DATASET_VERSION + ")");
-        // Post to main thread — startForegroundService() must be called from foreground
+        // Post to main thread - startForegroundService() must be called from foreground
         new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
             try {
                 Intent intent = new Intent(context, CiqualImportService.class);
@@ -447,7 +447,7 @@ public class CiqualDataSource extends BaseDataSource {
      * Returns the CiqualSettingsProvider which gives the Settings UI everything
      * it needs to render and interact with the Ciqual card:
      * local DB state, integrity checks, import control, and broadcast actions.
-     * Credentials are not included — Ciqual requires no API key.
+     * Credentials are not included - Ciqual requires no API key.
      */
     @Override
     @NonNull
@@ -458,10 +458,10 @@ public class CiqualDataSource extends BaseDataSource {
     // ========== SEARCH ==========
 
     /**
-     * Search Ciqual — local Room when DB imported, ES API fallback.
+     * Search Ciqual - local Room when DB imported, ES API fallback.
      *
      * LOCAL: queries food_products WHERE sourceId=CIQUAL AND searchableText LIKE query.
-     *        searchableText contains both nameFr + nameEn — bilingual search.
+     *        searchableText contains both nameFr + nameEn - bilingual search.
      *        Falls through to ES if local returns no results.
      * ES API: original Elasticsearch path for when DB not yet downloaded.
      */
@@ -507,13 +507,13 @@ public class CiqualDataSource extends BaseDataSource {
                 } catch (Exception e) {
                     logError("Local Ciqual search failed, falling back to ES", e);
                 }
-                // No local results — fall through to ES
+                // No local results - fall through to ES
                 searchElasticsearch(query, effectiveLanguage, limit, callback);
             });
             return;
         }
 
-        // ES API path — DB not yet imported
+        // ES API path - DB not yet imported
         if (!apiReady.get()) {
             Error error = Error.unknown("Ciqual API not yet initialized", null);
             handleError(error, callback);
@@ -523,7 +523,7 @@ public class CiqualDataSource extends BaseDataSource {
     }
 
     /**
-     * Execute Elasticsearch search — extracted from original search() so the
+     * Execute Elasticsearch search - extracted from original search() so the
      * local-first path above can delegate here cleanly.
      */
     private void searchElasticsearch(@NonNull String query, @NonNull String effectiveLanguage,

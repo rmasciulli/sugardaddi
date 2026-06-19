@@ -322,7 +322,7 @@ public class OpenFoodFactsMapper {
         if (offProduct.hasAgribalyseData()) {
             // === AGRIBALYSE PATH: bilingual, standardized ===
             // ecoscore_data.agribalyse always carries both EN and FR names.
-            // This is the most accurate, human-readable category — prefer it
+            // This is the most accurate, human-readable category - prefer it
             // over raw tags or free-text which are often language-mixed or stale.
             String nameEn = offProduct.getAgribalyseNameEn();
             String nameFr = offProduct.getAgribalyseNameFr();
@@ -333,7 +333,7 @@ public class OpenFoodFactsMapper {
                 product.setCategoriesText(primary, language);
             }
 
-            // Store other language in translations — no extra API call needed
+            // Store other language in translations - no extra API call needed
             String otherLang = "en".equals(language) ? "fr" : "en";
             String other = "en".equals(language) ? nameFr : nameEn;
             if (other != null && !other.trim().isEmpty()) {
@@ -381,7 +381,7 @@ public class OpenFoodFactsMapper {
     private String getMostSpecificEnglishTag(List<String> hierarchy) {
         if (hierarchy == null || hierarchy.isEmpty()) return null;
 
-        // Walk backwards — most specific tag is at the end of the hierarchy
+        // Walk backwards - most specific tag is at the end of the hierarchy
         for (int i = hierarchy.size() - 1; i >= 0; i--) {
             String tag = hierarchy.get(i);
             if (tag != null && tag.startsWith("en:") && isLikelyEnglishTag(tag)) {

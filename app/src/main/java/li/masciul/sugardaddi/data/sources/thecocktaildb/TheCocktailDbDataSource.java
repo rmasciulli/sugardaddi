@@ -37,7 +37,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * TheCocktailDbDataSource — TheCocktailDB cocktail data source.
+ * TheCocktailDbDataSource - TheCocktailDB cocktail data source.
  *
  * ARCHITECTURE
  * ============
@@ -46,14 +46,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * sources (OFF, Ciqual, USDA, TheMealDB).
  *
  * Returns {@link Recipe} objects wrapped in {@link SearchResult} items.
- * Cocktails are treated as recipes — they share the same domain model,
+ * Cocktails are treated as recipes - they share the same domain model,
  * same Room persistence, and same detail screen pipeline.
  *
  * SEARCH FLOW
  * ===========
  * search() → GET search.php?s={query}
  * Returns full Recipe objects (ingredients, instructions, thumbnail, tags).
- * No pagination — TheCocktailDB returns all matches in one response; we cap
+ * No pagination - TheCocktailDB returns all matches in one response; we cap
  * at {@link TheCocktailDbConstants#MAX_SEARCH_RESULTS}.
  *
  * RECIPE DETAIL
@@ -68,7 +68,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  * API KEY
  * =======
- * The key is a path segment in the base URL — changing it requires rebuilding
+ * The key is a path segment in the base URL - changing it requires rebuilding
  * the Retrofit instance. Call reinitialize() after saving a new key in Settings.
  *
  * LRU CACHE
@@ -88,16 +88,16 @@ public class TheCocktailDbDataSource extends BaseDataSource {
     private final TheCocktailDbMapper  mapper;
     private final Context              context;
 
-    /** Retrofit API interface — created in onInitialize(). */
+    /** Retrofit API interface - created in onInitialize(). */
     private TheCocktailDbAPI api;
 
-    /** Active Retrofit calls — tracked for cancellation support. */
+    /** Active Retrofit calls - tracked for cancellation support. */
     private final Set<Call<?>> activeCalls =
             Collections.synchronizedSet(new HashSet<>());
 
     /**
      * Session-scoped LRU cache keyed by TheCocktailDB drink ID.
-     * Capacity: 50 cocktails — sufficient for a full browsing session.
+     * Capacity: 50 cocktails - sufficient for a full browsing session.
      */
     private final LruCache<String, Recipe> recipeCache = new LruCache<>(50);
 
@@ -204,12 +204,12 @@ public class TheCocktailDbDataSource extends BaseDataSource {
 
         api = retrofit.create(TheCocktailDbAPI.class);
 
-        logInfo("TheCocktailDB API initialized — key: "
+        logInfo("TheCocktailDB API initialized - key: "
                 + (config.isUsingDemoKey() ? "DEMO (\"1\")" : "Patreon key"));
     }
 
     /**
-     * Synchronous initialization — delegates to onInitialize().
+     * Synchronous initialization - delegates to onInitialize().
      * Called by DataSourceManager's synchronous fallback path.
      */
     @Override
@@ -252,16 +252,16 @@ public class TheCocktailDbDataSource extends BaseDataSource {
      * Fires: GET search.php?s={query}
      *
      * Returns up to {@link TheCocktailDbConstants#MAX_SEARCH_RESULTS} Recipe objects
-     * wrapped in a SearchResult. The items list contains Recipe instances —
+     * wrapped in a SearchResult. The items list contains Recipe instances -
      * downstream handling must use instanceof or item.getProductType() to discriminate.
      *
      * Short-circuits with an empty success (not an error) when the query is
      * shorter than {@link TheCocktailDbConstants#MIN_QUERY_LENGTH}.
      *
      * @param query    Search query. Must not be null.
-     * @param language Language code — ignored (TheCocktailDB is English-only).
-     * @param limit    Max results — capped to MAX_SEARCH_RESULTS.
-     * @param page     Page number — ignored (TheCocktailDB has no pagination).
+     * @param language Language code - ignored (TheCocktailDB is English-only).
+     * @param limit    Max results - capped to MAX_SEARCH_RESULTS.
+     * @param page     Page number - ignored (TheCocktailDB has no pagination).
      * @param callback Result callback. Always called on the main thread.
      */
     @Override
@@ -280,7 +280,7 @@ public class TheCocktailDbDataSource extends BaseDataSource {
         // Enforce minimum query length
         if (query.trim().length() < TheCocktailDbConstants.MIN_QUERY_LENGTH) {
             logDebug("Query too short for TheCocktailDB (" + query.length()
-                    + " < " + TheCocktailDbConstants.MIN_QUERY_LENGTH + ") — returning empty");
+                    + " < " + TheCocktailDbConstants.MIN_QUERY_LENGTH + ") - returning empty");
             executeOnMainThread(() -> callback.onSuccess(
                     new SearchResult(new ArrayList<>(), 0, false,
                             query, language, TheCocktailDbConstants.SOURCE_ID)));
@@ -313,13 +313,13 @@ public class TheCocktailDbDataSource extends BaseDataSource {
                 // Map DTOs to Recipe domain objects
                 List<Recipe> all = mapper.mapSearchResponse(response.body());
 
-                // Cap to MAX_SEARCH_RESULTS — no pagination on TheCocktailDB
+                // Cap to MAX_SEARCH_RESULTS - no pagination on TheCocktailDB
                 int effectiveLimit = Math.min(
                         Math.min(limit, TheCocktailDbConstants.MAX_SEARCH_RESULTS),
                         all.size());
                 List<Recipe> capped = all.subList(0, effectiveLimit);
 
-                // Populate LRU cache — detail lookups for these results are free
+                // Populate LRU cache - detail lookups for these results are free
                 for (Recipe recipe : capped) {
                     if (recipe.getOriginalId() != null) {
                         recipeCache.put(recipe.getOriginalId(), recipe);
@@ -332,7 +332,7 @@ public class TheCocktailDbDataSource extends BaseDataSource {
                 SearchResult result = new SearchResult(
                         items,
                         all.size(),
-                        false,  // No pagination — TheCocktailDB is all-or-nothing
+                        false,  // No pagination - TheCocktailDB is all-or-nothing
                         query,
                         language,
                         TheCocktailDbConstants.SOURCE_ID
@@ -366,14 +366,14 @@ public class TheCocktailDbDataSource extends BaseDataSource {
     /**
      * Fetch a full Recipe by TheCocktailDB drink ID.
      *
-     * Checks the LRU cache first — avoids a network round-trip for cocktails
+     * Checks the LRU cache first - avoids a network round-trip for cocktails
      * already fetched during this session (e.g. from a search result).
      *
      * Called by RecipeRepository when the user opens a TheCocktailDB recipe
      * detail screen and the recipe is not yet in Room.
      *
      * @param drinkId  TheCocktailDB numeric ID string (e.g. "11007")
-     * @param language Language code — ignored (English-only source)
+     * @param language Language code - ignored (English-only source)
      * @param callback Called with the Recipe, or onError if not found
      */
     @Override

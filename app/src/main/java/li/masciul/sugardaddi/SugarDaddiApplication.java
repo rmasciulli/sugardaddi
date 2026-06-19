@@ -19,27 +19,16 @@ import li.masciul.sugardaddi.utils.language.LanguageDetector;
 import java.util.List;
 
 /**
- * SugarDaddiApplication — Global application initialisation.
+ * SugarDaddiApplication - global application initialisation.
  *
- * ARCHITECTURE v3.0 — Settings refactor
- * ======================================
- * REMOVED: DataSourceConfig usage.
- *   The old initializeDataSourceSystem() called DataSourceConfig.setSourceEnabled()
- *   and setSourcePriority() on EVERY app start, which silently overwrote any
- *   preferences the user had set in the Settings screen.
- *
- *   Each source now persists its own enabled flag independently (via
- *   BaseDataSource.setEnabled(context, enabled)), and DataSourceManager
- *   reads that flag directly.  This class no longer touches source configuration.
- *
- * WHAT THIS CLASS STILL DOES
- * ==========================
- * 1. Language context wrapping (attachBaseContext)
- * 2. Theme initialisation
- * 3. Room database warm-up
- * 4. DataSourceManager singleton boot — sources initialise themselves in parallel
- * 5. Network system defaults (User-Agent)
- * 6. Performance monitoring toggle
+ * Responsibilities:
+ *   1. Language context wrapping (attachBaseContext)
+ *   2. Theme initialisation
+ *   3. Room database warm-up
+ *   4. DataSourceManager singleton boot - sources initialise themselves in parallel,
+ *      each reading its own persisted enabled flag (no central source config here)
+ *   5. Network system defaults (User-Agent)
+ *   6. Performance monitoring toggle
  */
 public class SugarDaddiApplication extends Application {
 
@@ -71,7 +60,7 @@ public class SugarDaddiApplication extends Application {
     private ImagePurgeManager imagePurgeManager;
 
     // =========================================================================
-    // CONTEXT WRAPPING — must happen before onCreate
+    // CONTEXT WRAPPING - must happen before onCreate
     // =========================================================================
 
     @Override
@@ -111,7 +100,7 @@ public class SugarDaddiApplication extends Application {
     @Override
     public void onLowMemory() {
         super.onLowMemory();
-        if (ApiConfig.DEBUG_LOGGING) Log.w(TAG, "Low memory — consider clearing caches");
+        if (ApiConfig.DEBUG_LOGGING) Log.w(TAG, "Low memory - consider clearing caches");
     }
 
     // =========================================================================
@@ -166,7 +155,7 @@ public class SugarDaddiApplication extends Application {
     /**
      * Initialises the image system and schedules a background orphan purge.
      *
-     * Must be called AFTER initializeDatabaseSystem() — ImagePurgeManager
+     * Must be called AFTER initializeDatabaseSystem() - ImagePurgeManager
      * queries Room to cross-reference disk files against known paths.
      *
      * Singletons created here are held for the lifetime of the process and
@@ -176,7 +165,7 @@ public class SugarDaddiApplication extends Application {
     private void initializeImageSystem() {
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Initialising image system…");
 
-        // Lightweight — no I/O on construction.
+        // Lightweight - no I/O on construction.
         imageStorageManager = new ImageStorageManager(this);
 
         // Owns a dedicated OkHttpClient + single-thread executor.
@@ -186,9 +175,12 @@ public class SugarDaddiApplication extends Application {
         imagePurgeManager = new ImagePurgeManager(this, imageStorageManager);
 
         // Fire-and-forget: scans all image directories, deletes orphans.
+        // This also handles cleanup after a destructive DB recreation - an empty
+        // Room means every image file is unreferenced, so all are purged. Do NOT
+        // add a "skip when Room is empty" guard; that would strand orphaned files.
         imagePurgeManager.purgeOrphansAsync();
 
-        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Image system initialised — purge scheduled");
+        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Image system initialised - purge scheduled");
     }
 
     // =========================================================================
@@ -200,7 +192,7 @@ public class SugarDaddiApplication extends Application {
      *
      * This is the only thing we do here now. The manager creates each source
      * and starts async initialisation. Each source reads its own enabled flag
-     * from its own SharedPreferences — we don't touch any config here.
+     * from its own SharedPreferences - we don't touch any config here.
      *
      * Sources are enabled by default on first launch (BaseDataSource returns
      * true when no SharedPreferences value has been written yet). The user can
@@ -284,7 +276,7 @@ public class SugarDaddiApplication extends Application {
 
     /**
      * Returns the application-scoped ImageStorageManager singleton.
-     * Never construct a new instance — always use this.
+     * Never construct a new instance - always use this.
      */
     public ImageStorageManager getImageStorageManager() {
         return imageStorageManager;
@@ -292,7 +284,7 @@ public class SugarDaddiApplication extends Application {
 
     /**
      * Returns the application-scoped ThumbnailDownloader singleton.
-     * Holds a shared OkHttpClient and executor — never construct your own.
+     * Holds a shared OkHttpClient and executor - never construct your own.
      */
     public ThumbnailDownloader getThumbnailDownloader() {
         return thumbnailDownloader;

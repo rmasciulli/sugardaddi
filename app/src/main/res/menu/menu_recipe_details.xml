@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    menu_recipe_details.xml — Toolbar menu for RecipeDetailsActivity.
+    menu_recipe_details.xml - Toolbar menu for RecipeDetailsActivity.
     ALWAYS VISIBLE:
       - Favourite : toggles border/filled star
     OVERFLOW (⋮):
@@ -41,7 +41,7 @@
         app:showAsAction="never" />
 
     <!--
-        Watch video — hidden when recipe has no videoUrl.
+        Watch video - hidden when recipe has no videoUrl.
         Shown in onPrepareOptionsMenu() only when videoUrl is non-null.
     -->
     <item
@@ -51,7 +51,7 @@
         app:showAsAction="never" />
 
     <!--
-        Replace full-size image — always shown.
+        Replace full-size image - always shown.
         Triggers camera/gallery picker → ImagePickerHelper → userImagePath.
     -->
     <item
@@ -60,7 +60,7 @@
         app:showAsAction="never" />
 
     <!--
-        Replace thumbnail — always shown.
+        Replace thumbnail - always shown.
         Triggers camera/gallery picker → ImagePickerHelper → userThumbnailPath.
     -->
     <item

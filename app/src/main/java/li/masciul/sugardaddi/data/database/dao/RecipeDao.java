@@ -412,15 +412,13 @@ public interface RecipeDao {
      * Returns all non-null local image paths for recipes.
      *
      * Covers all four local path columns:
-     *   thumbnailPath     — auto-cached thumbnail (downloaded on favourite)
-     *   imagePath         — auto-cached full-size (future use, currently NULL)
-     *   userThumbnailPath — user-defined thumbnail override ({id}_custom.jpg)
-     *   userImagePath     — user-defined full-size override
+     *   thumbnailPath     - auto-cached thumbnail (downloaded on favourite)
+     *   imagePath         - auto-cached full-size (future use, currently NULL)
+     *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
+     *   userImagePath     - user-defined full-size override
      *
-     * Does NOT cover step photos — those are extracted from the stepStructure
+     * Does NOT cover step photos - those are extracted from the stepStructure
      * JSON blob separately via getAllWithStepStructure() + extractStepPhotoPaths().
-     *
-     * Updated in: database v13 (media field rename + expansion)
      */
     @Query("SELECT thumbnailPath FROM recipes WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "

@@ -24,7 +24,7 @@ import li.masciul.sugardaddi.R;
  *   Group 4: Ultra-processed food and drink products (soft drinks, packaged snacks, etc.)
  *
  * Drawable naming convention in this project: novagroup_1, novagroup_2, novagroup_3, novagroup_4
- * (confirmed from ProjectTree.txt — no underscore before the digit)
+ * (confirmed from ProjectTree.txt - no underscore before the digit)
  */
 public class ScoreUtils {
 
@@ -201,7 +201,7 @@ public class ScoreUtils {
      * Get Nova Group drawable.
      *
      * Nova group is stored as a String (from OpenFoodFacts API): "1", "2", "3", or "4".
-     * Some sources may return it as an integer disguised as a string — we handle that.
+     * Some sources may return it as an integer disguised as a string - we handle that.
      * Null or empty → returns the group 4 badge (ultra-processed) as a safe fallback
      * because showing no Nova is more dangerous than showing a conservative estimate.
      *

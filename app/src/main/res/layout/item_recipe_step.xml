@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_recipe_step.xml — Single structured step row for DefaultRecipeDetailRenderer.
+    item_recipe_step.xml - Single structured step row for DefaultRecipeDetailRenderer.
 
     Shows step number (circle badge), instruction text, and optional
     duration and equipment metadata below the instruction.

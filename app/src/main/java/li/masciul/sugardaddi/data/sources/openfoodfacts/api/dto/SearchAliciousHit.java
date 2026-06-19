@@ -42,7 +42,7 @@ public class SearchAliciousHit {
 
     // ========== IDENTIFICATION ==========
 
-    /** Product barcode (EAN-13, UPC-A, etc.) — primary identifier */
+    /** Product barcode (EAN-13, UPC-A, etc.) - primary identifier */
     @SerializedName("code")
     private String code;
 
@@ -76,7 +76,7 @@ public class SearchAliciousHit {
     // ========== BRAND ==========
 
     /**
-     * Brand names array — use brands[0] for display.
+     * Brand names array - use brands[0] for display.
      * Use getBrand() helper instead of direct access.
      */
     @SerializedName("brands")
@@ -120,7 +120,7 @@ public class SearchAliciousHit {
     private String imageFrontUrl;
 
     /**
-     * Small front image URL — recommended for list views.
+     * Small front image URL - recommended for list views.
      * Optimized thumbnail, fastest to load.
      */
     @SerializedName("image_front_small_url")
@@ -145,7 +145,7 @@ public class SearchAliciousHit {
 
     /**
      * EcoScore/Green-Score grade: a, b, c, d, e (lowercase).
-     * Environmental impact score — a = minimal impact.
+     * Environmental impact score - a = minimal impact.
      */
     @SerializedName("ecoscore_grade")
     @Nullable
@@ -153,7 +153,7 @@ public class SearchAliciousHit {
 
     /**
      * NOVA group: 1, 2, 3, or 4.
-     * Food processing classification — 4 = ultra-processed.
+     * Food processing classification - 4 = ultra-processed.
      */
     @SerializedName("nova_group")
     @Nullable
@@ -189,7 +189,7 @@ public class SearchAliciousHit {
     // ========== NESTED DTOs ==========
 
     /**
-     * EcoScoreData — maps the ecoscore_data JSON object.
+     * EcoScoreData - maps the ecoscore_data JSON object.
      *
      * The full ecoscore_data object contains adjustments, packaging scores,
      * per-country grades, etc. We only map what we need: the agribalyse block.
@@ -198,7 +198,7 @@ public class SearchAliciousHit {
     public static class EcoScoreData {
 
         /**
-         * Agribalyse data block — the cross-source category bridge.
+         * Agribalyse data block - the cross-source category bridge.
          * Present when the product has been matched to an Agribalyse/Ciqual food entry.
          * Contains bilingual names (EN + FR) and the numeric Agribalyse code.
          */
@@ -217,7 +217,7 @@ public class SearchAliciousHit {
     }
 
     /**
-     * AgribalyseData — maps the ecoscore_data.agribalyse JSON object.
+     * AgribalyseData - maps the ecoscore_data.agribalyse JSON object.
      *
      * Agribalyse is the French LCA (Life Cycle Assessment) database published
      * by ADEME/ANSES. It's built on Ciqual food data, so:
@@ -241,7 +241,7 @@ public class SearchAliciousHit {
         /**
          * Agribalyse category name in English.
          * Example: "Biscuit (cookie), with chocolate, prepacked"
-         * More precise than categories_tags — official ANSES label.
+         * More precise than categories_tags - official ANSES label.
          */
         @SerializedName("name_en")
         @Nullable
@@ -290,7 +290,7 @@ public class SearchAliciousHit {
 
     /**
      * Get Agribalyse category name in English, or null if not available.
-     * Convenience accessor — handles null chain internally.
+     * Convenience accessor - handles null chain internally.
      */
     @Nullable
     public String getAgribalyseNameEn() {
@@ -302,7 +302,7 @@ public class SearchAliciousHit {
 
     /**
      * Get Agribalyse category name in French, or null if not available.
-     * Convenience accessor — handles null chain internally.
+     * Convenience accessor - handles null chain internally.
      */
     @Nullable
     public String getAgribalyseNameFr() {
@@ -314,7 +314,7 @@ public class SearchAliciousHit {
 
     /**
      * Get Agribalyse/Ciqual numeric code as String (e.g. "24036"), or null.
-     * This is the cross-source taxonomy key — same code in Ciqual and Agribalyse
+     * This is the cross-source taxonomy key - same code in Ciqual and Agribalyse
      * for exact food matches. Use for CategoryComparison and CategoryStats.
      */
     @Nullable
@@ -451,10 +451,10 @@ public class SearchAliciousHit {
      * Get display category for this product in the requested language.
      *
      * Priority:
-     * 1. Agribalyse name — standardized, bilingual, consistent across APIs
-     * 2. Last categories_tags entry — raw taxonomy tag (may be stale/noisy)
+     * 1. Agribalyse name - standardized, bilingual, consistent across APIs
+     * 2. Last categories_tags entry - raw taxonomy tag (may be stale/noisy)
      *
-     * The returned string from categories_tags may still contain the "en:" prefix —
+     * The returned string from categories_tags may still contain the "en:" prefix -
      * callers should clean it with cleanCategoryTag() if displaying to users.
      *
      * @param language Preferred language code ("en", "fr")
@@ -494,7 +494,7 @@ public class SearchAliciousHit {
      * 1. image_front_small_url (optimized thumbnail)
      * 2. image_front_url (full front image)
      * 3. image_small_url (generic small)
-     * 4. image_url (full size — avoid for lists)
+     * 4. image_url (full size - avoid for lists)
      *
      * @return Best available image URL, or null
      */

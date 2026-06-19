@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * SearchCache — Search infrastructure for SearchManager.
+ * SearchCache - Search infrastructure for SearchManager.
  *
  * RESPONSIBILITIES
  * ================
@@ -45,9 +45,9 @@ import java.util.concurrent.Executors;
  *    API response (e.g. OFF v2) was saved to Room. That version is richer
  *    than the lightweight Searchalicious search result. This method upgrades
  *    matching FoodProduct items in-place using two batch Room queries.
- *    Recipe items pass through untouched — they have no FoodProductEntity.
+ *    Recipe items pass through untouched - they have no FoodProductEntity.
  *
- * 3. enrichAndCache() — convenience wrapper used by SearchManager
+ * 3. enrichAndCache() - convenience wrapper used by SearchManager
  *    Runs enrichment on a background thread, optionally writes the result
  *    to SearchResultCache, then invokes onDone on the main thread.
  *
@@ -66,7 +66,7 @@ import java.util.concurrent.Executors;
  * THREADING
  * =========
  * getCachedResults() and put()/invalidate()/clear() are called on any thread
- * — SearchResultCache is fully synchronized.
+ * - SearchResultCache is fully synchronized.
  *
  * enrichAndCache() dispatches enrichment to backgroundExecutor, then posts
  * onDone to the main thread via mainHandler. Never call Room queries directly
@@ -93,7 +93,7 @@ public class SearchCache {
     // =========================================================================
 
     /**
-     * @param context Application or Activity context — used to get AppDatabase singleton.
+     * @param context Application or Activity context - used to get AppDatabase singleton.
      */
     public SearchCache(@NonNull Context context) {
         this.context            = context.getApplicationContext();
@@ -110,7 +110,7 @@ public class SearchCache {
     /**
      * Return cached page-1 results for the given query, or null on miss/expiry.
      *
-     * Safe to call on any thread — SearchResultCache is synchronized.
+     * Safe to call on any thread - SearchResultCache is synchronized.
      *
      * @param query Normalized search query
      * @return Defensive copy of cached items, or null
@@ -125,7 +125,7 @@ public class SearchCache {
      * Used when you already have enriched items and just want to persist them.
      *
      * @param query Normalized search query
-     * @param items Items to cache — a defensive copy is stored internally
+     * @param items Items to cache - a defensive copy is stored internally
      */
     public void put(@NonNull String query, @NonNull List<Searchable> items) {
         resultCache.put(query, items);
@@ -161,14 +161,14 @@ public class SearchCache {
      * enrichment (and optional cache write) completes.
      *
      * WHEN TO CACHE:
-     *   cacheResult=true  — page 1 results: write to cache so the next search()
+     *   cacheResult=true  - page 1 results: write to cache so the next search()
      *                        call for the same query is served instantly.
-     *   cacheResult=false — pagination pages: do not overwrite the page-1 cache
-     *                        entry. Pagination pages are transient — they are
+     *   cacheResult=false - pagination pages: do not overwrite the page-1 cache
+     *                        entry. Pagination pages are transient - they are
      *                        appended to the adapter, not re-fetched on resume.
      *
      * @param items       Items to enrich in-place (FoodProduct only; Recipe pass-through)
-     * @param query       Cache key — only used when cacheResult=true
+     * @param query       Cache key - only used when cacheResult=true
      * @param cacheResult True to store enriched result in SearchResultCache
      * @param onDone      Runnable invoked on the main thread after completion
      */
@@ -204,9 +204,9 @@ public class SearchCache {
      *   2. One batch Room query per type (two queries total, regardless of list size)
      *   3. Build lookup maps: barcode → FoodProduct, searchableId → FoodProduct
      *   4. For each item, call enrichWith(richer) if a DB match is found
-     *      enrichWith() is a non-destructive field-level merge — never downgrades
+     *      enrichWith() is a non-destructive field-level merge - never downgrades
      *
-     * Recipe items are skipped — they have no FoodProductEntity representation.
+     * Recipe items are skipped - they have no FoodProductEntity representation.
      *
      * THREADING: Must be called on a background thread. Called exclusively from
      * the backgroundExecutor inside enrichAndCache().
@@ -242,7 +242,7 @@ public class SearchCache {
                 }
             }
 
-            // Batch Room queries — two total, regardless of result set size
+            // Batch Room queries - two total, regardless of result set size
             Map<String, FoodProduct> barcodeToRicher = new HashMap<>();
             Map<String, FoodProduct> idToRicher      = new HashMap<>();
 
@@ -292,7 +292,7 @@ public class SearchCache {
             }
 
         } catch (Exception e) {
-            // Never crash the search flow — enrichment is best-effort
+            // Never crash the search flow - enrichment is best-effort
             Log.w(TAG, "enrichSearchResultsFromDatabase failed (non-fatal): " + e.getMessage());
         }
     }
@@ -305,14 +305,14 @@ public class SearchCache {
      * Lightweight autocomplete across dedicated source endpoints.
      *
      * Calls CiqualDataSource.autocomplete() and OpenFoodFactsDataSource.autocomplete()
-     * in parallel — these hit optimised endpoints (match_phrase_prefix for Ciqual,
+     * in parallel - these hit optimised endpoints (match_phrase_prefix for Ciqual,
      * AUTOCOMPLETE_FIELDS for OFF) rather than going through the full aggregator pipeline.
      * Results are merged in insertion order (Ciqual first) with putIfAbsent deduplication.
      *
      * Does NOT use the DataSourceAggregator. Does NOT compete with in-flight searches.
      *
      * @param query    Partial query (min 3 chars, enforced upstream by SearchManager)
-     * @param callback Delivers List<Searchable> on the main thread — never null, may be empty
+     * @param callback Delivers List<Searchable> on the main thread - never null, may be empty
      */
     public void autocomplete(@NonNull String query,
                              @NonNull SearchCache.AutocompleteCallback callback) {

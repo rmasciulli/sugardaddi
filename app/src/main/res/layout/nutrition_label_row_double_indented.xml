@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_row_double_indented.xml — Double-indented row (indent level 2).
+    nutrition_label_row_double_indented.xml - Double-indented row (indent level 2).
     Examples: ALA, EPA, DHA (sub-nutrients of Omega-3).
 
     TYPOGRAPHY:
-      Nutrient name: textAppearanceLabelSmall (11sp medium) — deepest hierarchy,
+      Nutrient name: textAppearanceLabelSmall (11sp medium) - deepest hierarchy,
       smallest text. Still uses colorOnSurfaceVariant to remain readable without
       fighting the higher-level rows for attention.
       Values: autoSize 10–12sp.
@@ -31,7 +31,7 @@
         android:gravity="center_vertical"
         android:minHeight="28dp">
 
-        <!-- Column 1: Nutrient name — 32dp indent for second nesting level -->
+        <!-- Column 1: Nutrient name - 32dp indent for second nesting level -->
         <TextView
             android:id="@+id/nutrientName"
             android:layout_width="0dp"

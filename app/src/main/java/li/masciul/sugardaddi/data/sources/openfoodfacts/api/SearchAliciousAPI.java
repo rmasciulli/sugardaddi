@@ -16,25 +16,25 @@ import retrofit2.http.Query;
  *
  * TWO ENDPOINTS
  * =============
- * 1. /search  — full-text product search returning SearchAliciousResponse (product hits)
+ * 1. /search  - full-text product search returning SearchAliciousResponse (product hits)
  *    Used by: OpenFoodFactsDataSource.search() and OpenFoodFactsDataSource.autocomplete()
  *
- * 2. /autocomplete — taxonomy suggestions (categories, brands, ingredients)
+ * 2. /autocomplete - taxonomy suggestions (categories, brands, ingredients)
  *    Returns: AutocompleteResponse (option list, NOT products)
- *    Used by: NOT YET CALLED — infrastructure is ready, see note below.
+ *    Used by: NOT YET CALLED - infrastructure is ready, see note below.
  *
  * AUTOCOMPLETE STRATEGY
  * =====================
  * OpenFoodFactsDataSource.autocomplete() currently uses the /search endpoint
  * with AUTOCOMPLETE_FIELDS and a small page_size. This mirrors how
  * CiqualDataSource.autocomplete() reuses the Elasticsearch /search endpoint
- * with a match_phrase_prefix query — one consistent pattern across both sources.
+ * with a match_phrase_prefix query - one consistent pattern across both sources.
  *
  * The /autocomplete endpoint (taxonomy) will be wired in a future iteration
  * to surface "Chocolates (category)" and "Milka (brand)" suggestions alongside
  * product-name suggestions. The DTO is ready; only the DataSource call is pending.
  *
- * @version 2.1 — autocomplete endpoint declared with correct DTO
+ * @version 2.1 - autocomplete endpoint declared with correct DTO
  */
 public interface SearchAliciousAPI {
 
@@ -55,7 +55,7 @@ public interface SearchAliciousAPI {
      * language for product_name_xx fields and falls back to subsequent ones.
      *
      * FIELD SELECTION:
-     * Always pass the "fields" parameter — omitting it returns the full document
+     * Always pass the "fields" parameter - omitting it returns the full document
      * (slow and large). Use SearchAliciousConstants field subsets.
      *
      * RESPONSE STRUCTURE:
@@ -91,7 +91,7 @@ public interface SearchAliciousAPI {
     // ========== AUTOCOMPLETE (TAXONOMY) ENDPOINT ==========
 
     /**
-     * Taxonomy autocomplete — returns category/brand/ingredient suggestions,
+     * Taxonomy autocomplete - returns category/brand/ingredient suggestions,
      * NOT products.
      *
      * EXAMPLE REQUEST:
@@ -107,18 +107,18 @@ public interface SearchAliciousAPI {
      * }
      *
      * TAXONOMY NAMES (taxonomy_names parameter):
-     * - "category"    — food categories from OFF taxonomy
-     * - "brand"       — brand names
-     * - "ingredient"  — ingredient names
+     * - "category"    - food categories from OFF taxonomy
+     * - "brand"       - brand names
+     * - "ingredient"  - ingredient names
      * - Multiple:     "category,brand" (comma-separated)
      *
      * FUZZINESS:
-     * - null / omit — exact prefix matching only
-     * - 1           — allow 1 character difference (typo tolerance)
-     * - 2           — allow 2 character differences
+     * - null / omit - exact prefix matching only
+     * - 1           - allow 1 character difference (typo tolerance)
+     * - 2           - allow 2 character differences
      *
      * NOTE: This endpoint is declared and the DTO is ready.
-     * OpenFoodFactsDataSource does NOT call this yet — product-name autocomplete
+     * OpenFoodFactsDataSource does NOT call this yet - product-name autocomplete
      * is handled via the /search endpoint for consistency with Ciqual.
      * Wire this when taxonomy suggestions ("Chocolates (category)") are added to the UI.
      *

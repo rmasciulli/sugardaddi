@@ -12,7 +12,7 @@ import androidx.annotation.Nullable;
 import com.google.android.material.color.MaterialColors;
 
 /**
- * DotLeaderView — Draws a consistent dotted line that fills available width.
+ * DotLeaderView - Draws a consistent dotted line that fills available width.
  *
  * Used in ingredient rows to visually connect ingredient names to their
  * measures. Unlike a drawable-based approach, this calculates dot positions
@@ -23,10 +23,10 @@ import com.google.android.material.color.MaterialColors;
  */
 public class DotLeaderView extends View {
 
-    // Dot radius in dp — controls dot size
+    // Dot radius in dp - controls dot size
     private static final float DOT_RADIUS_DP = 1.2f;
 
-    // Gap between dot centers in dp — controls spacing
+    // Gap between dot centers in dp - controls spacing
     private static final float DOT_SPACING_DP = 6f;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -57,7 +57,7 @@ public class DotLeaderView extends View {
 
         paint.setStyle(Paint.Style.FILL);
 
-        // Resolve colorOutlineVariant from the current theme at runtime —
+        // Resolve colorOutlineVariant from the current theme at runtime -
         // correct for both light and dark mode
         int color = MaterialColors.getColor(
                 context,

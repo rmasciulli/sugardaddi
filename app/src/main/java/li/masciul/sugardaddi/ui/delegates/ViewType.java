@@ -21,32 +21,32 @@ package li.masciul.sugardaddi.ui.delegates;
 public final class ViewType {
 
     private ViewType() {
-        // Prevent instantiation — constants only
+        // Prevent instantiation - constants only
     }
 
     // ========== PRODUCT VIEW TYPES ==========
 
-    /** OpenFoodFacts product — image, brand, scores, categories */
+    /** OpenFoodFacts product - image, brand, scores, categories */
     public static final int PRODUCT_OFF = 1;
 
-    /** Ciqual product — scientific name, category, nutrition summary, no image */
+    /** Ciqual product - scientific name, category, nutrition summary, no image */
     public static final int PRODUCT_CIQUAL = 2;
 
-    /** USDA product (future) — similar to Ciqual */
+    /** USDA product (future) - similar to Ciqual */
     public static final int PRODUCT_USDA = 3;
 
-    /** Default/fallback product — generic display for unknown sources */
+    /** Default/fallback product - generic display for unknown sources */
     public static final int PRODUCT_DEFAULT = 10;
 
     // ========== RECIPE VIEW TYPES ==========
 
-    /** Recipe — name, description, time, servings, difficulty */
+    /** Recipe - name, description, time, servings, difficulty */
     public static final int RECIPE = 20;
 
-    /** TheMealDB recipe — external recipe fetched on demand, no local storage */
+    /** TheMealDB recipe - external recipe fetched on demand, no local storage */
     public static final int RECIPE_MEALDB = 21;
 
-    /** TheCocktailDB cocktail — external cocktail recipe, no local storage */
+    /** TheCocktailDB cocktail - external cocktail recipe, no local storage */
     public static final int RECIPE_COCKTAILDB = 22;
 
     // ========== SPECIAL VIEW TYPES ==========

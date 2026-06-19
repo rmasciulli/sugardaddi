@@ -514,10 +514,10 @@ public class MealDetailsActivity extends BaseActivity {
         isEditMode = !isEditMode;
 
         if (isEditMode) {
-            // Switch to edit mode — icon updates via onPrepareOptionsMenu
+            // Switch to edit mode - icon updates via onPrepareOptionsMenu
             Toast.makeText(this, R.string.swipe_to_delete_portions, Toast.LENGTH_SHORT).show();
         } else {
-            // Switch to view mode — save changes
+            // Switch to view mode - save changes
             saveMeal();
         }
 

@@ -9,7 +9,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * OpenFoodFactsSettingsProvider — SettingsProvider for OpenFoodFacts.
+ * OpenFoodFactsSettingsProvider - SettingsProvider for OpenFoodFacts.
  *
  * OFF IS A NETWORK-ONLY SOURCE. It has:
  *   - No credentials required from the user (the app uses the public API)
@@ -17,7 +17,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  *
  * The Settings card for OpenFoodFacts therefore shows only:
  *   - Source name + emoji (from DataSource / strings.xml)
- *   - Status dot (green/grey/red — from DataSource.getStatus())
+ *   - Status dot (green/grey/red - from DataSource.getStatus())
  *   - Enable / disable toggle (from DataSource.isEnabled() / setEnabled())
  *
  * No credential section, no progress bar, no integrity check button.
@@ -32,7 +32,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 public class OpenFoodFactsSettingsProvider implements SettingsProvider {
 
     // =========================================================================
-    // CREDENTIALS — none required
+    // CREDENTIALS - none required
     // =========================================================================
 
     @Override
@@ -70,7 +70,7 @@ public class OpenFoodFactsSettingsProvider implements SettingsProvider {
     }
 
     // =========================================================================
-    // LOCAL DATABASE — not applicable for OFF
+    // LOCAL DATABASE - not applicable for OFF
     // =========================================================================
 
     @Override
@@ -92,7 +92,7 @@ public class OpenFoodFactsSettingsProvider implements SettingsProvider {
 
     @Override
     public int getDatabaseProductCount(@NonNull Context context) {
-        return 0; // No local DB — results come live from the network
+        return 0; // No local DB - results come live from the network
     }
 
     @Override
@@ -102,23 +102,23 @@ public class OpenFoodFactsSettingsProvider implements SettingsProvider {
 
     @Override
     public void startImport(@NonNull Context context) {
-        // No-op — OFF has no import pipeline
+        // No-op - OFF has no import pipeline
     }
 
     @Override
     public void resetDatabaseState(@NonNull Context context) {
-        // No-op — OFF has no persistent import state to reset
+        // No-op - OFF has no persistent import state to reset
     }
 
     // =========================================================================
-    // BROADCAST ACTIONS — empty strings, card manager will never subscribe
+    // BROADCAST ACTIONS - empty strings, card manager will never subscribe
     // since hasLocalDatabase() = false means the DB section is hidden entirely
     // =========================================================================
 
     @NonNull
     @Override
     public String getBroadcastProgress() {
-        return ""; // Never used — hasLocalDatabase() is false
+        return ""; // Never used - hasLocalDatabase() is false
     }
 
     @NonNull

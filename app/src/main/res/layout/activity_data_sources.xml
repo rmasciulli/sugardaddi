@@ -54,7 +54,7 @@
                     ============================
                     DataSourceCardManager inflates one item_datasource_card.xml per
                     registered DataSource and adds it here in alphabetical order.
-                    No hardcoded source cards in XML — driven entirely by
+                    No hardcoded source cards in XML - driven entirely by
                     DataSourceManager.getAllSources() at runtime.
                 -->
                 <LinearLayout

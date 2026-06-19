@@ -95,7 +95,7 @@
             android:orientation="horizontal">
 
             <!--
-                User-defined image — shown only when the user has explicitly set
+                User-defined image - shown only when the user has explicitly set
                 one via ImagePickerHelper. GONE by default; bindImage() makes it
                 VISIBLE when userThumbnailPath or userImagePath is non-null.
                 Ciqual has no remote image URL and no auto-downloaded thumbnail.

@@ -601,7 +601,7 @@ public class NetworkManager {
      * Check network availability.
      *
      * minSdk = 26 (Android 8.0 Oreo), so NetworkCapabilities is always available.
-     * The legacy NetworkInfo path (deprecated in API 29) has been removed — it was
+     * The legacy NetworkInfo path (deprecated in API 29) has been removed - it was
      * dead code that could only run on API < 23, which we never target.
      */
     public boolean isNetworkAvailable() {

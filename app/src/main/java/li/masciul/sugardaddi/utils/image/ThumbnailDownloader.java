@@ -20,14 +20,14 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * ThumbnailDownloader — Downloads remote thumbnail images to local disk.
+ * ThumbnailDownloader - Downloads remote thumbnail images to local disk.
  *
  * RESPONSIBILITIES
  * ================
  * - Accept a remote image URL and a source-qualified item ID
  * - Resolve the destination path via {@link ImageStorageManager}
  * - Skip the download if the file already exists on disk (natural deduplication)
- * - Stream the response bytes directly to disk (no Bitmap allocation — thumbnails
+ * - Stream the response bytes directly to disk (no Bitmap allocation - thumbnails
  *   from CDNs are already small and require no resizing)
  * - Deliver the local file path (or an error) via callback on the main thread
  *
@@ -60,9 +60,9 @@ import okhttp3.ResponseBody;
  * Filenames are derived from the source-qualified item ID (e.g. "OFF:3017620422003"
  * → "OFF_3017620422003.jpg") via {@link ImageStorageManager#getThumbnailFile(String)}.
  * If the file already exists, the download is skipped and the existing path is
- * returned immediately — no network call is made.
+ * returned immediately - no network call is made.
  *
- * USAGE (from a background thread or main thread — both are safe)
+ * USAGE (from a background thread or main thread - both are safe)
  * ================================================================
  * <pre>
  *   thumbnailDownloader.download(
@@ -75,7 +75,7 @@ import okhttp3.ResponseBody;
  *           }
  *           {@literal @}Override
  *           public void onError(String reason) {
- *               // Log and ignore — the remote URL is still available as fallback
+ *               // Log and ignore - the remote URL is still available as fallback
  *           }
  *       });
  * </pre>
@@ -86,7 +86,7 @@ public class ThumbnailDownloader {
 
     /**
      * Buffer size for streaming response bytes to disk.
-     * 8 KB is a common sweet spot — large enough to amortise syscall overhead,
+     * 8 KB is a common sweet spot - large enough to amortise syscall overhead,
      * small enough to avoid wasting memory on the stack.
      */
     private static final int BUFFER_SIZE_BYTES = 8 * 1024;
@@ -151,7 +151,7 @@ public class ThumbnailDownloader {
     /** Delivers callbacks on the main thread. */
     private final Handler mainHandler;
 
-    /** Shared OkHttpClient — created once, reuses the connection pool. */
+    /** Shared OkHttpClient - created once, reuses the connection pool. */
     private final OkHttpClient httpClient;
 
     // =========================================================================
@@ -188,7 +188,7 @@ public class ThumbnailDownloader {
      *                          and a valid HTTP/HTTPS URL.
      * @param sourceQualifiedId The item's source-qualified ID, e.g. "OFF:3017620422003".
      *                          Used to construct the deterministic filename.
-     * @param callback          Result callback — never null. Called on the main thread.
+     * @param callback          Result callback - never null. Called on the main thread.
      */
     public void download(
             @NonNull String remoteUrl,
@@ -201,13 +201,13 @@ public class ThumbnailDownloader {
             File destination = storageManager.getThumbnailFile(sourceQualifiedId);
             if (destination == null) {
                 // External storage is unavailable (e.g. SD card removed).
-                deliverError(callback, "External storage unavailable — cannot save thumbnail");
+                deliverError(callback, "External storage unavailable - cannot save thumbnail");
                 return;
             }
 
             // ── 2. Check for existing file (deduplication) ────────────────────
             if (destination.exists() && destination.length() > 0) {
-                // File already present — skip network call.
+                // File already present - skip network call.
                 Log.d(TAG, "Thumbnail already on disk, skipping download: "
                         + destination.getName());
                 deliverSuccess(callback, destination.getAbsolutePath());
@@ -220,7 +220,7 @@ public class ThumbnailDownloader {
 
             Request request = new Request.Builder()
                     .url(remoteUrl)
-                    // Identify the app politely — same convention as other HTTP calls
+                    // Identify the app politely - same convention as other HTTP calls
                     .header("User-Agent", "SugarDaddi/1.0 (Android; thumbnail download)")
                     .build();
 
@@ -240,11 +240,11 @@ public class ThumbnailDownloader {
                 }
 
                 // ── 5. Stream bytes to disk ────────────────────────────────────
-                // We stream rather than loading all bytes into memory — thumbnails
+                // We stream rather than loading all bytes into memory - thumbnails
                 // are small but good practice regardless.
                 boolean written = streamToDisk(body, destination);
                 if (!written) {
-                    // Partial file may exist — delete it so a retry starts clean.
+                    // Partial file may exist - delete it so a retry starts clean.
                     if (destination.exists()) destination.delete();
                     deliverError(callback, "Failed to write thumbnail to disk: "
                             + destination.getAbsolutePath());
@@ -269,10 +269,10 @@ public class ThumbnailDownloader {
     /**
      * Deletes the locally cached thumbnail for the given item, if it exists.
      *
-     * This is the mirror of {@link #download} — call it when the user unfavourites
+     * This is the mirror of {@link #download} - call it when the user unfavourites
      * an item. Delegates to {@link ImageStorageManager#deleteFile(String)}.
      *
-     * Safe to call from any thread. No callback — deletion is fire-and-forget
+     * Safe to call from any thread. No callback - deletion is fire-and-forget
      * (failure is logged but not propagated, since the file will be cleaned up
      * by {@code ImagePurgeManager} at the next startup anyway).
      *
@@ -281,7 +281,7 @@ public class ThumbnailDownloader {
     public void deleteThumbnail(@NonNull String sourceQualifiedId) {
         downloadExecutor.execute(() -> {
             File file = storageManager.getThumbnailFile(sourceQualifiedId);
-            if (file == null) return; // Storage unavailable — nothing to delete.
+            if (file == null) return; // Storage unavailable - nothing to delete.
             storageManager.deleteFile(file.getAbsolutePath());
         });
     }
@@ -316,7 +316,7 @@ public class ThumbnailDownloader {
      * - Those clients inject source-specific User-Agent headers and retry interceptors
      *   designed for JSON APIs, not binary downloads
      * - A dedicated client with tight timeouts is more appropriate for small images
-     * - Thumbnails do not go through Retrofit — we need raw byte streaming
+     * - Thumbnails do not go through Retrofit - we need raw byte streaming
      */
     @NonNull
     private OkHttpClient buildHttpClient() {

@@ -7,28 +7,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MealDbSearchResponse — Gson DTO for all TheMealDB list responses.
+ * MealDbSearchResponse - Gson DTO for all TheMealDB list responses.
  *
  * Used by:
- *   GET /search.php?s={query}      — search by name
- *   GET /lookup.php?i={id}         — detail by ID
- *   GET /filter.php?c={category}   — filter by category (returns MealDbFilterMeal, not full meals)
- *   GET /filter.php?i={ingredient} — filter by ingredient
- *   GET /filter.php?a={area}       — filter by area
+ *   GET /search.php?s={query}      - search by name
+ *   GET /lookup.php?i={id}         - detail by ID
+ *   GET /filter.php?c={category}   - filter by category (returns MealDbFilterMeal, not full meals)
+ *   GET /filter.php?i={ingredient} - filter by ingredient
+ *   GET /filter.php?a={area}       - filter by area
  *
  * NOTE: search.php and lookup.php return FULL MealDbMeal objects in the meals array.
  * filter.php returns stripped objects (idMeal, strMeal, strMealThumb only).
  * Both reuse this response envelope. The mapper decides which DTO to use
  * based on which endpoint was called.
  *
- * IMPORTANT — NULL WHEN EMPTY:
+ * IMPORTANT - NULL WHEN EMPTY:
  * TheMealDB returns { "meals": null } (not []) when a search returns no results.
  * getMeals() handles this defensively and always returns a non-null list.
  */
 public class MealDbSearchResponse {
 
     /**
-     * List of meal objects. NULL when no results found — not an empty array.
+     * List of meal objects. NULL when no results found - not an empty array.
      * Always use getMeals() rather than accessing this field directly.
      */
     @SerializedName("meals")

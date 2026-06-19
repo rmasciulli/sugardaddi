@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.data.sources.ciqual;
 
 /**
- * CiqualConstants — All Ciqual data source constants.
+ * CiqualConstants - All Ciqual data source constants.
  *
  * DATASET UPDATE PROCEDURE (annual, when ANSES releases a new Ciqual version):
  * 1. Update DATASET_VERSION to the new date string (e.g. "2026_04_01")
@@ -46,9 +46,9 @@ public class CiqualConstants {
      * The three XML files that make up the Ciqual dataset.
      * Each constant is the filename as it appears on Zenodo and in assets/.
      *
-     * ASSET_GRP  — category hierarchy (80KB). Always bundled. Loaded at startup.
-     * ASSET_ALIM — 3484 foods with names, codes, categories (1.6MB). Bundled.
-     * ASSET_COMPO — 174K composition rows mapping const_code to nutrient values (69MB). Bundled.
+     * ASSET_GRP  - category hierarchy (80KB). Always bundled. Loaded at startup.
+     * ASSET_ALIM - 3484 foods with names, codes, categories (1.6MB). Bundled.
+     * ASSET_COMPO - 174K composition rows mapping const_code to nutrient values (69MB). Bundled.
      *
      * If a file is present in assets/, it is used directly.
      * If not (e.g. clean install without bundled assets), it is downloaded from Zenodo.

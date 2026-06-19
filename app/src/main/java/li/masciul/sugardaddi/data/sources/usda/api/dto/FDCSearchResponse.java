@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * FDCSearchResponse — Response from GET /foods/search
+ * FDCSearchResponse - Response from GET /foods/search
  *
  * RESPONSE STRUCTURE:
  * {

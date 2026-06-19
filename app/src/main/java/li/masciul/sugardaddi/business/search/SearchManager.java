@@ -24,11 +24,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * SearchManager — Unified search orchestration.
+ * SearchManager - Unified search orchestration.
  *
- * ARCHITECTURE v5.0 — Unified pipeline
+ * ARCHITECTURE v5.0 - Unified pipeline
  * =====================================
- * All search — products and recipes — flows through a single path:
+ * All search - products and recipes - flows through a single path:
  *
  *   search(query) / loadMoreResults()
  *       → DataSourceAggregator.searchAll(query, limit, page, exhaustedSources)
@@ -39,30 +39,30 @@ import java.util.Set;
  *
  * WHAT WAS REMOVED vs v4.1
  * =========================
- * - SearchScope enum (PRODUCTS_ONLY / RECIPES_ONLY / ALL) — scope gating was
+ * - SearchScope enum (PRODUCTS_ONLY / RECIPES_ONLY / ALL) - scope gating was
  *   hardcoded to PRODUCTS_ONLY and bypassed recipe search entirely. The aggregator
  *   already handles all Searchable types uniformly.
- * - performProductSearch / performRecipeSearch / performParallelSearch — replaced
+ * - performProductSearch / performRecipeSearch / performParallelSearch - replaced
  *   by a single performSearch() that calls the aggregator directly.
- * - RecipeRepository dependency — SearchManager no longer needs it. Recipe live
+ * - RecipeRepository dependency - SearchManager no longer needs it. Recipe live
  *   search comes through the aggregator (TheMealDB is a registered DataSource).
  *   RecipeRepository.search() is now Room-only, used by dedicated recipe screens.
- * - searchFoodAdvanced() / ProductRepository pagination delegation — pagination
+ * - searchFoodAdvanced() / ProductRepository pagination delegation - pagination
  *   is now owned here, not split across SearchManager + ProductRepository.
- * - parallelCombinedResults / AtomicInteger parallel state — gone with the scope.
+ * - parallelCombinedResults / AtomicInteger parallel state - gone with the scope.
  *
  * PAGINATION STATE
  * ================
  * SearchManager owns all pagination state for the current query:
  *
- *   currentPage       — 1-based, incremented by loadMoreResults()
- *   hasMorePages      — set from AggregatedSearchResult.hasMore() after each call
- *   exhaustedSources  — sources that reported hasMore=false; skipped on next pages
- *   seenSearchableIds — all IDs delivered to the UI; filters cross-page duplicates
+ *   currentPage       - 1-based, incremented by loadMoreResults()
+ *   hasMorePages      - set from AggregatedSearchResult.hasMore() after each call
+ *   exhaustedSources  - sources that reported hasMore=false; skipped on next pages
+ *   seenSearchableIds - all IDs delivered to the UI; filters cross-page duplicates
  *
  * All four are reset together by resetSearchState() on every new query.
  *
- * DEDUPLICATION — TWO LEVELS
+ * DEDUPLICATION - TWO LEVELS
  * ==========================
  * Level 1 (SmartMergeStrategy, inside aggregator): deduplicates FoodProduct items
  *   from different sources within a single page, merging the richest data.
@@ -93,19 +93,19 @@ public class SearchManager {
 
     /**
      * Room enrichment and SearchResultCache.
-     * SearchManager does NOT call aggregator through searchCache —
+     * SearchManager does NOT call aggregator through searchCache -
      * it calls the aggregator directly and uses searchCache only for
      * enrichAndCache() and checkCache().
      */
     private final SearchCache searchCache;
 
-    /** Application context — used for LanguageManager. */
+    /** Application context - used for LanguageManager. */
     private final Context context;
 
-    /** Debounce handler — all search scheduling goes through this. */
+    /** Debounce handler - all search scheduling goes through this. */
     private final Handler searchHandler;
 
-    /** Autocomplete debounce handler — separate so it doesn't cancel full searches. */
+    /** Autocomplete debounce handler - separate so it doesn't cancel full searches. */
     private final Handler autocompleteHandler;
 
     // =========================================================================
@@ -146,7 +146,7 @@ public class SearchManager {
 
     /**
      * True while more pages are available.
-     * Set from AggregatedSearchResult.hasMore() — replaces the old heuristic
+     * Set from AggregatedSearchResult.hasMore() - replaces the old heuristic
      * of items.size() >= API_PAGE_SIZE, which was wrong when results exhausted
      * exactly on a page boundary.
      */
@@ -175,7 +175,7 @@ public class SearchManager {
      * Active search filter set by the user via the filter UI in MainActivity.
      * Passed to DataSourceAggregator.searchAll() on every search call.
      * Default: no filter (all types, all sources).
-     * Survives across queries — reset only if the user explicitly clears filters.
+     * Survives across queries - reset only if the user explicitly clears filters.
      */
     @NonNull
     private SearchFilter activeFilter = SearchFilter.noFilter();
@@ -312,7 +312,7 @@ public class SearchManager {
         }
 
         if (!currentQuery.isEmpty()) {
-            // Invalidate cache for current query — cached results were produced
+            // Invalidate cache for current query - cached results were produced
             // with the previous filter and must not be reused
             searchCache.invalidate(currentQuery);
             searchImmediate(currentQuery);
@@ -332,7 +332,7 @@ public class SearchManager {
      * the debounce is still applied so rapid re-triggers don't double-fire.
      * Resets all pagination state for the new query.
      *
-     * @param query Raw user input — trimmed internally
+     * @param query Raw user input - trimmed internally
      */
     public void search(@Nullable String query) {
         cancelPendingSearch();
@@ -381,9 +381,9 @@ public class SearchManager {
      * Schedule a debounced autocomplete query.
      * Uses a shorter delay than full search for faster suggestions.
      *
-     * Failures are silent — the dropdown simply stays empty.
+     * Failures are silent - the dropdown simply stays empty.
      *
-     * @param query Raw user input — trimmed internally
+     * @param query Raw user input - trimmed internally
      */
     public void autocomplete(@Nullable String query) {
         cancelPendingAutocomplete();
@@ -408,7 +408,7 @@ public class SearchManager {
      * - no pagination already in flight
      * - no page-1 search in flight
      *
-     * Safe to call repeatedly from a scroll listener — guards prevent double-firing.
+     * Safe to call repeatedly from a scroll listener - guards prevent double-firing.
      */
     public void loadMoreResults() {
         if (currentQuery.isEmpty() || !hasMorePages
@@ -433,7 +433,7 @@ public class SearchManager {
 
         notifyLoadingMore();
 
-        // Use an unmodifiable snapshot of exhaustedSources — the set must not be
+        // Use an unmodifiable snapshot of exhaustedSources - the set must not be
         // modified while the aggregator is iterating it on a background thread.
         final Set<String> exhaustedSnapshot =
                 Collections.unmodifiableSet(new HashSet<>(exhaustedSources));
@@ -460,13 +460,13 @@ public class SearchManager {
                         isPaginationActive = false;
 
                         if (fresh.isEmpty()) {
-                            // All results were cross-page duplicates — treat as exhausted
+                            // All results were cross-page duplicates - treat as exhausted
                             if (ApiConfig.DEBUG_LOGGING) {
                                 Log.d(TAG, "Page " + currentPage
-                                        + " contained only duplicates — marking exhausted");
+                                        + " contained only duplicates - marking exhausted");
                             }
                             hasMorePages = false;
-                            // No callback — footer disappears naturally when hasMore=false
+                            // No callback - footer disappears naturally when hasMore=false
                             return;
                         }
 
@@ -513,7 +513,7 @@ public class SearchManager {
 
     /**
      * Cancel all in-flight and pending searches.
-     * Does not clear state — allows retryLastSearch() to still work.
+     * Does not clear state - allows retryLastSearch() to still work.
      */
     public void cancel() {
         cancelAllSearches();
@@ -553,14 +553,14 @@ public class SearchManager {
     }
 
     // =========================================================================
-    // PRIVATE — SEARCH EXECUTION
+    // PRIVATE - SEARCH EXECUTION
     // =========================================================================
 
     /**
      * Execute page-1 search for the given query.
      *
      * Flow:
-     *   1. Check SearchResultCache — if hit, enrich and deliver immediately.
+     *   1. Check SearchResultCache - if hit, enrich and deliver immediately.
      *   2. If miss, call aggregator → enrich → deduplicate → deliver.
      *
      * Cache hits skip the aggregator entirely for instant results on repeated
@@ -604,7 +604,7 @@ public class SearchManager {
                 Log.d(TAG, "Cache hit: '" + query + "' → " + cached.size() + " items");
             }
 
-            // We don't have a fresh hasMore signal from cache — assume true so
+            // We don't have a fresh hasMore signal from cache - assume true so
             // the user can still attempt pagination (loadMoreResults guards will
             // catch the case where the server has no more pages).
             notifySearchResults(cached, true);
@@ -634,7 +634,7 @@ public class SearchManager {
                         }
 
                         // Apply active type filter to partial results.
-                        // Source filter is already enforced upstream by DataSourceAggregator —
+                        // Source filter is already enforced upstream by DataSourceAggregator -
                         // only allowed sources are called. Type filter must be applied here
                         // since partial results arrive before the full aggregation completes.
                         if (activeFilter.isTypeFilterActive()) {
@@ -663,7 +663,7 @@ public class SearchManager {
                         isSearchActive = false;
 
                         if (!query.equals(currentQuery)) {
-                            // Query changed while this call was in flight — discard
+                            // Query changed while this call was in flight - discard
                             if (ApiConfig.DEBUG_LOGGING) {
                                 Log.d(TAG, "Discarding stale result for '" + query + "'");
                             }
@@ -747,7 +747,7 @@ public class SearchManager {
     }
 
     // =========================================================================
-    // PRIVATE — PAGINATION STATE MANAGEMENT
+    // PRIVATE - PAGINATION STATE MANAGEMENT
     // =========================================================================
 
     /**
@@ -771,7 +771,7 @@ public class SearchManager {
     private void updateExhaustedSources(@NonNull Map<String, Boolean> sourceHasMore) {
         for (Map.Entry<String, Boolean> entry : sourceHasMore.entrySet()) {
             if (!Boolean.TRUE.equals(entry.getValue())) {
-                // Source reported hasMore=false — exhausted for this query
+                // Source reported hasMore=false - exhausted for this query
                 if (exhaustedSources.add(entry.getKey()) && ApiConfig.DEBUG_LOGGING) {
                     Log.d(TAG, "Source exhausted: " + entry.getKey());
                 }
@@ -786,7 +786,7 @@ public class SearchManager {
      * listener in a previous page, then registers all remaining IDs.
      *
      * @param items Items from the current page (after level-1 SmartMergeStrategy)
-     * @return Items not previously seen — safe to deliver to the listener
+     * @return Items not previously seen - safe to deliver to the listener
      */
     @NonNull
     private List<Searchable> deduplicateAndRegister(@NonNull List<Searchable> items) {
@@ -808,7 +808,7 @@ public class SearchManager {
     }
 
     // =========================================================================
-    // PRIVATE — CANCELLATION
+    // PRIVATE - CANCELLATION
     // =========================================================================
 
     private void cancelPendingSearch() {
@@ -842,7 +842,7 @@ public class SearchManager {
     }
 
     // =========================================================================
-    // PRIVATE — LISTENER NOTIFICATIONS  (all on main thread, null-safe)
+    // PRIVATE - LISTENER NOTIFICATIONS  (all on main thread, null-safe)
     // =========================================================================
 
     private void notifySearchResults(@NonNull List<Searchable> results, boolean hasMore) {

@@ -75,7 +75,7 @@ public interface DetailRenderer {
      * Handle custom amount changes for nutrition recalculation.
      *
      * Called when the user changes the amount in the nutrition section.
-     * Default implementation does nothing — override in renderers
+     * Default implementation does nothing - override in renderers
      * that support custom amount display (product renderers).
      *
      * @param view     The view returned by inflate()

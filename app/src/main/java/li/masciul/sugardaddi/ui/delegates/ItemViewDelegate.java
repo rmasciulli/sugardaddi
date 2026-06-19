@@ -25,7 +25,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
  *
  * SHARED ACROSS ADAPTERS:
  * The same delegate instances are reused by SearchResultsAdapter,
- * FavoritesAdapter (removed — now uses the generic DelegateAdapter),
+ * FavoritesAdapter (removed - now uses the generic DelegateAdapter),
  * and any future list that displays Searchable items.
  *
  * TYPE SAFETY:
@@ -87,7 +87,7 @@ public interface ItemViewDelegate<VH extends RecyclerView.ViewHolder> {
     /**
      * Bind data to the ViewHolder.
      *
-     * Called every time an item scrolls into view. Should be efficient —
+     * Called every time an item scrolls into view. Should be efficient -
      * avoid allocations, use cached formatters, etc.
      *
      * @param holder   The ViewHolder to bind data to

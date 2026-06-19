@@ -8,7 +8,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 /**
- * TheMealDbAPI — Retrofit interface for TheMealDB v1 REST API.
+ * TheMealDbAPI - Retrofit interface for TheMealDB v1 REST API.
  *
  * BASE URL: https://www.themealdb.com/api/json/v1/1/
  * (The "1" path segment IS the API key for the free development tier.)
@@ -16,13 +16,13 @@ import retrofit2.http.Query;
  * ENDPOINTS IMPLEMENTED
  * =====================
  *
- * 1. searchByName — search.php?s={query}
+ * 1. searchByName - search.php?s={query}
  *    Returns full meal objects matching the name query.
  *    Response envelope: { "meals": [ ...MealDbMeal... ] }
- *    Returns { "meals": null } when no results found — NOT an empty array.
- *    No pagination — all results returned in one response.
+ *    Returns { "meals": null } when no results found - NOT an empty array.
+ *    No pagination - all results returned in one response.
  *
- * 2. lookupById — lookup.php?i={id}
+ * 2. lookupById - lookup.php?i={id}
  *    Returns a single full meal object by TheMealDB numeric ID.
  *    Same response envelope as searchByName: { "meals": [ ...MealDbMeal... ] }
  *    Returns { "meals": null } if ID not found.
@@ -30,12 +30,12 @@ import retrofit2.http.Query;
  *
  * ENDPOINTS NOT IMPLEMENTED (v2 / Patreon only, or out of scope)
  * ==============================================================
- * - filter.php?i={ingredient} — filter by ingredient (stripped response only)
- * - filter.php?c={category}   — filter by category
- * - filter.php?a={area}       — filter by area
- * - categories.php            — list all categories
- * - list.php?a=list           — list all areas
- * - random.php                — random meal
+ * - filter.php?i={ingredient} - filter by ingredient (stripped response only)
+ * - filter.php?c={category}   - filter by category
+ * - filter.php?a={area}       - filter by area
+ * - categories.php            - list all categories
+ * - list.php?a=list           - list all areas
+ * - random.php                - random meal
  *
  * Both implemented methods reuse {@link MealDbSearchResponse} as the response
  * type since both endpoints return the same { "meals": [...] } envelope with
@@ -50,10 +50,10 @@ public interface TheMealDbAPI {
      * Fires: GET search.php?s={query}
      *
      * Returns all meals whose name contains the query string (case-insensitive,
-     * server-side). No pagination — the full result set is returned at once.
+     * server-side). No pagination - the full result set is returned at once.
      * Cap results in the data source to {@link TheMealDbConstants#MAX_SEARCH_RESULTS}.
      *
-     * Empty result: { "meals": null } — handled defensively by
+     * Empty result: { "meals": null } - handled defensively by
      * {@link MealDbSearchResponse#getMeals()}.
      *
      * @param query Meal name search string. Must not be null or blank.
@@ -74,7 +74,7 @@ public interface TheMealDbAPI {
      * or { "meals": null } if the ID is not found.
      *
      * Use this when a search result summary needs to be enriched with full
-     * ingredient/instruction data — for example, after a filter.php call
+     * ingredient/instruction data - for example, after a filter.php call
      * (not currently implemented) which returns stripped objects only.
      *
      * For our current implementation, search.php already returns full objects,

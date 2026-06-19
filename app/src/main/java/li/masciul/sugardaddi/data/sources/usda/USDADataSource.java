@@ -45,7 +45,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * USDADataSource — USDA FoodData Central data source.
+ * USDADataSource - USDA FoodData Central data source.
  *
  * DUAL-MODE ARCHITECTURE
  * ======================
@@ -55,7 +55,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  *
  * MODE 2: Local Room DB (opt-in, offline-capable)
  *   Populated by USDAImportService (user-initiated from Settings).
- *   Not auto-triggered — ~215MB download requires user consent.
+ *   Not auto-triggered - ~215MB download requires user consent.
  *   Once imported, search() queries Room first and falls back to API if no results.
  *
  * SEARCH FLOW
@@ -73,7 +73,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * ================
  * 1. SharedPreferences (user entered a real key in Settings)
  * 2. BuildConfig.USDA_API_KEY (from local.properties → compile-time)
- * 3. USDAConstants.DEMO_KEY (hardcoded fallback — rate-limited)
+ * 3. USDAConstants.DEMO_KEY (hardcoded fallback - rate-limited)
  */
 public class USDADataSource extends BaseDataSource {
 
@@ -256,7 +256,7 @@ public class USDADataSource extends BaseDataSource {
                     logError("Local USDA search failed, falling back to API", e);
                 }
 
-                // No local results — fall through to API
+                // No local results - fall through to API
                 executeOnMainThread(() -> searchApi(query, language, limit, page, callback));
             });
             return;
@@ -352,7 +352,7 @@ public class USDADataSource extends BaseDataSource {
      * productId format: either "747447" (raw fdcId) or "USDA:747447"
      * (the SearchableId format used by the rest of the app).
      *
-     * Always fetches from API — Room search results don't include the full
+     * Always fetches from API - Room search results don't include the full
      * nutrient profile that this endpoint provides.
      */
     @Override
@@ -365,7 +365,7 @@ public class USDADataSource extends BaseDataSource {
             return;
         }
 
-        // Extract raw fdcId integer — strip "USDA:" prefix if present
+        // Extract raw fdcId integer - strip "USDA:" prefix if present
         String rawId = productId.startsWith("USDA:")
                 ? productId.substring(5) : productId;
 
@@ -431,7 +431,7 @@ public class USDADataSource extends BaseDataSource {
     @Override
     public void getProductByBarcode(@NonNull String barcode, @NonNull String language,
                                     @NonNull DataSourceCallback<FoodProduct> callback) {
-        // USDA does not use barcodes — route to getProduct() by fdcId if caller passes one,
+        // USDA does not use barcodes - route to getProduct() by fdcId if caller passes one,
         // otherwise return an informative error.
         handleError(Error.validation(
                 "USDA FoodData Central does not support barcode lookup. " +
@@ -441,11 +441,11 @@ public class USDADataSource extends BaseDataSource {
     // ===== AUTOCOMPLETE =====
 
     /**
-     * Autocomplete search — uses the regular API with a small limit.
+     * Autocomplete search - uses the regular API with a small limit.
      * Same pattern as OpenFoodFactsDataSource and CiqualDataSource.
      *
      * @param query    Partial user input
-     * @param language User language (ignored — FDC is EN-only)
+     * @param language User language (ignored - FDC is EN-only)
      * @param limit    Max suggestions (typically 5–10)
      * @param callback Result callback
      */
@@ -510,7 +510,7 @@ public class USDADataSource extends BaseDataSource {
                                   @NonNull Throwable t) {
                 activeCalls.remove(call);
                 if (call.isCanceled()) return;
-                // Silent failure for autocomplete — return empty list
+                // Silent failure for autocomplete - return empty list
                 executeOnMainThread(() -> callback.onSuccess(
                         new SearchResult(new ArrayList<>(), 0, false,
                                 query, language, USDAConstants.SOURCE_ID)));

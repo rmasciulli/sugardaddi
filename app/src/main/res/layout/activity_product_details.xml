@@ -34,7 +34,7 @@
     tools:context=".ui.activities.ProductDetailsActivity">
 
     <!-- ========================================================= -->
-    <!-- APP BAR — owned by the activity, not by any renderer      -->
+    <!-- APP BAR - owned by the activity, not by any renderer      -->
     <!-- ========================================================= -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"

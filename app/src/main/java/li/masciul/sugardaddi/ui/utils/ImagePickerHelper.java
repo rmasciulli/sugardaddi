@@ -225,7 +225,7 @@ public class ImagePickerHelper {
     private final ActivityResultLauncher<Intent> cropLauncher;
 
     /**
-     * Camera permission launcher — requests android.permission.CAMERA at runtime.
+     * Camera permission launcher - requests android.permission.CAMERA at runtime.
      * On grant, resumes the pending camera session. On deny, delivers cancelled.
      * Must be registered unconditionally in onCreate() alongside the other launchers.
      */
@@ -273,7 +273,7 @@ public class ImagePickerHelper {
                 new ActivityResultContracts.RequestPermission(),
                 granted -> {
                     if (granted) {
-                        // Permission just granted — resume the pending session.
+                        // Permission just granted - resume the pending session.
                         if (pendingDestinationFile != null && pendingCallback != null) {
                             launchCameraInternal();
                         }
@@ -316,18 +316,18 @@ public class ImagePickerHelper {
             int jpegQuality,
             @NonNull Callback callback) {
 
-        // Store pending session state regardless of permission outcome —
+        // Store pending session state regardless of permission outcome -
         // launchCameraInternal() and the permission callback both rely on it.
         this.pendingCallback        = callback;
         this.pendingDestinationFile = destinationFile;
         this.pendingMaxDimension    = maxDimension;
         this.pendingJpegQuality     = jpegQuality;
 
-        // On API 23+, CAMERA is a runtime permission — check before launching.
+        // On API 23+, CAMERA is a runtime permission - check before launching.
         if (androidx.core.content.ContextCompat.checkSelfPermission(
                 activity, android.Manifest.permission.CAMERA)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "CAMERA permission not granted — requesting");
+            Log.d(TAG, "CAMERA permission not granted - requesting");
             cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA);
             return;
         }
@@ -336,7 +336,7 @@ public class ImagePickerHelper {
     }
 
     /**
-     * Internal camera launch — called after CAMERA permission is confirmed.
+     * Internal camera launch - called after CAMERA permission is confirmed.
      * Shared by showCamera() (permission already held) and the permission
      * result callback (permission just granted).
      */

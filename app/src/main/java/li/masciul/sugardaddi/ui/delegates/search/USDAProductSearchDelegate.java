@@ -26,7 +26,7 @@ import li.masciul.sugardaddi.ui.delegates.ViewType;
 import java.util.Locale;
 
 /**
- * USDAProductSearchDelegate — Search result rendering for USDA FoodData Central entries.
+ * USDAProductSearchDelegate - Search result rendering for USDA FoodData Central entries.
  *
  * USDA FoodData Central is a US government scientific database:
  * - No product photos (scientific reference data, no images)
@@ -43,7 +43,7 @@ import java.util.Locale;
  * - Nutrition summary (carbs in grams, per 100g)
  * - Kcal badge (tertiary container pill)
  *
- * Mirrors CiqualProductSearchDelegate exactly — same layout structure,
+ * Mirrors CiqualProductSearchDelegate exactly - same layout structure,
  * same binding logic, different source check and badge text.
  *
  * @version 1.0
@@ -102,7 +102,7 @@ public class USDAProductSearchDelegate
         holder.productName.setText(name != null && !name.trim().isEmpty() ? name : "-");
     }
 
-    /** "USDA" badge — secondary container, same styling as Ciqual badge. */
+    /** "USDA" badge - secondary container, same styling as Ciqual badge. */
     private void bindSourceBadge(@NonNull ViewHolder holder) {
         // Use short label "USDA" rather than the full source name to keep the pill compact.
         holder.sourceBadge.setText(R.string.source_name_usda);
@@ -126,7 +126,7 @@ public class USDAProductSearchDelegate
             rawCategory = product.getPrimaryCategory(language);
         }
         // USDA categories are flat strings (no breadcrumb separator), so no
-        // breadcrumb formatting is needed — just display directly.
+        // breadcrumb formatting is needed - just display directly.
         if (rawCategory != null && !rawCategory.trim().isEmpty()) {
             holder.category.setText(rawCategory.trim());
             holder.category.setVisibility(View.VISIBLE);
@@ -174,7 +174,7 @@ public class USDAProductSearchDelegate
     /**
      * Resolves thumbnail source for a USDA product.
      * Priority: userThumbnailPath → userImagePath → null
-     * No remote URL, no auto-cached thumbnail — USDA FoodData Central provides
+     * No remote URL, no auto-cached thumbnail - USDA FoodData Central provides
      * no product images. Only user-defined images are shown.
      */
     @Nullable
@@ -185,7 +185,7 @@ public class USDAProductSearchDelegate
             java.io.File f = new java.io.File(userThumb);
             if (f.exists()) return f;
         }
-        // 2. User-defined full-size image — acceptable for thumbnail display.
+        // 2. User-defined full-size image - acceptable for thumbnail display.
         String userImage = product.getUserImagePath();
         if (userImage != null && !userImage.trim().isEmpty()) {
             java.io.File f = new java.io.File(userImage);
@@ -196,7 +196,7 @@ public class USDAProductSearchDelegate
 
     /**
      * Carbohydrate summary: "x.xg carbohydrates per 100g" (EN) / "x.xg glucides per 100g" (FR).
-     * USDA is English-only but the UI language may be French — honour the language param.
+     * USDA is English-only but the UI language may be French - honour the language param.
      */
     private void bindNutritionSummary(@NonNull ViewHolder holder, @NonNull FoodProduct product,
                                       @NonNull String language) {
@@ -217,7 +217,7 @@ public class USDAProductSearchDelegate
         }
     }
 
-    /** Kcal pill badge — integer value, tertiary container styling. */
+    /** Kcal pill badge - integer value, tertiary container styling. */
     private void bindKcalBadge(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
         Nutrition nutrition = product.getNutrition();
         if (nutrition == null) {

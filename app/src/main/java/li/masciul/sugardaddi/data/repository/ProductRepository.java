@@ -6,12 +6,14 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 import androidx.lifecycle.LiveData;
 
 // Database imports
 import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
+import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
@@ -40,53 +42,30 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 /**
- * ProductRepository - CONSOLIDATED DATA ACCESS LAYER
+ * ProductRepository - product detail loading, caching, and favourite management.
  *
- * *** REPOSITORY CONSOLIDATION v3.0 ***
- * This repository combines the functionality of the former FoodRepository and ProductRepository
- * into a single, comprehensive data access layer for all product operations.
- *
- * DUAL FUNCTIONALITY:
- * 1. SEARCH OPERATIONS (from FoodRepository):
- *    - Language-aware search with DataSource support
- *    - Multi-source search aggregation
- *    - Search caching and filtering
- *    - Advanced pagination and progress tracking
- *
- * 2. PRODUCT MANAGEMENT (from original ProductRepository):
- *    - Dual-table database storage (FoodProductEntity + NutritionEntity)
- *    - Favorite product management
- *    - Intelligent cache/network strategy with TTL
- *    - Background database operations
- *    - Lifecycle management and resource cleanup
- *
- * ARCHITECTURE BENEFITS:
- * - Single source of truth for all product operations
- * - Consistent threading model across all operations
- * - Unified error handling and logging
- * - Simplified dependency injection
- * - Better resource management
- *
- * MIGRATION NOTES:
- * - Replaces both FoodRepository and the old ProductRepository
- * - All existing interfaces preserved for backward compatibility
- * - SearchManager, SearchRepository, and UI components need minimal changes
- * - Database functionality enhanced with search capabilities
+ *   - Cache-first detail loading (resolveProduct): Room-first reads with
+ *     stale-while-revalidate, dual-table storage (FoodProductEntity + NutritionEntity).
+ *   - Favourite management and thumbnail caching.
+ *   - Cache maintenance (clear / stats / validity).
  */
 public class ProductRepository {
 
     private static final String TAG = ApiConfig.SEARCH_LOG_TAG;
 
     // ========== CORE DEPENDENCIES ==========
+
     private final NetworkManager networkManager;
     private final Context context;
     private final ExecutorService backgroundExecutor;
     private final AppDatabase database;
 
     // ========== SEARCH INFRASTRUCTURE ==========
+
     private final DataSourceManager dataSourceManager;
 
     // ========== CONFIGURATION ==========
+
     // Database cache settings
     private static final long DEFAULT_CACHE_VALIDITY_MS = 24 * 60 * 60 * 1000; // 24 hours
     private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days for favorites
@@ -98,17 +77,7 @@ public class ProductRepository {
     // ========== CALLBACK INTERFACES ==========
 
     /**
-     * Called with search results. Items are FoodProduct for food sources,
-     * Recipe for recipe sources (TheMealDB). Use instanceof to discriminate.
-     */
-    public interface SearchCallback {
-        void onSuccess(List<Searchable> items);
-        void onError(Error error);
-        void onLoading();
-    }
-
-    /**
-     * Callback interface for individual product operations (from ProductRepository)
+     * Callback interface for individual product operations
      */
     public interface ProductCallback {
         void onSuccess(FoodProduct product);
@@ -117,7 +86,7 @@ public class ProductRepository {
     }
 
     /**
-     * Callback interface for favorite operations (from ProductRepository)
+     * Callback interface for favorite operations
      */
     public interface FavoriteCallback {
         void onFavoriteStatus(boolean isFavorite);
@@ -125,21 +94,13 @@ public class ProductRepository {
         void onError(String message);
     }
 
-    /**
-     * Callback interface for batch operations (from ProductRepository)
-     */
-    public interface BatchCallback {
-        void onComplete(int successCount, int failureCount);
-        void onProgress(int current, int total);
-        void onError(String message);
+    private interface NetworkFetch {
+        void fetch(FetchCallback cb);
     }
-
-    /**
-     * Cache statistics callback (from ProductRepository)
-     */
-    public interface CacheStatsCallback {
-        void onStats(CacheStatistics stats);
-        void onError(String message);
+    
+    private interface FetchCallback {
+        void onSuccess(FoodProduct product);
+        void onError(Error error);
     }
 
     // ========== CONSTRUCTOR ==========
@@ -164,257 +125,62 @@ public class ProductRepository {
 
     // ========== INDIVIDUAL PRODUCT OPERATIONS ==========
 
-    /**
-     * Load product details with intelligent cache/network strategy
-     */
+    /** Load a product by barcode (OpenFoodFacts), cache-first. */
     public void loadProduct(String barcode, ProductCallback callback) {
         if (barcode == null || barcode.trim().isEmpty()) {
             callback.onError(Error.invalidRequest("Invalid barcode provided", null));
             return;
         }
-
         final String cleanBarcode = barcode.trim();
-        callback.onLoading();
-        isOperationInProgress = true;
-
-        backgroundExecutor.execute(() -> {
-            try {
-                // Try to load from cache first (joining both tables)
-                FoodProductWithNutrition cached = database.combinedProductDao()
-                        .getProductWithNutrition(cleanBarcode);
-
-                if (cached != null && cached.product != null) {
-                    // Update access tracking
-                    cached.product.recordAccess();
-                    database.foodProductDao().updateProduct(cached.product);
-
-                    // Check cache freshness
-                    long cacheAge = System.currentTimeMillis() - cached.product.getLastUpdated();
-                    long maxAge = cached.product.isFavorite() ?
-                            FAVORITE_CACHE_VALIDITY_MS : cacheValidityMs;
-
-                    if (cacheAge < maxAge) {
-                        // Cache is fresh - use it
-                        FoodProduct product = cached.toFoodProduct();
-
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Loaded product from database cache: " + cleanBarcode +
-                                    " (age: " + (cacheAge / 1000) + "s)");
-                        }
-
-                        isOperationInProgress = false;
-                        runOnMainThread(() -> callback.onSuccess(product));
-                        return;
-                    } else {
-                        if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Database cache stale for: " + cleanBarcode +
-                                    " (age: " + (cacheAge / 1000) + "s)");
-                        }
-                    }
-                }
-
-                // Cache miss or stale - fetch from network
-                runOnMainThread(() -> fetchFromNetwork(cleanBarcode, callback));
-
-            } catch (Exception e) {
-                Log.e(TAG, "Database error loading product", e);
-                isOperationInProgress = false;
-                // Fall back to network on database error
-                runOnMainThread(() -> fetchFromNetwork(cleanBarcode, callback));
-            }
-        });
+        // Barcode rows are keyed on the barcode column; OFF is the network source.
+        resolveProduct(cleanBarcode, cb ->
+                networkManager.getProduct(cleanBarcode, new NetworkManager.NetworkCallback<FoodProduct>() {
+                    @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
+                    @Override public void onFailure(String error) { cb.onError(mapNetworkError(error, cleanBarcode)); }
+                }), callback);
     }
 
     /**
-     * Load product from specific data source using source-specific ID
-     *
-     * This method enables loading products that use source-specific identifiers
-     * rather than standard barcodes. For example:
-     * - Ciqual products: Use internal IDs like "31020"
-     * - Custom sources: May use their own ID systems
-     *
-     * PROCESS:
-     * 1. Get the specified DataSource from DataSourceManager
-     * 2. Validate the source exists and is available
-     * 3. Call source.getProduct() with the product ID
-     * 4. Save successful results to database
-     * 5. Return product via callback
-     *
-     * IMPORTANT NOTES:
-     * - Does NOT use database cache (source-specific IDs may not be in DB)
-     * - Always fetches fresh from the specified source
-     * - Saves to database after successful fetch for future barcode lookups
-     *
-     * @param sourceId Data source identifier (e.g., "CIQUAL", "OPENFOODFACTS")
-     * @param productId Source-specific product ID (e.g., "31020" for Ciqual)
-     * @param callback Product callback for results
+     * Load a product from a specific source by its source-native id (e.g. Ciqual
+     * "31020"), cache-first. Goes Room-first like the barcode path - the previous
+     * "does NOT use cache" behaviour was the root of the source-path image bug.
      */
     public void loadProductFromSource(String sourceId, String productId, ProductCallback callback) {
         if (sourceId == null || sourceId.trim().isEmpty()) {
             callback.onError(Error.validation("Source ID cannot be empty", null));
             return;
         }
-
         if (productId == null || productId.trim().isEmpty()) {
             callback.onError(Error.validation("Product ID cannot be empty", null));
             return;
         }
-
         final String cleanSourceId = sourceId.trim();
         final String cleanProductId = productId.trim();
 
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, String.format("Loading product from source: %s, ID: %s",
-                    cleanSourceId, cleanProductId));
-        }
-
-        callback.onLoading();
-        isOperationInProgress = true;
-
-        // Get the specified data source
         DataSource source = dataSourceManager.getDataSource(cleanSourceId);
-
         if (source == null) {
-            String errorMsg = String.format("Data source '%s' not found or not registered", cleanSourceId);
-            Log.e(TAG, errorMsg);
-            isOperationInProgress = false;
-            callback.onError(Error.validation(errorMsg, "Available sources: " +
-                    dataSourceManager.getAllDataSources().size()));
+            callback.onError(Error.validation(
+                    String.format("Data source '%s' not found or not registered", cleanSourceId),
+                    "Available sources: " + dataSourceManager.getAllDataSources().size()));
             return;
         }
-
-        // Check if source is available and initialized
         if (!source.isAvailable()) {
-            String errorMsg = String.format("Data source '%s' is not available or not initialized",
-                    cleanSourceId);
-            Log.w(TAG, errorMsg);
-            isOperationInProgress = false;
-            callback.onError(Error.validation(errorMsg,
+            callback.onError(Error.validation(
+                    String.format("Data source '%s' is not available or not initialized", cleanSourceId),
                     "Source may still be initializing. Try again in a moment."));
             return;
         }
 
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, String.format("Found available source: %s (%s)",
-                    source.getSourceName(), cleanSourceId));
-        }
+        final String language = LanguageManager.getCurrentLanguage(context).getCode();
+        // Same string as FoodProduct.getSearchableId() / the entity id.
+        final String roomKey = new SourceIdentifier(cleanSourceId, cleanProductId).getCombinedId();
 
-        // Get current language for the request
-        String language = LanguageManager.getCurrentLanguage(context).getCode();
-
-        // Call the source's getProduct method
-        source.getProduct(cleanProductId, language, new DataSourceCallback<FoodProduct>() {
-            @Override
-            public void onSuccess(FoodProduct product) {
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, String.format("Successfully loaded product from %s: %s",
-                            cleanSourceId, product.getName()));
-                }
-
-                // Save to database - preserves existing local image paths.
-                saveProductToDatabase(product, false);
-
-                // Enrich with local image paths from Room on a background thread,
-                // then deliver the result on the main thread.
-                isOperationInProgress = false;
-                backgroundExecutor.execute(() -> {
-                    enrichWithLocalImagePaths(product);
-                    runOnMainThread(() -> callback.onSuccess(product));
-                });
-            }
-
-            @Override
-            public void onError(Error error) {
-                Log.w(TAG, String.format("Failed to load product from %s: %s",
-                        cleanSourceId, error.getMessage()));
-
-                isOperationInProgress = false;
-                callback.onError(error);
-            }
-
-            @Override
-            public void onLoading() {
-                // Already handled by callback.onLoading() above
-            }
-        });
-    }
-
-    /**
-     * Reads local image paths (thumbnailPath, imagePath, userThumbnailPath,
-     * userImagePath) from the Room row for this product and applies them to
-     * the in-memory domain object.
-     *
-     * Called after a network fetch to ensure the renderer receives the correct
-     * local paths even though the API response has no knowledge of local files.
-     *
-     * Must be called from a background thread - performs a synchronous Room read.
-     */
-    private void enrichWithLocalImagePaths(@NonNull FoodProduct product) {
-        try {
-            FoodProductEntity existing = database.foodProductDao()
-                    .getProductById(product.getSearchableId());
-            if (existing == null) return;
-
-            if (existing.getThumbnailPath() != null) {
-                product.setThumbnailPath(existing.getThumbnailPath());
-            }
-            if (existing.getImagePath() != null) {
-                product.setImagePath(existing.getImagePath());
-            }
-            if (existing.getUserThumbnailPath() != null) {
-                product.setUserThumbnailPath(existing.getUserThumbnailPath());
-            }
-            if (existing.getUserImagePath() != null) {
-                product.setUserImagePath(existing.getUserImagePath());
-            }
-        } catch (Exception e) {
-            // Non-critical - log and continue. Renderer will just show no local image.
-            Log.w(TAG, "enrichWithLocalImagePaths failed for "
-                    + product.getSearchableId() + ": " + e.getMessage());
-        }
-    }
-
-    /**
-     * Get product by barcode with DataSource support
-     */
-    public void getProductByBarcode(String barcode, ProductCallback callback) {
-        if (callback == null || barcode == null || barcode.trim().isEmpty()) {
-            if (callback != null) {
-                callback.onError(Error.network("Invalid barcode", null));
-            }
-            return;
-        }
-
-        callback.onLoading();
-
-        List<DataSource> activeSources = dataSourceManager.getActiveSources();
-        if (activeSources.isEmpty()) {
-            callback.onError(Error.network("No data sources available", null));
-            return;
-        }
-        DataSource primarySource = activeSources.get(0);
-
-        String language = LanguageManager.getCurrentLanguage(context).getCode();
-        primarySource.getProductByBarcode(barcode, language,
-            new DataSourceCallback<FoodProduct>() {
-                @Override
-                public void onSuccess(FoodProduct foodProduct) {
-                    // Save to database as well
-                    saveProductToDatabase(foodProduct, false);
-                    callback.onSuccess(foodProduct);
-                }
-
-                @Override
-                public void onError(Error error) {
-                    callback.onError(error);
-                }
-
-                @Override
-                public void onLoading() {
-                    // Already handled
-                }
-            }
-        );
+        resolveProduct(roomKey, cb ->
+                source.getProduct(cleanProductId, language, new DataSourceCallback<FoodProduct>() {
+                    @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
+                    @Override public void onError(Error error) { cb.onError(error); }
+                    @Override public void onLoading() {}
+                }), callback);
     }
 
     /**
@@ -430,7 +196,7 @@ public class ProductRepository {
         fetchFromNetwork(barcode.trim(), callback);
     }
 
-    // ========== FAVORITE MANAGEMENT (from ProductRepository) ==========
+    // ========== FAVORITE MANAGEMENT ==========
 
     /**
      * Get favorite status for a product
@@ -480,7 +246,7 @@ public class ProductRepository {
                 if (entity != null) {
                     newStatus = !entity.isFavorite();
                     entity.setFavorite(newStatus);
-                    entity.setUpdatedAt(System.currentTimeMillis());
+
                     // Clear thumbnailPath immediately when unfavouriting so Room
                     // is consistent before the file is deleted from disk.
                     if (!newStatus) {
@@ -608,15 +374,6 @@ public class ProductRepository {
         return database.combinedProductDao().getFavoriteProductsWithNutrition();
     }
 
-    // ========== DATASOURCE MANAGEMENT ==========
-
-    /**
-     * Get available data sources
-     */
-    public List<DataSource> getAvailableDataSources() {
-        return dataSourceManager.getActiveSources();
-    }
-
     // ========== CACHE MANAGEMENT ==========
 
     /**
@@ -667,87 +424,6 @@ public class ProductRepository {
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error clearing all cache", e);
-            }
-        });
-    }
-
-    /**
-     * Set database cache validity duration
-     */
-    public void setCacheValidity(long milliseconds) {
-        this.cacheValidityMs = milliseconds;
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Database cache validity set to: " + (milliseconds / 1000) + " seconds");
-        }
-    }
-
-    // ========== BATCH OPERATIONS ==========
-
-    /**
-     * Load multiple products efficiently
-     */
-    public void loadProducts(List<String> barcodes, BatchCallback callback) {
-        if (barcodes == null || barcodes.isEmpty()) {
-            callback.onComplete(0, 0);
-            return;
-        }
-
-        backgroundExecutor.execute(() -> {
-            int successCount = 0;
-            int failureCount = 0;
-            int total = barcodes.size();
-
-            for (int i = 0; i < barcodes.size(); i++) {
-                String barcode = barcodes.get(i);
-
-                try {
-                    // Try cache first
-                    FoodProductWithNutrition cached = database.combinedProductDao()
-                            .getProductWithNutrition(barcode);
-
-                    if (cached != null && cached.product != null &&
-                            !cached.product.isStale(cacheValidityMs)) {
-                        successCount++;
-                    } else {
-                        // Would need network fetch - count as pending
-                        failureCount++;
-                    }
-
-                    // Report progress
-                    final int current = i + 1;
-                    runOnMainThread(() -> callback.onProgress(current, total));
-
-                } catch (Exception e) {
-                    Log.e(TAG, "Error loading product: " + barcode, e);
-                    failureCount++;
-                }
-            }
-
-            final int finalSuccess = successCount;
-            final int finalFailure = failureCount;
-            runOnMainThread(() -> callback.onComplete(finalSuccess, finalFailure));
-        });
-    }
-
-    /**
-     * Get cache statistics
-     */
-    public void getCacheStatistics(CacheStatsCallback callback) {
-        backgroundExecutor.execute(() -> {
-            try {
-                int productCount = database.foodProductDao().getProductCount();
-                int nutritionCount = database.nutritionDao().getNutritionCount();
-                int favoriteCount = database.foodProductDao().getFavoriteCount();
-
-                CacheStatistics stats = new CacheStatistics(
-                        productCount, nutritionCount, favoriteCount);
-
-                runOnMainThread(() -> callback.onStats(stats));
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error getting cache statistics", e);
-                runOnMainThread(() -> callback.onError("Could not get cache statistics"));
             }
         });
     }
@@ -806,93 +482,85 @@ public class ProductRepository {
         });
     }
 
+    /**
+     * Fire-and-forget save of a product (+ nutrition). Enqueues the synchronous
+     * save on the background executor. Used by callers that don't read the result
+     * back (e.g. toggleFavorite's new-favourite branch).
+     */
     private void saveProductToDatabase(FoodProduct product, boolean asFavorite) {
         if (product == null) return;
-
-        backgroundExecutor.execute(() -> {
-            try {
-                // 1. Check if product already exists - preserve user-set fields
-                //    that must never be overwritten by a fresh network fetch:
-                //    isFavorite, thumbnailPath, imagePath, userThumbnailPath, userImagePath.
-                FoodProductEntity existingEntity = database.foodProductDao()
-                        .getProductById(product.getSearchableId());
-                boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
-
-                // 2. Prepare and save product entity (WITHOUT nutrition)
-                FoodProductEntity productEntity = FoodProductEntity.fromFoodProduct(product);
-                if (asFavorite || preserveFavorite) {
-                    productEntity.setFavorite(true);
-                }
-
-                // Carry forward all local image paths from the existing row.
-                // These are user-set or auto-cached - a network refresh must never
-                // wipe them. The API response has no knowledge of local files.
-                if (existingEntity != null) {
-                    if (existingEntity.getThumbnailPath() != null) {
-                        productEntity.setThumbnailPath(existingEntity.getThumbnailPath());
-                    }
-                    if (existingEntity.getImagePath() != null) {
-                        productEntity.setImagePath(existingEntity.getImagePath());
-                    }
-                    if (existingEntity.getUserThumbnailPath() != null) {
-                        productEntity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
-                    }
-                    if (existingEntity.getUserImagePath() != null) {
-                        productEntity.setUserImagePath(existingEntity.getUserImagePath());
-                    }
-                }
-
-                productEntity.markAsUpdated();
-
-                database.foodProductDao().insertProduct(productEntity);
-
-                // 2. Save nutrition separately if present
-                if (product.getNutrition() != null) {
-                    NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
-                            product.getNutrition(),
-                            "product",
-                            product.getSearchableId()
-                    );
-                    database.nutritionDao().insertNutrition(nutritionEntity);
-
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Saved product with nutrition to both tables: " +
-                                product.getSearchableId() + " (favorite: " + asFavorite + ")");
-                    }
-                } else {
-                    if (ApiConfig.DEBUG_LOGGING) {
-                        Log.d(TAG, "Saved product without nutrition: " +
-                                product.getSearchableId() + " (favorite: " + asFavorite + ")");
-                    }
-                }
-
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to save product to database", e);
-            }
-        });
+        backgroundExecutor.execute(() -> saveProductToDatabaseSync(product, asFavorite));
     }
 
     /**
-     * Get current language for API requests
+     * Synchronous save of a product (+ nutrition). MUST run on a background thread.
+     *
+     * Returns only after the Room write completes, so the caller can immediately
+     * re-read the saved row. This is what lets resolveProduct() return the merged
+     * entity (with preserved local image paths) rather than the raw network object.
+     *
+     * Preserved from any existing row (never overwritten by a fresh fetch):
+     *   isFavorite, the four local image paths, localImport, lastViewed, accessCount.
      */
-    private String getCurrentLanguageCode() {
+    @WorkerThread
+    private void saveProductToDatabaseSync(FoodProduct product, boolean asFavorite) {
+        if (product == null) return;
         try {
-            // Read directly from SharedPreferences for consistency
-            SharedPreferences prefs = context.getSharedPreferences("language_pref", Context.MODE_PRIVATE);
-            String savedLanguage = prefs.getString("selected_language", null);
+            // Existing favourite status must survive a refresh. asFavorite covers the
+            // "save as new favourite" path; preserveFavorite covers refreshing a row
+            // that was already a favourite.
+            FoodProductEntity existingEntity = database.foodProductDao()
+                    .getProductById(product.getSearchableId());
+            boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
 
-            if (savedLanguage != null) {
-                if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Language from prefs: " + savedLanguage);
-                return savedLanguage;
+            FoodProductEntity productEntity = FoodProductEntity.fromFoodProduct(product);
+            if (asFavorite || preserveFavorite) {
+                productEntity.setFavorite(true);
             }
 
-            // Fallback to LanguageManager
-            LanguageManager.SupportedLanguage currentLang = LanguageManager.getCurrentLanguage(context);
-            if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Language from manager: " + currentLang.getCode());
-            return currentLang.getCode();
+            if (existingEntity != null) {
+                // Local image paths - user-set or auto-cached. The API response has
+                // no knowledge of local files, so a refresh must never wipe them.
+                if (existingEntity.getThumbnailPath() != null) {
+                    productEntity.setThumbnailPath(existingEntity.getThumbnailPath());
+                }
+                if (existingEntity.getImagePath() != null) {
+                    productEntity.setImagePath(existingEntity.getImagePath());
+                }
+                if (existingEntity.getUserThumbnailPath() != null) {
+                    productEntity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
+                }
+                if (existingEntity.getUserImagePath() != null) {
+                    productEntity.setUserImagePath(existingEntity.getUserImagePath());
+                }
+
+                // View-time state - a background sync must not reset the eviction
+                // clock, zero the access count, or demote a dataset row to evictable.
+                productEntity.setLocalImport(existingEntity.isLocalImport());
+                productEntity.setLastViewed(existingEntity.getLastViewed());
+                productEntity.setAccessCount(existingEntity.getAccessCount());
+            }
+
+            productEntity.touch();   // stamps lastUpdated = now (the sync time)
+
+            database.foodProductDao().insertProduct(productEntity);
+
+            // Nutrition lives in a separate table.
+            if (product.getNutrition() != null) {
+                NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                        product.getNutrition(), "product", product.getSearchableId());
+                database.nutritionDao().insertNutrition(nutritionEntity);
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Saved product with nutrition: "
+                            + product.getSearchableId() + " (favorite: " + asFavorite + ")");
+                }
+            } else if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Saved product without nutrition: "
+                        + product.getSearchableId() + " (favorite: " + asFavorite + ")");
+            }
+
         } catch (Exception e) {
-            Log.e(TAG, "Failed to get language code, using default", e);
-            return "en"; // Safe fallback
+            Log.e(TAG, "Failed to save product to database", e);
         }
     }
 
@@ -903,20 +571,120 @@ public class ProductRepository {
         new android.os.Handler(android.os.Looper.getMainLooper()).post(runnable);
     }
 
-    // ========== INNER CLASSES ==========
+    /**
+     * Cache-first product load.
+     *
+     *  - Room hit, fresh : return the cached row immediately, no network.
+     *  - Room hit, stale : return the cached row immediately, then refresh in the
+     *                      background; the fresh data applies on the NEXT open
+     *                      (never changes values under the user mid-view).
+     *  - Room miss        : fetch, save, then re-read the merged row so locally
+     *                      preserved fields (image paths, etc.) reach the UI.
+     *
+     * Replaces the old split where loadProductFromSource() never consulted Room -
+     * the source path now caches like the barcode path, fixing image persistence.
+     */
+    private void resolveProduct(@NonNull String roomKey,
+                                @NonNull NetworkFetch fetch,
+                                @NonNull ProductCallback callback) {
+        callback.onLoading();
+        isOperationInProgress = true;
+
+        backgroundExecutor.execute(() -> {
+            try {
+                FoodProductWithNutrition cached = database.combinedProductDao()
+                        .getProductWithNutrition(roomKey);
+
+                if (cached != null && cached.product != null) {
+                    // Record the view (accessCount + lastViewed) and persist it.
+                    cached.product.recordAccess();
+                    database.foodProductDao().updateProduct(cached.product);
+
+                    long maxAge = cached.product.isFavorite()
+                            ? FAVORITE_CACHE_VALIDITY_MS : cacheValidityMs;
+                    boolean stale = cached.product.isStale(maxAge);
+
+                    // Always show the cached version immediately.
+                    FoodProduct product = cached.toFoodProduct();
+                    isOperationInProgress = false;
+                    runOnMainThread(() -> callback.onSuccess(product));
+
+                    // If stale, refresh quietly for next open - no live push.
+                    if (stale) {
+                        backgroundRefresh(roomKey, fetch);
+                    }
+                    return;
+                }
+
+                // Room miss → fetch, save, re-read, push.
+                fetchSaveAndPush(fetch, callback);
+
+            } catch (Exception e) {
+                Log.e(TAG, "resolveProduct error for " + roomKey, e);
+                // DB error: fall back to a straight network fetch (treat as a miss).
+                fetchSaveAndPush(fetch, callback);
+            }
+        });
+    }
+
+    /** Network fetch → synchronous save → re-read merged row → push to caller. */
+    private void fetchSaveAndPush(@NonNull NetworkFetch fetch,
+                                  @NonNull ProductCallback callback) {
+        fetch.fetch(new FetchCallback() {
+            @Override public void onSuccess(FoodProduct fetched) {
+                backgroundExecutor.execute(() -> {
+                    saveProductToDatabaseSync(fetched, false);
+                    FoodProduct result = reReadOrFallback(fetched);
+                    isOperationInProgress = false;
+                    runOnMainThread(() -> callback.onSuccess(result));
+                });
+            }
+            @Override public void onError(Error error) {
+                isOperationInProgress = false;
+                runOnMainThread(() -> callback.onError(error));
+            }
+        });
+    }
 
     /**
-     * Cache statistics
+     * Silent staleness refresh: fetch and persist, but do NOT push to the open
+     * screen. saveProductToDatabaseSync preserves local image paths, lastViewed,
+     * accessCount and localImport, so only the synced data changes.
      */
-    public static class CacheStatistics {
-        public final int productCount;
-        public final int nutritionCount;
-        public final int favoriteCount;
+    private void backgroundRefresh(@NonNull String roomKey, @NonNull NetworkFetch fetch) {
+        fetch.fetch(new FetchCallback() {
+            @Override public void onSuccess(FoodProduct fetched) {
+                backgroundExecutor.execute(() -> saveProductToDatabaseSync(fetched, false));
+            }
+            @Override public void onError(Error error) {
+                // Silent - the user already has the still-valid cached version.
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Background refresh failed for " + roomKey
+                            + ": " + error.getMessage());
+                }
+            }
+        });
+    }
 
-        CacheStatistics(int productCount, int nutritionCount, int favoriteCount) {
-            this.productCount = productCount;
-            this.nutritionCount = nutritionCount;
-            this.favoriteCount = favoriteCount;
+    /**
+     * Re-reads the just-saved row so fields merged during save (local image paths)
+     * reach the UI. Falls back to the raw fetched object if the re-read fails.
+     * Must run on a background thread.
+     */
+    @WorkerThread
+    private FoodProduct reReadOrFallback(@NonNull FoodProduct fetched) {
+        FoodProductWithNutrition saved = database.combinedProductDao()
+                .getProductWithNutrition(fetched.getSearchableId());
+        return (saved != null && saved.product != null) ? saved.toFoodProduct() : fetched;
+    }
+
+    /** Maps a NetworkManager failure string to a structured Error. */
+    private Error mapNetworkError(@NonNull String error, @NonNull String barcode) {
+        if (error.toLowerCase().contains("not found")) {
+            return Error.noData("No product found for barcode: " + barcode);
+        } else if (error.toLowerCase().contains("network")) {
+            return Error.network(error, null);
         }
+        return Error.network("Failed to load product: " + error, null);
     }
 }

@@ -18,13 +18,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * CiqualCategoryLookup — Category hierarchy resolver for Ciqual ES search results.
+ * CiqualCategoryLookup - Category hierarchy resolver for Ciqual ES search results.
  *
  * PROBLEM SOLVED:
  * The Ciqual Elasticsearch API returns only two human-readable category fields:
  *   - groupeAfficheEng / groupeAfficheFr  (always the lvl-2 subgroup name)
  * The grps[] array contains {code, lvl} pairs for all three hierarchy levels,
- * but only as numeric codes — no names for the parent group or sub-subgroup.
+ * but only as numeric codes - no names for the parent group or sub-subgroup.
  *
  * This class resolves those codes to full breadcrumb strings like:
  *   "sugar and confectionery > breakfast cereals"
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * ARCHITECTURE:
  * - Singleton, initialized once at app startup from assets
  * - Parses alim_grp_2025_11_03.xml (80KB, bundled as Android asset)
- * - Uses XmlPullParser (built into Android — no external library needed)
+ * - Uses XmlPullParser (built into Android - no external library needed)
  * - Builds two flat lookup maps keyed by ssgrp_code and ssssgrp_code
  * - Thread-safe: reads are lock-free once initialized
  * - Graceful degradation: returns null if not ready → caller falls back to groupeAfficheEng
@@ -65,14 +65,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   ssssgrp_nom_eng = "-"   → no name (placeholder)
  *
  * FILE: assets/alim_grp_2025_11_03.xml (80KB, 138 ALIM_GRP entries)
- * Ciqual 2025 — updated ~annually by ANSES. Bundled statically for simplicity.
+ * Ciqual 2025 - updated ~annually by ANSES. Bundled statically for simplicity.
  * When a new version is released, replace the asset file and rebuild the app.
  */
 public class CiqualCategoryLookup {
 
     private static final String TAG = "CiqualCategoryLookup";
 
-    /** Asset filename — update when ANSES releases a new version */
+    /** Asset filename - update when ANSES releases a new version */
     public static final String ASSET_FILENAME = "alim_grp_2025_11_03.xml";
 
     /** Sentinel code meaning "no sub-subgroup" */
@@ -109,17 +109,17 @@ public class CiqualCategoryLookup {
      * Immutable after construction.
      */
     public static final class CategoryRow {
-        // Level 1 — group
+        // Level 1 - group
         public final String grpCode;
         public final String grpNameFr;
         public final String grpNameEn;
 
-        // Level 2 — subgroup
+        // Level 2 - subgroup
         public final String ssgrpCode;
         public final String ssgrpNameFr;
         public final String ssgrpNameEn;
 
-        // Level 3 — sub-subgroup (may be absent: ssssgrpCode == SSSSGRP_NONE)
+        // Level 3 - sub-subgroup (may be absent: ssssgrpCode == SSSSGRP_NONE)
         public final String ssssgrpCode;
         public final String ssssgrpNameFr;
         public final String ssssgrpNameEn;
@@ -165,7 +165,7 @@ public class CiqualCategoryLookup {
     /**
      * Parse the bundled category XML asset and build the lookup maps.
      *
-     * Must be called from a background thread — opens and reads a file.
+     * Must be called from a background thread - opens and reads a file.
      * Safe to call multiple times: subsequent calls are no-ops.
      *
      * @param context Application context (for AssetManager access)
@@ -186,7 +186,7 @@ public class CiqualCategoryLookup {
 
             parseXml(is, newSsgrpMap, newSsssgrpMap);
 
-            // Publish atomically — readers never see a half-built map
+            // Publish atomically - readers never see a half-built map
             ssgrpMap = newSsgrpMap;
             ssssgrpMap = newSsssgrpMap;
             ready.set(true);
@@ -198,7 +198,7 @@ public class CiqualCategoryLookup {
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to initialize category lookup from assets", e);
-            // ready stays false — callers will fall back to groupeAfficheEng
+            // ready stays false - callers will fall back to groupeAfficheEng
         }
     }
 
@@ -211,7 +211,7 @@ public class CiqualCategoryLookup {
      * 3. XmlPullParser handles whitespace-padded values naturally via trim()
      * 4. Simple XML's strict mode choked on the old Ciqual XML files
      *
-     * Element values are trimmed — the real file has spaces around codes:
+     * Element values are trimmed - the real file has spaces around codes:
      * e.g. " 0101 " → "0101"
      */
     private void parseXml(
@@ -270,10 +270,10 @@ public class CiqualCategoryLookup {
                                     ssssgrpCode != null ? ssssgrpCode : SSSSGRP_NONE,
                                     ssssgrpNameFr, ssssgrpNameEn);
 
-                            // Index by ssgrp_code — covers all 138 entries
+                            // Index by ssgrp_code - covers all 138 entries
                             ssgrpOut.put(ssgrpCode, row);
 
-                            // Index by ssssgrp_code — only for real sub-subgroups
+                            // Index by ssssgrp_code - only for real sub-subgroups
                             if (isValid(ssssgrpCode) && !SSSSGRP_NONE.equals(ssssgrpCode)) {
                                 ssssgrpOut.put(ssssgrpCode, row);
                             }
@@ -344,7 +344,7 @@ public class CiqualCategoryLookup {
         }
 
         if (row == null) {
-            // No match found — caller should fall back to groupeAfficheEng
+            // No match found - caller should fall back to groupeAfficheEng
             return null;
         }
 
@@ -362,20 +362,20 @@ public class CiqualCategoryLookup {
         boolean isEn = "en".equalsIgnoreCase(language);
         StringBuilder sb = new StringBuilder();
 
-        // Level 1 — always present
+        // Level 1 - always present
         String grpName = isEn ? row.grpNameEn : row.grpNameFr;
         if (isValid(grpName)) {
             sb.append(grpName);
         }
 
-        // Level 2 — always present (ssgrp is the primary key)
+        // Level 2 - always present (ssgrp is the primary key)
         String ssgrpName = isEn ? row.ssgrpNameEn : row.ssgrpNameFr;
         if (isValid(ssgrpName) && !NAME_NONE.equals(ssgrpName)) {
             if (sb.length() > 0) sb.append(" > ");
             sb.append(ssgrpName);
         }
 
-        // Level 3 — only if real sub-subgroup exists
+        // Level 3 - only if real sub-subgroup exists
         if (row.hasSubSubGroup()) {
             String ssssgrpName = isEn ? row.ssssgrpNameEn : row.ssssgrpNameFr;
             if (isValid(ssssgrpName) && !NAME_NONE.equals(ssssgrpName)) {
@@ -400,7 +400,7 @@ public class CiqualCategoryLookup {
                 ssgrpMap.size(), ssssgrpMap.size());
     }
     /**
-     * Resolve category hierarchy directly from code strings — no CategoryGroup list needed.
+     * Resolve category hierarchy directly from code strings - no CategoryGroup list needed.
      * Used by CiqualImportService during XML import, where we have raw code strings
      * from the alim XML but no ES DTO objects.
      *

@@ -2,7 +2,7 @@
 <resources>
 
     <!--
-        TYPE SCALE — SugarDaddi font assignments
+        TYPE SCALE - SugarDaddi font assignments
         ════════════════════════════════════════
         Display + Headline  →  Roboto Condensed (space-efficient at large sizes)
         Title               →  Inter SemiBold   (card titles, dialog headers)
@@ -14,7 +14,7 @@
         automatically use Inter Regular without needing android:fontFamily set.
     -->
 
-    <!-- ===== DISPLAY — Roboto Condensed ===== -->
+    <!-- ===== DISPLAY - Roboto Condensed ===== -->
 
     <style name="TextAppearance.SugarDaddi.DisplayLarge"
         parent="TextAppearance.Material3.DisplayLarge">
@@ -32,7 +32,7 @@
     </style>
 
 
-    <!-- ===== HEADLINE — Roboto Condensed ===== -->
+    <!-- ===== HEADLINE - Roboto Condensed ===== -->
 
     <style name="TextAppearance.SugarDaddi.HeadlineLarge"
         parent="TextAppearance.Material3.HeadlineLarge">
@@ -50,7 +50,7 @@
     </style>
 
 
-    <!-- ===== TITLE — Inter SemiBold ===== -->
+    <!-- ===== TITLE - Inter SemiBold ===== -->
 
     <style name="TextAppearance.SugarDaddi.TitleLarge"
         parent="TextAppearance.Material3.TitleLarge">
@@ -68,7 +68,7 @@
     </style>
 
 
-    <!-- ===== BODY — Inter Regular ===== -->
+    <!-- ===== BODY - Inter Regular ===== -->
 
     <style name="TextAppearance.SugarDaddi.BodyLarge"
         parent="TextAppearance.Material3.BodyLarge">
@@ -86,7 +86,7 @@
     </style>
 
 
-    <!-- ===== LABEL — Inter Medium ===== -->
+    <!-- ===== LABEL - Inter Medium ===== -->
 
     <style name="TextAppearance.SugarDaddi.LabelLarge"
         parent="TextAppearance.Material3.LabelLarge">

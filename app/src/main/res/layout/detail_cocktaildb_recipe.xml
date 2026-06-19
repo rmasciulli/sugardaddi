@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    detail_cocktaildb_recipe.xml — Layout inflated by CocktailDbRecipeDetailRenderer.
+    detail_cocktaildb_recipe.xml - Layout inflated by CocktailDbRecipeDetailRenderer.
 
     STRUCTURE (mirrors detail_mealdb_recipe.xml):
-      1. Hero image — full-width, 200dp, GONE when no imageUrl
-      2. Main content card — single card with four sections + three dividers:
+      1. Hero image - full-width, 200dp, GONE when no imageUrl
+      2. Main content card - single card with four sections + three dividers:
            a. Header: cocktail name + category·alcoholic status description
            b. Glass type row (GONE when no glass tag present)
            c. Ingredients: dot-leader rows (FoodPortion stubs)
            d. Instructions: numbered step rows
-      3. Attribution card — amber, separate, tappable (TheCocktailDB credit)
+      3. Attribution card - amber, separate, tappable (TheCocktailDB credit)
 
     DIFFERENCES FROM detail_mealdb_recipe.xml:
       - Hero container height: 200dp (harmonised, was 220dp in MealDB layout)
       - Extra section: glass type row (between header and ingredients)
-      - No dot-leader for ingredients — plain two-column rows via item_ingredient_row.xml
+      - No dot-leader for ingredients - plain two-column rows via item_ingredient_row.xml
 
     Used by: CocktailDbRecipeDetailRenderer
 -->
@@ -32,7 +32,7 @@
         android:orientation="vertical">
 
         <!-- ================================================= -->
-        <!-- 1. HERO IMAGE — full-width, GONE when no imageUrl -->
+        <!-- 1. HERO IMAGE - full-width, GONE when no imageUrl -->
         <!-- ================================================= -->
         <FrameLayout
             android:id="@+id/heroImageContainer"
@@ -114,7 +114,7 @@
                     android:background="?attr/colorOutlineVariant" />
 
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-                <!-- 2b. GLASS TYPE — GONE when no glass tag    -->
+                <!-- 2b. GLASS TYPE - GONE when no glass tag    -->
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
                 <LinearLayout
                     android:id="@+id/glassTypeRow"
@@ -137,7 +137,7 @@
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginEnd="8dp" />
 
-                    <!-- Value — set programmatically -->
+                    <!-- Value - set programmatically -->
                     <TextView
                         android:id="@+id/glassTypeValue"
                         android:layout_width="0dp"

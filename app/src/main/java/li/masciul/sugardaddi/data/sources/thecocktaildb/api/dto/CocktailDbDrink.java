@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CocktailDbDrink — Gson DTO for a full drink object from TheCocktailDB API.
+ * CocktailDbDrink - Gson DTO for a full drink object from TheCocktailDB API.
  *
  * Maps the response of:
  *   GET https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i={id}
@@ -24,7 +24,7 @@ import java.util.List;
  * - ID field: idDrink (not idMeal)
  * - Name field: strDrink (not strMeal)
  * - Thumbnail: strDrinkThumb (not strMealThumb)
- * - No strArea field — cocktails have no geographic origin concept
+ * - No strArea field - cocktails have no geographic origin concept
  * - Extra field: strAlcoholic ("Alcoholic" / "Non alcoholic" / "Optional alcohol")
  * - Extra field: strGlass (e.g. "Highball glass", "Cocktail glass")
  * - 15 ingredient slots (not 20)
@@ -38,8 +38,8 @@ import java.util.List;
  *
  * LANGUAGE: English only. The free v1 API has no localisation support.
  *
- * @see CocktailDbSearchResponse — wraps this DTO in a "drinks" array
- * @see CocktailDbIngredient     — parsed ingredient+measure pair
+ * @see CocktailDbSearchResponse - wraps this DTO in a "drinks" array
+ * @see CocktailDbIngredient     - parsed ingredient+measure pair
  */
 public class CocktailDbDrink {
 
@@ -78,7 +78,7 @@ public class CocktailDbDrink {
      *   "Non alcoholic"    → tag "non_alcoholic"
      *   "Optional alcohol" → tag "optional_alcohol"
      *
-     * Mapped to tags in TheCocktailDbMapper — see TheCocktailDbConstants for tag name constants.
+     * Mapped to tags in TheCocktailDbMapper - see TheCocktailDbConstants for tag name constants.
      */
     @SerializedName("strAlcoholic")
     @Nullable
@@ -105,7 +105,7 @@ public class CocktailDbDrink {
 
     /**
      * Tags: freeform comma-separated string. Not structured.
-     * Examples: "IBA,NewEra" — used alongside strAlcoholic and strGlass tags.
+     * Examples: "IBA,NewEra" - used alongside strAlcoholic and strGlass tags.
      */
     @SerializedName("strTags")
     @Nullable
@@ -201,7 +201,7 @@ public class CocktailDbDrink {
      * - Skip any slot where the ingredient name is null or blank
      * - Treat a blank measure as null (no quantity specified)
      *
-     * The returned list contains only real ingredients — no empty slots.
+     * The returned list contains only real ingredients - no empty slots.
      *
      * @return List of this drink's ingredients. Never null, may be empty.
      */

@@ -33,9 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * DataSourceManager — Singleton registry and initialisation orchestrator.
+ * DataSourceManager - Singleton registry and initialisation orchestrator.
  *
- * ARCHITECTURE v3.0 — Settings refactor
+ * ARCHITECTURE v3.0 - Settings refactor
  * ======================================
  * REMOVED: DataSourceConfig dependency.
  *   Enabled state is now persisted by each source in its own SharedPreferences
@@ -47,10 +47,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   a source is registered for async init. Adding USDA (or any future source)
  *   requires no change here beyond calling registerAndInit().
  *
- * ADDED: {@link #getAllSources()} — all registered sources, sorted A→Z by name.
+ * ADDED: {@link #getAllSources()} - all registered sources, sorted A→Z by name.
  *   Used by SettingsActivity to build the data-source cards in alphabetical order.
  *
- * ADDED: {@link #getActiveSources()} — enabled + initialised sources, A→Z.
+ * ADDED: {@link #getActiveSources()} - enabled + initialised sources, A→Z.
  *   Used by DataSourceAggregator for parallel search. Replaces the former
  *   getEnabledDataSources() which filtered via DataSourceConfig.
  *
@@ -84,7 +84,7 @@ public class DataSourceManager {
     private final Set<String>         failedSources       = Collections.synchronizedSet(new HashSet<>());
     private final Map<String, Error>  initializationErrors = new ConcurrentHashMap<>();
 
-    // Dynamic counter — incremented per source registered for async init
+    // Dynamic counter - incremented per source registered for async init
     private final AtomicInteger pendingInitializations = new AtomicInteger(0);
 
     // Optional listener for init events
@@ -133,7 +133,7 @@ public class DataSourceManager {
      *
      * Increments the pending counter BEFORE submitting init so the counter
      * is always ≥ the number of in-flight inits. This is the only place the
-     * counter is incremented — adding a new source here is all that's needed.
+     * counter is incremented - adding a new source here is all that's needed.
      *
      * @param source The data source to register and initialise.
      */
@@ -187,7 +187,7 @@ public class DataSourceManager {
      * Create and initialise all data sources in parallel.
      *
      * TO ADD A NEW SOURCE: add one registerAndInit() call here.
-     * No other change is required — the pending counter is dynamic.
+     * No other change is required - the pending counter is dynamic.
      */
     private void initializeDataSources() {
         if (ApiConfig.DEBUG_LOGGING) {
@@ -251,7 +251,7 @@ public class DataSourceManager {
     private void checkAllInitialized() {
         if (pendingInitializations.get() == 0) {
             if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "All sources initialised — success=" + initializedSources.size()
+                Log.d(TAG, "All sources initialised - success=" + initializedSources.size()
                         + " failed=" + failedSources.size());
             }
             if (initializationListener != null) {

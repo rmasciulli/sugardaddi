@@ -5,14 +5,14 @@
          DARK THEME OVERRIDES
          The parent switches to Theme.Material3.Dark.NoActionBar.
          All color attributes reference the same md_theme_* names as the
-         light theme — values-night/colors.xml overrides those names with
+         light theme - values-night/colors.xml overrides those names with
          dark values automatically. We only re-declare structural items that
          differ in dark mode: status bar and ripple.
          ===================================================================== -->
 
     <style name="Theme.SugarDaddi" parent="Theme.Material3.Dark.NoActionBar">
 
-        <!-- ===== M3 COLOR ROLES — resolved from values-night/colors.xml ===== -->
+        <!-- ===== M3 COLOR ROLES - resolved from values-night/colors.xml ===== -->
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
@@ -70,7 +70,7 @@
         <item name="android:colorAccent">@color/md_theme_primary</item>
         <item name="colorAccent">@color/md_theme_primary</item>
 
-        <!-- ===== STATUS BAR — dark variant uses primary container ===== -->
+        <!-- ===== STATUS BAR - dark variant uses primary container ===== -->
         <item name="android:statusBarColor">@color/md_theme_primary</item>
         <item name="android:windowLightStatusBar">false</item>
 
@@ -79,7 +79,7 @@
         <item name="colorControlActivated">@color/md_theme_primary</item>
         <item name="colorControlHighlight">@color/ripple_primary</item>
 
-        <!-- ===== TYPE SCALE — same font references, colors auto-adapt ===== -->
+        <!-- ===== TYPE SCALE - same font references, colors auto-adapt ===== -->
         <item name="textAppearanceDisplayLarge">@style/TextAppearance.SugarDaddi.DisplayLarge</item>
         <item name="textAppearanceDisplayMedium">@style/TextAppearance.SugarDaddi.DisplayMedium</item>
         <item name="textAppearanceDisplaySmall">@style/TextAppearance.SugarDaddi.DisplaySmall</item>

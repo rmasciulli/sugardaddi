@@ -27,7 +27,7 @@ import li.masciul.sugardaddi.ui.delegates.ViewType;
 import java.util.List;
 
 /**
- * MealDbRecipeSearchDelegate — Search result card rendering for TheMealDB recipes.
+ * MealDbRecipeSearchDelegate - Search result card rendering for TheMealDB recipes.
  *
  * DISPLAYS:
  * - Recipe name (bold, 2 lines max)
@@ -54,7 +54,7 @@ import java.util.List;
  *   strTags       → recipe.getTags()
  *
  * NOTE ON VIDEO:
- * strYoutube is not stored as a dedicated field on Recipe — it was dropped
+ * strYoutube is not stored as a dedicated field on Recipe - it was dropped
  * during mapping since Recipe has no videoUrl field. The video indicator
  * is derived from a tag "has_video" added by TheMealDbMapper when strYoutube
  * is present. If the tag is absent, the indicator is hidden.
@@ -113,7 +113,7 @@ public class MealDbRecipeSearchDelegate
     private void bindName(@NonNull ViewHolder holder, @NonNull Recipe recipe,
                           @NonNull String language) {
         String name = recipe.getDisplayName(language);
-        holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "—");
+        holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "-");
     }
 
     /**
@@ -146,7 +146,7 @@ public class MealDbRecipeSearchDelegate
 
     /**
      * Load the recipe thumbnail via Glide.
-     * TheMealDB always provides strMealThumb for published recipes — this should
+     * TheMealDB always provides strMealThumb for published recipes - this should
      * almost never be null, but we hide the container gracefully if it is.
      */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
@@ -199,7 +199,7 @@ public class MealDbRecipeSearchDelegate
         String imageUrl = recipe.getImageUrl();
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
 
-        // 5. User-defined full-size image — last resort.
+        // 5. User-defined full-size image - last resort.
         String userImage = recipe.getUserImagePath();
         if (userImage != null && !userImage.trim().isEmpty()) {
             java.io.File f = new java.io.File(userImage);
@@ -244,7 +244,7 @@ public class MealDbRecipeSearchDelegate
             return;
         }
 
-        // Tags to exclude — internal or already shown elsewhere in the card
+        // Tags to exclude - internal or already shown elsewhere in the card
         java.util.Set<String> excluded = new java.util.HashSet<>();
         excluded.add("has_video");
         excluded.add("themealdb");

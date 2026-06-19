@@ -60,21 +60,21 @@ public abstract class CombinedProductDao {
      * Get all products with nutrition data
      */
     @Transaction
-    @Query("SELECT * FROM food_products ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM food_products ORDER BY lastViewed DESC")
     public abstract List<FoodProductWithNutrition> getAllProductsWithNutrition();
 
     /**
      * Get all products with nutrition (LiveData for UI)
      */
     @Transaction
-    @Query("SELECT * FROM food_products ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM food_products ORDER BY lastViewed DESC")
     public abstract LiveData<List<FoodProductWithNutrition>> getAllProductsWithNutritionLive();
 
     /**
      * Get recently accessed products with nutrition
      */
     @Transaction
-    @Query("SELECT * FROM food_products ORDER BY updatedAt DESC LIMIT :limit")
+    @Query("SELECT * FROM food_products ORDER BY lastViewed DESC LIMIT :limit")
     public abstract LiveData<List<FoodProductWithNutrition>> getRecentProductsWithNutrition(int limit);
 
     /**
@@ -88,14 +88,14 @@ public abstract class CombinedProductDao {
      * Get favorite products with nutrition
      */
     @Transaction
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastViewed DESC")
     public abstract LiveData<List<FoodProductWithNutrition>> getFavoriteProductsWithNutrition();
 
     /**
      * Get favorite products (non-LiveData)
      */
     @Transaction
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastViewed DESC")
     public abstract List<FoodProductWithNutrition> getFavoriteProductsList();
 
     /**
@@ -204,7 +204,7 @@ public abstract class CombinedProductDao {
     @Transaction
     public void updateProductWithNutrition(FoodProductEntity product, NutritionEntity nutrition) {
         if (product != null) {
-            product.setUpdatedAt(System.currentTimeMillis());
+            product.setLastUpdated(System.currentTimeMillis());
             updateProductEntity(product);
 
             if (nutrition != null) {
@@ -223,7 +223,7 @@ public abstract class CombinedProductDao {
         if (products != null && !products.isEmpty()) {
             long now = System.currentTimeMillis();
             for (FoodProductEntity product : products) {
-                product.setUpdatedAt(now);
+                product.setLastUpdated(now);
             }
             updateProductEntities(products);
 

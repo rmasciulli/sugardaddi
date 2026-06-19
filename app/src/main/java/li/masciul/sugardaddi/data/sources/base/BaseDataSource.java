@@ -20,14 +20,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * BaseDataSource — Abstract base implementation for all data sources.
+ * BaseDataSource - Abstract base implementation for all data sources.
  *
- * ARCHITECTURE v3.0 — Settings refactor
+ * ARCHITECTURE v3.0 - Settings refactor
  * ======================================
  * Key changes vs v2.x:
  *
  *   REMOVED: in-memory {@code boolean enabled} field.
- *   The old field was never persisted — DataSourceConfig held the real state,
+ *   The old field was never persisted - DataSourceConfig held the real state,
  *   which caused the two to drift.  Now each source persists its own enabled
  *   flag in a dedicated SharedPreferences file named after its source ID
  *   ("source_prefs_CIQUAL", "source_prefs_OPENFOODFACTS", …).
@@ -53,12 +53,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Default: true (enabled on first launch)
  *
  * This means each source independently persists its toggle state.
- * DataSourceManager calls source.isEnabled() directly — no shared config file.
+ * DataSourceManager calls source.isEnabled() directly - no shared config file.
  */
 public abstract class BaseDataSource implements DataSource {
 
     // =========================================================================
-    // SHARED PREFS — enable/disable persistence
+    // SHARED PREFS - enable/disable persistence
     // =========================================================================
 
     /** Prefix for each source's private SharedPreferences file. */
@@ -99,7 +99,7 @@ public abstract class BaseDataSource implements DataSource {
     // =========================================================================
 
     protected BaseDataSource() {
-        // Lightweight — heavy work goes in onInitialize()
+        // Lightweight - heavy work goes in onInitialize()
     }
 
     // =========================================================================
@@ -114,7 +114,7 @@ public abstract class BaseDataSource implements DataSource {
     public abstract NetworkConfig getNetworkConfig();
 
     /**
-     * Source-specific initialisation — called on a background thread by
+     * Source-specific initialisation - called on a background thread by
      * {@link #initialize(Context, InitializationCallback)}.
      * Override to create HTTP clients, open files, warm caches, etc.
      * Default does nothing (suitable for trivial/local sources).
@@ -124,7 +124,7 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     // =========================================================================
-    // ENABLE / DISABLE  — persisted in own SharedPreferences
+    // ENABLE / DISABLE  - persisted in own SharedPreferences
     // =========================================================================
 
     /**
@@ -145,7 +145,7 @@ public abstract class BaseDataSource implements DataSource {
      * so every source is enabled on first launch without explicit setup.
      *
      * If context is not yet available (called before initialize), returns true
-     * as a safe default — the aggregator will call isAvailable() anyway which
+     * as a safe default - the aggregator will call isAvailable() anyway which
      * also checks initialized state.
      */
     @Override
@@ -214,11 +214,11 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     // =========================================================================
-    // SETTINGS PROVIDER — default: none
+    // SETTINGS PROVIDER - default: none
     // =========================================================================
 
     /**
-     * Returns null by default — sources without user-configurable settings
+     * Returns null by default - sources without user-configurable settings
      * do not need to override this.  The Settings card will show only the
      * name, status dot, and enable/disable toggle.
      */
@@ -229,7 +229,7 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     // =========================================================================
-    // LIFECYCLE — async initialisation with callback
+    // LIFECYCLE - async initialisation with callback
     // =========================================================================
 
     /**
@@ -244,7 +244,7 @@ public abstract class BaseDataSource implements DataSource {
      * Asynchronous initialisation.  Runs {@link #onInitialize(Context)} on a
      * background thread and delivers the result via callback on the main thread.
      *
-     * Safe to call multiple times — subsequent calls are no-ops if the source
+     * Safe to call multiple times - subsequent calls are no-ops if the source
      * is already initialised or initialisation is already in progress.
      */
     public void initialize(@NonNull Context context,
@@ -298,7 +298,7 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     /**
-     * Synchronous initialisation — delegates to {@link #onInitialize(Context)}.
+     * Synchronous initialisation - delegates to {@link #onInitialize(Context)}.
      * Used as a fallback when the async path is not available.
      */
     @Override
@@ -325,7 +325,7 @@ public abstract class BaseDataSource implements DataSource {
     }
 
     // =========================================================================
-    // CAPABILITIES — sensible defaults, override as needed
+    // CAPABILITIES - sensible defaults, override as needed
     // =========================================================================
 
     @Override

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_header_summary.xml — Column header for SUMMARY mode (2 columns).
+    nutrition_label_header_summary.xml - Column header for SUMMARY mode (2 columns).
 
-    TYPOGRAPHY: same as detailed header — textAppearanceLabelMedium (12sp medium).
+    TYPOGRAPHY: same as detailed header - textAppearanceLabelMedium (12sp medium).
     DARK MODE: ?attr/colorSurface background, ?attr/colorOnSurface text.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

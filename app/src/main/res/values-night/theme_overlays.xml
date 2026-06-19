@@ -2,7 +2,7 @@
 <resources>
 
     <!-- =====================================================================
-         CONTRAST OVERLAYS — dark theme variants
+         CONTRAST OVERLAYS - dark theme variants
          Same structure as values/theme_overlays.xml but parents point to
          Theme.Material3.Dark.NoActionBar and reference night color values.
          ===================================================================== -->

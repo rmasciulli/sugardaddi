@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * MealDbIngredient — A single ingredient extracted from TheMealDB's flat field schema.
+ * MealDbIngredient - A single ingredient extracted from TheMealDB's flat field schema.
  *
  * TheMealDB does not return ingredients as a JSON array. Instead the API uses
  * 20 parallel string fields on the meal object:
@@ -19,7 +19,7 @@ import androidx.annotation.Nullable;
  * iterates them and produces a clean list of MealDbIngredient objects,
  * skipping all empty/null pairs.
  *
- * IMPORTANT: Both fields are plain English strings — no numeric quantities,
+ * IMPORTANT: Both fields are plain English strings - no numeric quantities,
  * no standardised units. Parsing "3/4 cup" or "1 tbsp" into grams requires
  * a unit conversion layer that is OUT OF SCOPE for this integration phase.
  *
@@ -46,8 +46,8 @@ public class MealDbIngredient {
     /**
      * Constructor. Called by {@link MealDbMeal#getIngredients()} only.
      *
-     * @param name    Ingredient name — must not be null or blank
-     * @param measure Measure string — may be null or empty
+     * @param name    Ingredient name - must not be null or blank
+     * @param measure Measure string - may be null or empty
      */
     public MealDbIngredient(@NonNull String name, @Nullable String measure) {
         this.name = name;
@@ -65,7 +65,7 @@ public class MealDbIngredient {
 
     /**
      * @return Measure string (e.g. "3/4 cup"), or null if none was provided.
-     *         Null here means "unspecified quantity" — treat as "to taste" in the UI.
+     *         Null here means "unspecified quantity" - treat as "to taste" in the UI.
      */
     @Nullable
     public String getMeasure() {
@@ -83,7 +83,7 @@ public class MealDbIngredient {
     /**
      * Display string combining name and measure, suitable for a single-line list item.
      * Examples:
-     *   "soy sauce — 3/4 cup"
+     *   "soy sauce - 3/4 cup"
      *   "salt"          (no measure)
      *
      * @return Formatted display string
@@ -91,7 +91,7 @@ public class MealDbIngredient {
     @NonNull
     public String toDisplayString() {
         if (measure != null) {
-            return name + " — " + measure;
+            return name + " - " + measure;
         }
         return name;
     }

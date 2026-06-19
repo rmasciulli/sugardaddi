@@ -166,7 +166,7 @@ public class CategoryColorHelper {
                 return ContextCompat.getColor(context, R.color.success);
             case "error":
             case "failed":
-                // error is an M3 theme role — resolve via theme attr, not named color
+                // error is an M3 theme role - resolve via theme attr, not named color
                 return MaterialColors.getColor(context,
                         com.google.android.material.R.attr.colorError,
                         ContextCompat.getColor(context, R.color.md_theme_error));

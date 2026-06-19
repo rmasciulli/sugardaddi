@@ -7,15 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CocktailDbSearchResponse — Gson DTO for all TheCocktailDB list responses.
+ * CocktailDbSearchResponse - Gson DTO for all TheCocktailDB list responses.
  *
  * Used by:
- *   GET /search.php?s={query}  — search by name
- *   GET /lookup.php?i={id}     — detail by ID
+ *   GET /search.php?s={query}  - search by name
+ *   GET /lookup.php?i={id}     - detail by ID
  *
  * Both endpoints return full {@link CocktailDbDrink} objects inside a "drinks" array.
  *
- * IMPORTANT — NULL WHEN EMPTY:
+ * IMPORTANT - NULL WHEN EMPTY:
  * TheCocktailDB returns { "drinks": null } (not []) when a search returns no results.
  * getDrinks() handles this defensively and always returns a non-null list.
  *
@@ -24,7 +24,7 @@ import java.util.List;
 public class CocktailDbSearchResponse {
 
     /**
-     * List of drink objects. NULL when no results found — not an empty array.
+     * List of drink objects. NULL when no results found - not an empty array.
      * Always use getDrinks() rather than accessing this field directly.
      */
     @SerializedName("drinks")

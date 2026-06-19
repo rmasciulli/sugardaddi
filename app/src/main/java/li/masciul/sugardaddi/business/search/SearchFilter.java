@@ -9,17 +9,17 @@ import java.util.Set;
 import li.masciul.sugardaddi.core.enums.ProductType;
 
 /**
- * SearchFilter — Immutable value object carrying the user's active search filters.
+ * SearchFilter - Immutable value object carrying the user's active search filters.
  *
- * OWNED BY: SearchManager — holds a single instance, updated via setFilters().
- * CONSUMED BY: DataSourceAggregator.searchAll() — intersects the active source list.
+ * OWNED BY: SearchManager - holds a single instance, updated via setFilters().
+ * CONSUMED BY: DataSourceAggregator.searchAll() - intersects the active source list.
  *
  * TWO FILTER DIMENSIONS
  * =====================
- * 1. allowedTypes   — Set<ProductType> the user wants to see in results.
+ * 1. allowedTypes   - Set<ProductType> the user wants to see in results.
  *                     Empty set = no type filter active (all types shown).
  *
- * 2. allowedSources — Set<String> of source IDs the user has selected.
+ * 2. allowedSources - Set<String> of source IDs the user has selected.
  *                     Empty set = no source filter active (all sources searched).
  *
  * EMPTY SET = NO FILTER (not "block everything")
@@ -39,7 +39,7 @@ import li.masciul.sugardaddi.core.enums.ProductType;
  *
  * USAGE EXAMPLES
  * ==============
- * // No filter — default state
+ * // No filter - default state
  * SearchFilter f = SearchFilter.noFilter();
  *
  * // Food only, all sources
@@ -55,12 +55,12 @@ import li.masciul.sugardaddi.core.enums.ProductType;
  */
 public final class SearchFilter {
 
-    /** Shared singleton for the "no filter" state — avoids allocation on every reset. */
+    /** Shared singleton for the "no filter" state - avoids allocation on every reset. */
     private static final SearchFilter NO_FILTER =
             new SearchFilter(Collections.emptySet(), Collections.emptySet());
 
     // =========================================================================
-    // FIELDS — immutable after construction
+    // FIELDS - immutable after construction
     // =========================================================================
 
     /**
@@ -87,13 +87,13 @@ public final class SearchFilter {
      */
     public SearchFilter(@NonNull Set<ProductType> allowedTypes,
                         @NonNull Set<String> allowedSources) {
-        // Defensive copies — caller cannot mutate this object after construction
+        // Defensive copies - caller cannot mutate this object after construction
         this.allowedTypes   = Collections.unmodifiableSet(new HashSet<>(allowedTypes));
         this.allowedSources = Collections.unmodifiableSet(new HashSet<>(allowedSources));
     }
 
     /**
-     * Returns the shared "no filter" singleton — search all types, all sources.
+     * Returns the shared "no filter" singleton - search all types, all sources.
      */
     @NonNull
     public static SearchFilter noFilter() {
@@ -101,7 +101,7 @@ public final class SearchFilter {
     }
 
     // =========================================================================
-    // FILTER LOGIC — used by DataSourceAggregator
+    // FILTER LOGIC - used by DataSourceAggregator
     // =========================================================================
 
     /**
@@ -112,7 +112,7 @@ public final class SearchFilter {
      * 2. Type filter is inactive OR the source produces at least one allowed type.
      *
      * Both conditions must pass. If the type filter is active and the source
-     * produces none of the allowed types, it is skipped — no network call is made.
+     * produces none of the allowed types, it is skipped - no network call is made.
      *
      * @param sourceId      The source's stable ID (e.g. "OPENFOODFACTS")
      * @param producedTypes What this source produces (from DataSource.getProducedTypes())
@@ -125,7 +125,7 @@ public final class SearchFilter {
             return false;
         }
 
-        // Check type filter — source must produce at least one type the user wants
+        // Check type filter - source must produce at least one type the user wants
         if (isTypeFilterActive()) {
             for (ProductType type : producedTypes) {
                 if (allowedTypes.contains(type)) return true;
@@ -150,7 +150,7 @@ public final class SearchFilter {
         return !allowedSources.isEmpty();
     }
 
-    /** True if no filter is active — equivalent to SearchFilter.noFilter(). */
+    /** True if no filter is active - equivalent to SearchFilter.noFilter(). */
     public boolean isNoFilter() {
         return !isTypeFilterActive() && !isSourceFilterActive();
     }

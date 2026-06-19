@@ -6,13 +6,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * SettingsProvider — UI contract between a data source and the settings screen.
+ * SettingsProvider - UI contract between a data source and the settings screen.
  *
  * DESIGN RATIONALE
  * ================
  * Each {@code DataSource} optionally produces one of these via
  * {@code DataSource.getSettingsProvider()}. Returning {@code null} means
- * "this source has no user-configurable settings" — the card shows only
+ * "this source has no user-configurable settings" - the card shows only
  * the name, status dot, and enable/disable toggle.
  *
  * This interface is intentionally NOT part of the {@code DataSource} interface
@@ -23,9 +23,9 @@ import androidx.annotation.Nullable;
  *
  * IMPLEMENTORS
  * ============
- * - {@code CiqualSettingsProvider}        — local DB section, no credentials
- * - {@code OpenFoodFactsSettingsProvider} — no credentials, no local DB
- * - {@code USDASettingsProvider}          — credentials (API_KEY) + local DB
+ * - {@code CiqualSettingsProvider}        - local DB section, no credentials
+ * - {@code OpenFoodFactsSettingsProvider} - no credentials, no local DB
+ * - {@code USDASettingsProvider}          - credentials (API_KEY) + local DB
  *
  * SECTIONS
  * ========
@@ -41,7 +41,7 @@ import androidx.annotation.Nullable;
  * =========
  * Methods that touch SharedPreferences ({@code isEnabled}, {@code setEnabled},
  * {@code loadCredential}, {@code saveCredential}) are safe to call on the
- * main thread — they are fast prefs reads/writes.
+ * main thread - they are fast prefs reads/writes.
  *
  * Methods that touch Room ({@code getDatabaseProductCount}) MUST be called
  * on a background thread; they are annotated accordingly.
@@ -97,7 +97,7 @@ public interface SettingsProvider {
     /**
      * A short warning shown below the credential field when the default
      * credential is in use. Typically a rate-limit notice.
-     * Example: {@code "⚠ Rate limited — register for a free key for unlimited access"}.
+     * Example: {@code "⚠ Rate limited - register for a free key for unlimited access"}.
      * Return null if no warning is needed (or source has no default credential).
      */
     @Nullable
@@ -134,7 +134,7 @@ public interface SettingsProvider {
 
     /**
      * Count of food products currently stored in Room for this source.
-     * MUST be called on a background thread — this is a synchronous DB query.
+     * MUST be called on a background thread - this is a synchronous DB query.
      *
      * @param context Application context
      * @return Row count, or 0 if the database is empty or not yet imported
@@ -143,7 +143,7 @@ public interface SettingsProvider {
 
     /**
      * Count of nutrition records currently stored in Room for this source.
-     * MUST be called on a background thread — this is a synchronous DB query.
+     * MUST be called on a background thread - this is a synchronous DB query.
      *
      * @param context Application context
      * @return Row count, or 0 if the database is empty or not yet imported

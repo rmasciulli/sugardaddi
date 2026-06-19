@@ -378,13 +378,13 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
     /**
      * Autocomplete search using SearchAlicious /search with minimal fields.
      *
-     * STRATEGY — mirrors CiqualDataSource.autocomplete():
+     * STRATEGY - mirrors CiqualDataSource.autocomplete():
      * Reuses the /search endpoint with:
      * - AUTOCOMPLETE_FIELDS (code, product_name_xx, brands, image_small_url)
-     * - No quality filter — partial names must still match low-completeness products
+     * - No quality filter - partial names must still match low-completeness products
      * - Small page_size (limit parameter, typically 10)
-     * - Page 1 only — autocomplete never paginates
-     * - POPULARITY sort — most-scanned products surface first
+     * - Page 1 only - autocomplete never paginates
+     * - POPULARITY sort - most-scanned products surface first
      *
      * WHY NOT THE /autocomplete TAXONOMY ENDPOINT?
      * The taxonomy endpoint returns category/brand names ("Chocolates", "Milka"),
@@ -399,7 +399,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
      * @param query    Partial user input (e.g., "choco", "milka bis")
      * @param language Language code ("en" or "fr")
      * @param limit    Maximum suggestions to return (typically 5–10)
-     * @param callback Results callback — same DataSourceCallback<SearchResult> as search()
+     * @param callback Results callback - same DataSourceCallback<SearchResult> as search()
      */
     public void autocomplete(@NonNull String query, @NonNull String language, int limit,
                              @NonNull DataSourceCallback<SearchResult> callback) {
@@ -430,10 +430,10 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
 
         onOperationStart();
 
-        // Use /search with lightweight field set — no quality filter for autocomplete
+        // Use /search with lightweight field set - no quality filter for autocomplete
         // (a query like "choc" should match products regardless of completeness)
         Call<SearchAliciousResponse> call = searchApi.search(
-                query.trim(),                                   // Raw query — no completeness filter
+                query.trim(),                                   // Raw query - no completeness filter
                 languagesList,
                 Math.min(limit, SearchAliciousConstants.Defaults.AUTOCOMPLETE_SIZE),
                 1,                                              // Always page 1
@@ -456,7 +456,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
 
                 SearchAliciousResponse body = response.body();
                 if (body == null || body.isEmpty()) {
-                    // Empty is not an error for autocomplete — return empty SearchResult
+                    // Empty is not an error for autocomplete - return empty SearchResult
                     SearchResult empty = new SearchResult(
                             new ArrayList<>(), 0, false,
                             query, targetLanguage, OpenFoodFactsConstants.SOURCE_ID

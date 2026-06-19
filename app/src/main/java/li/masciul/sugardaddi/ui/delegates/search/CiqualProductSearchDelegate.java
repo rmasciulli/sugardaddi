@@ -178,7 +178,7 @@ public class CiqualProductSearchDelegate
     /**
      * Resolves thumbnail source for a Ciqual product.
      * Priority: userThumbnailPath → userImagePath → null
-     * No remote URL, no auto-cached thumbnail — Ciqual is a scientific database
+     * No remote URL, no auto-cached thumbnail - Ciqual is a scientific database
      * with no product photos. Only user-defined images are shown.
      */
     @Nullable
@@ -189,7 +189,7 @@ public class CiqualProductSearchDelegate
             java.io.File f = new java.io.File(userThumb);
             if (f.exists()) return f;
         }
-        // 2. User-defined full-size image — acceptable for thumbnail display.
+        // 2. User-defined full-size image - acceptable for thumbnail display.
         String userImage = product.getUserImagePath();
         if (userImage != null && !userImage.trim().isEmpty()) {
             java.io.File f = new java.io.File(userImage);
@@ -251,7 +251,7 @@ public class CiqualProductSearchDelegate
     @Nullable
     private static String formatBreadcrumb(@Nullable String breadcrumb) {
         if (breadcrumb == null || breadcrumb.trim().isEmpty()) return null;
-        // Keep only the last 2 levels — level 1 (e.g. "Milk and milk products")
+        // Keep only the last 2 levels - level 1 (e.g. "Milk and milk products")
         // is too broad to be useful in a compact search card.
         // "milk and milk products > dairy products > dairy desserts"
         //   → "Dairy products › dairy desserts"

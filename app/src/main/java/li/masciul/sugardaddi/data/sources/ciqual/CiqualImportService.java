@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * CiqualImportService — Imports the full Ciqual dataset into the local Room database.
+ * CiqualImportService - Imports the full Ciqual dataset into the local Room database.
  *
  * NO NEW TABLES. Uses existing data model:
  *   Ciqual foods     → food_products  (FoodProductEntity, sourceId = "CIQUAL")
@@ -64,8 +64,8 @@ import java.util.concurrent.Executors;
  *   Phase 2: compo_2025_11_03.xml → Nutrition accumulator → NutritionEntity (69MB streamed)
  *
  * TRIGGERED BY:
- *   CiqualDataSource.initialize() — automatically on first launch or version change.
- *   SettingsActivity — manually by the user (force re-import / update).
+ *   CiqualDataSource.initialize() - automatically on first launch or version change.
+ *   SettingsActivity - manually by the user (force re-import / update).
  */
 public class CiqualImportService extends Service {
 
@@ -88,7 +88,7 @@ public class CiqualImportService extends Service {
     // ===== TUNING =====
     private static final int BATCH_SIZE         = 200;
     private static final int CONNECT_TIMEOUT_MS = 30_000;
-    /** 3 minutes — compo.xml is 69MB on variable connections */
+    /** 3 minutes - compo.xml is 69MB on variable connections */
     private static final int READ_TIMEOUT_MS    = 180_000;
 
     // ===== NOTIFICATION =====
@@ -97,11 +97,11 @@ public class CiqualImportService extends Service {
 
     /**
      * Maps Ciqual const_code integers to Nutrition setter keys.
-     * Const codes are stable INFOODS/Ciqual identifiers — more reliable than name matching.
+     * Const codes are stable INFOODS/Ciqual identifiers - more reliable than name matching.
      *
      * VITAMIN D: 52100=total D, 52200=D2 (ergocalciferol), 52300=D3 (cholecalciferol)
      * FOLATE:    56600=total DFE, 56610=intrinsic (food matrix), 56620=folic acid (fortification)
-     * ENERGY:    327=kJ (EU 1169), 328=kcal (EU 1169) — Jones-factor variants skipped
+     * ENERGY:    327=kJ (EU 1169), 328=kcal (EU 1169) - Jones-factor variants skipped
      *
      * Verify codes against assets/const_2025_11_03.xml if a nutrient appears wrong after import.
      */
@@ -189,7 +189,7 @@ public class CiqualImportService extends Service {
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         if (running) {
-            Log.w(TAG, "Import already running — ignoring");
+            Log.w(TAG, "Import already running - ignoring");
             return START_NOT_STICKY;
         }
         running = true;
@@ -220,7 +220,7 @@ public class CiqualImportService extends Service {
     private void runImport() throws Exception {
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
-        // Category lookup — always from bundled asset (alim_grp is always bundled)
+        // Category lookup - always from bundled asset (alim_grp is always bundled)
         CiqualCategoryLookup lookup = CiqualCategoryLookup.getInstance();
         if (!lookup.isReady()) lookup.parseFromAssets(getApplicationContext());
 
@@ -244,7 +244,7 @@ public class CiqualImportService extends Service {
     // ===== FILE RESOLUTION =====
 
     /**
-     * Open a dataset file — from assets/ if present, download from Zenodo otherwise.
+     * Open a dataset file - from assets/ if present, download from Zenodo otherwise.
      *
      * @param assetFilename  Versioned filename, e.g. "alim_2025_11_03.xml"
      * @param zenodoUrl      Zenodo content URL to use if asset is absent
@@ -256,13 +256,13 @@ public class CiqualImportService extends Service {
     private InputStream openFile(@NonNull String assetFilename,
                                  @NonNull String zenodoUrl,
                                  @NonNull String description) throws IOException {
-        // Try assets/ first — zero network cost, instant
+        // Try assets/ first - zero network cost, instant
         try {
             InputStream is = getAssets().open(assetFilename);
             Log.i(TAG, description + ": opened from assets/" + assetFilename);
             return is;
         } catch (IOException assetMiss) {
-            // File not bundled — download from Zenodo
+            // File not bundled - download from Zenodo
             Log.i(TAG, description + ": not in assets, downloading from Zenodo: " + zenodoUrl);
             broadcastProgress("Downloading " + description + " from Zenodo...", -1);
             return openDownload(zenodoUrl);
@@ -381,7 +381,7 @@ public class CiqualImportService extends Service {
         if (ok(catEn))  sb.append(catEn.toLowerCase()).append(' ');
         if (ok(catFr))  sb.append(catFr.toLowerCase());
         e.setSearchableText(sb.toString().trim());
-        e.setCreatedAt(now); e.setLastUpdated(now); e.setUpdatedAt(now);
+        e.setCreatedAt(now); e.setLastUpdated(now);
         e.setDataCompleteness(0.0f);
         return e;
     }
@@ -457,7 +457,7 @@ public class CiqualImportService extends Service {
 
             // Derive overall DataConfidence from the per-nutrient confidence codes.
             // conf.get(code) holds a frequency map e.g. {"A":12, "B":3, "C":1}.
-            // We take the WORST (lowest confidence) code present — even one C or D
+            // We take the WORST (lowest confidence) code present - even one C or D
             // nutrient lowers the overall product confidence to ESTIMATED.
             Map<String, Integer> codeCounts = conf.get(code);
             DataConfidence confidence = DataConfidence.SCIENTIFIC; // optimistic default

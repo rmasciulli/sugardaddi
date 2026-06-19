@@ -1,7 +1,7 @@
 package li.masciul.sugardaddi.data.sources.themealdb;
 
 /**
- * TheMealDbConstants — All TheMealDB data source constants.
+ * TheMealDbConstants - All TheMealDB data source constants.
  *
  * API NOTES
  * =========
@@ -15,9 +15,9 @@ package li.masciul.sugardaddi.data.sources.themealdb;
  *
  * API KEY PRIORITY (same pattern as USDA)
  * =======================================
- * 1. SharedPreferences — user entered their own key in Settings
- * 2. BuildConfig.THEMEALDB_API_KEY — from local.properties at compile time
- * 3. DEMO_KEY ("1") — hardcoded fallback, always works for development
+ * 1. SharedPreferences - user entered their own key in Settings
+ * 2. BuildConfig.THEMEALDB_API_KEY - from local.properties at compile time
+ * 3. DEMO_KEY ("1") - hardcoded fallback, always works for development
  *
  * BASE URL CONSTRUCTION
  * =====================
@@ -40,7 +40,7 @@ public final class TheMealDbConstants {
 
     // ===== SOURCE IDENTIFICATION =====
 
-    /** Stable source ID — used as Room sourceId discriminator and DataSourceManager key. */
+    /** Stable source ID - used as Room sourceId discriminator and DataSourceManager key. */
     public static final String SOURCE_ID   = "THEMEALDB";
 
     /** Human-readable source name for logging. */
@@ -53,7 +53,7 @@ public final class TheMealDbConstants {
 
     /**
      * Base URL template. The {key} placeholder is replaced by the active API key.
-     * The key is a PATH SEGMENT — not a query parameter.
+     * The key is a PATH SEGMENT - not a query parameter.
      * Format: https://www.themealdb.com/api/json/v1/{key}/
      */
     public static final String BASE_URL_TEMPLATE =
@@ -61,7 +61,7 @@ public final class TheMealDbConstants {
 
     /**
      * TheMealDB's public development key.
-     * Documented by TheMealDB for open development use — safe to hardcode.
+     * Documented by TheMealDB for open development use - safe to hardcode.
      * Functionally limited vs. a Patreon key (no randomMeals plural, etc.)
      * but fully sufficient for search and lookup.
      */

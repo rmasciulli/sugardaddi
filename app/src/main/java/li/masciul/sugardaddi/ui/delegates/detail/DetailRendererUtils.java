@@ -24,24 +24,24 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
  *     dataSourceAttribution, website link)
  *
  * ATTRIBUTION PANEL STRUCTURE (matches all three renderer layouts):
- *   @id/attributionPanel            — MaterialCardView (amber), tappable → website
- *   @id/attributionSourceName       — "🌍 Open Food Facts" (bold, emoji + name)
- *   @id/attributionLegalText        — Short attribution / legal reference (italic)
- *   @id/attributionSourceDescription— One-line description of the source
- *   (static TextView)               — "Visit website →" hint (right-aligned, static)
+ *   @id/attributionPanel            - MaterialCardView (amber), tappable → website
+ *   @id/attributionSourceName       - "🌍 Open Food Facts" (bold, emoji + name)
+ *   @id/attributionLegalText        - Short attribution / legal reference (italic)
+ *   @id/attributionSourceDescription- One-line description of the source
+ *   (static TextView)               - "Visit website →" hint (right-aligned, static)
  *
  * DATA SOURCE API used here (from DataSource enum):
- *   getDisplayWithEmoji(context)    — "🌍 Open Food Facts"
- *   getFullAttribution(context)     — Full legal attribution text
- *   getDescription(context)         — One-line source description
- *   getWebsiteUrl(context)          — URL string or null
- *   isPublic()                      — false for USER/CUSTOM/IMPORTED → hide panel
+ *   getDisplayWithEmoji(context)    - "🌍 Open Food Facts"
+ *   getFullAttribution(context)     - Full legal attribution text
+ *   getDescription(context)         - One-line source description
+ *   getWebsiteUrl(context)          - URL string or null
+ *   isPublic()                      - false for USER/CUSTOM/IMPORTED → hide panel
  *
  * @version 1.0
  */
 public final class DetailRendererUtils {
 
-    // Utility class — no instances
+    // Utility class - no instances
     private DetailRendererUtils() {}
 
     /**
@@ -60,7 +60,7 @@ public final class DetailRendererUtils {
         View panel = view.findViewById(R.id.attributionPanel);
         if (panel == null) return;
 
-        // Hide panel for user-generated content — no third-party to attribute
+        // Hide panel for user-generated content - no third-party to attribute
         if (!source.isPublic()) {
             panel.setVisibility(View.GONE);
             return;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    file_paths.xml — FileProvider path declarations for SugarDaddi
+    file_paths.xml - FileProvider path declarations for SugarDaddi
     ===============================================================
 
     Referenced from AndroidManifest.xml:
@@ -14,13 +14,13 @@
     shared with other apps (camera, gallery). Each <external-files-path> entry
     declares a path under getExternalFilesDir() that the provider may serve.
 
-    <external-files-path> maps to Context.getExternalFilesDir(null) — correct
+    <external-files-path> maps to Context.getExternalFilesDir(null) - correct
     for app-private external storage. No READ/WRITE_EXTERNAL_STORAGE needed (API 29+).
 
     WHY EACH DIRECTORY IS DECLARED
     ================================
     FileProvider rejects URIs for any path not declared here with a SecurityException.
-    The camera app writes into the URI we provide — it must cover the target directory.
+    The camera app writes into the URI we provide - it must cover the target directory.
     We declare each subdirectory explicitly rather than using path="." to follow the
     principle of least privilege.
 
@@ -37,7 +37,7 @@
 <paths>
 
     <!--
-        Thumbnails — auto-cached remote images.
+        Thumbnails - auto-cached remote images.
         Declared so thumbnails can be shared with external viewers if needed.
         The camera does NOT write here; ThumbnailDownloader manages this directory.
     -->
@@ -46,7 +46,7 @@
         path="sugardaddi/thumbnails/" />
 
     <!--
-        Products — hero images for food products.
+        Products - hero images for food products.
         The camera writes a new UUID-named file here when the user attaches
         or replaces a hero image for a food product.
     -->
@@ -55,7 +55,7 @@
         path="sugardaddi/products/" />
 
     <!--
-        Recipes — hero images for recipes.
+        Recipes - hero images for recipes.
         The camera writes here for recipe hero image capture/replacement.
     -->
     <external-files-path
@@ -63,7 +63,7 @@
         path="sugardaddi/recipes/" />
 
     <!--
-        Meals — photos attached to meal journal entries.
+        Meals - photos attached to meal journal entries.
         The camera writes here when the user photos a meal.
     -->
     <external-files-path
@@ -71,7 +71,7 @@
         path="sugardaddi/meals/" />
 
     <!--
-        Steps — instructional photos for recipe preparation steps.
+        Steps - instructional photos for recipe preparation steps.
         The camera writes here when the user captures a step result photo.
     -->
     <external-files-path

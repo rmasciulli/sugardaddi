@@ -20,9 +20,9 @@ import java.util.List;
  * then generic fallbacks last. For example:
  *   1. OffProductSearchDelegate     (matches FoodProduct + OPENFOODFACTS)
  *   2. CiqualProductSearchDelegate  (matches FoodProduct + CIQUAL)
- *   3. DefaultProductSearchDelegate (matches any FoodProduct — fallback)
+ *   3. DefaultProductSearchDelegate (matches any FoodProduct - fallback)
  *   4. DefaultRecipeSearchDelegate         (matches Recipe)
- *   5. FooterDelegate               (matches nothing in canHandle — special case)
+ *   5. FooterDelegate               (matches nothing in canHandle - special case)
  *
  * DUAL LOOKUP:
  * - resolve(Searchable) → iterates delegates, returns first canHandle match
@@ -38,16 +38,16 @@ public class DelegateRegistry {
 
     private static final String TAG = "DelegateRegistry";
 
-    /** Delegates in registration order — used for canHandle resolution */
+    /** Delegates in registration order - used for canHandle resolution */
     private final List<ItemViewDelegate<?>> delegates = new ArrayList<>();
 
-    /** ViewType → Delegate lookup — used for onCreateViewHolder */
+    /** ViewType → Delegate lookup - used for onCreateViewHolder */
     private final SparseArray<ItemViewDelegate<?>> viewTypeMap = new SparseArray<>();
 
     // ========== REGISTRATION ==========
 
     /**
-     * Register a delegate. Order matters — first match wins in resolve().
+     * Register a delegate. Order matters - first match wins in resolve().
      *
      * @param delegate The delegate to register
      * @throws IllegalArgumentException if a delegate with the same viewType is already registered
@@ -115,7 +115,7 @@ public class DelegateRegistry {
     /**
      * Find a delegate by its viewType ID.
      *
-     * Used in onCreateViewHolder — RecyclerView gives us the viewType,
+     * Used in onCreateViewHolder - RecyclerView gives us the viewType,
      * and we need to find the delegate that creates that ViewHolder.
      *
      * @param viewType The viewType returned by getItemViewType

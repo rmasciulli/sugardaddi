@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * TheCocktailDbMapper — Maps TheCocktailDB DTOs to {@link Recipe} domain models.
+ * TheCocktailDbMapper - Maps TheCocktailDB DTOs to {@link Recipe} domain models.
  *
  * OUTPUT MODEL
  * ============
@@ -62,7 +62,7 @@ import java.util.Set;
  * ============
  * strInstructions is stored as a raw blob via setInstructions() and also
  * parsed into structured RecipeStep entries via Recipe.addStep(), splitting
- * on newlines and filtering bare step numbers — same approach as TheMealDbMapper.
+ * on newlines and filtering bare step numbers - same approach as TheMealDbMapper.
  *
  * IDENTIFIERS
  * ===========
@@ -73,7 +73,7 @@ public class TheCocktailDbMapper {
 
     private static final String TAG = "TheCocktailDbMapper";
 
-    // TheCocktailDB is English-only — all content stored under this language key
+    // TheCocktailDB is English-only - all content stored under this language key
     private static final String LANGUAGE = "en";
 
     // ========== PUBLIC API ==========
@@ -113,7 +113,7 @@ public class TheCocktailDbMapper {
     /**
      * Map a single {@link CocktailDbDrink} DTO to a {@link Recipe} domain model.
      *
-     * Returns null if the drink is invalid (missing ID or name) — callers
+     * Returns null if the drink is invalid (missing ID or name) - callers
      * should skip null results silently.
      *
      * @param drink TheCocktailDB DTO. May be null.
@@ -178,22 +178,22 @@ public class TheCocktailDbMapper {
      * All content is English-only.
      *
      * TheCocktailDB has no strArea (geographic origin). Description is composed
-     * from category alone (e.g. "Cocktail", "Shot") — still gives the search
+     * from category alone (e.g. "Cocktail", "Shot") - still gives the search
      * result card a meaningful subtitle.
      */
     private void mapContent(@NonNull Recipe recipe, @NonNull CocktailDbDrink drink) {
         recipe.setCurrentLanguage(LANGUAGE);
 
-        // Name — guaranteed non-null by isValid() check above
+        // Name - guaranteed non-null by isValid() check above
         recipe.setName(drink.getStrDrink(), LANGUAGE);
 
-        // Description — category only (no strArea in TheCocktailDB)
+        // Description - category only (no strArea in TheCocktailDB)
         String description = buildDescription(drink.getStrCategory(), drink.getStrAlcoholic());
         if (description != null) {
             recipe.setDescription(description, LANGUAGE);
         }
 
-        // Instructions — raw blob + structured steps
+        // Instructions - raw blob + structured steps
         if (drink.getStrInstructions() != null
                 && !drink.getStrInstructions().trim().isEmpty()) {
 
@@ -202,7 +202,7 @@ public class TheCocktailDbMapper {
             // Store raw blob for search indexing and plain-text fallback
             recipe.setInstructions(raw, LANGUAGE);
 
-            // Parse into structured steps — same approach as TheMealDbMapper
+            // Parse into structured steps - same approach as TheMealDbMapper
             String normalised = raw
                     .replace("\r\n", "\n")
                     .replace("\r", "\n")
@@ -229,13 +229,13 @@ public class TheCocktailDbMapper {
             }
         }
 
-        // Image URL — CDN-hosted JPEG, load with Glide
+        // Image URL - CDN-hosted JPEG, load with Glide
         if (drink.getStrDrinkThumb() != null
                 && !drink.getStrDrinkThumb().trim().isEmpty()) {
             recipe.setImageUrl(drink.getStrDrinkThumb().trim());
         }
 
-        // Video URL — store for detail screen video button
+        // Video URL - store for detail screen video button
         if (drink.getStrVideo() != null && !drink.getStrVideo().trim().isEmpty()) {
             recipe.setVideoUrl(drink.getStrVideo().trim());
         }
@@ -273,10 +273,10 @@ public class TheCocktailDbMapper {
                     ? new ServingSize(ingredient.getMeasure())
                     : new ServingSize();
 
-            // Unresolved stub — itemId = ingredient name as display fallback
+            // Unresolved stub - itemId = ingredient name as display fallback
             FoodPortion portion = new FoodPortion(
-                    "FOOD_PRODUCT",      // itemType — intended type when resolved
-                    ingredient.getName(), // itemId — display fallback
+                    "FOOD_PRODUCT",      // itemType - intended type when resolved
+                    ingredient.getName(), // itemId - display fallback
                     serving
             );
 
@@ -338,7 +338,7 @@ public class TheCocktailDbMapper {
             tags.add("glass:" + drink.getStrGlass().trim().toLowerCase());
         }
 
-        // Video availability flag — cheap boolean for the search card delegate
+        // Video availability flag - cheap boolean for the search card delegate
         if (drink.getStrVideo() != null && !drink.getStrVideo().trim().isEmpty()) {
             tags.add(TheCocktailDbConstants.TAG_HAS_VIDEO);
         }

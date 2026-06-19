@@ -18,16 +18,16 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * DataSource — Base interface for all item data sources (food products and recipes).
+ * DataSource - Base interface for all item data sources (food products and recipes).
  *
- * ARCHITECTURE v3.0 — Settings refactor
+ * ARCHITECTURE v3.0 - Settings refactor
  * ======================================
  * Three additions vs v2.0:
  *
  *   1. {@link #isEnabled()} / {@link #setEnabled(Context, boolean)}
  *      Operational enable/disable persisted by each source in its own
  *      SharedPreferences.  Replaces the former DataSourceConfig class which
- *      kept a single cross-source enabled-set — a design that required every
+ *      kept a single cross-source enabled-set - a design that required every
  *      new source to be registered in three separate places.
  *
  *   2. {@link #getSettingsProvider()}
@@ -39,7 +39,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * WHAT BELONGS HERE vs. SettingsProvider
  * =======================================
  * isEnabled/setEnabled ARE on this interface because the DataSourceManager and
- * DataSourceAggregator need to know whether to include a source in searches —
+ * DataSourceAggregator need to know whether to include a source in searches -
  * that is an operational concern, not a UI concern.
  *
  * Everything else (credentials, import control, broadcast actions) lives in
@@ -61,7 +61,7 @@ public interface DataSource {
     /**
      * Stable unique identifier for this source.
      * Used as a map key in DataSourceManager and as a Room sourceId discriminator.
-     * Convention: SCREAMING_SNAKE_CASE — e.g. "OPENFOODFACTS", "CIQUAL", "USDA".
+     * Convention: SCREAMING_SNAKE_CASE - e.g. "OPENFOODFACTS", "CIQUAL", "USDA".
      */
     @NonNull
     String getSourceId();
@@ -75,7 +75,7 @@ public interface DataSource {
 
     /**
      * Rich metadata snapshot for diagnostics and logging.
-     * Contains health, request counts, error rates — NOT configuration.
+     * Contains health, request counts, error rates - NOT configuration.
      * Built fresh on each call from current runtime state.
      */
     @NonNull
@@ -93,7 +93,7 @@ public interface DataSource {
     NetworkConfig getNetworkConfig();
 
     // =========================================================================
-    // ENABLE / DISABLE  (operational — affects search participation)
+    // ENABLE / DISABLE  (operational - affects search participation)
     // =========================================================================
 
     /**
@@ -120,7 +120,7 @@ public interface DataSource {
     void setEnabled(@NonNull Context context, boolean enabled);
 
     // =========================================================================
-    // AVAILABILITY  (runtime — considers init state, network, error rate)
+    // AVAILABILITY  (runtime - considers init state, network, error rate)
     // =========================================================================
 
     /**
@@ -141,9 +141,9 @@ public interface DataSource {
      * The set of item types this source produces in search results.
      *
      * Used by DataSourceAggregator to skip sources that produce only types
-     * the user has filtered out — avoiding unnecessary network calls.
+     * the user has filtered out - avoiding unnecessary network calls.
      *
-     * The default returns both types as a safe fallback — a source that doesn't
+     * The default returns both types as a safe fallback - a source that doesn't
      * override this method is never silently excluded from any search.
      *
      * @return Set of ProductType values. Never null.
@@ -176,7 +176,7 @@ public interface DataSource {
      *
      * Food sources (OFF, Ciqual, USDA) override this method.
      * Recipe-only sources (TheMealDB) inherit the default which fires onError()
-     * immediately — symmetric with getRecipe() on food-only sources.
+     * immediately - symmetric with getRecipe() on food-only sources.
      *
      * @param productId Source-native product ID
      * @param language  BCP-47 language code
@@ -218,7 +218,7 @@ public interface DataSource {
      *
      * Recipe sources (TheMealDB) override this method.
      * Food-only sources (OFF, Ciqual, USDA) inherit the default which fires
-     * onError() immediately — symmetric with getProduct() on recipe-only sources.
+     * onError() immediately - symmetric with getProduct() on recipe-only sources.
      *
      * This is the recipe parallel of {@link #getProduct}.
      *
@@ -280,7 +280,7 @@ public interface DataSource {
     void cleanup();
 
     // =========================================================================
-    // SETTINGS (UI contract — optional)
+    // SETTINGS (UI contract - optional)
     // =========================================================================
 
     /**

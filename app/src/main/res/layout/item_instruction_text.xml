@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_instruction_text.xml — Plain-text instruction fallback.
+    item_instruction_text.xml - Plain-text instruction fallback.
 
     Used by DefaultRecipeDetailRenderer when recipe.getSteps() is empty
     but recipe.getInstructions() returns a non-empty string.

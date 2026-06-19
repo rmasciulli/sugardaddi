@@ -508,7 +508,7 @@ public class CiqualElasticsearchMapper {
         }
 
         // Fallback: flat groupeAfficheEng/Fr from ES response
-        // Always available — was the only source before Phase 2A.
+        // Always available - was the only source before Phase 2A.
         if ("en".equals(language)) {
             String categoryEn = food.getGroupeAfficheEng();
             if (categoryEn != null && !categoryEn.isEmpty()) {

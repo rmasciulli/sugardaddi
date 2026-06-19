@@ -49,18 +49,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * MainActivity — Search entry point for SugarDaddi.
+ * MainActivity - Search entry point for SugarDaddi.
  *
- * ARCHITECTURE v3.0 — Clean wiring
+ * ARCHITECTURE v3.0 - Clean wiring
  * ==================================
  * MainActivity owns no repositories. All search state and orchestration lives
  * in SearchManager. ProductRepository and RecipeRepository are instantiated by
- * ProductManager and RecipeManager respectively — MainActivity has no visibility
+ * ProductManager and RecipeManager respectively - MainActivity has no visibility
  * into either.
  *
  * DEPENDENCIES (instantiated here, passed to SearchManager):
- *   DataSourceAggregator — stateless parallel search executor
- *   SearchCache           — SearchResultCache + Room enrichment
+ *   DataSourceAggregator - stateless parallel search executor
+ *   SearchCache           - SearchResultCache + Room enrichment
  *
  * SEARCH FLOW:
  *   1. User types          → autocomplete (debounced via SearchManager)
@@ -86,7 +86,7 @@ public class MainActivity extends BaseActivity implements
     private static final int PAGINATION_TRIGGER_THRESHOLD = 3;
 
     // Minimum milliseconds between loadMore calls triggered by the scroll listener.
-    // SearchManager has its own guard too — this is a UI-level safety net.
+    // SearchManager has its own guard too - this is a UI-level safety net.
     private static final long LOAD_MORE_DEBOUNCE_MS = 1000;
 
     // =========================================================================
@@ -135,7 +135,7 @@ public class MainActivity extends BaseActivity implements
     /**
      * Last query committed to a full search (Enter / suggestion tap).
      * Used by the retry button and debug logging. SearchManager tracks its
-     * own currentQuery internally — this is purely for the UI layer.
+     * own currentQuery internally - this is purely for the UI layer.
      */
     private String lastQuery = "";
 
@@ -146,7 +146,7 @@ public class MainActivity extends BaseActivity implements
      */
     private String returnToMealId = null;
 
-    /** Timestamp of last scroll-triggered loadMore — prevents rapid-fire calls. */
+    /** Timestamp of last scroll-triggered loadMore - prevents rapid-fire calls. */
     private long lastLoadMoreTimestamp = 0;
 
     // =========================================================================
@@ -232,7 +232,7 @@ public class MainActivity extends BaseActivity implements
         navigationView = findViewById(R.id.nav_view);
 
         if (returnToMealId != null) {
-            // Disable drawer in add-to-meal mode — back button is the only exit
+            // Disable drawer in add-to-meal mode - back button is the only exit
             drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
             return;
         }
@@ -314,7 +314,7 @@ public class MainActivity extends BaseActivity implements
                 int lastVisibleItem  = layoutManager.findLastVisibleItemPosition();
 
                 if (lastVisibleItem >= totalItemCount - PAGINATION_TRIGGER_THRESHOLD) {
-                    // Post to next frame — calling notifyItemChanged inside a scroll
+                    // Post to next frame - calling notifyItemChanged inside a scroll
                     // callback throws IllegalStateException
                     rv.post(() -> onLoadMore());
                 }
@@ -421,7 +421,7 @@ public class MainActivity extends BaseActivity implements
     public void onLoadMore() {
         if (lastQuery.isEmpty() || searchManager == null) return;
 
-        // Scroll-listener debounce — SearchManager has its own guard too
+        // Scroll-listener debounce - SearchManager has its own guard too
         long now = System.currentTimeMillis();
         if (now - lastLoadMoreTimestamp < LOAD_MORE_DEBOUNCE_MS) return;
         lastLoadMoreTimestamp = now;
@@ -506,7 +506,7 @@ public class MainActivity extends BaseActivity implements
 
     @Override
     public void onAutocompleteError(@NonNull Error error) {
-        // Silent — empty dropdown is acceptable for autocomplete failures
+        // Silent - empty dropdown is acceptable for autocomplete failures
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "Autocomplete error (ignored): " + error.getMessage());
         }
@@ -640,7 +640,7 @@ public class MainActivity extends BaseActivity implements
 
     /**
      * Trigger CiqualImportService if the local DB is absent or stale.
-     * Called from onResume — the app must be in the foreground for
+     * Called from onResume - the app must be in the foreground for
      * startForegroundService() to be allowed on API 34+.
      */
     private void triggerCiqualImportIfNeeded() {

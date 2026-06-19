@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * CocktailDbRecipeSearchDelegate — Search result card rendering for TheCocktailDB cocktails.
+ * CocktailDbRecipeSearchDelegate - Search result card rendering for TheCocktailDB cocktails.
  *
  * DISPLAYS:
  * - Cocktail name (bold, 2 lines max)
@@ -210,7 +210,7 @@ public class CocktailDbRecipeSearchDelegate
     /**
      * Tag chips: shown for strTags values (e.g. "IBA", "NewEra").
      * Excludes structural tags ("alcoholic", "non_alcoholic", "optional_alcohol",
-     * "has_video", "glass:*", category, alcoholic status) — those are displayed
+     * "has_video", "glass:*", category, alcoholic status) - those are displayed
      * via other fields and would be noisy if repeated here.
      */
     private void bindTags(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
@@ -222,7 +222,7 @@ public class CocktailDbRecipeSearchDelegate
             return;
         }
 
-        // Build exclusion set — structural tags already shown via other fields
+        // Build exclusion set - structural tags already shown via other fields
         Set<String> excluded = new HashSet<>();
         excluded.add("has_video");
 
@@ -239,12 +239,12 @@ public class CocktailDbRecipeSearchDelegate
             // Skip structural tags
             if (excluded.contains(tag.toLowerCase())) continue;
             if (tag.startsWith("glass:")) continue;
-            // Skip alcoholic status tags — already in description
+            // Skip alcoholic status tags - already in description
             if (tag.equals(TheCocktailDbConstants.TAG_ALCOHOLIC)) continue;
             if (tag.equals(TheCocktailDbConstants.TAG_NON_ALCOHOLIC)) continue;
             if (tag.equals(TheCocktailDbConstants.TAG_OPTIONAL_ALCOHOL)) continue;
 
-            // Inflate chip_tag_compact — same as MealDbRecipeSearchDelegate
+            // Inflate chip_tag_compact - same as MealDbRecipeSearchDelegate
             Chip chip = (Chip) LayoutInflater.from(context)
                     .inflate(R.layout.chip_tag_compact, holder.tagChips, false);
             chip.setEnsureMinTouchTargetSize(false);

@@ -81,10 +81,8 @@ public interface MealDao {
      * Returns all non-null user image paths for meals.
      * Used by ImagePurgeManager to cross-reference disk files against Room.
      *
-     * Column renamed from photoPath to userImagePath in v13.
-     * Method name kept as getAllLocalImagePaths() to avoid updating all callers.
-     *
-     * Updated in: database v13 (media field rename)
+     * Method name kept as getAllLocalImagePaths() to match the product/recipe DAOs,
+     * even though meals expose a single userImagePath column.
      */
     @Query("SELECT userImagePath FROM meals WHERE userImagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();

@@ -21,7 +21,7 @@ import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.ui.settings.DataSourceCardManager;
 
 /**
- * DataSourcesActivity — manages registered data sources.
+ * DataSourcesActivity - manages registered data sources.
  *
  * Displays one {@link DataSourceCardManager} card per registered
  * {@link DataSource}, in alphabetical order. Each card exposes
@@ -64,7 +64,7 @@ public class DataSourcesActivity extends BaseActivity
         setupNavigationDrawer();
         setupDataSourceCards();
 
-        logDebug("DataSourcesActivity initialised — " + cardManagers.size() + " source(s)");
+        logDebug("DataSourcesActivity initialised - " + cardManagers.size() + " source(s)");
     }
 
     @Override
@@ -146,7 +146,7 @@ public class DataSourcesActivity extends BaseActivity
         else if (id == R.id.nav_favorites)    startActivity(new Intent(this, FavoritesActivity.class));
         else if (id == R.id.nav_settings)     startActivity(new Intent(this, SettingsActivity.class));
 
-        // nav_data_sources: already here — just close drawer
+        // nav_data_sources: already here - just close drawer
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -169,7 +169,7 @@ public class DataSourcesActivity extends BaseActivity
      * and attaches it to the dataSourcesContainer LinearLayout.
      *
      * Sources are returned alphabetically by DataSourceManager.getAllSources().
-     * No source-specific code here — each card is driven by its SettingsProvider.
+     * No source-specific code here - each card is driven by its SettingsProvider.
      */
     private void setupDataSourceCards() {
         android.widget.LinearLayout container = findViewById(R.id.dataSourcesContainer);
@@ -189,6 +189,6 @@ public class DataSourcesActivity extends BaseActivity
             logDebug("Card created for: " + source.getSourceId());
         }
 
-        logDebug("setupDataSourceCards complete — " + cardManagers.size() + " card(s)");
+        logDebug("setupDataSourceCards complete - " + cardManagers.size() + " card(s)");
     }
 }

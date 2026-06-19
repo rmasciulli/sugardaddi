@@ -23,9 +23,9 @@ import li.masciul.sugardaddi.data.database.converters.RecipeStepTranslationListC
 import java.util.*;
 
 /**
- * RecipeEntity - Room entity for recipe storage (v3.0 - Hybrid Translation)
+ * RecipeEntity - Room entity for recipe storage (Hybrid Translation)
  *
- * ARCHITECTURE UPDATE v3.0:
+ * ARCHITECTURE UPDATE:
  * - Nutrition data stored separately in NutritionEntity table
  * - NEW: Hybrid translation system with split step architecture
  * - Primary fields store content in currentLanguage
@@ -98,7 +98,7 @@ public class RecipeEntity {
     @TypeConverters(GeneralConverters.class)
     private List<String> cookingTips;
 
-    // ========== STEP ARCHITECTURE v3.0 ==========
+    // ========== STEP ARCHITECTURE ==========
     @TypeConverters(RecipeStepMetadataListConverter.class)
     private List<RecipeStepMetadata> stepStructure; // Universal metadata (once)
 
@@ -141,7 +141,6 @@ public class RecipeEntity {
 
     // ========== STATUS FLAGS ==========
     private boolean isPublic = false;
-    private boolean isFavorite = false;
     private boolean isTemplate = false;
 
     // ========== RATINGS ==========
@@ -174,11 +173,20 @@ public class RecipeEntity {
 
     // ========== QUALITY METRICS ==========
     private float completenessScore = 0.0f;
+
+    // ========== CACHE METADATA ==========
+    private boolean isFavorite = false;
     private int accessCount = 0;
+
+    // True for rows populated by a downloaded dataset (Ciqual / USDA bulk import).
+    // Such rows are exempt from TTL eviction - they're dataset members, not
+    // on-demand cache - and are removed only via Settings ▸ cache management.
+    private boolean localImport = false;
 
     // ========== TIMESTAMPS ==========
     private long createdAt;
     private long lastUpdated;
+    private long lastViewed;
 
     // ========== CONSTRUCTORS ==========
 
@@ -186,6 +194,7 @@ public class RecipeEntity {
         long now = System.currentTimeMillis();
         this.createdAt = now;
         this.lastUpdated = now;
+        this.lastViewed = now;
         this.translations = new HashMap<>();
         this.equipmentNeeded = new ArrayList<>();
         this.cookingTips = new ArrayList<>();
@@ -421,6 +430,17 @@ public class RecipeEntity {
         return entity;
     }
 
+    // ========== CACHE MANAGEMENT ==========
+
+    public void recordAccess() {
+        this.accessCount++;
+        this.lastViewed = System.currentTimeMillis();
+    }
+
+    public boolean isStale(long maxAgeMillis) {
+        return (System.currentTimeMillis() - lastUpdated) > maxAgeMillis;
+    }
+
     /**
      * Update last updated timestamp
      */
@@ -547,9 +567,6 @@ public class RecipeEntity {
     public boolean isPublic() { return isPublic; }
     public void setPublic(boolean aPublic) { isPublic = aPublic; }
 
-    public boolean isFavorite() { return isFavorite; }
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
-
     public boolean isTemplate() { return isTemplate; }
     public void setTemplate(boolean template) { isTemplate = template; }
 
@@ -594,8 +611,15 @@ public class RecipeEntity {
         this.completenessScore = completenessScore;
     }
 
+    // Cache metadata
+    public boolean isFavorite() { return isFavorite; }
+    public void setFavorite(boolean favorite) { isFavorite = favorite; }
+
     public int getAccessCount() { return accessCount; }
     public void setAccessCount(int accessCount) { this.accessCount = accessCount; }
+
+    public boolean isLocalImport() { return localImport; }
+    public void setLocalImport(boolean localImport) { this.localImport = localImport; }
 
     // Timestamps
     public long getCreatedAt() { return createdAt; }
@@ -603,4 +627,7 @@ public class RecipeEntity {
 
     public long getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(long lastUpdated) { this.lastUpdated = lastUpdated; }
+
+    public long getLastViewed() { return lastViewed; }
+    public void setLastViewed(long lastUpdated) { this.lastViewed = lastUpdated; }
 }

@@ -194,7 +194,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
             if (f.exists()) return f;
         }
 
-        // 2. Auto-cached full-size image (currently unused — imagePath always null).
+        // 2. Auto-cached full-size image (currently unused - imagePath always null).
         String imagePath = product.getImagePath();
         if (imagePath != null && !imagePath.trim().isEmpty()) {
             java.io.File f = new java.io.File(imagePath);

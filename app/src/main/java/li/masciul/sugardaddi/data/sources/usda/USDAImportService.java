@@ -39,11 +39,11 @@ import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;
 
 /**
- * USDAImportService — Imports USDA Foundation Foods and SR Legacy into Room.
+ * USDAImportService - Imports USDA Foundation Foods and SR Legacy into Room.
  *
  * TRIGGERED BY:
- *   USDASettingsProvider.startImport() — user-initiated from Settings card only.
- *   Never auto-triggered — ~215MB download requires user consent.
+ *   USDASettingsProvider.startImport() - user-initiated from Settings card only.
+ *   Never auto-triggered - ~215MB download requires user consent.
  *
  * PIPELINE:
  *   Phase 0: Clear USDA rows from food_products + nutrition tables
@@ -53,7 +53,7 @@ import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;
  *
  * FILE RESOLUTION:
  *   Each ZIP is downloaded directly from fdc.nal.usda.gov.
- *   Unlike Ciqual, no asset bundling — files are too large for the APK.
+ *   Unlike Ciqual, no asset bundling - files are too large for the APK.
  *   The JSON is stream-parsed (Gson JsonReader) to avoid OOM on SR Legacy.
  *
  * NO NEW TABLES:
@@ -88,7 +88,7 @@ public class USDAImportService extends Service {
     @Override
     public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         if (running) {
-            Log.w(TAG, "Import already running — ignoring duplicate start");
+            Log.w(TAG, "Import already running - ignoring duplicate start");
             return START_NOT_STICKY;
         }
 
@@ -321,7 +321,7 @@ public class USDAImportService extends Service {
      * Stream-parse one food object from a JsonReader positioned at the start
      * of a food object. Populates productBatch and nutritionBatch.
      *
-     * This method avoids loading the full JSON into memory — critical for the
+     * This method avoids loading the full JSON into memory - critical for the
      * 205MB SR Legacy file on devices with limited RAM.
      */
     private void parseSingleFood(
@@ -382,7 +382,6 @@ public class USDAImportService extends Service {
         entity.setSearchableText(searchable);
 
         entity.setCreatedAt(System.currentTimeMillis());
-        entity.setUpdatedAt(System.currentTimeMillis());
 
         productBatch.add(entity);
 
@@ -499,7 +498,7 @@ public class USDAImportService extends Service {
     /**
      * Open an HTTP stream to a USDA download URL.
      * Follows redirects (USDA may redirect to a CDN).
-     * Uses long timeouts — SR Legacy is 205MB.
+     * Uses long timeouts - SR Legacy is 205MB.
      */
     @NonNull
     private InputStream openDownload(@NonNull String url) throws IOException {

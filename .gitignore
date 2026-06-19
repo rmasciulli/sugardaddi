@@ -30,7 +30,7 @@ local.properties
 .DS_Store
 Thumbs.db
 
-# Signing — NEVER commit
+# Signing - NEVER commit
 *.jks
 *.keystore
 keystore.properties

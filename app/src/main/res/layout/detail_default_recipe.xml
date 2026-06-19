@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    detail_default_recipe.xml — Layout inflated by DefaultRecipeDetailRenderer.
+    detail_default_recipe.xml - Layout inflated by DefaultRecipeDetailRenderer.
 
     CONTENT (USER source and future sources):
       - Header card: name, cuisine, difficulty, prep/cook time, servings
@@ -28,7 +28,7 @@
         android:paddingBottom="24dp">
 
         <!-- ================================================= -->
-        <!-- HERO IMAGE — GONE when no local image available   -->
+        <!-- HERO IMAGE - GONE when no local image available   -->
         <!-- User recipes have no remote URL; shown only when  -->
         <!-- set via ImagePickerHelper.                        -->
         <!-- ================================================= -->

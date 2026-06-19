@@ -14,7 +14,7 @@
     └───────────────────────────────────────────────────────┘
 
     Mirrors item_search_recipe_themealdb.xml exactly in structure.
-    Only the badge text and source differ — same ViewHolder field IDs.
+    Only the badge text and source differ - same ViewHolder field IDs.
 
     Used by: CocktailDbRecipeSearchDelegate
 -->
@@ -92,7 +92,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Thumbnail: 72x72dp — identical to MealDB card -->
+            <!-- Thumbnail: 72x72dp - identical to MealDB card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/imageContainer"
                 android:layout_width="72dp"
@@ -147,7 +147,7 @@
                     tools:visibility="visible"
                     tools:text="5 ingredients" />
 
-                <!-- Tag chips — compact, IBA / category tags from strTags -->
+                <!-- Tag chips - compact, IBA / category tags from strTags -->
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/tagChips"
                     android:layout_width="match_parent"

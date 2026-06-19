@@ -30,7 +30,7 @@
 
     </group>
 
-    <!-- Settings — separate group so a divider line appears automatically -->
+    <!-- Settings - separate group so a divider line appears automatically -->
     <group
         android:id="@+id/group_settings"
         android:checkableBehavior="single">

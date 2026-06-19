@@ -19,9 +19,9 @@ import java.util.List;
  * full-screen display inside ProductDetailsActivity.
  *
  * RESOLUTION ORDER (register specific before generic):
- *   1. OffProductDetailRenderer     — FoodProduct + DataSource.OPENFOODFACTS
- *   2. CiqualProductDetailRenderer  — FoodProduct + DataSource.CIQUAL
- *   3. DefaultProductDetailRenderer — FoodProduct (any remaining source — catch-all)
+ *   1. OffProductDetailRenderer     - FoodProduct + DataSource.OPENFOODFACTS
+ *   2. CiqualProductDetailRenderer  - FoodProduct + DataSource.CIQUAL
+ *   3. DefaultProductDetailRenderer - FoodProduct (any remaining source - catch-all)
  *   (Future: RecipeDetailRenderer, etc.)
  *
  * USAGE IN ProductDetailsActivity:
@@ -42,13 +42,13 @@ public class DetailRendererRegistry {
 
     private static final String TAG = "DetailRendererRegistry";
 
-    /** Renderers in registration order — first match wins in resolve() */
+    /** Renderers in registration order - first match wins in resolve() */
     private final List<DetailRenderer> renderers = new ArrayList<>();
 
     // ========== REGISTRATION ==========
 
     /**
-     * Register a renderer. Registration order matters — first match wins in resolve().
+     * Register a renderer. Registration order matters - first match wins in resolve().
      * Register specific renderers (OFF, Ciqual) before generic fallbacks (Default).
      *
      * @param renderer The renderer to register

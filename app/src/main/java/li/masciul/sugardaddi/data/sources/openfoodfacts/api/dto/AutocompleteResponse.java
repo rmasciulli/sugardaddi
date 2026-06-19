@@ -26,7 +26,7 @@ import java.util.List;
  *
  * CURRENT STATUS:
  * The Retrofit interface declares the endpoint; the DTO is compiled and ready.
- * OpenFoodFactsDataSource does NOT call this endpoint yet — its autocomplete()
+ * OpenFoodFactsDataSource does NOT call this endpoint yet - its autocomplete()
  * method uses the /search endpoint with AUTOCOMPLETE_FIELDS for product-name
  * suggestions, which is consistent with CiqualDataSource's pattern.
  *

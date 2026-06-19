@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MealDbMeal — Gson DTO for a full meal object from TheMealDB API.
+ * MealDbMeal - Gson DTO for a full meal object from TheMealDB API.
  *
  * Maps the response of:
  *   GET https://www.themealdb.com/api/json/v1/1/lookup.php?i={id}
@@ -18,7 +18,7 @@ import java.util.List;
  *   "meals": [ { ...MealDbMeal fields... } ]
  * }
  *
- * IMPORTANT — FLAT INGREDIENT SCHEMA:
+ * IMPORTANT - FLAT INGREDIENT SCHEMA:
  * TheMealDB does not use a nested array for ingredients. It uses 20 parallel
  * string fields (strIngredient1..20, strMeasure1..20). Empty slots are either
  * null or an empty string "". Use getIngredients() to get a clean parsed list.
@@ -28,8 +28,8 @@ import java.util.List;
  *
  * LANGUAGE: English only. The free v1 API has no localisation support.
  *
- * @see MealDbSearchResponse  — wraps this DTO in a "meals" array
- * @see MealDbIngredient      — parsed ingredient+measure pair
+ * @see MealDbSearchResponse  - wraps this DTO in a "meals" array
+ * @see MealDbIngredient      - parsed ingredient+measure pair
  */
 public class MealDbMeal {
 
@@ -78,7 +78,7 @@ public class MealDbMeal {
     /**
      * Full cooking instructions as a plain text blob. English only.
      * May contain newlines and numbered steps, but formatting is inconsistent
-     * across recipes — do not rely on any specific structure.
+     * across recipes - do not rely on any specific structure.
      * Can be very long (500–2000+ characters).
      */
     @SerializedName("strInstructions")
@@ -192,7 +192,7 @@ public class MealDbMeal {
      * - Treat a blank measure as null (no quantity specified)
      * - Stop early if we hit a null ingredient (remaining slots are guaranteed empty)
      *
-     * The returned list contains only real ingredients — no empty slots.
+     * The returned list contains only real ingredients - no empty slots.
      *
      * @return Immutable snapshot of this meal's ingredients. Never null, may be empty.
      */

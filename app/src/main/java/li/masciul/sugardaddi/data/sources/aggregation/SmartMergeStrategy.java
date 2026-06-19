@@ -74,7 +74,7 @@ public class SmartMergeStrategy implements MergeStrategy {
             }
         }
 
-        // Append passthrough items (Recipe etc.) — no deduplication applied
+        // Append passthrough items (Recipe etc.) - no deduplication applied
         mergedItems.addAll(passthroughItems);
         // Sort by relevance/quality
         sortByRelevance(mergedItems);
@@ -90,7 +90,7 @@ public class SmartMergeStrategy implements MergeStrategy {
             language = firstResult.language;
         }
 
-        // hasMore and sourceHasMore are placeholder values here —
+        // hasMore and sourceHasMore are placeholder values here -
         // DataSourceAggregator.mergeAndDeliver() computes the real values
         // from raw SearchResult objects and overwrites them in the final result.
         return new AggregatedSearchResult(
@@ -101,8 +101,8 @@ public class SmartMergeStrategy implements MergeStrategy {
                 searchDuration,
                 duplicatesFound,
                 totalItemsBeforeMerge,
-                false,          // placeholder — aggregator sets real value
-                Collections.emptyMap()  // placeholder — aggregator sets real value
+                false,          // placeholder - aggregator sets real value
+                Collections.emptyMap()  // placeholder - aggregator sets real value
         );
     }
 
@@ -204,7 +204,7 @@ public class SmartMergeStrategy implements MergeStrategy {
         String raw1 = item1.getDisplayName("en");
         String raw2 = item2.getDisplayName("en");
 
-        // Null name means incomplete data — can't fuzzy match, assume not duplicate
+        // Null name means incomplete data - can't fuzzy match, assume not duplicate
         if (raw1 == null || raw2 == null) return false;
 
         // Get names in same language
@@ -339,7 +339,7 @@ public class SmartMergeStrategy implements MergeStrategy {
             if (a instanceof FoodProduct && !(b instanceof FoodProduct)) return -1;
             if (!(a instanceof FoodProduct) && b instanceof FoodProduct) return 1;
 
-            // Both FoodProduct — preserve existing three-tier logic
+            // Both FoodProduct - preserve existing three-tier logic
             if (a instanceof FoodProduct && b instanceof FoodProduct) {
                 FoodProduct fa = (FoodProduct) a;
                 FoodProduct fb = (FoodProduct) b;
@@ -364,7 +364,7 @@ public class SmartMergeStrategy implements MergeStrategy {
                 return nameA.compareTo(nameB);
             }
 
-            // Both Recipe or other Searchable types — preserve insertion order
+            // Both Recipe or other Searchable types - preserve insertion order
             return 0;
         });
     }

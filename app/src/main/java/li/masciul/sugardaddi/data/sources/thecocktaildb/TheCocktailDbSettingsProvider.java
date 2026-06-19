@@ -11,7 +11,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 
 /**
- * TheCocktailDbSettingsProvider — SettingsProvider for the TheCocktailDB settings card.
+ * TheCocktailDbSettingsProvider - SettingsProvider for the TheCocktailDB settings card.
  *
  * CARD LAYOUT
  * ===========
@@ -21,12 +21,12 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * ├─────────────────────────────────────┤
  * │ API CREDENTIALS                     │
  * │ [API key input field]               │
- * │ ⚠ Using free key — Patreon key      │  ← shown when DEMO_KEY ("1") active
+ * │ ⚠ Using free key - Patreon key      │  ← shown when DEMO_KEY ("1") active
  * │   required for public release       │
  * │ [Save]                              │
  * └─────────────────────────────────────┘
  *
- * TheCocktailDB has NO local database — all data is fetched on demand.
+ * TheCocktailDB has NO local database - all data is fetched on demand.
  * The local DB section is hidden entirely (hasLocalDatabase() = false).
  *
  * CREDENTIAL LIFECYCLE
@@ -99,7 +99,7 @@ public class TheCocktailDbSettingsProvider implements SettingsProvider {
                 .putString(TheCocktailDbConstants.PREF_API_KEY, value.trim())
                 .apply();
 
-        // Trigger Retrofit reinitialize — the key is part of the base URL path
+        // Trigger Retrofit reinitialize - the key is part of the base URL path
         if (reinitializeCallback != null) {
             reinitializeCallback.onKeyChanged();
         }
@@ -114,11 +114,11 @@ public class TheCocktailDbSettingsProvider implements SettingsProvider {
     @Nullable
     @Override
     public String getCredentialWarning() {
-        return "⚠ Free development key active — a Patreon key is required for public release";
+        return "⚠ Free development key active - a Patreon key is required for public release";
     }
 
     // =========================================================================
-    // LOCAL DATABASE — none
+    // LOCAL DATABASE - none
     // =========================================================================
 
     @Override public boolean hasLocalDatabase()                              { return false; }
@@ -130,7 +130,7 @@ public class TheCocktailDbSettingsProvider implements SettingsProvider {
     @Override public void resetDatabaseState(@NonNull Context context)       { /* no-op */ }
 
     // =========================================================================
-    // BROADCAST KEYS — not applicable (no import service)
+    // BROADCAST KEYS - not applicable (no import service)
     // =========================================================================
 
     @NonNull @Override public String getBroadcastProgress()  { return ""; }

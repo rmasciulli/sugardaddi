@@ -293,7 +293,7 @@ public class CiqualElasticsearchFood {
 
     /**
      * Salt equivalent (g/100g)
-     * Calculated from sodium (salt â‰ˆ sodium Ã— 2.5)
+     * Calculated from sodium (salt â‰ˆ sodium Ã- 2.5)
      */
     @SerializedName("sel")
     private Double sel;

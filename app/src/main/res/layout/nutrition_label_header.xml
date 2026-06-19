@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_header.xml — Column header for DETAILED mode (3 columns).
+    nutrition_label_header.xml - Column header for DETAILED mode (3 columns).
 
     TYPOGRAPHY:
       textAppearanceLabelMedium (12sp, medium weight) for all header columns.
-      Header labels should be smaller/lighter than the data rows below them —
+      Header labels should be smaller/lighter than the data rows below them -
       LabelMedium is the correct token for table column headings.
 
     DARK MODE:
@@ -40,7 +40,7 @@
             android:paddingEnd="8dp"
             android:text="@string/nutrition_label_nutrient_column" />
 
-        <!-- Column 2: Per 100g — EU mandatory column, always visible.
+        <!-- Column 2: Per 100g - EU mandatory column, always visible.
              autoSizeTextType adapts if the unit string "pour 100ml" is long. -->
         <TextView
             android:id="@+id/headerPer100g"
@@ -59,7 +59,7 @@
             android:paddingEnd="8dp"
             android:text="@string/per_100g" />
 
-        <!-- Column 3: Custom amount — updated dynamically by NutritionLabelManager -->
+        <!-- Column 3: Custom amount - updated dynamically by NutritionLabelManager -->
         <TextView
             android:id="@+id/headerCustomAmount"
             android:layout_width="0dp"
@@ -79,7 +79,7 @@
     </LinearLayout>
 
     <!-- Separator line: full-opacity primary color marks the boundary between
-         header and data rows — visually anchors the table. -->
+         header and data rows - visually anchors the table. -->
     <View
         android:id="@+id/divider"
         android:layout_width="match_parent"

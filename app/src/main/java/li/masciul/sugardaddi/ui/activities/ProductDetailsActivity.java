@@ -64,20 +64,20 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *   - Toolbar title        → DetailRenderer.getToolbarTitle()
  *   - Cleanup              → DetailRenderer.destroy()
  *
- * RENDERER REGISTRATION ORDER (first match wins — most specific first):
- *   1. OffProductDetailRenderer     — FoodProduct + OPENFOODFACTS
- *   2. CiqualProductDetailRenderer  — FoodProduct + CIQUAL
- *   3. DefaultProductDetailRenderer — FoodProduct (catch-all)
+ * RENDERER REGISTRATION ORDER (first match wins - most specific first):
+ *   1. OffProductDetailRenderer     - FoodProduct + OPENFOODFACTS
+ *   2. CiqualProductDetailRenderer  - FoodProduct + CIQUAL
+ *   3. DefaultProductDetailRenderer - FoodProduct (catch-all)
  *
  * INTENT EXTRAS:
- *   EXTRA_FOOD_ITEM              : String — product ID to load
- *   EXTRA_FALLBACK_CATEGORY_EN   : String — search-result category (EN), used if detail has none
- *   EXTRA_FALLBACK_CATEGORY_FR   : String — search-result category (FR), used if detail has none
- *   EXTRA_FALLBACK_NUTRISCORE    : String — search-result NutriScore, used if detail has none
- *   EXTRA_FALLBACK_ECOSCORE      : String — search-result EcoScore, used if detail has none
- *   RETURN_TO_MEAL               : String — meal ID to return to after "Add to Meal"
+ *   EXTRA_FOOD_ITEM              : String - product ID to load
+ *   EXTRA_FALLBACK_CATEGORY_EN   : String - search-result category (EN), used if detail has none
+ *   EXTRA_FALLBACK_CATEGORY_FR   : String - search-result category (FR), used if detail has none
+ *   EXTRA_FALLBACK_NUTRISCORE    : String - search-result NutriScore, used if detail has none
+ *   EXTRA_FALLBACK_ECOSCORE      : String - search-result EcoScore, used if detail has none
+ *   RETURN_TO_MEAL               : String - meal ID to return to after "Add to Meal"
  *
- * @version 5.1 — added search-result fallback extras
+ * @version 5.1 - added search-result fallback extras
  */
 public class ProductDetailsActivity extends BaseActivity implements ProductManager.ProductListener {
 
@@ -85,7 +85,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
     /**
      * Fallback data passed from the search result (MainActivity).
-     * Used when the detail API returns incomplete data — e.g. OFF v2 sometimes
+     * Used when the detail API returns incomplete data - e.g. OFF v2 sometimes
      * omits ecoscore_data.agribalyse even when Searchalicious had it.
      * These are FALLBACKS: only applied when the loaded product has no value.
      */
@@ -134,14 +134,14 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     private ImagePickerHelper imagePicker;
     private ProductRepository productRepository;
 
-    // Meal context — set when launched with RETURN_TO_MEAL intent extra
+    // Meal context - set when launched with RETURN_TO_MEAL intent extra
     private String returnToMealId = null;
 
     // ========== LIFECYCLE ==========
 
     @Override
     protected void onBaseActivityCreated(Bundle savedInstanceState) {
-        // Register ActivityResultLaunchers before onStart() — safe here because
+        // Register ActivityResultLaunchers before onStart() - safe here because
         // onBaseActivityCreated() is called from BaseActivity.onCreate().
         imagePicker = new ImagePickerHelper(this);
 
@@ -312,7 +312,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
      * we use the data already known from the Searchalicious search result, which was
      * passed as Intent extras by MainActivity.
      *
-     * This is purely additive — only fills fields that are null/empty in the loaded product.
+     * This is purely additive - only fills fields that are null/empty in the loaded product.
      * Never overwrites data that the detail API did return.
      *
      * @param product The product just loaded by the detail API (modified in-place if needed)
@@ -361,7 +361,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         }
     }
 
-    // ========== PRODUCT DISPLAY — RENDERER DISPATCH ==========
+    // ========== PRODUCT DISPLAY - RENDERER DISPATCH ==========
 
     /**
      * Core rendering method:
@@ -486,7 +486,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
             }
         }
 
-        // Remove image — shown only when user has set a custom full-size image.
+        // Remove image - shown only when user has set a custom full-size image.
         MenuItem removeImageItem = menu.findItem(R.id.action_remove_image);
         if (removeImageItem != null) {
             FoodProduct product = productManager.getCurrentProduct();
@@ -495,7 +495,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                     && !product.getUserImagePath().trim().isEmpty());
         }
 
-        // Remove thumbnail — shown only when user has set a custom thumbnail.
+        // Remove thumbnail - shown only when user has set a custom thumbnail.
         MenuItem removeThumbnailItem = menu.findItem(R.id.action_remove_thumbnail);
         if (removeThumbnailItem != null) {
             FoodProduct product = productManager.getCurrentProduct();
@@ -556,13 +556,13 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
 
-        // Construct the destination file — caller's responsibility per ImagePickerHelper contract.
+        // Construct the destination file - caller's responsibility per ImagePickerHelper contract.
         File destinationFile;
         int  maxDimension;
         int  jpegQuality;
 
         if (isThumbnail) {
-            // Deterministic name: {id}_custom.jpg — co-exists with auto-cached thumbnail.
+            // Deterministic name: {id}_custom.jpg - co-exists with auto-cached thumbnail.
             destinationFile = storage.getUserThumbnailFile(product.getSearchableId());
             maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
             jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
@@ -592,7 +592,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
             @Override
             public void onCancelled(@NonNull String reason) {
-                // No UI feedback for plain cancellation — user intentionally exited.
+                // No UI feedback for plain cancellation - user intentionally exited.
                 logDebug("Image pick cancelled: " + reason);
             }
         };
@@ -649,7 +649,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         FoodProduct product = productManager.getCurrentProduct();
         if (product == null || product.getUserImagePath() == null) return;
 
-        // Capture path before clearing — currentProduct.getUserImagePath()
+        // Capture path before clearing - currentProduct.getUserImagePath()
         // will be null by the time runOnUiThread() fires.
         final String pathToDelete = product.getUserImagePath();
 
@@ -661,7 +661,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         // correct state before the background thread completes.
         productManager.updateLocalImagePaths(null, null);
 
-        // Move deleteFile() to the background thread alongside the DAO update —
+        // Move deleteFile() to the background thread alongside the DAO update -
         // keeps the entire remove operation atomic and avoids a race with
         // onActivityResumed() which re-renders with the stale product if
         // deleteFile() runs on the main thread before updateLocalImagePaths() fires.
@@ -688,7 +688,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         FoodProduct product = productManager.getCurrentProduct();
         if (product == null || product.getUserThumbnailPath() == null) return;
 
-        // Capture paths before clearing — both will be null by the time
+        // Capture paths before clearing - both will be null by the time
         // runOnUiThread() fires so we capture them here on the main thread.
         final String pathToDelete       = product.getUserThumbnailPath();
         final String currentUserImage   = product.getUserImagePath();
@@ -696,7 +696,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
 
-        // deleteFile() moved to background thread — keeps the entire remove
+        // deleteFile() moved to background thread - keeps the entire remove
         // operation atomic and avoids a race with onActivityResumed().
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
@@ -707,7 +707,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                 Toast.makeText(this,
                         getSafeString(R.string.thumbnail_removed),
                         Toast.LENGTH_SHORT).show();
-                // Preserve userImagePath — we're only removing the thumbnail.
+                // Preserve userImagePath - we're only removing the thumbnail.
                 productManager.updateLocalImagePaths(currentUserImage, null);
                 invalidateOptionsMenu();
             });

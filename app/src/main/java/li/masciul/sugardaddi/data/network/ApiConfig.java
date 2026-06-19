@@ -60,7 +60,7 @@ public final class ApiConfig {
      * Minimum data completeness score [0.0–1.0] for a FoodProduct to appear
      * in search results. Products below this threshold are dropped before scoring.
      *
-     * 0.1 is intentionally permissive — completeness scoring already deprioritises
+     * 0.1 is intentionally permissive - completeness scoring already deprioritises
      * incomplete products. This gate only removes truly empty entries (no name,
      * no data). Source-specific scorers handle quality discrimination above this floor.
      *

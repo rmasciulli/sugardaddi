@@ -216,7 +216,7 @@ public class RecipeStepMetadata {
     }
 
     /**
-     * Returns true if this step has any media content — remote or local.
+     * Returns true if this step has any media content - remote or local.
      * Used by RecipeStepMetadataListConverter.getStepsWithMediaCount().
      */
     public boolean hasMedia() {

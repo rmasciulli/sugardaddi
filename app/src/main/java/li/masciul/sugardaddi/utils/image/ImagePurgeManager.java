@@ -20,7 +20,7 @@ import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 
 /**
- * ImagePurgeManager — Orphan image cleanup for SugarDaddi.
+ * ImagePurgeManager - Orphan image cleanup for SugarDaddi.
  *
  * RESPONSIBILITIES
  * ================
@@ -35,7 +35,7 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  * interrupts a deletion (crash, power loss, race condition), orphaned files would
  * accumulate indefinitely without a background sweep.
  *
- * THIS IS NOT a replacement for immediate deletion — it is a startup sanity check
+ * THIS IS NOT a replacement for immediate deletion - it is a startup sanity check
  * that can also be triggered manually from Settings.
  *
  * WHAT THIS CLASS DOES NOT DO
@@ -45,7 +45,7 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  * - No camera/gallery UI → ImagePickerHelper
  * - No gallery scanning  → ImageStorageManager
  *
- * DIRECTORY COVERAGE — five directories, each cross-referenced independently:
+ * DIRECTORY COVERAGE - five directories, each cross-referenced independently:
  *
  *   sugardaddi/thumbnails/  → food_products.thumbnailPath + userThumbnailPath
  *                             + recipes.thumbnailPath + userThumbnailPath
@@ -60,34 +60,21 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  * It is NOT a separate Room table. At purge time, all recipe entities with a
  * non-null stepStructure are loaded; Room's RecipeStepMetadataListConverter
  * deserialises the JSON automatically when getStepStructure() is called.
- * stepPhotoPath values are then extracted from each step. This is slightly
+ * Each step's imagePath and userImagePath are then extracted. This is slightly
  * heavier than a simple SQL query but the dataset is small and the purge runs
  * only once per launch on a background thread.
  *
- * REQUIRED DAO METHODS (added in v12)
- * =====================================
- * FoodProductDao:
- *   @Query("SELECT thumbnailPath FROM food_products WHERE thumbnailPath IS NOT NULL
- *           UNION ALL
- *           SELECT heroImagePath FROM food_products WHERE heroImagePath IS NOT NULL")
- *   List<String> getAllLocalImagePaths();
- *
- * RecipeDao:
- *   @Query("SELECT thumbnailPath FROM recipes WHERE thumbnailPath IS NOT NULL
- *           UNION ALL
- *           SELECT heroImagePath FROM recipes WHERE heroImagePath IS NOT NULL")
- *   List<String> getAllLocalImagePaths();
- *
- *   @Query("SELECT * FROM recipes WHERE stepStructure IS NOT NULL")
- *   List<RecipeEntity> getAllWithStepStructure();
- *
- * MealDao:
- *   @Query("SELECT photoPath FROM meals WHERE photoPath IS NOT NULL")
- *   List<String> getAllLocalImagePaths();
+ * REQUIRED DAO METHODS
+ * ====================
+ * FoodProductDao.getAllLocalImagePaths()  - unions all four product image columns
+ * RecipeDao.getAllLocalImagePaths()       - unions all four recipe image columns
+ * RecipeDao.getAllWithStepStructure()     - recipes whose stepStructure is non-null
+ * MealDao.getAllLocalImagePaths()         - meals.userImagePath
+ * (See each DAO for the authoritative SQL - deliberately not duplicated here.)
  *
  * THREADING
  * =========
- * All public methods are fire-and-forget — they submit work to a dedicated
+ * All public methods are fire-and-forget - they submit work to a dedicated
  * single-thread executor and return immediately. Purge must never block the
  * main thread or delay visible app startup.
  *
@@ -136,7 +123,7 @@ public class ImagePurgeManager {
 
     /**
      * Scans all managed directories, cross-references every file against Room,
-     * and deletes any orphan. Fire-and-forget — returns immediately.
+     * and deletes any orphan. Fire-and-forget - returns immediately.
      *
      * Safe to call every launch. Fast when no orphans exist (directory listing
      * + Set lookup only). Idempotent: multiple concurrent calls are queued by
@@ -149,17 +136,47 @@ public class ImagePurgeManager {
                 long start   = System.currentTimeMillis();
                 int  deleted = purgeOrphans();
                 long elapsed = System.currentTimeMillis() - start;
-                Log.i(TAG, "ImagePurgeManager: complete — "
+                Log.i(TAG, "ImagePurgeManager: complete - "
                         + deleted + " orphan(s) deleted in " + elapsed + "ms");
             } catch (Exception e) {
-                // Non-fatal — the app functions normally without purge.
+                // Non-fatal - the app functions normally without purge.
                 Log.e(TAG, "ImagePurgeManager: unexpected error during purge", e);
             }
         });
     }
 
     /**
-     * Synchronous purge — for testing or user-triggered cleanup from Settings.
+     * Deletes EVERY file in all managed image directories, WITHOUT consulting
+     * Room. Use only after a destructive database recreation: the DB has been
+     * wiped, so every image file is necessarily orphaned and cross-referencing
+     * an empty Room would be pointless (and the orphan sweep would do it only by
+     * accident of the set being empty). Fire-and-forget.
+     */
+    public void purgeAllAsync() {
+        purgeExecutor.execute(() -> {
+            try {
+                int deleted = purgeAll();
+                Log.i(TAG, "ImagePurgeManager: full wipe - " + deleted + " file(s) deleted");
+            } catch (Exception e) {
+                Log.e(TAG, "ImagePurgeManager: error during full wipe", e);
+            }
+        });
+    }
+
+    @WorkerThread
+    private int purgeAll() {
+        Set<String> none = java.util.Collections.emptySet();   // nothing is "known" → delete all
+        int total = 0;
+        total += scanAndPurge(storageManager.getThumbnailsDir(), none, "thumbnails");
+        total += scanAndPurge(storageManager.getProductsDir(),   none, "products");
+        total += scanAndPurge(storageManager.getRecipesDir(),    none, "recipes");
+        total += scanAndPurge(storageManager.getMealsDir(),      none, "meals");
+        total += scanAndPurge(storageManager.getStepsDir(),      none, "steps");
+        return total;
+    }
+    
+    /**
+     * Synchronous purge - for testing or user-triggered cleanup from Settings.
      *
      * Must be called from a background thread.
      *
@@ -202,12 +219,10 @@ public class ImagePurgeManager {
      * Builds the complete set of absolute file paths referenced by any entity in Room.
      *
      * Covered fields:
-     *   food_products.thumbnailPath   (thumbnails/)
-     *   food_products.heroImagePath   (products/)
-     *   recipes.thumbnailPath         (thumbnails/)
-     *   recipes.heroImagePath         (recipes/)
-     *   meals.photoPath               (meals/)
-     *   RecipeStepMetadata.stepPhotoPath (steps/, via JSON deserialization)
+     *   food_products: thumbnailPath, imagePath, userThumbnailPath, userImagePath
+     *   recipes:       thumbnailPath, imagePath, userThumbnailPath, userImagePath
+     *   meals:         userImagePath
+     *   RecipeStepMetadata: imagePath, userImagePath (steps/, via JSON deserialization)
      */
     @WorkerThread
     @NonNull
@@ -222,7 +237,7 @@ public class ImagePurgeManager {
                 Log.d(TAG, "  Product paths: " + paths.size());
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load product image paths — skipping", e);
+            Log.w(TAG, "Failed to load product image paths - skipping", e);
         }
 
         // ── Recipe paths (thumbnail + hero) ───────────────────────────────────
@@ -233,7 +248,7 @@ public class ImagePurgeManager {
                 Log.d(TAG, "  Recipe paths: " + paths.size());
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load recipe image paths — skipping", e);
+            Log.w(TAG, "Failed to load recipe image paths - skipping", e);
         }
 
         // ── Meal photo paths ──────────────────────────────────────────────────
@@ -244,7 +259,7 @@ public class ImagePurgeManager {
                 Log.d(TAG, "  Meal paths: " + paths.size());
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load meal photo paths — skipping", e);
+            Log.w(TAG, "Failed to load meal photo paths - skipping", e);
         }
 
         // ── Recipe step photo paths (from JSON stepStructure) ─────────────────
@@ -257,7 +272,7 @@ public class ImagePurgeManager {
                         + " (from " + recipes.size() + " recipe(s))");
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load step photo paths — skipping", e);
+            Log.w(TAG, "Failed to load step photo paths - skipping", e);
         }
 
         return knownPaths;
@@ -266,7 +281,7 @@ public class ImagePurgeManager {
     /**
      * Scans a single directory and deletes any file not in {@code knownPaths}.
      *
-     * Only regular files are deleted — subdirectories are never touched.
+     * Only regular files are deleted - subdirectories are never touched.
      * Hidden files (starting with '.') are skipped.
      * Null directories (external storage unavailable) return 0 gracefully.
      *
@@ -282,13 +297,13 @@ public class ImagePurgeManager {
             @NonNull String label) {
 
         if (dir == null || !dir.exists() || !dir.isDirectory()) {
-            Log.d(TAG, "  [" + label + "] absent — skipping");
+            Log.d(TAG, "  [" + label + "] absent - skipping");
             return 0;
         }
 
         File[] files = dir.listFiles();
         if (files == null || files.length == 0) {
-            Log.d(TAG, "  [" + label + "] empty — nothing to purge");
+            Log.d(TAG, "  [" + label + "] empty - nothing to purge");
             return 0;
         }
 
@@ -317,11 +332,11 @@ public class ImagePurgeManager {
     // =========================================================================
 
     /**
-     * Extracts all non-null stepPhotoPath values from the step structures of
-     * the given recipe entities.
+     * Extracts all non-null step image paths (imagePath + userImagePath) from
+     * the step structures of the given recipe entities.
      *
      * Room's RecipeStepMetadataListConverter automatically deserialises the
-     * stepStructure JSON column — no manual Gson parsing is needed here.
+     * stepStructure JSON column - no manual Gson parsing is needed here.
      */
     @WorkerThread
     @NonNull
@@ -333,9 +348,9 @@ public class ImagePurgeManager {
             if (steps == null || steps.isEmpty()) continue;
 
             for (RecipeStepMetadata step : steps) {
-                // imageUrl      — remote image from TheMealDB/TheCocktailDB, never stored locally
-                // imagePath     — auto-cached local copy of imageUrl (downloaded on favourite)
-                // userImagePath — user-defined local photo set via ImagePickerHelper
+                // imageUrl      - remote image from TheMealDB/TheCocktailDB, never stored locally
+                // imagePath     - auto-cached local copy of imageUrl (downloaded on favourite)
+                // userImagePath - user-defined local photo set via ImagePickerHelper
                 String imagePath = step.getImagePath();
                 if (imagePath != null && !imagePath.trim().isEmpty()) {
                     paths.add(imagePath);

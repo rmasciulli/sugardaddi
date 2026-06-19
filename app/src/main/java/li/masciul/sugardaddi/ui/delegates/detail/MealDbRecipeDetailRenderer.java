@@ -153,14 +153,14 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
             if (f.exists()) return f;
         }
 
-        // 2. Auto-cached full-size image (currently unused — imagePath always null).
+        // 2. Auto-cached full-size image (currently unused - imagePath always null).
         String imagePath = recipe.getImagePath();
         if (imagePath != null && !imagePath.trim().isEmpty()) {
             java.io.File f = new java.io.File(imagePath);
             if (f.exists()) return f;
         }
 
-        // 3. Cached thumbnail — offline copy of imageUrl, acceptable as hero fallback.
+        // 3. Cached thumbnail - offline copy of imageUrl, acceptable as hero fallback.
         String thumbPath = recipe.getThumbnailPath();
         if (thumbPath != null && !thumbPath.trim().isEmpty()) {
             java.io.File f = new java.io.File(thumbPath);

@@ -6,7 +6,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.network.RetryStrategy;
 
 /**
- * USDAConfig — NetworkConfig implementation for USDA FoodData Central.
+ * USDAConfig - NetworkConfig implementation for USDA FoodData Central.
  *
  * DUAL-MODE ARCHITECTURE:
  * ========================
@@ -14,7 +14,7 @@ import li.masciul.sugardaddi.data.network.RetryStrategy;
  *   - Base URL: https://api.nal.usda.gov/fdc/v1/
  *   - Auth: api_key query parameter (from BuildConfig.USDA_API_KEY)
  *   - Data types: Foundation + SR Legacy + Survey (FNDDS)
- *   - No caching restriction — FDC data is CC0 public domain
+ *   - No caching restriction - FDC data is CC0 public domain
  *
  * MODE 2: Local JSON database (opt-in, user-initiated)
  *   - Downloads Foundation Foods + SR Legacy JSON ZIPs from fdc.nal.usda.gov
@@ -24,7 +24,7 @@ import li.masciul.sugardaddi.data.network.RetryStrategy;
  *
  * RETRY STRATEGY:
  * USDA FDC is a stable government API with good uptime. Standard exponential
- * backoff is appropriate — unlike Ciqual which uses NONE to fail fast.
+ * backoff is appropriate - unlike Ciqual which uses NONE to fail fast.
  */
 public class USDAConfig extends NetworkConfig {
 
@@ -50,7 +50,7 @@ public class USDAConfig extends NetworkConfig {
     }
 
     // ===== TIMEOUT OVERRIDES =====
-    // SR Legacy is 205MB — give downloads room to breathe.
+    // SR Legacy is 205MB - give downloads room to breathe.
     // API calls themselves are fast and use default timeouts.
 
     /**

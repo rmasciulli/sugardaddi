@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_row.xml — Standard nutrient row (indent level 0).
+    nutrition_label_row.xml - Standard nutrient row (indent level 0).
 
     TYPOGRAPHY:
-      Nutrient name: textAppearanceBodyMedium (14sp regular) — primary read target.
-      Values: autoSize 12–14sp base textAppearanceBodySmall — adapt to column width.
+      Nutrient name: textAppearanceBodyMedium (14sp regular) - primary read target.
+      Values: autoSize 12–14sp base textAppearanceBodySmall - adapt to column width.
       colorOnSurface for the name (full emphasis), colorOnSurfaceVariant for values
       (secondary, slightly dimmed to draw eye to the name column first).
 
@@ -29,7 +29,7 @@
         android:gravity="center_vertical"
         android:minHeight="36dp">
 
-        <!-- Column 1: Nutrient name — no indentation at level 0 -->
+        <!-- Column 1: Nutrient name - no indentation at level 0 -->
         <TextView
             android:id="@+id/nutrientName"
             android:layout_width="0dp"
@@ -40,7 +40,7 @@
             android:paddingEnd="8dp"
             android:text="Nutrient" />
 
-        <!-- Column 2: Per 100g value — autoSize keeps alignment when values are long -->
+        <!-- Column 2: Per 100g value - autoSize keeps alignment when values are long -->
         <TextView
             android:id="@+id/valuePer100g"
             android:layout_width="0dp"
@@ -75,7 +75,7 @@
 
     </LinearLayout>
 
-    <!-- Row divider — light separator, not a strong line -->
+    <!-- Row divider - light separator, not a strong line -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

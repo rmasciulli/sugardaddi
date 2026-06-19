@@ -15,7 +15,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import java.util.List;
 
 /**
- * CiqualSettingsProvider — SettingsProvider implementation for the Ciqual data source.
+ * CiqualSettingsProvider - SettingsProvider implementation for the Ciqual data source.
  *
  * RESPONSIBILITIES
  * ================
@@ -36,25 +36,25 @@ import java.util.List;
  * THREADING
  * =========
  * getDatabaseProductCount() and getDatabaseNutritionCount() are synchronous Room
- * queries — always call them on a background thread (the card manager handles this).
+ * queries - always call them on a background thread (the card manager handles this).
  *
  * startImport() posts to the main thread internally so startForegroundService() is
  * always called from the foreground, satisfying Android 12+ restrictions.
  *
  * resetDatabaseState() writes SharedPreferences synchronously (apply() is async
- * but that's fine — the card manager refreshes the UI after calling this).
+ * but that's fine - the card manager refreshes the UI after calling this).
  */
 public class CiqualSettingsProvider implements SettingsProvider {
 
     private static final String TAG = "CiqualSettingsProvider";
 
     // =========================================================================
-    // CREDENTIALS — Ciqual has none
+    // CREDENTIALS - Ciqual has none
     // =========================================================================
 
     @Override
     public boolean hasCredentials() {
-        // Ciqual is a bundled/downloaded dataset — no API key required
+        // Ciqual is a bundled/downloaded dataset - no API key required
         return false;
     }
 
@@ -72,7 +72,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
 
     @Override
     public void saveCredential(@NonNull Context context, @NonNull String value) {
-        // No-op — Ciqual has no credential
+        // No-op - Ciqual has no credential
     }
 
     @Nullable
@@ -100,7 +100,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
      * True if the Ciqual DB has been successfully imported and the stored version
      * matches the current dataset version in CiqualConstants.
      *
-     * Reads CiqualImportService's own SharedPreferences — this is the single source
+     * Reads CiqualImportService's own SharedPreferences - this is the single source
      * of truth for import state. The SettingsActivity no longer reaches into those
      * prefs directly; it asks us instead.
      */
@@ -121,7 +121,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
 
     /**
      * Count of food product rows in Room for the CIQUAL source.
-     * MUST be called on a background thread — this is a synchronous DB query.
+     * MUST be called on a background thread - this is a synchronous DB query.
      * Expected value after a full import: 3 484.
      */
     @Override
@@ -138,7 +138,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
 
     /**
      * Count of nutrition rows in Room that belong to Ciqual products.
-     * MUST be called on a background thread — this is a synchronous DB query.
+     * MUST be called on a background thread - this is a synchronous DB query.
      * Expected value after a full import equals the product count (one record per food).
      */
     @Override
@@ -189,7 +189,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
      * Reset the import state so the card reflects an empty/unimported DB.
      *
      * Clears CiqualImportService's SharedPreferences (so isImported() returns false)
-     * but does NOT delete Room rows — that is the responsibility of the "clear cache"
+     * but does NOT delete Room rows - that is the responsibility of the "clear cache"
      * button in the preferences card, which already calls the DB wipe separately.
      *
      * Call this after a cache clear or after an integrity check finds the DB empty,

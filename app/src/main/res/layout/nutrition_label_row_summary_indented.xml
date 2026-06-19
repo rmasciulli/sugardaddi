@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_row_summary_indented.xml — SUMMARY mode indented row (level 1, 2 columns).
+    nutrition_label_row_summary_indented.xml - SUMMARY mode indented row (level 1, 2 columns).
 
     TYPOGRAPHY: textAppearanceBodySmall (12sp) for name and value.
     Same indentation rules as detailed mode.

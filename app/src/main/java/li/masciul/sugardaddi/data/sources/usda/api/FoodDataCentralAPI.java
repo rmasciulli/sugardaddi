@@ -13,7 +13,7 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
- * FoodDataCentralAPI — Retrofit interface for the USDA FoodData Central REST API.
+ * FoodDataCentralAPI - Retrofit interface for the USDA FoodData Central REST API.
  *
  * BASE URL: https://api.nal.usda.gov/fdc/v1/
  * DOCS:     https://fdc.nal.usda.gov/api-spec/fdc_api.html
@@ -26,14 +26,14 @@ import retrofit2.http.Query;
  *
  * TWO ENDPOINTS
  * =============
- * 1. GET /foods/search  — full-text search returning FDCSearchResponse (food list)
- * 2. GET /food/{fdcId}  — detail fetch returning FDCFoodDetail (single food)
+ * 1. GET /foods/search  - full-text search returning FDCSearchResponse (food list)
+ * 2. GET /food/{fdcId}  - detail fetch returning FDCFoodDetail (single food)
  *
  * DATA TYPES (dataType parameter):
- * - "Foundation"      — ~1,200 raw agricultural commodities, highest quality
- * - "SR Legacy"       — ~7,700 foods, classic USDA Standard Reference
- * - "Survey (FNDDS)"  — ~7,300 dietary survey foods (composite dishes)
- * - "Branded"         — ~400,000 consumer products (excluded — OFF handles this)
+ * - "Foundation"      - ~1,200 raw agricultural commodities, highest quality
+ * - "SR Legacy"       - ~7,700 foods, classic USDA Standard Reference
+ * - "Survey (FNDDS)"  - ~7,300 dietary survey foods (composite dishes)
+ * - "Branded"         - ~400,000 consumer products (excluded - OFF handles this)
  *
  * We pass USDAConstants.API_DATA_TYPES = "Foundation,SR Legacy,Survey (FNDDS)"
  * on all search requests.
@@ -51,7 +51,7 @@ public interface FoodDataCentralAPI {
      * "Survey (FNDDS)" dataType value, whose parentheses cause HTTP 400
      * errors when passed as repeated query parameters.
      *
-     * The api_key remains a query parameter (not in the body) — this is
+     * The api_key remains a query parameter (not in the body) - this is
      * how USDA authenticates POST requests.
      *
      * EXAMPLE REQUEST BODY:
@@ -129,8 +129,8 @@ public interface FoodDataCentralAPI {
      * }
      *
      * FORMAT PARAMETER:
-     * "full"   — all nutrient data (default, what we want)
-     * "abridged" — key nutrients only
+     * "full"   - all nutrient data (default, what we want)
+     * "abridged" - key nutrients only
      *
      * @param fdcId  The FoodData Central integer ID (e.g. 747447)
      * @param apiKey FDC API key

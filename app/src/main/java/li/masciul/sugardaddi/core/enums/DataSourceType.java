@@ -77,16 +77,16 @@ public enum DataSourceType {
     API_CACHE("CACHE", true, false),
 
     /**
-     * TheMealDB — Open recipe database (themealdb.com)
+     * TheMealDB - Open recipe database (themealdb.com)
      * - Allows caching: No (public release requires Patreon subscription per ToS;
      *                       development key "1" is free but not for distribution)
-     * - Requires network: Yes (no local bundle — recipes are fetched on demand)
+     * - Requires network: Yes (no local bundle - recipes are fetched on demand)
      * - Data quality: Good for recipe structure; NO nutrition data provided
      */
     THEMEALDB("THEMEALDB", false, true),
 
     /**
-     * TheCocktailDB — Open cocktail database (thecocktaildb.com)
+     * TheCocktailDB - Open cocktail database (thecocktaildb.com)
      * - Allows caching: No (same ToS as TheMealDB)
      * - Requires network: Yes
      * - Data quality: Good for cocktail structure; NO nutrition data provided

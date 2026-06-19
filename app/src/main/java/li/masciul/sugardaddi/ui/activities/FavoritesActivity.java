@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
  * DELEGATE ARCHITECTURE v2.0
  *
  * Now backed by {@link SearchResultsAdapter} with pagination disabled.
- * FavoriteItem and FavoritesAdapter have been removed — this activity works
+ * FavoriteItem and FavoritesAdapter have been removed - this activity works
  * directly with {@link Searchable} objects (FoodProduct and Recipe), exactly
  * as the search results screen does. The delegate system automatically selects
  * the correct card layout per item type and data source.
@@ -86,7 +86,7 @@ public class FavoritesActivity extends BaseActivity
 
     // ========== DATA ==========
 
-    /** Delegate-based adapter — reused from search results, pagination disabled */
+    /** Delegate-based adapter - reused from search results, pagination disabled */
     private SearchResultsAdapter adapter;
 
     private AppDatabase database;
@@ -98,7 +98,7 @@ public class FavoritesActivity extends BaseActivity
     /** Currently displayed after applying type filter + search query */
     private List<Searchable> displayedFavorites = new ArrayList<>();
 
-    /** Meal ID to return to — forwarded from MainActivity in add-to-meal mode */
+    /** Meal ID to return to - forwarded from MainActivity in add-to-meal mode */
     private String returnToMealId = null;
 
     /** Current type filter selection */
@@ -140,7 +140,7 @@ public class FavoritesActivity extends BaseActivity
 
     @Override
     protected void onBaseActivityCreated(@Nullable Bundle savedInstanceState) {
-        // Managed in onCreate — nothing needed here
+        // Managed in onCreate - nothing needed here
     }
 
     @Override
@@ -220,7 +220,7 @@ public class FavoritesActivity extends BaseActivity
 
     private void setupRecyclerView() {
         // Reuse the same delegate-based adapter as the search results screen.
-        // Pagination is explicitly disabled — there is no load-more footer in favorites.
+        // Pagination is explicitly disabled - there is no load-more footer in favorites.
         adapter = new SearchResultsAdapter(this, this);
         adapter.setPaginationEnabled(false);
         adapter.setOnItemClickListener(this);
@@ -245,7 +245,7 @@ public class FavoritesActivity extends BaseActivity
 
                 // ── Products ──────────────────────────────────────────────────────
                 // Use FoodProductWithNutrition to load products WITH their nutrition data.
-                // getFavoriteProducts() returns bare entities without nutrition — cards
+                // getFavoriteProducts() returns bare entities without nutrition - cards
                 // would be missing kcal, carbs, and other data shown in search results.
                 List<FoodProductWithNutrition> productEntities =
                         database.combinedProductDao().getFavoriteProductsList();
@@ -320,7 +320,7 @@ public class FavoritesActivity extends BaseActivity
             displayedFavorites.add(item);
         }
 
-        // Push to adapter — updateItems() also resets pagination state (harmless here)
+        // Push to adapter - updateItems() also resets pagination state (harmless here)
         adapter.updateItems(displayedFavorites, false);
 
         updateCountText();
@@ -405,7 +405,7 @@ public class FavoritesActivity extends BaseActivity
 
     @Override
     public void onItemLongClick(@NonNull Searchable item, int position) {
-        // Not used in Favorites — reserved for future context menus
+        // Not used in Favorites - reserved for future context menus
     }
 
     // ========== NAVIGATION ==========

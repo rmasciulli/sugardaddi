@@ -97,7 +97,7 @@ public class FooterDelegate implements ItemViewDelegate<FooterDelegate.ViewHolde
          *
          * The footer is ONLY visible when a load is actively in progress.
          * It collapses to GONE both when idle (waiting for scroll) and when
-         * there are no more items — preventing the ghost gap and stale text
+         * there are no more items - preventing the ghost gap and stale text
          * that appeared between items when hasMoreItems was true but isLoading
          * was false.
          *
@@ -115,7 +115,7 @@ public class FooterDelegate implements ItemViewDelegate<FooterDelegate.ViewHolde
                 return;
             }
 
-            // Actively loading — show spinner and label
+            // Actively loading - show spinner and label
             footerContainer.setVisibility(View.VISIBLE);
             progressIndicator.setVisibility(View.VISIBLE);
             loadingText.setVisibility(View.VISIBLE);

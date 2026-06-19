@@ -79,7 +79,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
      */
     @Override
     public boolean supports(@NonNull Searchable item) {
-        // Only handles food products — recipes are handled by a separate renderer (future)
+        // Only handles food products - recipes are handled by a separate renderer (future)
         return item.getProductType() == ProductType.FOOD;
     }
 
@@ -99,7 +99,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         populateScores(view, product);
         populateAllergens(view, product);
         populateNutrition(view, product, language);
-        // Attribution panel last — informational, never obscures critical content
+        // Attribution panel last - informational, never obscures critical content
         DetailRendererUtils.populateAttribution(context, view, product.getDataSource());
     }
 

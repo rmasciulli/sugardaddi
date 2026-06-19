@@ -10,7 +10,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.network.RetryStrategy;
 
 /**
- * TheCocktailDbConfig — NetworkConfig implementation for TheCocktailDB.
+ * TheCocktailDbConfig - NetworkConfig implementation for TheCocktailDB.
  *
  * API KEY ARCHITECTURE
  * ====================
@@ -18,19 +18,19 @@ import li.masciul.sugardaddi.data.network.RetryStrategy;
  *   https://www.thecocktaildb.com/api/json/v1/{key}/search.php?s=query
  *
  * This means the base URL is KEY-DEPENDENT and cannot be a static constant.
- * Changing the key requires rebuilding the Retrofit instance — handled by
+ * Changing the key requires rebuilding the Retrofit instance - handled by
  * TheCocktailDbDataSource.reinitialize(), called via ReinitializeCallback
  * from TheCocktailDbSettingsProvider after the user saves a new key.
  *
  * KEY PRIORITY
  * ============
- * 1. SharedPreferences — user entered their own Patreon key in Settings
- * 2. BuildConfig.THECOCKTAILDB_API_KEY — from local.properties at compile time
- * 3. TheCocktailDbConstants.DEMO_KEY ("1") — always works, no signup needed
+ * 1. SharedPreferences - user entered their own Patreon key in Settings
+ * 2. BuildConfig.THECOCKTAILDB_API_KEY - from local.properties at compile time
+ * 3. TheCocktailDbConstants.DEMO_KEY ("1") - always works, no signup needed
  *
  * RETRY STRATEGY
  * ==============
- * EXPONENTIAL — TheCocktailDB is community-hosted with variable availability.
+ * EXPONENTIAL - TheCocktailDB is community-hosted with variable availability.
  *
  * CACHING
  * =======
@@ -43,7 +43,7 @@ public class TheCocktailDbConfig extends NetworkConfig {
     // ===== CONSTRUCTOR =====
 
     /**
-     * @param context Application context — needed to read SharedPreferences for active API key.
+     * @param context Application context - needed to read SharedPreferences for active API key.
      */
     public TheCocktailDbConfig(@NonNull Context context) {
         super(TheCocktailDbConstants.SOURCE_ID, Environment.PRODUCTION);
@@ -55,7 +55,7 @@ public class TheCocktailDbConfig extends NetworkConfig {
 
     /**
      * Base URL for all TheCocktailDB API calls.
-     * Constructed dynamically — the API key is a path segment, not a query param.
+     * Constructed dynamically - the API key is a path segment, not a query param.
      * Called once during Retrofit initialization in TheCocktailDbDataSource.
      */
     @NonNull
@@ -78,9 +78,9 @@ public class TheCocktailDbConfig extends NetworkConfig {
     /**
      * Returns the active API key using three-tier priority:
      *
-     * 1. SharedPreferences — user entered a real Patreon key in Settings.
-     * 2. BuildConfig.THECOCKTAILDB_API_KEY — set via local.properties at compile time.
-     * 3. DEMO_KEY ("1") — TheCocktailDB's public development key.
+     * 1. SharedPreferences - user entered a real Patreon key in Settings.
+     * 2. BuildConfig.THECOCKTAILDB_API_KEY - set via local.properties at compile time.
+     * 3. DEMO_KEY ("1") - TheCocktailDB's public development key.
      *
      * @return Active API key. Never null, never empty.
      */
@@ -100,7 +100,7 @@ public class TheCocktailDbConfig extends NetworkConfig {
             return BuildConfig.THECOCKTAILDB_API_KEY;
         }
 
-        // Priority 3: public development key — always works
+        // Priority 3: public development key - always works
         return TheCocktailDbConstants.DEMO_KEY;
     }
 

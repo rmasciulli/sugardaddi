@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    detail_mealdb_recipe.xml — Layout inflated by MealDbRecipeDetailRenderer.
+    detail_mealdb_recipe.xml - Layout inflated by MealDbRecipeDetailRenderer.
 
     STRUCTURE (mirrors product detail layouts):
-      1. Hero image — full-width, no card, GONE when no imageUrl
-      2. Main content card — single card with three sections + two dividers:
+      1. Hero image - full-width, no card, GONE when no imageUrl
+      2. Main content card - single card with three sections + two dividers:
            a. Header: name + area·category description
            b. Ingredients: dot-leader rows (FoodPortion stubs)
            c. Instructions: numbered step rows (RecipeStep list)
-      3. Attribution card — amber, separate, tappable (TheMealDB credit)
+      3. Attribution card - amber, separate, tappable (TheMealDB credit)
 
     DESIGN RATIONALE:
     One content card with internal dividers matches the established pattern
     from detail_off_product.xml and detail_ciqual_product.xml. Section headers
-    use textAppearanceLabelMedium + letterSpacing — not bold Headline6 titles.
+    use textAppearanceLabelMedium + letterSpacing - not bold Headline6 titles.
 
     WHAT IS NOT SHOWN:
       - Nutrition (TheMealDB provides none)
       - Difficulty / prep time / cook time (not available from this source)
-      - Edit button (external recipe — read-only)
+      - Edit button (external recipe - read-only)
 
     The video button lives in the activity toolbar (action_video menu item).
 -->
@@ -36,7 +36,7 @@
         android:orientation="vertical">
 
         <!-- ================================================= -->
-        <!-- 1. HERO IMAGE — full-width, GONE when no imageUrl -->
+        <!-- 1. HERO IMAGE - full-width, GONE when no imageUrl -->
         <!-- ================================================= -->
         <FrameLayout
             android:id="@+id/heroImageContainer"
@@ -132,7 +132,7 @@
                     android:paddingTop="10dp"
                     android:paddingBottom="10dp">
 
-                    <!-- Compact section header — matches product layout style -->
+                    <!-- Compact section header - matches product layout style -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

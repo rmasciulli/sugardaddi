@@ -36,7 +36,7 @@ import li.masciul.sugardaddi.utils.image.ImageProcessor;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
- * RecipeDetailsActivity — Detail screen for Recipe items.
+ * RecipeDetailsActivity - Detail screen for Recipe items.
  *
  * ARCHITECTURE
  * ============
@@ -56,20 +56,20 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *     - Toolbar title     → DetailRenderer.getToolbarTitle()
  *     - Cleanup           → DetailRenderer.destroy()
  *
- * RENDERER REGISTRATION ORDER (first match wins — most specific first):
- *   1. MealDbRecipeDetailRenderer  — Recipe + DataSourceType.THEMEALDB
- *   2. DefaultRecipeDetailRenderer — Recipe (catch-all for USER and future sources)
+ * RENDERER REGISTRATION ORDER (first match wins - most specific first):
+ *   1. MealDbRecipeDetailRenderer  - Recipe + DataSourceType.THEMEALDB
+ *   2. DefaultRecipeDetailRenderer - Recipe (catch-all for USER and future sources)
  *
  * INTENT EXTRAS
  * =============
- *   EXTRA_RECIPE_ID : String — source-qualified recipe ID (e.g. "THEMEALDB:52772",
+ *   EXTRA_RECIPE_ID : String - source-qualified recipe ID (e.g. "THEMEALDB:52772",
  *                    "USER:some-uuid"). Produced by Recipe.getSearchableId().
  *
  * MENU
  * ====
  *   Favourite : toggles border/filled star via RecipeManager.toggleFavorite()
  *   Share     : shares recipe name and source as plain text
- *   Video     : opens videoUrl in browser — shown only when recipe.getVideoUrl() != null
+ *   Video     : opens videoUrl in browser - shown only when recipe.getVideoUrl() != null
  *
  * @version 1.0
  */
@@ -102,7 +102,7 @@ public class RecipeDetailsActivity extends BaseActivity
     /** Container into which the active renderer inflates its layout. */
     private FrameLayout rendererContentContainer;
 
-    // State views — same IDs as activity_product_details.xml
+    // State views - same IDs as activity_product_details.xml
     private View loadingView;
     private View errorView;
     private TextView errorTitle;
@@ -117,7 +117,7 @@ public class RecipeDetailsActivity extends BaseActivity
 
     @Override
     protected void onBaseActivityCreated(Bundle savedInstanceState) {
-        // Register ActivityResultLaunchers before onStart() — safe here because
+        // Register ActivityResultLaunchers before onStart() - safe here because
         // onBaseActivityCreated() is called from BaseActivity.onCreate().
         imagePicker = new ImagePickerHelper(this);
 
@@ -165,7 +165,7 @@ public class RecipeDetailsActivity extends BaseActivity
         errorTitle               = findViewById(R.id.errorTitle);
         errorMessage             = findViewById(R.id.errorMessage);
 
-        // Retry button — reload the same recipe ID on tap
+        // Retry button - reload the same recipe ID on tap
         View retryButton = findViewById(R.id.retryButton);
         if (retryButton != null) {
             retryButton.setOnClickListener(v -> {
@@ -176,7 +176,7 @@ public class RecipeDetailsActivity extends BaseActivity
             });
         }
 
-        // "Add to Meal" container (present in layout) — hide it:
+        // "Add to Meal" container (present in layout) - hide it:
         // recipe-to-meal composition is a future feature, not implemented yet.
         View addToMealContainer = findViewById(R.id.addToMealContainer);
         if (addToMealContainer != null) {
@@ -280,7 +280,7 @@ public class RecipeDetailsActivity extends BaseActivity
         // 1. Resolve renderer
         DetailRenderer renderer = rendererRegistry.resolveOrNull(recipe);
         if (renderer == null) {
-            // No renderer registered for this recipe type — programming error, surface it gracefully
+            // No renderer registered for this recipe type - programming error, surface it gracefully
             Log.e(TAG, "No renderer found for recipe source: " + recipe.getDataSource());
             showError(Error.validation(getSafeString(R.string.error_loading_recipe), null));
             return;
@@ -395,7 +395,7 @@ public class RecipeDetailsActivity extends BaseActivity
             videoItem.setVisible(hasVideo);
         }
 
-        // Web button — shown only for sources with a public recipe page
+        // Web button - shown only for sources with a public recipe page
         MenuItem webItem = menu.findItem(R.id.action_open_web);
         if (webItem != null) {
             Recipe recipe = recipeManager.getCurrentRecipe();
@@ -407,7 +407,7 @@ public class RecipeDetailsActivity extends BaseActivity
             }
         }
 
-        // Remove image — shown only when user has set a custom full-size image.
+        // Remove image - shown only when user has set a custom full-size image.
         MenuItem removeImageItem = menu.findItem(R.id.action_remove_image);
         if (removeImageItem != null) {
             Recipe recipe = recipeManager.getCurrentRecipe();
@@ -416,7 +416,7 @@ public class RecipeDetailsActivity extends BaseActivity
                     && !recipe.getUserImagePath().trim().isEmpty());
         }
 
-        // Remove thumbnail — shown only when user has set a custom thumbnail.
+        // Remove thumbnail - shown only when user has set a custom thumbnail.
         MenuItem removeThumbnailItem = menu.findItem(R.id.action_remove_thumbnail);
         if (removeThumbnailItem != null) {
             Recipe recipe = recipeManager.getCurrentRecipe();
@@ -485,7 +485,7 @@ public class RecipeDetailsActivity extends BaseActivity
         int  jpegQuality;
 
         if (isThumbnail) {
-            // Deterministic name: {id}_custom.jpg — co-exists with auto-cached thumbnail.
+            // Deterministic name: {id}_custom.jpg - co-exists with auto-cached thumbnail.
             destinationFile = storage.getUserThumbnailFile(recipe.getSearchableId());
             maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
             jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
@@ -616,7 +616,7 @@ public class RecipeDetailsActivity extends BaseActivity
      * optionally the video URL as plain text.
      *
      * Recipe page URL (TheMealDB / TheCocktailDB) is the primary shareable
-     * link — it works for anyone regardless of whether they have the app.
+     * link - it works for anyone regardless of whether they have the app.
      * Video URL is appended as a secondary link when available.
      */
     private void shareRecipe() {
@@ -628,7 +628,7 @@ public class RecipeDetailsActivity extends BaseActivity
 
         shareText.append(recipe.getDisplayName(language));
 
-        // Source attribution — "via TheMealDB" etc.
+        // Source attribution - "via TheMealDB" etc.
         if (recipe.getDataSource() != null) {
             shareText.append("\n")
                     .append(getSafeString(R.string.share_recipe_source_prefix))
@@ -636,13 +636,13 @@ public class RecipeDetailsActivity extends BaseActivity
                     .append(recipe.getDataSource().getDisplayName(this));
         }
 
-        // Recipe page URL — primary shareable link
+        // Recipe page URL - primary shareable link
         String recipeUrl = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
         if (recipeUrl != null) {
             shareText.append("\n").append(recipeUrl);
         }
 
-        // Video URL — secondary link, appended when present
+        // Video URL - secondary link, appended when present
         if (recipe.getVideoUrl() != null && !recipe.getVideoUrl().trim().isEmpty()) {
             shareText.append("\n").append(recipe.getVideoUrl());
         }
@@ -686,7 +686,7 @@ public class RecipeDetailsActivity extends BaseActivity
     /**
      * Opens the recipe's page on TheMealDB or TheCocktailDB in the device browser.
      *
-     * Only called when the web button is visible — which only happens when
+     * Only called when the web button is visible - which only happens when
      * RecipeUrlBuilder.hasWebsiteSupport() returns true for this recipe.
      * Mirrors ProductDetailsActivity.openInBrowser() exactly.
      */
