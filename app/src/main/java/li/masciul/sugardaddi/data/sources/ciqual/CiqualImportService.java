@@ -382,6 +382,7 @@ public class CiqualImportService extends Service {
         if (ok(catFr))  sb.append(catFr.toLowerCase());
         e.setSearchableText(sb.toString().trim());
         e.setCreatedAt(now); e.setLastUpdated(now);
+        e.setLocalImport(true);   // bulk-imported Ciqual dataset row: TTL-exempt, cleared only via Settings cache management
         e.setDataCompleteness(0.0f);
         return e;
     }

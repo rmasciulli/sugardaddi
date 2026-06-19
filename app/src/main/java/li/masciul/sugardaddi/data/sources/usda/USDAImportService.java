@@ -382,6 +382,7 @@ public class USDAImportService extends Service {
         entity.setSearchableText(searchable);
 
         entity.setCreatedAt(System.currentTimeMillis());
+        entity.setLocalImport(true);   // bulk-imported USDA dataset row: TTL-exempt, cleared only via Settings cache management
 
         productBatch.add(entity);
 
