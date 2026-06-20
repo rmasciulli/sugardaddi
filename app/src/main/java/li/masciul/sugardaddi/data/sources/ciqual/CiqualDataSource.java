@@ -364,42 +364,6 @@ public class CiqualDataSource extends BaseDataSource {
         });
     }
 
-    /**
-     * Automatically starts CiqualImportService if:
-     *   - The DB has never been imported, OR
-     *   - The stored version doesn't match CiqualConstants.DATASET_VERSION
-     *
-     * Uses startForegroundService so the OS allows it from a background thread.
-     * The import runs in its own foreground service - this call returns immediately.
-     * search() continues using the ES API as fallback until the import completes.
-     */
-    /**
-     * Starts CiqualImportService if the local DB is missing or stale.
-     *
-     * THREADING: initializeCategoryLookupAsync() runs on backgroundExecutor.
-     * startForegroundService() must be called from the main thread on Android 12+
-     * to avoid ForegroundServiceStartNotAllowedException.
-     * We post to mainHandler to guarantee this.
-     */
-    public void triggerImportIfNeeded() {
-        if (!CiqualImportService.needsUpdate(context)) {
-            logDebug("Ciqual DB is current (v" + CiqualImportService.getImportedVersion(context) + ") - skipping import");
-            return;
-        }
-        logInfo("Ciqual DB needs import (stored=" + CiqualImportService.getImportedVersion(context)
-                + ", current=" + CiqualConstants.DATASET_VERSION + ")");
-        // Post to main thread - startForegroundService() must be called from foreground
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-            try {
-                Intent intent = new Intent(context, CiqualImportService.class);
-                context.startForegroundService(intent);
-                logInfo("CiqualImportService started");
-            } catch (Exception e) {
-                logError("Failed to start CiqualImportService (non-fatal, ES API still available)", e);
-            }
-        });
-    }
-
     // ========== REQUIRED BASEDATASOURCE METHODS ==========
 
     @NonNull

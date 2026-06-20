@@ -38,7 +38,6 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.aggregation.DataSourceAggregator;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
-import li.masciul.sugardaddi.data.sources.ciqual.CiqualImportService;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.ui.adapters.AutocompleteAdapter;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
@@ -174,12 +173,6 @@ public class MainActivity extends BaseActivity implements
 
         showEmptyState();
         logDebug("MainActivity v3.0 initialized");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        triggerCiqualImportIfNeeded();
     }
 
     @Override
@@ -631,25 +624,6 @@ public class MainActivity extends BaseActivity implements
             errorMessage.setText(error.getMessage() != null
                     ? error.getMessage()
                     : getSafeString(R.string.error_network_message));
-        }
-    }
-
-    // =========================================================================
-    // CIQUAL IMPORT
-    // =========================================================================
-
-    /**
-     * Trigger CiqualImportService if the local DB is absent or stale.
-     * Called from onResume - the app must be in the foreground for
-     * startForegroundService() to be allowed on API 34+.
-     */
-    private void triggerCiqualImportIfNeeded() {
-        if (!CiqualImportService.needsUpdate(this)) return;
-        try {
-            startForegroundService(new Intent(this, CiqualImportService.class));
-            logDebug("CiqualImportService auto-started");
-        } catch (Exception e) {
-            logError("Failed to auto-start CiqualImportService", e);
         }
     }
 
