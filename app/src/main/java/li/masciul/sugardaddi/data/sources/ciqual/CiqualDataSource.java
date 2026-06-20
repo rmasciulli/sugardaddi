@@ -17,6 +17,7 @@ import li.masciul.sugardaddi.data.database.dao.NutritionDao;
 import li.masciul.sugardaddi.data.network.NetworkClient;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
+import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import li.masciul.sugardaddi.data.sources.ciqual.api.CiqualAPI;
@@ -585,12 +586,12 @@ public class CiqualDataSource extends BaseDataSource {
         handleError(error, callback);
     }
 
-    // ========== NEW: AUTOCOMPLETE METHOD ==========
+    // ========== AUTOCOMPLETE METHOD ==========
 
     /**
      * Autocomplete search using optimized phrase prefix query
      *
-     * NEW METHOD: Separate from regular search() - uses match_phrase_prefix for
+     * Separate from regular search() - uses match_phrase_prefix for
      * partial word matching, making it ideal for typeahead suggestions.
      *
      * DIFFERENCE FROM search():
@@ -746,6 +747,13 @@ public class CiqualDataSource extends BaseDataSource {
         // imported items resolve offline, so the source only strictly requires network
         // when no local dataset is present.
         return !CiqualImportService.isImported(context);
+    }
+
+    @Override
+    public CacheStrategy getCacheStrategy() {
+        // Slow-moving reference dataset; live single-item fetches need only an
+        // occasional refresh.
+        return CacheStrategy.staleAfter(30L * 24 * 60 * 60 * 1000); // 30 days
     }
 
     @NonNull

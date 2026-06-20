@@ -157,6 +157,15 @@ public interface DataSource {
     }
 
     /**
+     * Cache freshness policy for this source (default 24h). Slow-moving sources
+     * (Ciqual, USDA) override with a longer window; the resolver layers the
+     * localImport/favourite overrides on top.
+     */
+    default CacheStrategy getCacheStrategy() {
+        return CacheStrategy.defaultStrategy();
+    }
+
+    /**
      * Search for food products matching the query.
      *
      * @param query    Search string (minimum 3 characters recommended)

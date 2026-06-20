@@ -24,6 +24,7 @@ import li.masciul.sugardaddi.data.network.NetworkManager;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 // DataSource imports
+import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 
@@ -66,12 +67,11 @@ public class ProductRepository {
 
     // ========== CONFIGURATION ==========
 
-    // Database cache settings
-    private static final long DEFAULT_CACHE_VALIDITY_MS = 24 * 60 * 60 * 1000; // 24 hours
-    private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days for favorites
-    private long cacheValidityMs = DEFAULT_CACHE_VALIDITY_MS;
+    // Staleness threshold (7 days for favorites)
+    private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000;
 
     // ========== STATE TRACKING ==========
+
     private boolean isOperationInProgress = false;
 
     // ========== CALLBACK INTERFACES ==========
@@ -133,11 +133,14 @@ public class ProductRepository {
         }
         final String cleanBarcode = barcode.trim();
         // Barcode rows are keyed on the barcode column; OFF is the network source.
-        resolveProduct(cleanBarcode, cb ->
-                networkManager.getProduct(cleanBarcode, new NetworkManager.NetworkCallback<FoodProduct>() {
-                    @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
-                    @Override public void onFailure(String error) { cb.onError(mapNetworkError(error, cleanBarcode)); }
-                }), callback);
+        resolveProduct(cleanBarcode,
+                cb -> networkManager.getProduct(cleanBarcode,
+                        new NetworkManager.NetworkCallback<FoodProduct>() {
+                            @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
+                            @Override public void onFailure(String error) { cb.onError(mapNetworkError(error, cleanBarcode)); }
+                        }),
+                CacheStrategy.defaultStrategy(),
+                callback);
     }
 
     /**
@@ -175,12 +178,15 @@ public class ProductRepository {
         // Same string as FoodProduct.getSearchableId() / the entity id.
         final String roomKey = new SourceIdentifier(cleanSourceId, cleanProductId).getCombinedId();
 
-        resolveProduct(roomKey, cb ->
-                source.getProduct(cleanProductId, language, new DataSourceCallback<FoodProduct>() {
-                    @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
-                    @Override public void onError(Error error) { cb.onError(error); }
-                    @Override public void onLoading() {}
-                }), callback);
+        resolveProduct(roomKey,
+                cb -> source.getProduct(cleanProductId, language,
+                        new DataSourceCallback<FoodProduct>() {
+                            @Override public void onSuccess(FoodProduct product) { cb.onSuccess(product); }
+                            @Override public void onError(Error error) { cb.onError(error); }
+                            @Override public void onLoading() {}
+                        }),
+                source.getCacheStrategy(),
+                callback);
     }
 
     /**
@@ -586,6 +592,7 @@ public class ProductRepository {
      */
     private void resolveProduct(@NonNull String roomKey,
                                 @NonNull NetworkFetch fetch,
+                                @NonNull CacheStrategy strategy,
                                 @NonNull ProductCallback callback) {
         callback.onLoading();
         isOperationInProgress = true;
@@ -600,9 +607,10 @@ public class ProductRepository {
                     cached.product.recordAccess();
                     database.foodProductDao().updateProduct(cached.product);
 
-                    long maxAge = cached.product.isFavorite()
-                            ? FAVORITE_CACHE_VALIDITY_MS : cacheValidityMs;
-                    boolean stale = cached.product.isStale(maxAge);
+                    // Staleness comes from the source strategy + row overrides.
+                    boolean stale = isStale(cached.product.isLocalImport(),
+                            cached.product.isFavorite(),
+                            cached.product.getLastUpdated(), strategy);
 
                     // Always show the cached version immediately.
                     FoodProduct product = cached.toFoodProduct();
@@ -625,6 +633,20 @@ public class ProductRepository {
                 fetchSaveAndPush(fetch, callback);
             }
         });
+    }
+
+    /**
+     * Combined staleness: the source CacheStrategy plus row-level overrides.
+     *  - localImport rows (bulk dataset members) never auto-refresh.
+     *  - favourites stay fresh for at least the favourite floor.
+     */
+    private boolean isStale(boolean localImport, boolean favorite,
+                            long lastUpdatedMs, CacheStrategy strategy) {
+        if (localImport || strategy.isNeverStale()) return false;
+        long ttl = favorite
+                ? Math.max(strategy.getStaleAfterMs(), FAVORITE_CACHE_VALIDITY_MS)
+                : strategy.getStaleAfterMs();
+        return (System.currentTimeMillis() - lastUpdatedMs) > ttl;
     }
 
     /** Network fetch → synchronous save → re-read merged row → push to caller. */

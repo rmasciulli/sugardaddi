@@ -16,6 +16,7 @@ import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.RecipeDao;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.network.ApiConfig;
+import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.managers.DataSourceManager;
@@ -58,9 +59,8 @@ public class RecipeRepository {
 
     // ========== CONFIGURATION ==========
 
-    // Staleness thresholds (mirror ProductRepository). Replaced by CacheStrategy later.
-    private static final long RECIPE_CACHE_VALIDITY_MS = 24 * 60 * 60 * 1000L;              // 24h
-    private static final long FAVORITE_RECIPE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000L; // 7d
+    // Staleness threshold (7 days for favorites)
+    private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000L;
 
     // ========== CALLBACK INTERFACES ==========
 
@@ -250,9 +250,9 @@ public class RecipeRepository {
                     cached.recordAccess();            // accessCount + lastViewed
                     recipeDao.update(cached);
 
-                    long maxAge = cached.isFavorite()
-                            ? FAVORITE_RECIPE_CACHE_VALIDITY_MS : RECIPE_CACHE_VALIDITY_MS;
-                    boolean stale = cached.isStale(maxAge);
+                    boolean stale = isStale(cached.isLocalImport(),
+                            cached.isFavorite(),
+                            cached.getLastUpdated(), source.getCacheStrategy());
 
                     Recipe recipe = cached.toRecipe();
                     runOnMainThread(() -> callback.onSuccess(recipe));
@@ -272,6 +272,20 @@ public class RecipeRepository {
         });
     }
 
+    /**
+     * Combined staleness: the source CacheStrategy plus row-level overrides.
+     *  - localImport rows (bulk dataset members) never auto-refresh.
+     *  - favourites stay fresh for at least the favourite floor.
+     */
+    private boolean isStale(boolean localImport, boolean favorite,
+                            long lastUpdatedMs, CacheStrategy strategy) {
+        if (localImport || strategy.isNeverStale()) return false;
+        long ttl = favorite
+                ? Math.max(strategy.getStaleAfterMs(), FAVORITE_CACHE_VALIDITY_MS)
+                : strategy.getStaleAfterMs();
+        return (System.currentTimeMillis() - lastUpdatedMs) > ttl;
+    }
+    
     /** Network fetch → synchronous save → re-read merged row → push to caller. */
     private void fetchSaveAndPushRecipe(@NonNull DataSource source, @NonNull String originalId,
                                         @NonNull String language, @NonNull RecipeCallback callback) {

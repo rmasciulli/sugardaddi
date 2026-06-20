@@ -26,6 +26,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.network.NetworkClient;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
+import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.data.sources.base.DataSource.SearchResult;
 import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
@@ -79,7 +80,8 @@ public class USDADataSource extends BaseDataSource {
 
     private static final String TAG = "USDADataSource";
 
-    // ===== API & CONFIGURATION =====
+    // ========== API & CONFIGURATION ==========
+
     private FoodDataCentralAPI api;
     private final USDAConfig config;
     private final Context context;
@@ -88,20 +90,23 @@ public class USDADataSource extends BaseDataSource {
     private final Set<Call<?>> activeCalls =
             Collections.synchronizedSet(new HashSet<>());
 
-    // ===== DATABASE =====
+    // ========== DATABASE ==========
+
     private final AppDatabase   database;
     private final FoodProductDao productDao;
     private final NutritionDao   nutritionDao;
     private final CombinedProductDao combinedDao;
 
-    // ===== BACKGROUND WORK =====
+    // ========== BACKGROUND WORK ==========
+
     private final ExecutorService backgroundExecutor =
             Executors.newSingleThreadExecutor();
 
-    // ===== SETTINGS =====
+    // ========== SETTINGS ==========
+
     private final USDASettingsProvider settingsProvider = new USDASettingsProvider();
 
-    // ===== CONSTRUCTOR =====
+    // ========== CONSTRUCTOR ==========
 
     public USDADataSource(@NonNull Context context, @NonNull USDAConfig config) {
         super();
@@ -116,7 +121,7 @@ public class USDADataSource extends BaseDataSource {
         Log.d(TAG, "USDADataSource created (deferred initialization)");
     }
 
-    // ===== BASEDATASOURCE REQUIRED METHODS =====
+    // ========== BASEDATASOURCE REQUIRED METHODS ==========
 
     @NonNull
     @Override
@@ -140,6 +145,13 @@ public class USDADataSource extends BaseDataSource {
     @Override
     public Set<ProductType> getProducedTypes() {
         return Collections.singleton(ProductType.FOOD);
+    }
+
+    @Override
+    public CacheStrategy getCacheStrategy() {
+        // Slow-moving reference dataset; live single-item fetches need only an
+        // occasional refresh.
+        return CacheStrategy.staleAfter(30L * 24 * 60 * 60 * 1000); // 30 days
     }
 
     @Nullable
@@ -169,7 +181,7 @@ public class USDADataSource extends BaseDataSource {
         return "en";
     }
 
-    // ===== INITIALIZATION =====
+    // ========== INITIALIZATION ==========
 
     @Override
     protected void onInitialize(@NonNull Context context) throws Exception {
@@ -203,7 +215,7 @@ public class USDADataSource extends BaseDataSource {
         }
     }
 
-    // ===== SEARCH =====
+    // ========== SEARCH ==========
 
     /**
      * Search for USDA foods.
@@ -344,7 +356,7 @@ public class USDADataSource extends BaseDataSource {
         });
     }
 
-    // ===== PRODUCT DETAIL =====
+    // ========== PRODUCT DETAIL ==========
 
     /**
      * Fetch full product detail from FDC by fdcId.
@@ -438,7 +450,7 @@ public class USDADataSource extends BaseDataSource {
                         "Use getProduct() with an fdcId.", null), callback);
     }
 
-    // ===== AUTOCOMPLETE =====
+    // ========== AUTOCOMPLETE ==========
 
     /**
      * Autocomplete search - uses the regular API with a small limit.
@@ -517,8 +529,8 @@ public class USDADataSource extends BaseDataSource {
             }
         });
     }
-
-    // ===== CANCELLATION =====
+    
+    // ========== CANCELLATION ==========
 
     @Override
     public void cancelOperations() {
@@ -539,7 +551,7 @@ public class USDADataSource extends BaseDataSource {
         logDebug("USDADataSource cleanup complete");
     }
 
-    // ===== HELPERS =====
+    // ========== HELPERS ==========
 
     /**
      * Resolve the active API key from SharedPreferences → BuildConfig → DEMO_KEY.
