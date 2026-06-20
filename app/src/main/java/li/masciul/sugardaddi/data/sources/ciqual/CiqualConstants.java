@@ -7,7 +7,8 @@ package li.masciul.sugardaddi.data.sources.ciqual;
  * 1. Update DATASET_VERSION to the new date string (e.g. "2026_04_01")
  * 2. Update ZENODO_RECORD_ID to the new Zenodo record number
  * 3. Update ASSET_ALIM, ASSET_COMPO filenames to match the new release
- * 4. Replace the bundled asset files in app/src/main/assets/
+ * 4. Replace the bundled alim_grp asset in app/src/main/assets/ (alim and compo
+ *    are fetched from Zenodo, so only the category file ships)
  * 5. Bump AppDatabase version if schema changed
  *
  * The app will detect the version mismatch on next launch and re-import automatically.
@@ -45,13 +46,6 @@ public class CiqualConstants {
     /**
      * The three XML files that make up the Ciqual dataset.
      * Each constant is the filename as it appears on Zenodo and in assets/.
-     *
-     * ASSET_GRP  - category hierarchy (80KB). Always bundled. Loaded at startup.
-     * ASSET_ALIM - 3484 foods with names, codes, categories (1.6MB). Bundled.
-     * ASSET_COMPO - 174K composition rows mapping const_code to nutrient values (69MB). Bundled.
-     *
-     * If a file is present in assets/, it is used directly.
-     * If not (e.g. clean install without bundled assets), it is downloaded from Zenodo.
      */
     public static final String ASSET_GRP   = "alim_grp_"   + DATASET_VERSION + ".xml";
     public static final String ASSET_ALIM  = "alim_"       + DATASET_VERSION + ".xml";

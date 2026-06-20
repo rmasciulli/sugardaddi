@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.data.sources.ciqual;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -134,9 +132,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class CiqualDataSource extends BaseDataSource {
 
     private static final String TAG = "CiqualDataSource";
-    private static final String PREFS_NAME = "ciqual_prefs";
-    private static final String KEY_LAST_UPDATE = "last_update";
-    private static final String KEY_DB_READY = "database_ready";
 
     // ========== ELASTICSEARCH API ==========
 
@@ -183,16 +178,6 @@ public class CiqualDataSource extends BaseDataSource {
     private final CombinedProductDao combinedDao;
 
     /**
-     * Database ready flag
-     */
-    private boolean databaseReady = false;
-
-    /**
-     * Shared preferences for state persistence
-     */
-    private final SharedPreferences prefs;
-
-    /**
      * Application context
      */
     private final Context context;
@@ -222,8 +207,6 @@ public class CiqualDataSource extends BaseDataSource {
         this.productDao = database.foodProductDao();
         this.nutritionDao = database.nutritionDao();
         this.combinedDao = database.combinedProductDao();
-        this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        this.databaseReady = prefs.getBoolean(KEY_DB_READY, false);
 
         Log.d(TAG, "CiqualDataSource created (deferred initialization)");
     }
@@ -825,9 +808,10 @@ public class CiqualDataSource extends BaseDataSource {
 
     @Override
     public boolean requiresNetwork() {
-        // Phase 1: Always requires network (API only)
-        // Phase 3: Will check databaseReady flag
-        return !databaseReady;
+        // Live ES search/fetch needs network. Once the dataset is imported to Room,
+        // imported items resolve offline, so the source only strictly requires network
+        // when no local dataset is present.
+        return !CiqualImportService.isImported(context);
     }
 
     @NonNull
