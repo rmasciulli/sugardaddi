@@ -44,90 +44,24 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
- * CiqualDataSource - French food composition database by ANSES
+ * CiqualDataSource - French food composition database (Ciqual, by ANSES).
  *
- * VERSION 2.1 - ASYNC INITIALIZATION WITH DUAL-MODE READINESS
+ * Two complementary data paths:
  *
- * TRI-MODAL OPERATIONAL STRATEGY:
- * ================================
- * This data source supports THREE operational modes with automatic fallback:
+ *   1. Live Elasticsearch API (default). Reverse-engineered from ANSES's backend
+ *      (no official API exists). Provides search(), per-item getProduct() by code,
+ *      and autocomplete(). Requires network.
  *
- * MODE 1: ELASTICSEARCH API (Phase 1) [ACTIVE] ACTIVE
- * - Real-time search via Elasticsearch endpoint
- * - Fast (1-10ms response time)
- * - Relevance-scored results
- * - No authentication required
- * - Status: [DONE] IMPLEMENTED
- * - Availability: Ready once network is up (~500ms)
+ *   2. Local Room cache (optional). When the user imports the dataset from Zenodo
+ *      via the DataSources screen (CiqualImportService), search() is local-first and
+ *      falls through to the ES API; imported items resolve offline. Imported rows are
+ *      flagged localImport=true and exempt from TTL eviction.
  *
- * MODE 2: XML DOWNLOAD & PARSE (Phase 2) [BUNDLED] PLANNED
- * - Download full Ciqual database as ZIP
- * - Parse 3000+ XML files with CiqualXmlParser
- * - One-time setup, periodic updates
- * - Populates local database
- * - Status: [WIP] Initialization framework ready, implementation TODO
- * - Availability: Ready after XML parsing completes (~30-60s)
+ * Category breadcrumbs come from the bundled alim_grp lookup (CiqualCategoryLookup);
+ * the ES response's flat category is used as a fallback when the lookup isn't ready.
  *
- * MODE 3: LOCAL DATABASE (Phase 3) [LOCAL DB] PLANNED
- * - Query local Room database
- * - Fast, offline-capable
- * - Pre-populated from XML or API
- * - Status: [WIP] TODO
- *
- * ✨ NEW IN v2.1: PROGRESSIVE AVAILABILITY
- * ========================================
- * Sources can now signal readiness in stages:
- *
- * 1. API READY (~500ms):
- *    - Network client initialized
- *    - Can perform searches and lookups
- *    - Requires internet connection
- *    → onInitialized() callback fires
- *    → isAvailable() returns true
- *
- * 2. XML READY (~30-60s, background):
- *    - XML parser initialized
- *    - Full database available locally
- *    - Can perform enriched lookups
- *    → onXmlParserReady() callback fires (optional listener)
- *    → xmlParserAvailable() returns true
- *
- * This allows the app to start using the API immediately while XML
- * parsing happens in the background without blocking.
- *
- * USAGE:
- * ```java
- * CiqualConfig config = new CiqualConfig();
- * CiqualDataSource source = new CiqualDataSource(context, config);
- *
- * // Async initialization with progressive callbacks
- * source.initialize(context, new InitializationCallback() {
- *     @Override
- *     public void onInitialized() {
- *         // API is ready! Can start searching immediately
- *         source.search("fraise", "fr", 10, searchCallback);
- *     }
- *
- *     @Override
- *     public void onInitializationFailed(Error error) {
- *         // Handle initialization failure
- *     }
- * });
- *
- * // Optional: Listen for XML parser readiness
- * source.setXmlParserListener(new XmlParserListener() {
- *     @Override
- *     public void onXmlParserReady() {
- *         // XML parser ready - can do enriched lookups
- *     }
- * });
- * ```
- *
- * @see BaseDataSource
- * @see CiqualConfig
- * @see CiqualAPI
- * @author SugarDaddi Team
- * @version 2.1 (Async Dual-Mode Initialization)
+ * Initialization is deferred: the constructor is lightweight; the API client and the
+ * category lookup are built in onInitialize().
  */
 public class CiqualDataSource extends BaseDataSource {
 
