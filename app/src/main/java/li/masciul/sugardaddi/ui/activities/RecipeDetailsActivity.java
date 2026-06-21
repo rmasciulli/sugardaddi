@@ -15,6 +15,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.io.File;
 import java.util.concurrent.Executors;
 
@@ -108,6 +110,10 @@ public class RecipeDetailsActivity extends BaseActivity
     private TextView errorTitle;
     private TextView errorMessage;
 
+    // Refresh recipe information FAB
+    private View refreshFabContainer;
+    private FloatingActionButton refreshFab;
+
     // ========== BUSINESS LOGIC ==========
 
     private RecipeManager recipeManager;
@@ -182,6 +188,13 @@ public class RecipeDetailsActivity extends BaseActivity
         if (addToMealContainer != null) {
             addToMealContainer.setVisibility(View.GONE);
         }
+
+        // Refresh recipe information FAB
+        refreshFabContainer = findViewById(R.id.refreshFabContainer);
+        refreshFab = findViewById(R.id.refreshFab);
+        if (refreshFab != null) {
+            refreshFab.setOnClickListener(v -> recipeManager.applyPendingRefresh());
+        }
     }
 
     private void initializeBusinessLogic() {
@@ -230,17 +243,25 @@ public class RecipeDetailsActivity extends BaseActivity
         // Invalidate the options menu so onPrepareOptionsMenu() can show/hide
         // the video button now that we have recipe data.
         invalidateOptionsMenu();
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
     }
 
     @Override
     public void onRecipeError(@NonNull Error error) {
         logDebug("Recipe load failed: " + error.getMessage());
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
         showError(error);
     }
 
     @Override
     public void onRecipeLoading() {
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
         showLoading();
+    }
+
+    @Override
+    public void onRefreshAvailable() {
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.VISIBLE);
     }
 
     @Override

@@ -16,6 +16,8 @@ import androidx.appcompat.widget.Toolbar;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.io.File;
 import java.util.concurrent.Executors;
 
@@ -128,6 +130,10 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     // "Add to Meal" bottom bar (shown only in meal context)
     private LinearLayout addToMealContainer;
 
+    // Refresh product information FAB
+    private View refreshFabContainer;
+    private FloatingActionButton refreshFab;
+
     // ========== BUSINESS LOGIC ==========
 
     private ProductManager productManager;
@@ -194,6 +200,13 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         View retryButton = findViewById(R.id.retryButton);
         if (retryButton != null) {
             retryButton.setOnClickListener(v -> productManager.refreshProduct());
+        }
+
+        // Refresh product information FAB
+        refreshFabContainer = findViewById(R.id.refreshFabContainer);
+        refreshFab = findViewById(R.id.refreshFab);
+        if (refreshFab != null) {
+            refreshFab.setOnClickListener(v -> productManager.applyPendingRefresh());
         }
     }
 
@@ -273,17 +286,25 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
         displayProduct(product, language);
         invalidateOptionsMenu(); // Refresh menu (favorite icon, web button)
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
     }
 
     @Override
     public void onProductError(Error error) {
         logError("Product loading failed: " + error.getType() + " - " + error.getMessage(), null);
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
         showError(error);
     }
 
     @Override
     public void onProductLoading() {
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
         showLoading();
+    }
+
+    @Override
+    public void onRefreshAvailable() {
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.VISIBLE);
     }
 
     @Override

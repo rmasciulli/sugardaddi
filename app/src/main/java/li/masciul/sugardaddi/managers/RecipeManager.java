@@ -67,6 +67,10 @@ public class RecipeManager {
     @Nullable private RecipeListener listener;
     @Nullable private Recipe currentRecipe;
     @Nullable private String currentSearchableId;
+
+    // Candidate from a stale background refresh, held until the user applies it via the FAB.
+    @Nullable private Recipe pendingRefreshCandidate;
+
     private boolean isLoading  = false;
     private boolean isFavorite = false;
 
@@ -124,6 +128,13 @@ public class RecipeManager {
          * @param message Human-readable error description
          */
         void onFavoriteError(@NonNull String message);
+
+        /**
+         * A stale-triggered background refresh found changed upstream content.
+         * The screen should surface the refresh affordance (FAB); tapping it calls
+         * applyPendingRefresh(). Default no-op for listeners with no detail screen.
+         */
+        default void onRefreshAvailable() {}
     }
 
     // ========== CONSTRUCTOR ==========
@@ -185,6 +196,7 @@ public class RecipeManager {
         }
 
         currentSearchableId = cleanId;
+        pendingRefreshCandidate = null;
         isLoading = true;
 
         if (ApiConfig.DEBUG_LOGGING) {
@@ -216,7 +228,45 @@ public class RecipeManager {
                 Log.w(TAG, "Recipe load failed: " + message);
                 notifyError(Error.network(message, null));
             }
+
+            @Override
+            public void onRefreshAvailable(Recipe candidate) {
+                pendingRefreshCandidate = candidate;
+                notifyRefreshAvailable();
+            }
         });
+    }
+
+    /**
+     * Apply the candidate offered by a stale background refresh (FAB tap).
+     * Saves the already-fetched candidate and re-renders - no second network call.
+     */
+    public void applyPendingRefresh() {
+        if (pendingRefreshCandidate == null) return;
+        Recipe candidate = pendingRefreshCandidate;
+        pendingRefreshCandidate = null;
+        repository.applyCandidate(candidate, new RecipeRepository.RecipeCallback() {
+            @Override
+            public void onSuccess(Recipe recipe) {
+                currentRecipe = recipe;          // keep manager state in sync with the applied row
+                notifyRecipeLoaded(recipe);
+            }
+            @Override
+            public void onError(String message) {
+                notifyError(Error.network(message, null));
+            }
+        });
+    }
+
+    /** Safely notify the listener that a refresh candidate is available. */
+    private void notifyRefreshAvailable() {
+        if (listener != null) {
+            try {
+                listener.onRefreshAvailable();
+            } catch (Exception e) {
+                Log.e(TAG, "Error in refresh-available callback", e);
+            }
+        }
     }
 
     /**
@@ -345,6 +395,7 @@ public class RecipeManager {
         listener        = null;
         currentRecipe   = null;
         currentSearchableId = null;
+        pendingRefreshCandidate = null;
         isFavorite      = false;
 
         if (ApiConfig.DEBUG_LOGGING) {

@@ -12,7 +12,7 @@ import li.masciul.sugardaddi.data.repository.ProductRepository;
 /**
  * ProductManager - High-level orchestration for product detail operations
  *
- * ✅ FIXED VERSION - Source-specific ID support
+ * Source-specific ID support
  *
  * CRITICAL FIX:
  * - Added detection for source-specific IDs (e.g., "CIQUAL:31020")
@@ -56,7 +56,11 @@ public class ProductManager {
     // State tracking
     private ProductListener listener;
     private FoodProduct currentProduct;
-    private String currentIdentifier;  // ✅ CHANGED: Was currentBarcode
+    private String currentIdentifier;
+
+    // Candidate from a stale background refresh, held until the user applies it via the FAB.
+    private FoodProduct pendingRefreshCandidate;
+
     private boolean isLoading = false;
     private boolean isFavorite = false;
 
@@ -102,6 +106,13 @@ public class ProductManager {
          * Should show error message
          */
         void onFavoriteError(String message);
+
+        /**
+         * A stale-triggered background refresh found changed upstream content.
+         * The screen should surface the refresh affordance (FAB); tapping it calls
+         * applyPendingRefresh(). Default no-op for listeners with no detail screen.
+         */
+        default void onRefreshAvailable() {}
     }
 
     /**
@@ -124,7 +135,7 @@ public class ProductManager {
     }
 
     /**
-     * ✅ FIXED: Load product by identifier (barcode OR source-specific ID)
+     * Load product by identifier (barcode OR source-specific ID)
      *
      * This method now intelligently handles both:
      * - Standard barcodes: "3017620422003" (EAN-13, UPC-A, etc.)
@@ -158,6 +169,7 @@ public class ProductManager {
         }
 
         currentIdentifier = cleanIdentifier;
+        pendingRefreshCandidate = null; // a new load invalidates any held refresh candidate
         isLoading = true;
 
         if (ApiConfig.DEBUG_LOGGING) {
@@ -166,7 +178,7 @@ public class ProductManager {
 
         notifyLoading();
 
-        // ✅ NEW: Detect identifier type and route accordingly
+        // Detect identifier type and route accordingly
         if (cleanIdentifier.contains(":")) {
             // SOURCE:ID format (e.g., "CIQUAL:31020")
             loadProductBySourceId(cleanIdentifier);
@@ -177,7 +189,7 @@ public class ProductManager {
     }
 
     /**
-     * ✅ NEW: Load product using source-specific ID
+     * Load product using source-specific ID
      *
      * Handles identifiers like "CIQUAL:31020" by:
      * 1. Parsing the source ID and product ID
@@ -244,6 +256,12 @@ public class ProductManager {
             public void onLoading() {
                 // Already handled by notifyLoading() call above
             }
+
+            @Override
+            public void onRefreshAvailable(FoodProduct candidate) {
+                pendingRefreshCandidate = candidate;
+                notifyRefreshAvailable();
+            }
         });
     }
 
@@ -284,6 +302,12 @@ public class ProductManager {
             @Override
             public void onLoading() {
                 // Already handled
+            }
+
+            @Override
+            public void onRefreshAvailable(FoodProduct candidate) {
+                pendingRefreshCandidate = candidate;
+                notifyRefreshAvailable();
             }
         });
     }
@@ -339,7 +363,7 @@ public class ProductManager {
         isLoading = true;
         notifyLoading();
 
-        // ✅ UPDATED: Handle both identifier types on refresh
+        // Handle both identifier types on refresh
         if (currentIdentifier.contains(":")) {
             // Can't refresh source-specific IDs through repository.refreshProduct()
             // Instead, just reload using the source
@@ -371,6 +395,35 @@ public class ProductManager {
                     // Already handled
                 }
             });
+        }
+    }
+
+    /**
+     * Apply the candidate offered by a stale background refresh (FAB tap).
+     * Saves the already-fetched candidate and re-renders - no second network call.
+     */
+    public void applyPendingRefresh() {
+        if (pendingRefreshCandidate == null) return;
+        FoodProduct candidate = pendingRefreshCandidate;
+        pendingRefreshCandidate = null;
+        repository.applyCandidate(candidate, new ProductRepository.ProductCallback() {
+            @Override public void onSuccess(FoodProduct product) {
+                currentProduct = product;   // keep manager state in sync with the applied row
+                notifyProductLoaded(product);
+            }
+            @Override public void onError(Error error) { notifyError(error); }
+            @Override public void onLoading() {}
+        });
+    }
+
+    /** Safely notify the listener that a refresh candidate is available. */
+    private void notifyRefreshAvailable() {
+        if (listener != null) {
+            try {
+                listener.onRefreshAvailable();
+            } catch (Exception e) {
+                Log.e(TAG, "Error in refresh-available callback", e);
+            }
         }
     }
 
@@ -427,18 +480,7 @@ public class ProductManager {
     }
 
     /**
-     * ✅ DEPRECATED: Use getCurrentIdentifier() instead
-     * Kept for backward compatibility
-     *
-     * @return Currently loaded identifier (may be barcode or source ID)
-     */
-    @Deprecated
-    public String getCurrentBarcode() {
-        return currentIdentifier;
-    }
-
-    /**
-     * ✅ NEW: Get current identifier
+     * Get current identifier
      *
      * @return Currently loaded identifier (barcode or source-specific ID)
      */
@@ -490,6 +532,7 @@ public class ProductManager {
         listener = null;
         currentProduct = null;
         currentIdentifier = null;
+        pendingRefreshCandidate = null;
         isFavorite = false;
 
         if (ApiConfig.DEBUG_LOGGING) {

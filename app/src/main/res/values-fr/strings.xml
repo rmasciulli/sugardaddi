@@ -73,6 +73,7 @@
     <string name="nutri_score">Nutri-Score</string>
     <string name="error_no_product_id">Aucun ID de produit fourni</string>
     <string name="unknown_product">Produit Inconnu</string>
+    <string name="refresh_available">Données mises à jour disponibles</string>
 
     <!-- Écran détail : section scores -->
     <string name="scores_section_title">Scores</string>
