@@ -155,6 +155,17 @@ public class ServingSize {
         return "1 serving";
     }
 
+    /** True if the serving definition matches (ignores source + derived as-grams/ml). */
+    public boolean contentEquals(ServingSize other) {
+        if (other == null) return false;
+        return ContentCompare.numbersEqual(this.quantity, other.quantity)
+                && ContentCompare.numbersEqual(this.gramEquivalent, other.gramEquivalent)
+                && ContentCompare.numbersEqual(this.mlEquivalent, other.mlEquivalent)
+                && ContentCompare.objectsEqual(this.unit, other.unit)
+                && ContentCompare.stringsEqual(this.description, other.description)
+                && ContentCompare.stringsEqual(this.unitText, other.unitText);
+    }
+
     // ========== PARSING AND FORMATTING ==========
 
     /**

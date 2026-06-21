@@ -890,6 +890,64 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         return servingSize;
     }
 
+    /**
+     * True if the source-provided content matches another product within tolerance.
+     * Compares what the user would care about changing - names, ingredients,
+     * nutrition, ratings, dietary/allergen flags, serving, source image URLs.
+     * Excludes everything local or derived: image *paths*, favourite, timestamps,
+     * accessCount, completeness, searchableText, translations, identity, and the
+     * grp-derived category lists (categoryList/categoryHierarchy) - the raw
+     * categoriesText/categoryCode are compared instead. Logistics fields
+     * (manufacturer/packaging/origins/stores) are intentionally excluded as
+     * low-signal, community-churny metadata.
+     */
+    public boolean contentEquals(FoodProduct other) {
+        if (other == null) return false;
+
+        // Descriptive text
+        if (!ContentCompare.stringsEqual(name, other.name)) return false;
+        if (!ContentCompare.stringsEqual(genericName, other.genericName)) return false;
+        if (!ContentCompare.stringsEqual(brand, other.brand)) return false;
+        if (!ContentCompare.stringsEqual(description, other.description)) return false;
+        if (!ContentCompare.stringsEqual(ingredients, other.ingredients)) return false;
+        if (!ContentCompare.stringsEqual(scientificName, other.scientificName)) return false;
+        if (!ContentCompare.stringsEqual(quantity, other.quantity)) return false;
+
+        // Categories - raw source values, NOT the grp-derived lists
+        if (!ContentCompare.stringsEqual(categoriesText, other.categoriesText)) return false;
+        if (!ContentCompare.stringsEqual(categoryCode, other.categoryCode)) return false;
+
+        // Ratings
+        if (!ContentCompare.stringsEqual(nutriScore, other.nutriScore)) return false;
+        if (!ContentCompare.stringsEqual(ecoScore, other.ecoScore)) return false;
+        if (!ContentCompare.stringsEqual(novaGroup, other.novaGroup)) return false;
+
+        // Source image URLs (included by decision; local image *paths* are not)
+        if (!ContentCompare.stringsEqual(thumbnailUrl, other.thumbnailUrl)) return false;
+        if (!ContentCompare.stringsEqual(imageUrl, other.imageUrl)) return false;
+
+        // Structural / dietary flags (primitives - no null handling needed)
+        if (isLiquid != other.isLiquid) return false;
+        if (isOrganic != other.isOrganic) return false;
+        if (isVegan != other.isVegan) return false;
+        if (isVegetarian != other.isVegetarian) return false;
+        if (isGlutenFree != other.isGlutenFree) return false;
+        if (isPalmOilFree != other.isPalmOilFree) return false;
+        if (isFairTrade != other.isFairTrade) return false;
+        if (allergenFlags != other.allergenFlags) return false;
+        if (!ContentCompare.numbersEqual(density, other.density)) return false;
+
+        // Lists (order-insensitive). Allergens are compared via allergenFlags above.
+        if (!ContentCompare.listsEqual(additives, other.additives)) return false;
+        if (!ContentCompare.listsEqual(labels, other.labels)) return false;
+
+        // Nutrition + serving (null-aware delegation)
+        if (!ContentCompare.nutritionEqual(nutrition, other.nutrition)) return false;
+        if (!ContentCompare.servingEqual(servingSize, other.servingSize)) return false;
+
+        return true;
+    }
+
     @Override
     public boolean isLiquid() {
         return isLiquid;

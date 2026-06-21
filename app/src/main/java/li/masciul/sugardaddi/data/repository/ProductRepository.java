@@ -83,6 +83,15 @@ public class ProductRepository {
         void onSuccess(FoodProduct product);
         void onError(Error error);
         void onLoading();
+
+        /**
+         * A stale-triggered background refresh found CHANGED upstream content.
+         * The candidate is offered, not applied - the detail screen shows the
+         * refresh FAB and applies it via applyCandidate() on tap, so data never
+         * changes under the user mid-view. Default no-op: callers that don't show
+         * a detail screen (search, favourites) ignore it.
+         */
+        default void onRefreshAvailable(FoodProduct candidate) {}
     }
 
     /**
@@ -619,7 +628,7 @@ public class ProductRepository {
 
                     // If stale, refresh quietly for next open - no live push.
                     if (stale) {
-                        backgroundRefresh(roomKey, fetch);
+                        backgroundRefresh(roomKey, fetch, product, callback);
                     }
                     return;
                 }
@@ -669,22 +678,47 @@ public class ProductRepository {
     }
 
     /**
-     * Silent staleness refresh: fetch and persist, but do NOT push to the open
-     * screen. saveProductToDatabaseSync preserves local image paths, lastViewed,
-     * accessCount and localImport, so only the synced data changes.
+     * Staleness refresh: fetch the live version and compare it against what the user
+     * is currently viewing.
+     *  - Unchanged upstream → re-save to reset the freshness clock (lastUpdated)
+     *    so we don't refetch on every open. No UI signal, no visible change.
+     *  - Changed → hand the candidate to the screen via onRefreshAvailable(); it is
+     *    deliberately NOT saved here. The user applies it through the refresh FAB
+     *    (applyCandidate), so values never change under them mid-view.
      */
-    private void backgroundRefresh(@NonNull String roomKey, @NonNull NetworkFetch fetch) {
+    private void backgroundRefresh(@NonNull String roomKey, @NonNull NetworkFetch fetch,
+                                   @NonNull FoodProduct baseline, @NonNull ProductCallback callback) {
         fetch.fetch(new FetchCallback() {
             @Override public void onSuccess(FoodProduct fetched) {
-                backgroundExecutor.execute(() -> saveProductToDatabaseSync(fetched, false));
+                backgroundExecutor.execute(() -> {
+                    if (baseline.contentEquals(fetched)) {
+                        // No real change - just re-stamp freshness (preserves local fields).
+                        saveProductToDatabaseSync(fetched, false);
+                    } else {
+                        // Real change - offer it; do not apply silently.
+                        runOnMainThread(() -> callback.onRefreshAvailable(fetched));
+                    }
+                });
             }
             @Override public void onError(Error error) {
                 // Silent - the user already has the still-valid cached version.
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Background refresh failed for " + roomKey
-                            + ": " + error.getMessage());
+                    Log.d(TAG, "Background refresh failed for " + roomKey + ": " + error.getMessage());
                 }
             }
+        });
+    }
+
+    /**
+     * Apply a candidate previously offered via onRefreshAvailable(): save it
+     * (preserving local fields), re-read the merged row, and push it back so the
+     * screen re-renders. Invoked by the refresh FAB.
+     */
+    public void applyCandidate(@NonNull FoodProduct candidate, @NonNull ProductCallback callback) {
+        backgroundExecutor.execute(() -> {
+            saveProductToDatabaseSync(candidate, false);
+            FoodProduct result = reReadOrFallback(candidate);
+            runOnMainThread(() -> callback.onSuccess(result));
         });
     }
 

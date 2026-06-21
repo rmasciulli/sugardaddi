@@ -2158,6 +2158,20 @@ public class Nutrition {
     }
 
     /**
+     * True if every nutrient the app models (NutrientInfo) matches within tolerance.
+     * Compares values only - not dataSource, completeness, confidence or timestamps.
+     */
+    public boolean contentEquals(Nutrition other) {
+        if (other == null) return false;
+        for (NutrientInfo info : NutrientInfo.values()) {
+            if (!ContentCompare.numbersEqual(info.getValue(this), info.getValue(other))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Get only nutrients with non-null values
      *
      * @return Map of NutrientInfo to their values (nulls excluded)

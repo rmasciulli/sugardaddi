@@ -458,6 +458,85 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         return instructions;
     }
 
+    /**
+     * True if the source-provided content matches another recipe within tolerance.
+     * Compares names, instructions, cuisine, ingredients (portions), nutrition,
+     * times, difficulty, dietary/allergen flags and source media URLs. Step content
+     * is captured via the full instructions text - no separate stepStructure diff.
+     * Excludes everything local or derived: image paths, favourite/template flags,
+     * the social fields, translations, searchableText, identity, tags, recipeSource,
+     * and the Category objects (categoriesText is compared instead).
+     */
+    public boolean contentEquals(Recipe other) {
+        if (other == null) return false;
+
+        // Descriptive text (primary-language direct fields)
+        if (!ContentCompare.stringsEqual(name, other.name)) return false;
+        if (!ContentCompare.stringsEqual(description, other.description)) return false;
+        if (!ContentCompare.stringsEqual(instructions, other.instructions)) return false;
+        if (!ContentCompare.stringsEqual(cuisine, other.cuisine)) return false;
+        if (!ContentCompare.stringsEqual(notes, other.notes)) return false;
+        if (!ContentCompare.stringsEqual(yieldDescription, other.yieldDescription)) return false;
+        if (!ContentCompare.stringsEqual(categoriesText, other.categoriesText)) return false;
+
+        // Source media URLs (included by decision; local image paths are not)
+        if (!ContentCompare.stringsEqual(thumbnailUrl, other.thumbnailUrl)) return false;
+        if (!ContentCompare.stringsEqual(imageUrl, other.imageUrl)) return false;
+        if (!ContentCompare.stringsEqual(videoUrl, other.videoUrl)) return false;
+
+        // Equipment / tips (order-insensitive)
+        if (!ContentCompare.listsEqual(equipmentNeeded, other.equipmentNeeded)) return false;
+        if (!ContentCompare.listsEqual(cookingTips, other.cookingTips)) return false;
+
+        // Times / servings / difficulty (boxed - null-aware equals)
+        if (!ContentCompare.objectsEqual(servings, other.servings)) return false;
+        if (!ContentCompare.objectsEqual(prepTimeMinutes, other.prepTimeMinutes)) return false;
+        if (!ContentCompare.objectsEqual(cookTimeMinutes, other.cookTimeMinutes)) return false;
+        if (!ContentCompare.objectsEqual(totalTimeMinutes, other.totalTimeMinutes)) return false;
+        if (!ContentCompare.objectsEqual(difficulty, other.difficulty)) return false;
+
+        // Dietary / allergen flags (primitives)
+        if (isVegan != other.isVegan) return false;
+        if (isVegetarian != other.isVegetarian) return false;
+        if (isGlutenFree != other.isGlutenFree) return false;
+        if (isDairyFree != other.isDairyFree) return false;
+        if (isKeto != other.isKeto) return false;
+        if (isPaleo != other.isPaleo) return false;
+        if (allergenFlags != other.allergenFlags) return false;
+
+        // Nutrition + serving (null-aware delegation)
+        if (!ContentCompare.nutritionEqual(nutrition, other.nutrition)) return false;
+        if (!ContentCompare.servingEqual(servingSize, other.servingSize)) return false;
+
+        // Ingredients
+        if (!portionsEqual(portions, other.portions)) return false;
+
+        return true;
+    }
+
+    /**
+     * Ordered, element-wise ingredient compare. For external recipes a portion is
+     * an unresolved stub whose itemId holds the ingredient name; once ingredient
+     * resolution lands itemId becomes a real reference - either way it's the identity.
+     * Ignores local/derived portion fields (id, parentId, gramsEquivalent, the
+     * transients) and orderIndex (order is captured by list position).
+     */
+    private static boolean portionsEqual(List<FoodPortion> a, List<FoodPortion> b) {
+        int na = (a == null) ? 0 : a.size();
+        int nb = (b == null) ? 0 : b.size();
+        if (na != nb) return false;
+        for (int i = 0; i < na; i++) {
+            FoodPortion pa = a.get(i);
+            FoodPortion pb = b.get(i);
+            if (!ContentCompare.stringsEqual(pa.getItemId(), pb.getItemId())) return false;
+            if (!ContentCompare.stringsEqual(pa.getItemType(), pb.getItemType())) return false;
+            if (!ContentCompare.servingEqual(pa.getServing(), pb.getServing())) return false;
+            if (!ContentCompare.stringsEqual(pa.getPreparationNote(), pb.getPreparationNote())) return false;
+            if (pa.isOptional() != pb.isOptional()) return false;
+        }
+        return true;
+    }
+
     public String getInstructions() {
         return getInstructions(DEFAULT_LANGUAGE);
     }

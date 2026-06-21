@@ -70,6 +70,14 @@ public class RecipeRepository {
     public interface RecipeCallback {
         void onSuccess(Recipe recipe);
         void onError(String error);
+
+        /**
+         * A stale-triggered background refresh found CHANGED upstream content.
+         * The candidate is offered, not applied - the detail screen shows the
+         * refresh FAB and applies it via applyCandidate() on tap. Default no-op:
+         * callers that don't show a detail screen ignore it.
+         */
+        default void onRefreshAvailable(Recipe candidate) {}
     }
 
     public interface RecipeOperationCallback {
@@ -258,7 +266,8 @@ public class RecipeRepository {
                     runOnMainThread(() -> callback.onSuccess(recipe));
 
                     if (stale) {
-                        backgroundRefreshRecipe(source, originalId, language);
+                        backgroundRefreshRecipe(source, originalId, language, recipe, callback);
+
                     }
                     return;
                 }
@@ -304,12 +313,29 @@ public class RecipeRepository {
         });
     }
 
-    /** Silent staleness refresh - persist, no push; applies on next open. */
+    /**
+     * Staleness refresh: fetch the live recipe and compare it against what the
+     * user is viewing.
+     *  - Unchanged upstream → re-save to reset the freshness clock (lastUpdated).
+     *    No UI signal, no visible change.
+     *  - Changed → hand the candidate to the screen via onRefreshAvailable(); it
+     *    is NOT saved here. The user applies it through the refresh FAB
+     *    (applyCandidate), so the recipe never changes under them mid-view.
+     */
     private void backgroundRefreshRecipe(@NonNull DataSource source, @NonNull String originalId,
-                                         @NonNull String language) {
+                                         @NonNull String language,
+                                         @NonNull Recipe baseline, @NonNull RecipeCallback callback) {
         source.getRecipe(originalId, language, new DataSourceCallback<Recipe>() {
-            @Override public void onSuccess(Recipe recipe) {
-                backgroundExecutor.execute(() -> saveExternalRecipeSync(recipe));
+            @Override public void onSuccess(Recipe fetched) {
+                backgroundExecutor.execute(() -> {
+                    if (baseline.contentEquals(fetched)) {
+                        // No real change - just re-stamp freshness (preserves local fields).
+                        saveExternalRecipeSync(fetched);
+                    } else {
+                        // Real change - offer it; do not apply silently.
+                        runOnMainThread(() -> callback.onRefreshAvailable(fetched));
+                    }
+                });
             }
             @Override public void onError(Error error) {
                 if (ApiConfig.DEBUG_LOGGING) {
@@ -317,6 +343,19 @@ public class RecipeRepository {
                 }
             }
             @Override public void onLoading() {}
+        });
+    }
+
+    /**
+     * Apply a candidate previously offered via onRefreshAvailable(): save it
+     * (preserving local fields), re-read the merged row, and push it back so the
+     * screen re-renders. Invoked by the refresh FAB.
+     */
+    public void applyCandidate(@NonNull Recipe candidate, @NonNull RecipeCallback callback) {
+        backgroundExecutor.execute(() -> {
+            saveExternalRecipeSync(candidate);
+            Recipe result = reReadRecipeOrFallback(candidate);
+            runOnMainThread(() -> callback.onSuccess(result));
         });
     }
 
