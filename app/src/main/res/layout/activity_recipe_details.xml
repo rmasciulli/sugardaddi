@@ -157,4 +157,48 @@
 
     </LinearLayout>
 
+    <!-- ========================================================= -->
+    <!-- REFRESH AFFORDANCE  (label on the left, icon FAB on the   -->
+    <!-- right). Hidden by default; shown only when a stale        -->
+    <!-- background refresh found changed upstream data. Tapping    -->
+    <!-- the FAB applies the held candidate (applyPendingRefresh).  -->
+    <!-- ========================================================= -->
+    <LinearLayout
+        android:id="@+id/refreshFabContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <!-- Label on the LEFT -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="3dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:text="@string/refresh_available"
+                android:textColor="@android:color/black"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Circular icon FAB on the RIGHT -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/refreshFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/refresh_available"
+            app:srcCompat="@drawable/ic_refresh" />
+    </LinearLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

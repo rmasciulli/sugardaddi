@@ -127,7 +127,7 @@ public class RecipeDetailsActivity extends BaseActivity
         // onBaseActivityCreated() is called from BaseActivity.onCreate().
         imagePicker = new ImagePickerHelper(this);
 
-        setContentView(R.layout.activity_product_details);
+        setContentView(R.layout.activity_recipe_details);
 
         setupToolbar();
         initializeRendererRegistry();
