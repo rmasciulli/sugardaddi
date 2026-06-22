@@ -11,6 +11,7 @@ import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.ThemeManager;
+import li.masciul.sugardaddi.utils.cache.CacheEvictionManager;
 import li.masciul.sugardaddi.utils.image.ImagePurgeManager;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
@@ -58,6 +59,11 @@ public class SugarDaddiApplication extends Application {
      * Owns a dedicated single-thread executor.
      */
     private ImagePurgeManager imagePurgeManager;
+
+    /**
+     * Application-scoped cache eviction system.
+     */
+    private CacheEvictionManager cacheEvictionManager;
 
     // =========================================================================
     // CONTEXT WRAPPING - must happen before onCreate
@@ -171,14 +177,15 @@ public class SugarDaddiApplication extends Application {
         // Owns a dedicated OkHttpClient + single-thread executor.
         thumbnailDownloader = new ThumbnailDownloader(imageStorageManager);
 
-        // Owns a single-thread executor. Must be created after the database.
         imagePurgeManager = new ImagePurgeManager(this, imageStorageManager);
+        cacheEvictionManager = new CacheEvictionManager(AppDatabase.getInstance(this));
 
-        // Fire-and-forget: scans all image directories, deletes orphans.
-        // This also handles cleanup after a destructive DB recreation - an empty
-        // Room means every image file is unreferenced, so all are purged. Do NOT
-        // add a "skip when Room is empty" guard; that would strand orphaned files.
-        imagePurgeManager.purgeOrphansAsync();
+        // Startup maintenance, ordered: evict expired rows FIRST, then purge orphan
+        // images - so the evicted rows' image files are seen as orphans and removed.
+        new Thread(() -> {
+            cacheEvictionManager.evictExpiredSync();
+            imagePurgeManager.purgeOrphansSync();
+        }, "startup-cache-maintenance").start();
 
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Image system initialised - purge scheduled");
     }

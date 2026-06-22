@@ -402,6 +402,13 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE lastUpdated < :threshold ORDER BY accessCount ASC")
     List<RecipeEntity> getStaleRecipes(long threshold);
 
+    /**
+     * Delete cached recipes not viewed since {@code threshold}, never touching
+     * favourites or bulk-imported (localImport) rows. Returns the number deleted.
+     */
+    @Query("DELETE FROM recipes WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0")
+    int deleteExpiredRecipes(long threshold);
+
     @Query("DELETE FROM recipes WHERE lastUpdated < :threshold AND isFavorite = 0 AND accessCount < :minAccessCount")
     int deleteStaleRecipes(long threshold, int minAccessCount);
 

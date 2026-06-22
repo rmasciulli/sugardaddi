@@ -280,22 +280,11 @@ public interface FoodProductDao {
     // ========== CACHE MAINTENANCE ==========
 
     /**
-     * Get products older than threshold
+     * Delete cached products not viewed since {@code threshold}, never touching
+     * favourites or bulk-imported (localImport) rows. Returns the number deleted.
      */
-    @Query("SELECT * FROM food_products WHERE lastUpdated < :timestampThreshold")
-    List<FoodProductEntity> getOldProducts(long timestampThreshold);
-
-    /**
-     * Delete products older than threshold
-     */
-    @Query("DELETE FROM food_products WHERE lastUpdated < :timestampThreshold AND isFavorite = 0")
-    int deleteOldProducts(long timestampThreshold);
-
-    /**
-     * Delete old non-favorite products
-     */
-    @Query("DELETE FROM food_products WHERE lastUpdated < :timestampThreshold AND isFavorite = 0")
-    int deleteOldNonFavorites(long timestampThreshold);
+    @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0")
+    int deleteExpiredProducts(long threshold);
 
     /**
      * Clear all non-favorite products
