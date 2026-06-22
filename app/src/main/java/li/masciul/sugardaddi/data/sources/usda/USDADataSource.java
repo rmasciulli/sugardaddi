@@ -151,7 +151,7 @@ public class USDADataSource extends BaseDataSource {
     public CacheStrategy getCacheStrategy() {
         // Slow-moving reference dataset; live single-item fetches need only an
         // occasional refresh.
-        return CacheStrategy.staleAfter(30L * 24 * 60 * 60 * 1000); // 30 days
+        return CacheStrategy.staleAfter(7L * 24 * 60 * 60 * 1000); // 7 days
     }
 
     @Nullable

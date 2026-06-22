@@ -57,11 +57,6 @@ public class RecipeRepository {
      */
     private final DataSourceManager dataSourceManager;
 
-    // ========== CONFIGURATION ==========
-
-    // Staleness threshold (7 days for favorites)
-    private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000L;
-
     // ========== CALLBACK INTERFACES ==========
 
     /**
@@ -255,12 +250,10 @@ public class RecipeRepository {
                 RecipeEntity cached = recipeDao.getBySourceAndOriginalId(sourceId, originalId);
 
                 if (cached != null) {
-                    cached.recordAccess();            // accessCount + lastViewed
+                    cached.recordAccess();  // accessCount + lastViewed
                     recipeDao.update(cached);
 
-                    boolean stale = isStale(cached.isLocalImport(),
-                            cached.isFavorite(),
-                            cached.getLastUpdated(), source.getCacheStrategy());
+                    boolean stale = isStale(cached.getLastUpdated(), source.getCacheStrategy());
 
                     Recipe recipe = cached.toRecipe();
                     runOnMainThread(() -> callback.onSuccess(recipe));
@@ -281,18 +274,11 @@ public class RecipeRepository {
         });
     }
 
-    /**
-     * Combined staleness: the source CacheStrategy plus row-level overrides.
-     *  - localImport rows (bulk dataset members) never auto-refresh.
-     *  - favourites stay fresh for at least the favourite floor.
-     */
-    private boolean isStale(boolean localImport, boolean favorite,
-                            long lastUpdatedMs, CacheStrategy strategy) {
-        if (localImport || strategy.isNeverStale()) return false;
-        long ttl = favorite
-                ? Math.max(strategy.getStaleAfterMs(), FAVORITE_CACHE_VALIDITY_MS)
-                : strategy.getStaleAfterMs();
-        return (System.currentTimeMillis() - lastUpdatedMs) > ttl;
+    /** Stale once older than the source's freshness window. Refresh is independent
+     *  of favourite/localImport - those only affect eviction. */
+    private boolean isStale(long lastUpdatedMs, CacheStrategy strategy) {
+        if (strategy.isNeverStale()) return false;
+        return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();
     }
     
     /** Network fetch → synchronous save → re-read merged row → push to caller. */

@@ -65,11 +65,6 @@ public class ProductRepository {
 
     private final DataSourceManager dataSourceManager;
 
-    // ========== CONFIGURATION ==========
-
-    // Staleness threshold (7 days for favorites)
-    private static final long FAVORITE_CACHE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000;
-
     // ========== STATE TRACKING ==========
 
     private boolean isOperationInProgress = false;
@@ -617,9 +612,7 @@ public class ProductRepository {
                     database.foodProductDao().updateProduct(cached.product);
 
                     // Staleness comes from the source strategy + row overrides.
-                    boolean stale = isStale(cached.product.isLocalImport(),
-                            cached.product.isFavorite(),
-                            cached.product.getLastUpdated(), strategy);
+                    boolean stale = isStale(cached.product.getLastUpdated(), strategy);
 
                     // Always show the cached version immediately.
                     FoodProduct product = cached.toFoodProduct();
@@ -644,18 +637,11 @@ public class ProductRepository {
         });
     }
 
-    /**
-     * Combined staleness: the source CacheStrategy plus row-level overrides.
-     *  - localImport rows (bulk dataset members) never auto-refresh.
-     *  - favourites stay fresh for at least the favourite floor.
-     */
-    private boolean isStale(boolean localImport, boolean favorite,
-                            long lastUpdatedMs, CacheStrategy strategy) {
-        if (localImport || strategy.isNeverStale()) return false;
-        long ttl = favorite
-                ? Math.max(strategy.getStaleAfterMs(), FAVORITE_CACHE_VALIDITY_MS)
-                : strategy.getStaleAfterMs();
-        return (System.currentTimeMillis() - lastUpdatedMs) > ttl;
+    /** Stale once older than the source's freshness window. Refresh is independent
+     *  of favourite/localImport - those only affect eviction. */
+    private boolean isStale(long lastUpdatedMs, CacheStrategy strategy) {
+        if (strategy.isNeverStale()) return false;
+        return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();
     }
 
     /** Network fetch → synchronous save → re-read merged row → push to caller. */
