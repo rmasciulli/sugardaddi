@@ -166,17 +166,8 @@ cd sugardaddi
 
 ### Assets
 
-Datasets already bundled in the APK (committed to git):
+Dataset already bundled in the APK (committed to git):
 - `alim_grp_*.xml`: Ciqual category hierarchy (80KB), loaded at startup
-- `alim_*.xml`: Ciqual food list (1.6MB), imported on first launch
-
-Datasets NOT committed (downloaded at runtime):
-- `compo_*.xml`: Ciqual composition data (69MB)
-  Source: https://doi.org/10.5281/zenodo.17550133
-- `food_nutrient.csv`: USDA composition data (450MB)
-  Source: https://fdc.nal.usda.gov/download-foods.html
-
-The app handles missing dataset files automatically on first launch.
 
 ## Roadmap
 
