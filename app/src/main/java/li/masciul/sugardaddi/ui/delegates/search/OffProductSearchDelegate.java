@@ -8,12 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -23,6 +18,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 import li.masciul.sugardaddi.utils.category.CategoryCleaner;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
@@ -186,65 +182,12 @@ public class OffProductSearchDelegate
     }
 
     private void bindImage(ViewHolder holder, FoodProduct product) {
-        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
-
-        // Local-first: thumbnailPath → imageThumbnailUrl → imageUrl → placeholder
-        Object imageSource = resolveProductThumbnailSource(product);
-
-        if (imageSource != null) {
-            Glide.with(context)
-                    .load(imageSource)
-                    .override(sizePx, sizePx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(holder.productImage);
+        Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
+        if (source != null) {
+            ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
-    }
-
-    /**
-     * Resolves thumbnail source for a food product.
-     * Local-first: userThumbnailPath → thumbnailPath → thumbnailUrl → imageUrl → userImagePath
-     * userImagePath is last resort so Ciqual/USDA products with a user-set image show something
-     * meaningful in the search card.
-     */
-    @Nullable
-    private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
-        // 1. User-defined thumbnail override ({id}_custom.jpg).
-        String userThumb = product.getUserThumbnailPath();
-        if (userThumb != null && !userThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userThumb);
-            if (f.exists()) return f;
-        }
-
-        // 2. Auto-cached thumbnail (downloaded on favourite).
-        String localThumb = product.getThumbnailPath();
-        if (localThumb != null && !localThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(localThumb);
-            if (f.exists()) return f;
-        }
-
-        // 3. Remote CDN thumbnail URL (small, fast).
-        String thumbUrl = product.getThumbnailUrl();
-        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
-
-        // 4. Remote full-size image URL.
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
-
-        // 5. User-defined full-size image - last resort for Ciqual/USDA products
-        //    that have no remote URL but may have a user-set image.
-        String userImage = product.getUserImagePath();
-        if (userImage != null && !userImage.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userImage);
-            if (f.exists()) return f;
-        }
-
-        return null;
     }
 
     // Compact score dimensions for search result cards.

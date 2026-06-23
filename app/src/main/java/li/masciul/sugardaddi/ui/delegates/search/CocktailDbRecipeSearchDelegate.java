@@ -7,12 +7,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
@@ -25,6 +21,7 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.TheCocktailDbConstants;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -144,53 +141,13 @@ public class CocktailDbRecipeSearchDelegate
      * TheCocktailDB always provides strDrinkThumb for published cocktails.
      */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
-
-        Object imageSource = resolveRecipeThumbnailSource(recipe);
-
-        if (imageSource != null) {
-            Glide.with(context)
-                    .load(imageSource)
-                    .override(sizePx, sizePx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(holder.recipeImage);
+        Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
+        if (source != null) {
+            ImageDisplayUtils.loadCardThumbnail(context, source, holder.recipeImage);
             holder.imageContainer.setVisibility(View.VISIBLE);
         } else {
             holder.imageContainer.setVisibility(View.GONE);
         }
-    }
-
-    @Nullable
-    private Object resolveRecipeThumbnailSource(@NonNull Recipe recipe) {
-        String userThumb = recipe.getUserThumbnailPath();
-        if (userThumb != null && !userThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userThumb);
-            if (f.exists()) return f;
-        }
-
-        String localThumb = recipe.getThumbnailPath();
-        if (localThumb != null && !localThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(localThumb);
-            if (f.exists()) return f;
-        }
-
-        String thumbUrl = recipe.getThumbnailUrl();
-        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) return thumbUrl;
-
-        String imageUrl = recipe.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
-
-        String userImage = recipe.getUserImagePath();
-        if (userImage != null && !userImage.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userImage);
-            if (f.exists()) return f;
-        }
-
-        return null;
     }
 
     /**

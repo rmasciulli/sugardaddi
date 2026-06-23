@@ -12,11 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -28,6 +24,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
 
@@ -139,50 +136,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
-        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        int widthPx  = dm.widthPixels;
-        int heightPx = Math.round(200 * dm.density);
-
-        Object imageSource = resolveProductImageSource(product);
-
-        if (imageSource != null) {
-            Glide.with(context)
-                    .load(imageSource)
-                    .override(widthPx, heightPx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(heroImage);
-        } else {
-            heroImage.setImageResource(R.drawable.ic_food_placeholder);
-            heroImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        }
-    }
-
-    /**
-     * Resolves image source for a food product.
-     * Local-first: userImagePath → imagePath → imageUrl
-     */
-    @Nullable
-    private Object resolveProductImageSource(@NonNull FoodProduct product) {
-        String userImage = product.getUserImagePath();
-        if (userImage != null && !userImage.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userImage);
-            if (f.exists()) return f;
-        }
-
-        String imagePath = product.getImagePath();
-        if (imagePath != null && !imagePath.trim().isEmpty()) {
-            java.io.File f = new java.io.File(imagePath);
-            if (f.exists()) return f;
-        }
-
-        String imageUrl = product.getImageUrl();
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
-
-        return null;
+        ImageDisplayUtils.loadHeroImage(context, ImageDisplayUtils.resolveProductImageSource(product), heroImage);
     }
 
     /**

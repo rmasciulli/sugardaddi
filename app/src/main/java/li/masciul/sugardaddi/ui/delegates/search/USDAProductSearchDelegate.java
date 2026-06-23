@@ -9,9 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.card.MaterialCardView;
 
 import li.masciul.sugardaddi.R;
@@ -22,6 +19,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.Locale;
 
@@ -145,53 +143,18 @@ public class USDAProductSearchDelegate
      */
     private void bindImage(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
         if (holder.productImage == null) return;
-        int sizePx = Math.round(72 * context.getResources().getDisplayMetrics().density);
 
-        // Local-first: userThumbnailPath → userImagePath → placeholder
-        Object imageSource = resolveProductThumbnailSource(product);
-
-        if (imageSource != null) {
+        Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
+        if (source != null) {
             if (holder.imageContainer != null) {
                 holder.imageContainer.setVisibility(View.VISIBLE);
             }
-
-            Glide.with(context)
-                    .load(imageSource)
-                    .override(sizePx, sizePx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(holder.productImage);
+            ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
         } else {
             if (holder.imageContainer != null) {
                 holder.imageContainer.setVisibility(View.GONE);
             }
         }
-    }
-
-    /**
-     * Resolves thumbnail source for a USDA product.
-     * Priority: userThumbnailPath → userImagePath → null
-     * No remote URL, no auto-cached thumbnail - USDA FoodData Central provides
-     * no product images. Only user-defined images are shown.
-     */
-    @Nullable
-    private Object resolveProductThumbnailSource(@NonNull FoodProduct product) {
-        // 1. User-defined thumbnail override.
-        String userThumb = product.getUserThumbnailPath();
-        if (userThumb != null && !userThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userThumb);
-            if (f.exists()) return f;
-        }
-        // 2. User-defined full-size image - acceptable for thumbnail display.
-        String userImage = product.getUserImagePath();
-        if (userImage != null && !userImage.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userImage);
-            if (f.exists()) return f;
-        }
-        return null;
     }
 
     /**

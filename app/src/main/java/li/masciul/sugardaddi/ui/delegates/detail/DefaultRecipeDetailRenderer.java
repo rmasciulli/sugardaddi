@@ -9,11 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -21,6 +16,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeStep;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.List;
 
@@ -106,51 +102,15 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
     private void populateImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
-
-        // Both views may not exist yet in detail_default_recipe.xml
-        // - this method is a no-op until the layout is updated.
         if (heroContainer == null || heroImage == null) return;
 
-        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        int widthPx  = dm.widthPixels;
-        int heightPx = Math.round(200 * dm.density);
-
-        // User recipes: only local paths, no remote URL.
-        Object source = resolveRecipeImageSource(recipe);
+        Object source = ImageDisplayUtils.resolveRecipeImageSource(recipe);
         if (source != null) {
-            Glide.with(context)
-                    .load(source)
-                    .override(widthPx, heightPx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(heroImage);
             heroContainer.setVisibility(View.VISIBLE);
+            ImageDisplayUtils.loadHeroImage(context, source, heroImage);
         } else {
             heroContainer.setVisibility(View.GONE);
         }
-    }
-
-    @Nullable
-    private Object resolveRecipeImageSource(@NonNull Recipe recipe) {
-        // 1. User-defined full-size image - first choice.
-        String userImage = recipe.getUserImagePath();
-        if (userImage != null && !userImage.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userImage);
-            if (f.exists()) return f;
-        }
-        
-        // 2. User-defined thumbnail - acceptable fallback for hero display.
-        String userThumb = recipe.getUserThumbnailPath();
-        if (userThumb != null && !userThumb.trim().isEmpty()) {
-            java.io.File f = new java.io.File(userThumb);
-            if (f.exists()) return f;
-        }
-        
-        // No remote URL for user recipes - return null (hero container hidden).
-        return null;
     }
 
     /**

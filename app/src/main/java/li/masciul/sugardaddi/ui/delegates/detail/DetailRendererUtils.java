@@ -11,48 +11,30 @@ import androidx.annotation.NonNull;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
-import li.masciul.sugardaddi.core.models.FoodProduct;
 
 /**
- * DetailRendererUtils - Shared static helpers used by all DetailRenderer implementations.
+ * DetailRendererUtils - detail-screen-only shared helpers for the DetailRenderer
+ * implementations. Image resolution/loading now lives in
+ * {@link li.masciul.sugardaddi.ui.utils.ImageDisplayUtils} (shared with the search
+ * delegates); this class is attribution-only.
  *
- * Centralises logic that would otherwise be copy-pasted across
- * OffProductDetailRenderer, CiqualProductDetailRenderer, and DefaultProductDetailRenderer.
- *
- * Currently handles:
- *   - Attribution panel population (dataSourceName, dataSourceDescription,
- *     dataSourceAttribution, website link)
- *
- * ATTRIBUTION PANEL STRUCTURE (matches all three renderer layouts):
- *   @id/attributionPanel            - MaterialCardView (amber), tappable → website
- *   @id/attributionSourceName       - "🌍 Open Food Facts" (bold, emoji + name)
- *   @id/attributionLegalText        - Short attribution / legal reference (italic)
- *   @id/attributionSourceDescription- One-line description of the source
- *   (static TextView)               - "Visit website →" hint (right-aligned, static)
- *
- * DATA SOURCE API used here (from DataSource enum):
- *   getDisplayWithEmoji(context)    - "🌍 Open Food Facts"
- *   getFullAttribution(context)     - Full legal attribution text
- *   getDescription(context)         - One-line source description
- *   getWebsiteUrl(context)          - URL string or null
- *   isPublic()                      - false for USER/CUSTOM/IMPORTED → hide panel
- *
- * @version 1.0
+ * ATTRIBUTION PANEL STRUCTURE:
+ *   @id/attributionPanel             - MaterialCardView (amber), tappable → website
+ *   @id/attributionSourceName        - "🌍 Open Food Facts" (emoji + name)
+ *   @id/attributionLegalText         - Short attribution / legal reference (italic)
+ *   @id/attributionSourceDescription - One-line source description
  */
 public final class DetailRendererUtils {
 
-    // Utility class - no instances
-    private DetailRendererUtils() {}
+    private DetailRendererUtils() {} // no instances
 
     /**
      * Populate the attribution panel by DataSourceType directly.
+     * Used by all detail renderers (food products, recipes, future item types).
      *
-     * Used by all detail renderers (food products, recipes, and future item types).
-     * Callers pass their item's DataSourceType directly via item.getDataSource().
-     *
-     * @param context  Android context
-     * @param view     Root view inflated by the renderer
-     * @param source   The DataSourceType to attribute
+     * @param context Android context
+     * @param view    Root view inflated by the renderer
+     * @param source  The DataSourceType to attribute
      */
     public static void populateAttribution(@NonNull Context context,
                                            @NonNull View view,
@@ -68,13 +50,11 @@ public final class DetailRendererUtils {
 
         panel.setVisibility(View.VISIBLE);
 
-        // "🍳 TheMealDB", "🌍 Open Food Facts", etc.
         TextView nameView = view.findViewById(R.id.attributionSourceName);
         if (nameView != null) {
             nameView.setText(source.getDisplayWithEmoji(context));
         }
 
-        // Full legal attribution text (italic)
         TextView legalView = view.findViewById(R.id.attributionLegalText);
         if (legalView != null) {
             String attribution = source.getFullAttribution(context);
@@ -86,7 +66,6 @@ public final class DetailRendererUtils {
             }
         }
 
-        // One-line source description
         TextView descView = view.findViewById(R.id.attributionSourceDescription);
         if (descView != null) {
             String description = source.getDescription(context);
@@ -98,7 +77,6 @@ public final class DetailRendererUtils {
             }
         }
 
-        // Make card tappable if a website URL is available
         String websiteUrl = source.getWebsiteUrl(context);
         if (websiteUrl != null && !websiteUrl.trim().isEmpty()) {
             panel.setOnClickListener(v -> {

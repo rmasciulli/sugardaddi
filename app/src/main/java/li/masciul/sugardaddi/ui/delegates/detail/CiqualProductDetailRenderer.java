@@ -13,9 +13,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -28,6 +25,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.Locale;
 
@@ -136,28 +134,12 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
     private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
-
-        // Views may not exist yet in detail_ciqual_product.xml - no-op until added.
         if (heroContainer == null || heroImage == null) return;
 
-        android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
-        int widthPx  = dm.widthPixels;
-        int heightPx = Math.round(200 * dm.density);
-
-        // Ciqual has no remote image URL and no auto-downloaded thumbnail.
-        // Only user-defined paths are checked (userImagePath, userThumbnailPath).
-        Object source = resolveProductImageSource(product);
+        Object source = ImageDisplayUtils.resolveProductImageSource(product);
         if (source != null) {
-            Glide.with(context)
-                    .load(source)
-                    .override(widthPx, heightPx)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_food_placeholder)
-                    .error(R.drawable.ic_food_error)
-                    .centerCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(heroImage);
             heroContainer.setVisibility(View.VISIBLE);
+            ImageDisplayUtils.loadHeroImage(context, source, heroImage);
         } else {
             heroContainer.setVisibility(View.GONE);
         }
