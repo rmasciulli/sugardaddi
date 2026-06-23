@@ -313,36 +313,25 @@ public class ProductManager {
     }
 
     /**
-     * Updates a local image path on the currently-loaded product without
-     * triggering a network fetch or a full Room save.
-     *
-     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path
-     * and the targeted DAO update (updateUserImagePath / updateUserThumbnailPath)
-     * has already written it to Room. This method syncs the in-memory product
-     * state and re-notifies the listener so the UI reflects the change.
-     *
-     * @param userImagePath     New userImagePath value, or null to clear it.
-     * @param userThumbnailPath New userThumbnailPath value, or null to clear it.
+     * Re-read the current product from Room and re-notify after a local image edit,
+     * so the render and overflow menu rebuild from the authoritative row instead of
+     * patched in-memory state.
      */
-    public void updateLocalImagePaths(
-            @Nullable String userImagePath,
-            @Nullable String userThumbnailPath) {
+    public void reloadCurrentFromCache() {
         if (currentProduct == null) return;
-
-        if (userImagePath != null || currentProduct.getUserImagePath() != null) {
-            currentProduct.setUserImagePath(userImagePath);
-        }
-        if (userThumbnailPath != null || currentProduct.getUserThumbnailPath() != null) {
-            currentProduct.setUserThumbnailPath(userThumbnailPath);
-        }
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Local image paths updated in-memory: userImagePath="
-                    + userImagePath + ", userThumbnailPath=" + userThumbnailPath);
-        }
-
-        notifyProductLoaded(currentProduct);
+        repository.readFromCache(currentProduct.getSearchableId(),
+                new ProductRepository.ProductCallback() {
+                    @Override public void onSuccess(FoodProduct product) {
+                        currentProduct = product;
+                        notifyProductLoaded(product);
+                    }
+                    @Override public void onError(Error error) {
+                        Log.w(TAG, "Reload from cache failed: " + error.getMessage());
+                    }
+                    @Override public void onLoading() {}
+                });
     }
+
 
     /**
      * Refresh current product from network

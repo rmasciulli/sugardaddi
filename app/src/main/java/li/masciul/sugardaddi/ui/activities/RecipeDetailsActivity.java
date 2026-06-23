@@ -564,17 +564,10 @@ public class RecipeDetailsActivity extends BaseActivity
                 db.recipeDao().updateUserImagePath(recipe.getSearchableId(), localPath);
             }
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(isThumbnail
-                                ? R.string.thumbnail_replaced
-                                : R.string.image_replaced),
+                Toast.makeText(this, getSafeString(isThumbnail
+                                ? R.string.thumbnail_replaced : R.string.image_replaced),
                         Toast.LENGTH_SHORT).show();
-                if (isThumbnail) {
-                    recipeManager.updateLocalImagePaths(null, localPath);
-                } else {
-                    recipeManager.updateLocalImagePaths(localPath, null);
-                }
-                invalidateOptionsMenu();
+                recipeManager.reloadCurrentFromCache();
             });
         });
     }
@@ -585,21 +578,17 @@ public class RecipeDetailsActivity extends BaseActivity
     private void removeImage() {
         Recipe recipe = recipeManager.getCurrentRecipe();
         if (recipe == null || recipe.getUserImagePath() == null) return;
-
+        final String pathToDelete = recipe.getUserImagePath();
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
-        storage.deleteFile(recipe.getUserImagePath());
-
         Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase.getInstance(this)
-                    .recipeDao()
+            storage.deleteFile(pathToDelete);
+            AppDatabase.getInstance(this).recipeDao()
                     .updateUserImagePath(recipe.getSearchableId(), null);
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(R.string.image_removed),
+                Toast.makeText(this, getSafeString(R.string.image_removed),
                         Toast.LENGTH_SHORT).show();
-                recipeManager.updateLocalImagePaths(null, null);
-                invalidateOptionsMenu();
+                recipeManager.reloadCurrentFromCache();
             });
         });
     }
@@ -611,21 +600,17 @@ public class RecipeDetailsActivity extends BaseActivity
     private void removeThumbnail() {
         Recipe recipe = recipeManager.getCurrentRecipe();
         if (recipe == null || recipe.getUserThumbnailPath() == null) return;
-
+        final String pathToDelete = recipe.getUserThumbnailPath();
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
-        storage.deleteFile(recipe.getUserThumbnailPath());
-
         Executors.newSingleThreadExecutor().execute(() -> {
-            AppDatabase.getInstance(this)
-                    .recipeDao()
+            storage.deleteFile(pathToDelete);
+            AppDatabase.getInstance(this).recipeDao()
                     .updateUserThumbnailPath(recipe.getSearchableId(), null);
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(R.string.thumbnail_removed),
+                Toast.makeText(this, getSafeString(R.string.thumbnail_removed),
                         Toast.LENGTH_SHORT).show();
-                recipeManager.updateLocalImagePaths(recipeManager.getCurrentRecipe().getUserImagePath(), null);
-                invalidateOptionsMenu();
+                recipeManager.reloadCurrentFromCache();
             });
         });
     }

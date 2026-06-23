@@ -270,30 +270,22 @@ public class RecipeManager {
     }
 
     /**
-     * Updates a local image path on the currently-loaded recipe without
-     * triggering a network fetch or a full Room save.
-     *
-     * @param userImagePath     New userImagePath value, or null to clear it.
-     * @param userThumbnailPath New userThumbnailPath value, or null to clear it.
+     * Re-read the current recipe from Room and re-notify after a local image edit,
+     * so the render and overflow menu rebuild from the authoritative row instead of
+     * patched in-memory state.
      */
-    public void updateLocalImagePaths(
-            @Nullable String userImagePath,
-            @Nullable String userThumbnailPath) {
+    public void reloadCurrentFromCache() {
         if (currentRecipe == null) return;
-
-        if (userImagePath != null || currentRecipe.getUserImagePath() != null) {
-            currentRecipe.setUserImagePath(userImagePath);
-        }
-        if (userThumbnailPath != null || currentRecipe.getUserThumbnailPath() != null) {
-            currentRecipe.setUserThumbnailPath(userThumbnailPath);
-        }
-
-        if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Local image paths updated in-memory: userImagePath="
-                    + userImagePath + ", userThumbnailPath=" + userThumbnailPath);
-        }
-
-        notifyRecipeLoaded(currentRecipe);
+        repository.readFromCache(currentRecipe.getSearchableId(),
+                new RecipeRepository.RecipeCallback() {
+                    @Override public void onSuccess(Recipe recipe) {
+                        currentRecipe = recipe;
+                        notifyRecipeLoaded(recipe);
+                    }
+                    @Override public void onError(String message) {
+                        Log.w(TAG, "Reload from cache failed: " + message);
+                    }
+                });
     }
 
     /**

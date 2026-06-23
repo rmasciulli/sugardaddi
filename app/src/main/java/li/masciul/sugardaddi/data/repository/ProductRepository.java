@@ -729,4 +729,22 @@ public class ProductRepository {
         }
         return Error.network("Failed to load product: " + error, null);
     }
+
+    /**
+     * Re-read a product from Room only (no network, no staleness) and push it.
+     * Used after a local image edit to refresh the UI from the authoritative row.
+     */
+    public void readFromCache(@NonNull String searchableId, @NonNull ProductCallback callback) {
+        backgroundExecutor.execute(() -> {
+            FoodProductWithNutrition cached = database.combinedProductDao()
+                    .getProductWithNutrition(searchableId);
+            if (cached != null && cached.product != null) {
+                FoodProduct product = cached.toFoodProduct();
+                runOnMainThread(() -> callback.onSuccess(product));
+            } else {
+                runOnMainThread(() -> callback.onError(
+                        Error.noData("Product not in cache: " + searchableId)));
+            }
+        });
+    }
 }

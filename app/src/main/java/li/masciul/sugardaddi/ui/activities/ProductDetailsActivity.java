@@ -647,17 +647,10 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                 db.foodProductDao().updateUserImagePath(product.getSearchableId(), localPath);
             }
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(isThumbnail
-                                ? R.string.thumbnail_replaced
-                                : R.string.image_replaced),
+                Toast.makeText(this, getSafeString(isThumbnail
+                                ? R.string.thumbnail_replaced : R.string.image_replaced),
                         Toast.LENGTH_SHORT).show();
-                if (isThumbnail) {
-                    productManager.updateLocalImagePaths(null, localPath);
-                } else {
-                    productManager.updateLocalImagePaths(localPath, null);
-                }
-                invalidateOptionsMenu();
+                productManager.reloadCurrentFromCache();
             });
         });
     }
@@ -669,33 +662,17 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     private void removeImage() {
         FoodProduct product = productManager.getCurrentProduct();
         if (product == null || product.getUserImagePath() == null) return;
-
-        // Capture path before clearing - currentProduct.getUserImagePath()
-        // will be null by the time runOnUiThread() fires.
         final String pathToDelete = product.getUserImagePath();
-
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
-
-        // Clear in-memory state immediately on the main thread so that
-        // onActivityResumed() (triggered by menu dismissal) renders the
-        // correct state before the background thread completes.
-        productManager.updateLocalImagePaths(null, null);
-
-        // Move deleteFile() to the background thread alongside the DAO update -
-        // keeps the entire remove operation atomic and avoids a race with
-        // onActivityResumed() which re-renders with the stale product if
-        // deleteFile() runs on the main thread before updateLocalImagePaths() fires.
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this)
-                    .foodProductDao()
+            AppDatabase.getInstance(this).foodProductDao()
                     .updateUserImagePath(product.getSearchableId(), null);
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(R.string.image_removed),
+                Toast.makeText(this, getSafeString(R.string.image_removed),
                         Toast.LENGTH_SHORT).show();
-                invalidateOptionsMenu();
+                productManager.reloadCurrentFromCache();
             });
         });
     }
@@ -708,29 +685,17 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     private void removeThumbnail() {
         FoodProduct product = productManager.getCurrentProduct();
         if (product == null || product.getUserThumbnailPath() == null) return;
-
-        // Capture paths before clearing - both will be null by the time
-        // runOnUiThread() fires so we capture them here on the main thread.
-        final String pathToDelete       = product.getUserThumbnailPath();
-        final String currentUserImage   = product.getUserImagePath();
-
+        final String pathToDelete = product.getUserThumbnailPath();
         ImageStorageManager storage =
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
-
-        // deleteFile() moved to background thread - keeps the entire remove
-        // operation atomic and avoids a race with onActivityResumed().
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this)
-                    .foodProductDao()
+            AppDatabase.getInstance(this).foodProductDao()
                     .updateUserThumbnailPath(product.getSearchableId(), null);
             runOnUiThread(() -> {
-                Toast.makeText(this,
-                        getSafeString(R.string.thumbnail_removed),
+                Toast.makeText(this, getSafeString(R.string.thumbnail_removed),
                         Toast.LENGTH_SHORT).show();
-                // Preserve userImagePath - we're only removing the thumbnail.
-                productManager.updateLocalImagePaths(currentUserImage, null);
-                invalidateOptionsMenu();
+                productManager.reloadCurrentFromCache();
             });
         });
     }

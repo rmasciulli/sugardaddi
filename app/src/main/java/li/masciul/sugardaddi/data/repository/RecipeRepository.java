@@ -352,6 +352,18 @@ public class RecipeRepository {
         return (saved != null) ? saved.toRecipe() : fetched;
     }
 
+    public void readFromCache(@NonNull String searchableId, @NonNull RecipeCallback callback) {
+        backgroundExecutor.execute(() -> {
+            RecipeEntity cached = recipeDao.getById(searchableId);
+            if (cached != null) {
+                Recipe recipe = cached.toRecipe();
+                runOnMainThread(() -> callback.onSuccess(recipe));
+            } else {
+                runOnMainThread(() -> callback.onError("Recipe not in cache: " + searchableId));
+            }
+        });
+    }
+
     /**
      * Toggle the favourite flag on a recipe, persisting the change to Room.
      *
