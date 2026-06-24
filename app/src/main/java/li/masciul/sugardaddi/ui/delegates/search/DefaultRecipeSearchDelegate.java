@@ -2,33 +2,40 @@ package li.masciul.sugardaddi.ui.delegates.search;
 
 import android.content.Context;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 /**
- * DefaultRecipeSearchDelegate - Search result rendering for recipes
+ * DefaultRecipeSearchDelegate - generic (fallback) search result card for recipes.
+ *
+ * This is the LAST-registered recipe delegate. Source-specific delegates
+ * (e.g. MealDbRecipeSearchDelegate, CocktailDbRecipeSearchDelegate) are checked
+ * first; this one catches every remaining Recipe - any source without a dedicated
+ * delegate, plus any future user-created recipes. Matching on ProductType.RECIPE
+ * alone is deliberate: a "default" that only handled one source would not be a
+ * fallback, and a new source's recipes would otherwise match no delegate at all.
  *
  * DISPLAYS:
+ * - Thumbnail (user override / cached / remote, resolved via ImageDisplayUtils),
+ *   hidden when no image source resolves
  * - Recipe name
  * - Description (truncated)
  * - Total time (prep + cook)
  * - Servings count
  * - Difficulty level
  *
- * Recipes are identified by ProductType.RECIPE regardless of DataSource,
- * so this delegate matches on type alone.
- *
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultRecipeSearchDelegate.ViewHolder> {
 
@@ -47,16 +54,15 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
 
     @Override
     public int getLayoutResId() {
-        return R.layout.item_search_recipe;
+        return R.layout.item_search_recipe_default;
     }
-
 
     @Override
     public boolean canHandle(@NonNull Searchable item) {
-        // Only handle user-created recipes (stored in Room via RecipeEntity).
-        // TheMealDB recipes are handled by MealDbRecipeSearchDelegate instead.
-        return item.getProductType() == ProductType.RECIPE
-                && item.getDataSource() == DataSourceType.USER;
+        // Generic fallback: handle ANY recipe. Registered last, so source-specific
+        // recipe delegates (TheMealDB, TheCocktailDB) still take precedence; this
+        // catches every other source and any future user-created recipes.
+        return item.getProductType() == ProductType.RECIPE;
     }
 
     @NonNull
@@ -70,6 +76,7 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         Recipe recipe = (Recipe) item;
 
         bindName(holder, recipe, language);
+        bindImage(holder, recipe);
         bindDescription(holder, recipe, language);
         bindTime(holder, recipe);
         bindServings(holder, recipe);
@@ -83,21 +90,12 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "-");
     }
 
-    private void bindDescription(ViewHolder holder, Recipe recipe, String language) {
-        String description = recipe.getDescription(language);
-        if (description != null && !description.trim().isEmpty()) {
-            // Truncate long descriptions
-            String shortDesc = description.length() > 80
-                    ? description.substring(0, 77) + "…"
-                    : description;
-            holder.recipeDescription.setText(shortDesc);
-            holder.recipeDescription.setVisibility(View.VISIBLE);
-        } else {
-            holder.recipeDescription.setVisibility(View.GONE);
-        }
-    }
-
-    /*
+    /**
+     * Resolve and load the card thumbnail through the shared ImageDisplayUtils
+     * (user override -> auto-cached path -> remote thumbnail/image URL). The
+     * container is hidden when nothing resolves so text-only recipes collapse the
+     * 72x72 slot cleanly.
+     */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
         Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
         if (source != null && holder.recipeImage != null) {
@@ -107,7 +105,20 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
             if (holder.imageContainer != null) holder.imageContainer.setVisibility(View.GONE);
         }
     }
-    */
+
+    private void bindDescription(ViewHolder holder, Recipe recipe, String language) {
+        String description = recipe.getDescription(language);
+        if (description != null && !description.trim().isEmpty()) {
+            // Truncate long descriptions
+            String shortDesc = description.length() > 80
+                    ? description.substring(0, 77) + "\u2026"
+                    : description;
+            holder.recipeDescription.setText(shortDesc);
+            holder.recipeDescription.setVisibility(View.VISIBLE);
+        } else {
+            holder.recipeDescription.setVisibility(View.GONE);
+        }
+    }
 
     private void bindTime(ViewHolder holder, Recipe recipe) {
         Integer prep = recipe.getPrepTimeMinutes();
@@ -145,19 +156,23 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
     // ========== VIEW HOLDER ==========
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView recipeName;
-        final TextView recipeDescription;
-        final TextView recipeTime;
-        final TextView recipeServings;
-        final TextView recipeDifficulty;
+        final View      imageContainer;
+        final ImageView recipeImage;
+        final TextView  recipeName;
+        final TextView  recipeDescription;
+        final TextView  recipeTime;
+        final TextView  recipeServings;
+        final TextView  recipeDifficulty;
 
         ViewHolder(View itemView) {
             super(itemView);
-            recipeName = itemView.findViewById(R.id.recipeName);
+            imageContainer    = itemView.findViewById(R.id.imageContainer);
+            recipeImage       = itemView.findViewById(R.id.recipeImage);
+            recipeName        = itemView.findViewById(R.id.recipeName);
             recipeDescription = itemView.findViewById(R.id.recipeDescription);
-            recipeTime = itemView.findViewById(R.id.recipeTime);
-            recipeServings = itemView.findViewById(R.id.recipeServings);
-            recipeDifficulty = itemView.findViewById(R.id.recipeDifficulty);
+            recipeTime        = itemView.findViewById(R.id.recipeTime);
+            recipeServings    = itemView.findViewById(R.id.recipeServings);
+            recipeDifficulty  = itemView.findViewById(R.id.recipeDifficulty);
         }
     }
 }

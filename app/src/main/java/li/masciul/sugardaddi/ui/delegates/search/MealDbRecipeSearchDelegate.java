@@ -81,8 +81,9 @@ public class MealDbRecipeSearchDelegate
 
     @Override
     public boolean canHandle(@NonNull Searchable item) {
-        // Only handle Recipe items from TheMealDB.
-        // User-created recipes (DataSourceType.USER) go to DefaultRecipeSearchDelegate.
+        // Only handle Recipe items from TheMealDB. Recipes from any other source
+        // (or with no source-specific delegate) fall through to the generic
+        // DefaultRecipeSearchDelegate, which is registered last.
         return item.getProductType() == ProductType.RECIPE
                 && item.getDataSource() == DataSourceType.THEMEALDB;
     }
