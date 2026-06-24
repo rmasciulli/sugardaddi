@@ -175,6 +175,23 @@ public class MainActivity extends BaseActivity implements
         logDebug("MainActivity v3.0 initialized");
     }
 
+    /**
+     * Re-enrich the displayed results from Room on every resume so that an image
+     * set or removed on a detail screen is reflected on the search card when the
+     * user navigates back - without re-running the search. No-op when there are no
+     * results on screen. The list objects are shared with the search cache by
+     * reference, so enriching them in place refreshes the cache too.
+     */
+    @Override
+    protected void onActivityResumed() {
+        super.onActivityResumed();
+        if (searchManager != null && adapter != null && !adapter.getItems().isEmpty()) {
+            searchManager.refreshDisplayedResults(
+                    adapter.getItems(),
+                    () -> adapter.notifyDataSetChanged());
+        }
+    }
+
     @Override
     protected void onPause() {
         super.onPause();

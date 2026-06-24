@@ -512,6 +512,21 @@ public class SearchManager {
     }
 
     /**
+     * Re-enrich the currently displayed results against Room without re-searching.
+     *
+     * Thin facade over SearchCache.refreshFromDatabase(): MainActivity owns the
+     * adapter list and SearchManager owns the SearchCache, so the activity routes
+     * the refresh through here rather than reaching into the cache directly. Used by
+     * MainActivity.onActivityResumed() to reflect detail-screen image edits on cards.
+     *
+     * @param items  The adapter's live result list (re-enriched in place)
+     * @param onDone Run on the main thread when done (e.g. adapter.notifyDataSetChanged)
+     */
+    public void refreshDisplayedResults(@NonNull List<Searchable> items, @NonNull Runnable onDone) {
+        searchCache.refreshFromDatabase(items, onDone);
+    }
+
+    /**
      * Cancel all in-flight and pending searches.
      * Does not clear state - allows retryLastSearch() to still work.
      */

@@ -1272,24 +1272,28 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     public void enrichWith(FoodProduct richer) {
         if (richer == null) return;
 
-        // No quality gate here - the caller (enrichSearchResultsFromDatabase) is
-        // responsible for deciding WHEN to call enrichWith. It calls enrichWith only
-        // when it found a DB-cached version of this product, meaning the user previously
-        // fetched the full detail from OFF v2. That version is always authoritative
-        // over a Searchalicious search result for the same barcode.
-        // enrichWith itself just does a clean field-by-field merge: richer wins.
+         // No quality gate here - the caller (enrichSearchResultsFromDatabase) is
+         // responsible for deciding WHEN to call enrichWith. It calls enrichWith only
+         // when it found a DB-cached version of this product, meaning the user previously
+         // fetched the full detail from OFF v2. That version is always authoritative
+         // over a Searchalicious search result for the same barcode.
+         // enrichWith itself just does a clean field-by-field merge: richer wins.
 
         // --- Category ---
+
         // Upgrade if this product has no category or only a raw tag fallback
         // (agribalyse names are richer and don't contain ":" or slug patterns)
         String richerCategory = richer.getCategoriesText(DEFAULT_LANGUAGE);
         String thisCategory   = this.getCategoriesText(DEFAULT_LANGUAGE);
+
         if (isEnrichable(thisCategory, richerCategory)) {
             // Set primary language category
             this.setCategoriesText(richerCategory, DEFAULT_LANGUAGE);
+
             // Also copy FR translation if richer has it and we don't
             String richerCategoryFr = richer.getCategoriesText("fr");
             String thisCategoryFr   = this.getCategoriesText("fr");
+
             if (isEnrichable(thisCategoryFr, richerCategoryFr)) {
                 this.setCategoriesText(richerCategoryFr, "fr");
             }
@@ -1307,6 +1311,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         }
 
         // --- Images ---
+
         // Always prefer richer image when we have none; if both exist, keep ours
         // (search result may already have the right thumbnail)
         if (isEnrichable(this.imageUrl, richer.imageUrl)) {
@@ -1316,7 +1321,21 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
             this.thumbnailUrl = richer.thumbnailUrl;
         }
 
+        // --- Local image paths (auto-cached + user overrides) ---
+
+        // These local file paths live ONLY in Room - a network search result never
+        // carries them. enrichWith() is called only when a Room row matched, and that
+        // row is authoritative for these fields, so we MIRROR it exactly - including
+        // null. Mirroring (rather than copy-if-present) is what lets a custom image
+        // both appear AND, once removed, disappear on the search card when the list is
+        // re-enriched on return (MainActivity.onActivityResumed). Nothing is lost by
+        // assigning null, since the search result never had a local path to begin with.
+        this.userImagePath     = richer.userImagePath;
+        this.userThumbnailPath = richer.userThumbnailPath;
+        this.thumbnailPath     = richer.thumbnailPath;
+
         // --- Nutrition ---
+
         // Only upgrade if this has no nutrition and richer does
         if (this.nutrition == null && richer.nutrition != null && richer.nutrition.hasData()) {
             this.nutrition = richer.nutrition;
@@ -1328,12 +1347,14 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         }
 
         // --- Allergen flags ---
+
         // Use bitwise OR: richer data is a superset, never lose allergen info
         if (richer.allergenFlags != 0) {
             this.allergenFlags |= richer.allergenFlags;
         }
 
         // --- Translations ---
+
         // Merge translation maps: for each language in richer, add to this if missing,
         // or merge individual fields if this already has a translation for that language
         for (Map.Entry<String, ProductTranslation> entry : richer.translations.entrySet()) {
@@ -1372,15 +1393,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
      * @param current   Current value on this product (may be null/empty)
      * @param candidate Candidate replacement from richer product
      * @return true if the field should be updated
-     */
-    /**
-     * Check if a field should be replaced by the richer product's value.
-     *
-     * Since enrichWith() is only called when richer has higher dataCompleteness,
-     * we prefer richer's value whenever it is non-null/non-empty - regardless of
-     * whether this product already has a value. This is "richer wins", not "fill gaps".
-     *
-     * The only constraint: never replace with null or empty (never downgrade to nothing).
      */
     private boolean isEnrichable(String current, String candidate) {
         return candidate != null && !candidate.trim().isEmpty();

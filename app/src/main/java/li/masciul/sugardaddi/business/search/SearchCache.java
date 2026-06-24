@@ -9,8 +9,10 @@ import androidx.annotation.Nullable;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
+import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.repository.SearchResultCache;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
@@ -187,26 +189,41 @@ public class SearchCache {
         });
     }
 
+    /**
+     * Re-run Room enrichment over an already-displayed result list - no re-search,
+     * no network, no cache write.
+     *
+     * The list elements are the same Searchable objects held by SearchResultCache
+     * (stored by reference), so enriching them in place also refreshes the cached
+     * entry - no separate invalidation needed. Used by MainActivity.onActivityResumed()
+     * so an image set or removed on a detail screen is reflected on the search card
+     * when the user returns, without re-running the search.
+     *
+     * THREADING: enrichment runs on backgroundExecutor; onDone is posted to the main
+     * thread. Caller passes the adapter's live list and refreshes it in onDone.
+     *
+     * @param items  Displayed results to re-enrich in place (modified on a bg thread)
+     * @param onDone Run on the main thread once enrichment completes (e.g. notifyDataSetChanged)
+     */
+    public void refreshFromDatabase(@NonNull List<Searchable> items, @NonNull Runnable onDone) {
+        backgroundExecutor.execute(() -> {
+            enrichSearchResultsFromDatabase(items);
+            mainHandler.post(onDone);
+        });
+    }
+
     // =========================================================================
     // ROOM ENRICHMENT  (package-visible for testing)
     // =========================================================================
 
     /**
-     * Upgrade FoodProduct search results in-place with richer data from Room.
+     * Room enrichment entry point: upgrade search results in-place with the richer
+     * data saved when the user previously opened a detail screen.
      *
-     * When the user has previously opened a product detail screen, the full
-     * API response was saved to Room. That version has more complete data than
-     * the lightweight Searchalicious result: richer category (agribalyse name),
-     * scores, full nutrition, better images. This method upgrades matching items.
-     *
-     * IMPLEMENTATION:
-     *   1. Separate FoodProduct items by identity type: barcoded vs non-barcoded
-     *   2. One batch Room query per type (two queries total, regardless of list size)
-     *   3. Build lookup maps: barcode → FoodProduct, searchableId → FoodProduct
-     *   4. For each item, call enrichWith(richer) if a DB match is found
-     *      enrichWith() is a non-destructive field-level merge - never downgrades
-     *
-     * Recipe items are skipped - they have no FoodProductEntity representation.
+     * Products and recipes live in separate Room tables and enrich independently, so
+     * this just splits the result set by concrete type and delegates to the matching
+     * per-type helper (kept fully symmetric, never shared). Both helpers no-op on an
+     * empty list, so they are always called unconditionally.
      *
      * THREADING: Must be called on a background thread. Called exclusively from
      * the backgroundExecutor inside enrichAndCache().
@@ -216,13 +233,35 @@ public class SearchCache {
     void enrichSearchResultsFromDatabase(@NonNull List<Searchable> items) {
         if (items.isEmpty()) return;
 
-        // Extract FoodProduct items only
+        // Split the result set by concrete type. Each type enriches against its own
+        // Room table; the helpers no-op on an empty list, so unconditional calls are fine.
         List<FoodProduct> products = new ArrayList<>();
+        List<Recipe> recipes = new ArrayList<>();
         for (Searchable item : items) {
             if (item instanceof FoodProduct) {
                 products.add((FoodProduct) item);
+            } else if (item instanceof Recipe) {
+                recipes.add((Recipe) item);
             }
         }
+
+        enrichProductsFromDatabase(products);
+        enrichRecipesFromDatabase(recipes);
+    }
+
+    /**
+     * Upgrade FoodProduct search results in-place with richer data from Room.
+     *
+     * When the user has previously opened a product detail screen, the full API
+     * response (e.g. OFF v2) was saved to Room: richer category, scores, full
+     * nutrition, better images, and any local image overrides. This upgrades
+     * matching items using two batch queries (barcoded vs non-barcoded identity).
+     *
+     * THREADING: background thread only (called from enrichSearchResultsFromDatabase).
+     *
+     * @param products FoodProduct search results to potentially upgrade (in-place)
+     */
+    private void enrichProductsFromDatabase(@NonNull List<FoodProduct> products) {
         if (products.isEmpty()) return;
 
         try {
@@ -293,7 +332,75 @@ public class SearchCache {
 
         } catch (Exception e) {
             // Never crash the search flow - enrichment is best-effort
-            Log.w(TAG, "enrichSearchResultsFromDatabase failed (non-fatal): " + e.getMessage());
+            Log.w(TAG, "enrichProductsFromDatabase failed (non-fatal): " + e.getMessage());
+        }
+    }
+
+    /**
+     * Upgrade Recipe search results in-place with the user's local image paths
+     * from Room.
+     *
+     * Symmetric twin of enrichProductsFromDatabase(), scoped to images only. When the
+     * user has previously opened or favourited a recipe, its Room row may carry a
+     * custom photo/thumbnail (or our auto-cached copy). A fresh network search result
+     * never has those local paths, so without this overlay the card falls back to the
+     * source thumbnail and the user's custom image is silently dropped - visible only
+     * on the Favorites screen, which reads Room directly. (See Recipe.enrichWith for
+     * why the merge is images-only and not a full-field merge.)
+     *
+     * IMPLEMENTATION (mirrors the product non-barcoded branch):
+     *   1. Collect each recipe's searchableId ("sourceId:originalId").
+     *   2. One batch Room query (getRecipesBySearchableIds), across mixed sources.
+     *   3. Build a lookup map keyed by the row id (which IS the searchableId).
+     *   4. For each recipe, call enrichWith(richer) if a Room match is found.
+     *
+     * THREADING: background thread only (called from enrichSearchResultsFromDatabase).
+     *
+     * @param recipes Recipe search results to potentially upgrade (modified in-place)
+     */
+    private void enrichRecipesFromDatabase(@NonNull List<Recipe> recipes) {
+        if (recipes.isEmpty()) return;
+
+        try {
+            // Collect the searchable IDs to look up (skip any without one).
+            List<String> searchableIds = new ArrayList<>();
+            for (Recipe recipe : recipes) {
+                String sid = recipe.getSearchableId();
+                if (sid != null && !sid.trim().isEmpty()) {
+                    searchableIds.add(sid.trim());
+                }
+            }
+            if (searchableIds.isEmpty()) return;
+
+            // One batch Room query for the whole page, across all recipe sources.
+            // RecipeEntity.id IS the searchableId (see fromRecipe), so the entity's
+            // own id is the map key - no reconstruction needed.
+            Map<String, Recipe> idToRicher = new HashMap<>();
+            List<RecipeEntity> cached =
+                    database.recipeDao().getRecipesBySearchableIds(searchableIds);
+            for (RecipeEntity entity : cached) {
+                idToRicher.put(entity.getId(), entity.toRecipe());
+            }
+
+            // Overlay the user's local image paths wherever a cached row exists.
+            int enrichedCount = 0;
+            for (Recipe recipe : recipes) {
+                String sid = recipe.getSearchableId();
+                Recipe richer = (sid != null) ? idToRicher.get(sid.trim()) : null;
+                if (richer != null) {
+                    recipe.enrichWith(richer);
+                    enrichedCount++;
+                }
+            }
+
+            if (ApiConfig.DEBUG_LOGGING && enrichedCount > 0) {
+                Log.d(TAG, "Enriched " + enrichedCount + "/" + recipes.size()
+                        + " recipes from Room cache");
+            }
+
+        } catch (Exception e) {
+            // Never crash the search flow - enrichment is best-effort
+            Log.w(TAG, "enrichRecipesFromDatabase failed (non-fatal): " + e.getMessage());
         }
     }
 

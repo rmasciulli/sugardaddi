@@ -171,6 +171,28 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE sourceId = :sourceId AND originalId = :originalId LIMIT 1")
     RecipeEntity getBySourceAndOriginalId(String sourceId, String originalId);
 
+    /**
+     * Batch lookup of cached recipes by their searchable IDs.
+     *
+     * Symmetric twin of FoodProductDao.getProductsBySearchableIds(): one query
+     * resolves an entire page of search results regardless of size, across mixed
+     * sources (TheMealDB + TheCocktailDB) in a single round-trip.
+     *
+     * The match key is Recipe.getSearchableId() - the source-qualified ID
+     * "sourceId:originalId" (e.g. "THEMEALDB:52772"). This is also the row's primary
+     * key: RecipeEntity.fromRecipe() persists `id` as recipe.getSearchableId(), so a
+     * plain `id IN (:searchableIds)` matches directly and uses the PK index - no need
+     * to reconstruct the key from sourceId/originalId.
+     *
+     * Used by SearchCache.enrichRecipesFromDatabase() to overlay the user's local
+     * image paths onto recipe search cards.
+     *
+     * @param searchableIds Source-qualified IDs ("sourceId:originalId"), == row PK
+     * @return Matching cached recipe entities (only those present in Room)
+     */
+    @Query("SELECT * FROM recipes WHERE id IN (:searchableIds)")
+    List<RecipeEntity> getRecipesBySearchableIds(List<String> searchableIds);
+
     // ========== AUTHOR/USER QUERIES ==========
 
     @Query("SELECT * FROM recipes WHERE authorId = :authorId ORDER BY lastUpdated DESC")

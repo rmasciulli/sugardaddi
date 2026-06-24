@@ -1033,6 +1033,44 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     public String getUserImagePath() { return userImagePath; }
     public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
 
+    // ========== SEARCH ENRICHMENT ==========
+
+    /**
+     * Upgrade this recipe in-place with the local image paths from a richer
+     * (Room-cached) copy of the same recipe.
+     *
+     * Symmetric twin of FoodProduct.enrichWith(FoodProduct), deliberately scoped to
+     * images only: a recipe search result already carries everything the search card
+     * shows (name, category, ingredient count, tags), so the one thing Room can add
+     * is the user's custom photo/thumbnail (or our auto-cached copy). A full-field
+     * merge (richer instructions, resolved ingredient portions, etc.) is intentionally
+     * deferred until ingredient mapping lands - that feature is what makes a
+     * richer-portion merge meaningful.
+     *
+     * The caller (SearchCache.enrichRecipesFromDatabase) decides WHEN to call this -
+     * only when a Room-cached row exists for this recipe's (sourceId, originalId).
+     * The local paths live only in Room and are authoritative, so we copy whenever
+     * richer has a value and never overwrite an existing path with null.
+     *
+     * Assigns fields directly (not via setters) to mirror the product twin and to
+     * avoid any touch()/timestamp side effects - enrichment is not a content edit.
+     *
+     * @param richer Room-cached copy of the same recipe (no-op if null)
+     */
+    public void enrichWith(Recipe richer) {
+        if (richer == null) return;
+
+        // --- Local image paths (auto-cached + user overrides) ---
+
+        // A matched Room row is authoritative for these local-only fields, so mirror
+        // it exactly - including null, so a removed override clears on re-enrich (see
+        // FoodProduct.enrichWith for the full rationale). The search stub never has a
+        // local path, so assigning null is never a loss.
+        this.userImagePath     = richer.userImagePath;
+        this.userThumbnailPath = richer.userThumbnailPath;
+        this.thumbnailPath     = richer.thumbnailPath;
+    }
+
     // ========== TAGS ==========
 
     public Set<String> getTags() { return tags != null ? tags : new HashSet<>(); }
