@@ -91,17 +91,14 @@ app/src/main/java/li/masciul/sugardaddi/
 
 Data sources are ordered by relevance to the primary target audience (EU users with diabetes). Food sources come first; recipe and cocktail sources complement them.
 
----
-
 **Ciqual 2025 (ANSES)**
 
 - **Type:** Scientific reference - French national food composition table
 - **Search:** Ciqual Elasticsearch API (live) + local Room DB (offline, after import)
-- **Local import:** `alim_grp_2025_11_03.xml` (80KB, bundled), `alim_2025_11_03.xml` (1.6MB, bundled), `compo_2025_11_03.xml` (69MB, downloaded at first launch from Zenodo)
+- **Assets prepacked**: `alim_grp_2025_11_03.xml` (80KB, bundled), used to improve categorisation
+- **Local import:** Optional - `alim_2025_11_03.xml` (1.6MB) and `compo_2025_11_03.xml` (69MB)
 - **Coverage:** 3,484 foods, 65+ nutrients per food, full EU mineral/vitamin panel
 - **Attribution:** [ANSES Ciqual](https://ciqual.anses.fr) - Etalab Open Licence - DOI [10.5281/zenodo.17550133](https://doi.org/10.5281/zenodo.17550133)
-
----
 
 **Open Food Facts**
 
@@ -110,8 +107,6 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **Detail:** Open Food Facts API v2 (`/api/v2/product/{barcode}.json`)
 - **Coverage:** 3M+ products worldwide, product images, NutriScore, EcoScore, NOVA group, allergens
 - **Attribution:** [OpenFoodFacts.org](https://world.openfoodfacts.org) - Open Database Licence (ODbL)
-
----
 
 **USDA FoodData Central**
 
@@ -123,8 +118,6 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **API key:** Free key required - register at [fdc.nal.usda.gov/api-key-signup](https://fdc.nal.usda.gov/api-key-signup/) then add to `local.properties` as `USDA_API_KEY=your_key`. Falls back to `DEMO_KEY` (30 req/hour per IP).
 - **Attribution:** [USDA FoodData Central](https://fdc.nal.usda.gov) - public domain (CC0 1.0)
 
----
-
 **TheMealDB**
 
 - **Type:** Open recipe database
@@ -134,8 +127,6 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **API key:** Free development key (`1`) is hardcoded and sufficient for search and lookup. A Patreon key is required for public release. Add to `local.properties` as `THEMEALDB_API_KEY=your_key`.
 - **Attribution:** [TheMealDB.com](https://www.themealdb.com) - free tier for open-source projects
 
----
-
 **TheCocktailDB**
 
 - **Type:** Open cocktail recipe database - same developer as TheMealDB
@@ -144,8 +135,6 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **Coverage:** Structured cocktail recipes with up to 15 ingredients and measures, category, glass type, alcoholic status, and preparation instructions. No nutrition data provided by this source. Alcoholic status is stored as a searchable tag (`alcoholic`, `non_alcoholic`, `optional_alcohol`).
 - **API key:** Free development key (`1`) is hardcoded. A Patreon key is required for public release. Add to `local.properties` as `THECOCKTAILDB_API_KEY=your_key`.
 - **Attribution:** [TheCocktailDB.com](https://www.thecocktaildb.com) - free tier for open-source projects
-
----
 
 ## Getting started
 
