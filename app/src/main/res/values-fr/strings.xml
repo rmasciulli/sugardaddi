@@ -406,18 +406,18 @@
     <string name="cache_card_title">Données en cache</string>
 
     <string name="cache_browsed_title">Éléments recherchés</string>
-    <string name="cache_browsed_desc">Tout produit ou recette ouvert récemment.</string>
-    <string name="cache_browsed_action">Vider ce cache supprime tous les éléments consultés au cours des 30 derniers jours. Les favoris et les sources de données téléchargées sont conservés.</string>
+    <string name="cache_browsed_desc">Tout produit ou recette que vous avez recherché et ouvert récemment.</string>
+    <string name="cache_browsed_action">Vider ce cache supprime tous les éléments que vous avez consultés au cours des 30 derniers jours. Vos favoris et vos sources de données téléchargées sont conservés.</string>
 
     <string name="cache_favorites_title">Favoris</string>
-    <string name="cache_favorites_desc">Produits et recettes que vous avez ajoutés aux favoris.</string>
-    <string name="cache_favorites_action">Vider ce cache supprime tous les favoris. Les éléments provenant d\'une source de données téléchargée sont conservés mais perdent leur marque de favori.</string>
+    <string name="cache_favorites_desc">Produits et recettes que vous avez marqués comme favoris.</string>
+    <string name="cache_favorites_action">Vider ce cache supprime tous vos favoris. Les éléments provenant d\'une source de données que vous avez téléchargée sont conservés mais ne sont plus marqués comme favoris.</string>
 
     <string name="cache_downloaded_title">Sources de données téléchargées</string>
-    <string name="cache_downloaded_desc">Jeux de données téléchargés sur votre appareil pour une utilisation hors ligne.</string>
+    <string name="cache_downloaded_desc">Jeux de données que vous avez téléchargés sur votre appareil pour une utilisation hors ligne.</string>
     <string name="cache_downloaded_empty">Aucune source de données téléchargée.</string>
     <string name="cache_downloaded_action">Supprime le jeu de données %1$s de votre appareil. Les éléments favoris en sont conservés comme favoris.</string>
-    <string name="cache_downloaded_note">Vider une source supprime son contenu du disque. Les éléments marqués comme favoris sont conservés mais ne sont plus considérés comme provenant d\'un jeu de données téléchargé.</string>
+    <string name="cache_downloaded_note">Vider une source supprime ses données du disque. Les éléments que vous avez marqués comme favoris sont conservés mais ne sont plus catégorisés comme provenant d\'une source de données téléchargée.</string>
 
     <string name="cache_clear_all_title">Effacer toutes les données en cache</string>
     <string name="cache_clear_all_action">Supprime tout : éléments recherchés, favoris et sources de données téléchargées.</string>
