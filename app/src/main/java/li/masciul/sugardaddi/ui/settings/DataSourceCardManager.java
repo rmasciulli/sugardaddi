@@ -97,7 +97,7 @@ public class DataSourceCardManager {
     private LinearProgressIndicator   dbProgressBar;
     private TextView                  dbProgressPercent;
     private TextView                  dbPhaseText;
-    private TextView                  dbCheckIntegrityButton;
+    private MaterialButton            dbRefreshButton;
     private TextView                  dbIntegrityResult;
     private MaterialButton            dbReinitialiseButton;
 
@@ -183,19 +183,16 @@ public class DataSourceCardManager {
         credentialSaveButton  = cardView.findViewById(R.id.dsCredentialSaveButton);
 
         // Local DB section
-        localDbSection         = cardView.findViewById(R.id.dsLocalDbSection);
-        dbStatusText           = cardView.findViewById(R.id.dsDbStatusText);
-        dbVersionText          = cardView.findViewById(R.id.dsDbVersionText);
-        dbProgressRow          = cardView.findViewById(R.id.dsDbProgressRow);
-        dbProgressBar          = cardView.findViewById(R.id.dsDbProgressBar);
-        dbProgressPercent      = cardView.findViewById(R.id.dsDbProgressPercent);
-        dbPhaseText            = cardView.findViewById(R.id.dsDbPhaseText);
-        dbCheckIntegrityButton = cardView.findViewById(R.id.dsDbCheckIntegrityButton);
-        dbIntegrityResult      = cardView.findViewById(R.id.dsDbIntegrityResult);
-        dbReinitialiseButton   = cardView.findViewById(R.id.dsDbReinitialiseButton);
-
-        // Apply underline to text-link views (cannot be done in XML)
-        underline(dbCheckIntegrityButton);
+        localDbSection    = cardView.findViewById(R.id.dsLocalDbSection);
+        dbStatusText      = cardView.findViewById(R.id.dsDbStatusText);
+        dbVersionText     = cardView.findViewById(R.id.dsDbVersionText);
+        dbProgressRow     = cardView.findViewById(R.id.dsDbProgressRow);
+        dbProgressBar     = cardView.findViewById(R.id.dsDbProgressBar);
+        dbProgressPercent = cardView.findViewById(R.id.dsDbProgressPercent);
+        dbPhaseText       = cardView.findViewById(R.id.dsDbPhaseText);
+        dbRefreshButton   = cardView.findViewById(R.id.dsDbRefreshButton);
+        dbIntegrityResult = cardView.findViewById(R.id.dsDbIntegrityResult);
+        dbReinitialiseButton = cardView.findViewById(R.id.dsDbReinitialiseButton);
     }
 
     // =========================================================================
@@ -379,9 +376,9 @@ public class DataSourceCardManager {
     private void wireDbButtons() {
         if (settings == null) return;
 
-        // Check integrity
-        if (dbCheckIntegrityButton != null) {
-            dbCheckIntegrityButton.setOnClickListener(v -> runIntegrityCheck());
+        // Refresh = re-run the integrity check (recount + verify)
+        if (dbRefreshButton != null) {
+            dbRefreshButton.setOnClickListener(v -> runIntegrityCheck());
         }
 
         // Reinitialise
@@ -472,9 +469,10 @@ public class DataSourceCardManager {
     // =========================================================================
 
     private void runIntegrityCheck() {
-        if (settings == null || dbCheckIntegrityButton == null) return;
+        if (settings == null || dbRefreshButton == null) return;
 
-        dbCheckIntegrityButton.setEnabled(false);
+        // Disable the refresh button while the check runs
+        dbRefreshButton.setEnabled(false);
         if (dbIntegrityResult != null) {
             dbIntegrityResult.setText(s(R.string.ds_db_checking));
             dbIntegrityResult.setVisibility(View.VISIBLE);
@@ -485,13 +483,12 @@ public class DataSourceCardManager {
                 // Brief pause so Room settles if DB was just cleared
                 Thread.sleep(200);
 
-                int products   = settings.getDatabaseProductCount(context);
-                int nutrition  = settings.getDatabaseNutritionCount(context);
+                int products  = settings.getDatabaseProductCount(context);
+                int nutrition = settings.getDatabaseNutritionCount(context);
 
-                // Expected count comes from the source's prefs/constants
                 // We infer "full" if products > 0 and nutrition >= products
                 postToMain(() -> {
-                    if (dbCheckIntegrityButton != null) dbCheckIntegrityButton.setEnabled(true);
+                    if (dbRefreshButton != null) dbRefreshButton.setEnabled(true);
                     if (dbIntegrityResult == null) return;
 
                     String verdict;
@@ -500,7 +497,7 @@ public class DataSourceCardManager {
                     if (products == 0) {
                         verdict = s(R.string.ds_db_integrity_empty);
                         colour  = 0xFFE53935; // red
-                        // DB empty - reset import prefs so status dot reflects reality
+                        // DB empty - reset import prefs so the status dot reflects reality
                         if (settings != null) settings.resetDatabaseState(context);
                         refresh();
                     } else {
@@ -518,7 +515,7 @@ public class DataSourceCardManager {
             } catch (Exception e) {
                 Log.e(TAG, "Integrity check failed for " + source.getSourceId(), e);
                 postToMain(() -> {
-                    if (dbCheckIntegrityButton != null) dbCheckIntegrityButton.setEnabled(true);
+                    if (dbRefreshButton != null) dbRefreshButton.setEnabled(true);
                     if (dbIntegrityResult != null) {
                         dbIntegrityResult.setText(s(R.string.ds_db_integrity_error));
                         dbIntegrityResult.setTextColor(0xFFE53935);

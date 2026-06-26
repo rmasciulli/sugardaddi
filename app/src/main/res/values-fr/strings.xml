@@ -760,7 +760,7 @@
     <string name="ds_db_status_not_ready">Non téléchargée - recherche via API en ligne</string>
     <string name="ds_db_status_stale">Mise à jour disponible</string>
     <string name="ds_db_version_format">v%s</string>
-    <string name="ds_db_check_integrity">Vérifier l\'intégrité</string>
+    <string name="ds_db_refresh_description">Actualiser l\'état de la base de données locale</string>
     <string name="ds_db_checking">Vérification…</string>
     <string name="ds_db_integrity_ok">%1$d produits · %2$d enregistrements nutritionnels</string>
     <string name="ds_db_integrity_partial">%1$d / %2$d produits · %3$d enregistrements nutritionnels</string>

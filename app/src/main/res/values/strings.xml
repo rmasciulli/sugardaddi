@@ -773,7 +773,7 @@
     <string name="ds_db_version_format">v%s</string>
 
     <!-- Integrity check button and result -->
-    <string name="ds_db_check_integrity">Check integrity</string>
+    <string name="ds_db_refresh_description">Refresh local database status</string>
     <string name="ds_db_checking">Checking…</string>
     <string name="ds_db_integrity_ok">%1$d products · %2$d nutrition records</string>
     <string name="ds_db_integrity_partial">%1$d / %2$d products · %3$d nutrition records</string>

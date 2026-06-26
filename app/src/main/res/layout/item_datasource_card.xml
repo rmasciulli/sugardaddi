@@ -209,15 +209,39 @@
             android:visibility="gone"
             tools:visibility="visible">
 
-            <TextView
+            <!-- Header row: LOCAL DATABASE label + refresh icon button.
+                 Mirrors the image-library "Storage used" header in
+                 activity_settings.xml. The refresh button re-runs the
+                 integrity check (recount products / nutrition rows) and
+                 shows the outcome in dsDbIntegrityResult below. -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/ds_db_section_label"
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorPrimary"
-                android:textAllCaps="true"
-                android:letterSpacing="0.08"
-                android:layout_marginBottom="4dp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/ds_db_section_label"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.08" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/dsDbRefreshButton"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:contentDescription="@string/ds_db_refresh_description"
+                    app:icon="@drawable/ic_refresh"
+                    app:iconTint="?attr/colorOnSurfaceVariant"
+                    app:iconSize="20dp" />
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/dsDbStatusText"
@@ -286,24 +310,9 @@
                 android:visibility="gone"
                 tools:text="Importing foods... (1 200)" />
 
-            <!--
-                "Check integrity" text link.
-                Full-width result TextView sits directly below so it can use
-                the entire card width. breakStrategy="balanced" asks the text
-                engine to split the string as evenly as possible across 2 lines,
-                avoiding a near-empty second line.
-            -->
-            <TextView
-                android:id="@+id/dsDbCheckIntegrityButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="8dp"
-                android:paddingBottom="4dp"
-                android:text="@string/ds_db_check_integrity"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorPrimary"
-                android:clickable="true"
-                android:focusable="true" />
+            <!-- Integrity result row, populated by the refresh button above
+                 (runIntegrityCheck). Full-width; breakStrategy="balanced"
+                 splits the text evenly across 2 lines. -->
 
             <TextView
                 android:id="@+id/dsDbIntegrityResult"
