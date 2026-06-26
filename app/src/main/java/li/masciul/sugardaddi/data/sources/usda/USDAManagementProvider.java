@@ -9,20 +9,20 @@ import androidx.annotation.Nullable;
 
 import li.masciul.sugardaddi.BuildConfig;
 import li.masciul.sugardaddi.data.database.AppDatabase;
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
- * USDASettingsProvider - SettingsProvider for the USDA FoodData Central settings card.
+ * USDAManagementProvider - ManagementProvider for the USDA FoodData Central settings card.
  *
  * CARD SECTIONS SHOWN:
  * ┌─────────────────────────────────────┐
- * │ USDA FoodData          ●  [toggle] │
+ * │ USDA FoodData            ● [toggle] │
  * │ US Department of Agriculture...     │
  * ├─────────────────────────────────────│
  * │ API CREDENTIALS                     │
  * │ [API key input field]               │
- * │ ⚠ Rate limited - register for key  │  ← shown when DEMO_KEY active
+ * │ ⚠ Rate limited - register for key   │  ← shown when DEMO_KEY active
  * │ [Save]                              │
  * ├─────────────────────────────────────│
  * │ LOCAL DATABASE                      │
@@ -42,7 +42,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * - USDAImportService handles the download + parse pipeline.
  * - On completion, "database_ready" prefs key is set to true.
  */
-public class USDASettingsProvider implements SettingsProvider {
+public class USDAManagementProvider implements ManagementProvider {
 
     // ===== CREDENTIAL SECTION =====
 

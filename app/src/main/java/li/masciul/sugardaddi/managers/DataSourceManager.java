@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   requires no change here beyond calling registerAndInit().
  *
  * ADDED: {@link #getAllSources()} - all registered sources, sorted A→Z by name.
- *   Used by SettingsActivity to build the data-source cards in alphabetical order.
+ *   Used by DataSourcesActivity to build the data-source cards in alphabetical order.
  *
  * ADDED: {@link #getActiveSources()} - enabled + initialised sources, A→Z.
  *   Used by DataSourceAggregator for parallel search. Replaces the former
@@ -286,7 +286,7 @@ public class DataSourceManager {
 
     /**
      * All registered sources, sorted A→Z by display name.
-     * Used by SettingsActivity to render cards in alphabetical order.
+     * Used by DataSourcesActivity to render cards in alphabetical order.
      * Includes sources that are disabled or still initialising.
      */
     @NonNull

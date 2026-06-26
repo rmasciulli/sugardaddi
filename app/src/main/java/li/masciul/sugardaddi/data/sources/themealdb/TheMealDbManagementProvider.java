@@ -7,16 +7,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import li.masciul.sugardaddi.BuildConfig;
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
- * TheMealDbSettingsProvider - SettingsProvider for the TheMealDB settings card.
+ * TheMealDbManagementProvider - ManagementProvider for the TheMealDB settings card.
  *
  * CARD LAYOUT
  * ===========
  * ┌─────────────────────────────────────┐
- * │ 🍳 TheMealDB          ●  [toggle]   │
+ * │ TheMealDB                ● [toggle] │
  * │ Open recipe database                │
  * ├─────────────────────────────────────┤
  * │ API CREDENTIALS                     │
@@ -40,10 +40,10 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * ====================================
  * Because the TheMealDB API key is a PATH SEGMENT in the base URL, saving a new
  * key requires rebuilding the Retrofit instance. TheMealDbDataSource.reinitialize()
- * handles this. TheMealDbSettingsProvider calls it after saving via the optional
+ * handles this. TheMealDbManagementProvider calls it after saving via the optional
  * ReinitializeCallback - wired up by DataSourceManager at registration time.
  */
-public class TheMealDbSettingsProvider implements SettingsProvider {
+public class TheMealDbManagementProvider implements ManagementProvider {
 
     /**
      * Optional callback fired after a new API key is saved.
@@ -59,13 +59,13 @@ public class TheMealDbSettingsProvider implements SettingsProvider {
 
     // ===== CONSTRUCTOR =====
 
-    public TheMealDbSettingsProvider() {}
+    public TheMealDbManagementProvider() {}
 
     /**
      * @param reinitializeCallback Called after a successful key save.
      *                             Pass TheMealDbDataSource::reinitialize.
      */
-    public TheMealDbSettingsProvider(@Nullable ReinitializeCallback reinitializeCallback) {
+    public TheMealDbManagementProvider(@Nullable ReinitializeCallback reinitializeCallback) {
         this.reinitializeCallback = reinitializeCallback;
     }
 

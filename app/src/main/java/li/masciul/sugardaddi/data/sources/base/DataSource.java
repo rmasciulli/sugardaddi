@@ -15,7 +15,7 @@ import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
  * DataSource - Base interface for all item data sources (food products and recipes).
@@ -30,27 +30,27 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  *      kept a single cross-source enabled-set - a design that required every
  *      new source to be registered in three separate places.
  *
- *   2. {@link #getSettingsProvider()}
+ *   2. {@link #getManagementProvider()}
  *      Returns the source's optional settings contract (credentials, local DB,
  *      broadcast actions).  Returning null means "no user-configurable settings".
  *      The Settings UI never imports source-specific classes; it only calls
  *      methods on this interface.
  *
- * WHAT BELONGS HERE vs. SettingsProvider
+ * WHAT BELONGS HERE vs. ManagementProvider
  * =======================================
  * isEnabled/setEnabled ARE on this interface because the DataSourceManager and
  * DataSourceAggregator need to know whether to include a source in searches -
  * that is an operational concern, not a UI concern.
  *
  * Everything else (credentials, import control, broadcast actions) lives in
- * SettingsProvider, which is strictly a UI contract.
+ * ManagementProvider, which is strictly a UI contract.
  *
  * IMPLEMENTATION GUIDE
  * ====================
  * - Extend BaseDataSource for common boilerplate
  * - Provide a NetworkConfig subclass for HTTP sources (null for local-only)
  * - Implement search / getProduct / getProductByBarcode for data retrieval
- * - Override getSettingsProvider() if the source has user-configurable state
+ * - Override getManagementProvider() if the source has user-configurable state
  */
 public interface DataSource {
 
@@ -297,14 +297,14 @@ public interface DataSource {
      * has no user-configurable state beyond the enable/disable toggle.
      *
      * The Settings UI casts nothing to source-specific types; it only calls
-     * methods on the returned SettingsProvider.  This keeps the UI layer
+     * methods on the returned ManagementProvider.  This keeps the UI layer
      * completely decoupled from individual source implementations.
      *
      * Override in subclasses that have credentials, local databases, or
      * import services.  The default implementation returns null.
      */
     @Nullable
-    default SettingsProvider getSettingsProvider() {
+    default ManagementProvider getManagementProvider() {
         return null;
     }
 

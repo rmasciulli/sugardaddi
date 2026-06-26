@@ -33,14 +33,12 @@ import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.SugarDaddiApplication;
-import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.repository.CacheRepository;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.ThemeManager;
-import li.masciul.sugardaddi.ui.settings.DataSourceCardManager;
 import li.masciul.sugardaddi.utils.image.ImagePurgeManager;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
@@ -57,7 +55,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  * REPLACED BY: DataSourceCardManager list.
  *   One DataSourceCardManager is created per registered DataSource
  *   (alphabetical order from DataSourceManager.getAllSources()). Each manager
- *   inflates item_datasource_card.xml, binds its own SettingsProvider, and
+ *   inflates item_datasource_card.xml, binds its own ManagementProvider, and
  *   owns its BroadcastReceiver lifecycle. SettingsActivity knows nothing about
  *   any specific source - it just calls onResume/onPause/onDestroy on each
  *   manager at the right moment.
@@ -428,7 +426,7 @@ public class SettingsActivity extends BaseActivity
                 List<DataSource> sources =
                         DataSourceManager.getInstance(this).getAllSources();
                 for (DataSource source : sources) {
-                    SettingsProvider provider = source.getSettingsProvider();
+                    ManagementProvider provider = source.getManagementProvider();
                     if (provider == null || !provider.hasLocalDatabase()) continue;
 
                     String sourceId = source.getSourceId();
@@ -532,7 +530,7 @@ public class SettingsActivity extends BaseActivity
     private void removeDownloadedSource(DataSource source) {
         runCacheOp(() -> {
             cacheRepository.removeDownloadedSource(source.getSourceId());
-            SettingsProvider provider = source.getSettingsProvider();
+            ManagementProvider provider = source.getManagementProvider();
             if (provider != null) provider.resetDatabaseState(this);
         }, false);
     }
@@ -543,7 +541,7 @@ public class SettingsActivity extends BaseActivity
             cacheRepository.clearAll();
             List<DataSource> sources = DataSourceManager.getInstance(this).getAllSources();
             for (DataSource source : sources) {
-                SettingsProvider provider = source.getSettingsProvider();
+                ManagementProvider provider = source.getManagementProvider();
                 if (provider != null) provider.resetDatabaseState(this);
             }
         }, true);

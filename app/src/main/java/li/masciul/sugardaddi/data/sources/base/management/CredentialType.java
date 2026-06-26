@@ -1,9 +1,9 @@
-package li.masciul.sugardaddi.data.sources.base.settings;
+package li.masciul.sugardaddi.data.sources.base.management;
 
 /**
  * CredentialType - The kind of credential a data source may require.
  *
- * Used by {@link SettingsProvider} to tell {@code DataSourceCardManager}
+ * Used by {@link ManagementProvider} to tell {@code DataSourceCardManager}
  * how to render the credential input section and how to label it.
  *
  * NONE is never stored on a source that returns hasCredentials() = false;

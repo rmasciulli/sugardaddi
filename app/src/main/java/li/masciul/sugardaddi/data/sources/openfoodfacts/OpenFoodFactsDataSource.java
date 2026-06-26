@@ -14,7 +14,7 @@ import li.masciul.sugardaddi.data.network.NetworkClient;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.SearchAliciousAPI;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.OpenFoodFactsAPI;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.SearchAliciousConstants;
@@ -168,8 +168,8 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
      */
     @Override
     @NonNull
-    public SettingsProvider getSettingsProvider() {
-        return new OpenFoodFactsSettingsProvider();
+    public ManagementProvider getManagementProvider() {
+        return new OpenFoodFactsManagementProvider();
     }
 
     // ========== INITIALIZATION ==========

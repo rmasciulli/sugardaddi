@@ -20,7 +20,7 @@ import li.masciul.sugardaddi.data.network.RetryStrategy;
  * This means the base URL is KEY-DEPENDENT and cannot be a static constant.
  * Changing the key requires rebuilding the Retrofit instance - handled by
  * TheCocktailDbDataSource.reinitialize(), called via ReinitializeCallback
- * from TheCocktailDbSettingsProvider after the user saves a new key.
+ * from TheCocktailDbManagementProvider after the user saves a new key.
  *
  * KEY PRIORITY
  * ============
@@ -106,7 +106,7 @@ public class TheCocktailDbConfig extends NetworkConfig {
 
     /**
      * True if the active key is the public development key.
-     * Used by TheCocktailDbSettingsProvider to show a warning when DEMO_KEY is active.
+     * Used by TheCocktailDbManagementProvider to show a warning when DEMO_KEY is active.
      */
     public boolean isUsingDemoKey() {
         return TheCocktailDbConstants.DEMO_KEY.equals(getActiveApiKey());

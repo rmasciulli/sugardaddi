@@ -22,7 +22,7 @@ import li.masciul.sugardaddi.data.network.RetryStrategy;
  * TheMealDB requires the Retrofit instance to be rebuilt when the key changes.
  *
  * TheMealDbDataSource handles this via reinitialize() - called automatically
- * from TheMealDbSettingsProvider.saveCredential() when the user saves a new key.
+ * from TheMealDbManagementProvider.saveCredential() when the user saves a new key.
  *
  * KEY PRIORITY (identical to USDA pattern)
  * =========================================
@@ -119,7 +119,7 @@ public class TheMealDbConfig extends NetworkConfig {
 
     /**
      * True if the active key is the public development key.
-     * Used by TheMealDbSettingsProvider to show a warning when DEMO_KEY is active.
+     * Used by TheMealDbManagementProvider to show a warning when DEMO_KEY is active.
      */
     public boolean isUsingDemoKey() {
         return TheMealDbConstants.DEMO_KEY.equals(getActiveApiKey());

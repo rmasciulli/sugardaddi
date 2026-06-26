@@ -65,7 +65,7 @@ import java.util.concurrent.Executors;
  *
  * TRIGGERED BY:
  *   CiqualDataSource.initialize() - automatically on first launch or version change.
- *   SettingsActivity - manually by the user (force re-import / update).
+ *   DataSourcesActivity - manually by the user (force re-import / update).
  */
 public class CiqualImportService extends Service {
 

@@ -25,7 +25,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.api.TheCocktailDbAPI;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.api.dto.CocktailDbSearchResponse;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.mappers.TheCocktailDbMapper;
@@ -153,9 +153,9 @@ public class TheCocktailDbDataSource extends BaseDataSource {
 
     @NonNull
     @Override
-    public SettingsProvider getSettingsProvider() {
+    public ManagementProvider getManagementProvider() {
         // Pass reinitialize callback so key changes trigger Retrofit rebuild immediately
-        return new TheCocktailDbSettingsProvider(this::reinitialize);
+        return new TheCocktailDbManagementProvider(this::reinitialize);
     }
 
     @Override
@@ -231,7 +231,7 @@ public class TheCocktailDbDataSource extends BaseDataSource {
      *
      * Because the key is a URL path segment, changing it requires rebuilding
      * the Retrofit instance with the new base URL. Called by
-     * TheCocktailDbSettingsProvider via the ReinitializeCallback after the
+     * TheCocktailDbManagementProvider via the ReinitializeCallback after the
      * user saves a new key in Settings.
      */
     public void reinitialize() {

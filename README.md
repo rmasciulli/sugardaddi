@@ -32,7 +32,7 @@ The project is still in alpha (core architecture complete), it's actively develo
 - **Multi-source filtering** - `SearchFilter{}` is an immutable value object carrying two filter dimensions: allowed item types (`ProductType`) and allowed source IDs. `DataSourceAggregator.searchAll()` intersects the active source list against the filter before firing any network call - excluded sources are never contacted. Each `DataSource{}` declares what it produces via `getProducedTypes()`, allowing type-based exclusion at the same level. Filter state is owned by `SearchManager{}` and survives pagination.
 - **Delegate pattern** - `ItemViewDelegate{}` and `DetailRenderer{}` interfaces allow each data source to define its own search card and detail screen layouts independently. Food sources (OFF, Ciqual, USDA) and recipe sources (TheMealDB, TheCocktailDB) share the same pipeline but render through source-specific delegates, with `DefaultProductSearchDelegate{}` and `DefaultRecipeSearchDelegate{}` as catch-all fallbacks.
 - **Hybrid translation** - primary content stored in the language received; `ProductTranslation{}` and `RecipeTranslation{}` maps hold other languages. Default language is English.
-- **Generic settings cards** - `DataSourceCardManager{}` + `SettingsProvider{}` interface drive the settings screen. Each source declares its own credentials, local DB state, and broadcast actions. Adding a new source requires zero changes to `SettingsActivity{}`.
+- **Generic settings cards** - `DataSourceCardManager{}` + `ManagementProvider{}` interface drive the settings screen. Each source declares its own credentials, local DB state, and broadcast actions. Adding a new source requires zero changes to `DataSourcesActivity{}`.
 
 ## Architecture overview
 
@@ -63,7 +63,7 @@ app/src/main/java/li/masciul/sugardaddi/
 │   │   ├── entities/            # Room entities with typed converters
 │   │   └── relations/           # FoodProductWithNutrition, MealWithNutrition…
 │   ├── sources/                 # One package per data source
-│   │   ├── base/                # BaseDataSource, DataSourceCallback, SettingsProvider
+│   │   ├── base/                # BaseDataSource, DataSourceCallback, ManagementProvider
 │   │   ├── aggregation/         # DataSourceAggregator, SmartMergeStrategy
 │   │   ├── ciqual/              # Ciqual ES API + local XML import pipeline
 │   │   ├── openfoodfacts/       # SearchAlicious + OFF v2 API

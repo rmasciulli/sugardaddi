@@ -19,7 +19,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.data.sources.ciqual.api.CiqualAPI;
 import li.masciul.sugardaddi.data.sources.ciqual.api.CiqualSearchRequest;
 import li.masciul.sugardaddi.data.sources.ciqual.api.dto.CiqualElasticsearchResponse;
@@ -326,15 +326,15 @@ public class CiqualDataSource extends BaseDataSource {
     // ========== SETTINGS PROVIDER ==========
 
     /**
-     * Returns the CiqualSettingsProvider which gives the Settings UI everything
+     * Returns the CiqualManagementProvider which gives the Settings UI everything
      * it needs to render and interact with the Ciqual card:
      * local DB state, integrity checks, import control, and broadcast actions.
      * Credentials are not included - Ciqual requires no API key.
      */
     @Override
     @NonNull
-    public SettingsProvider getSettingsProvider() {
-        return new CiqualSettingsProvider();
+    public ManagementProvider getManagementProvider() {
+        return new CiqualManagementProvider();
     }
 
     // ========== SEARCH ==========

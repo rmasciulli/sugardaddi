@@ -35,7 +35,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * the DAOs' "CACHE MANAGEMENT (settings)" sections; this class composes them.
  *
  * SCOPE: Room only. Image-file purging (ImagePurgeManager) and resetting a source's
- * import state (SettingsProvider.resetDatabaseState) are infra/UI concerns and stay in
+ * import state (ManagementProvider.resetDatabaseState) are infra/UI concerns and stay in
  * the Settings layer that orchestrates this repository.
  *
  * THREADING: every method is synchronous and annotated {@code @WorkerThread} - call
@@ -133,7 +133,7 @@ public class CacheRepository {
      * pin (they stay as plain favourites). Mirrored across both tables.
      *
      * Room only - the caller resets the source's import state
-     * (SettingsProvider.resetDatabaseState) and purges orphaned image files.
+     * (ManagementProvider.resetDatabaseState) and purges orphaned image files.
      *
      * @param sourceId The data source id whose dataset is being removed (e.g. "CIQUAL")
      */

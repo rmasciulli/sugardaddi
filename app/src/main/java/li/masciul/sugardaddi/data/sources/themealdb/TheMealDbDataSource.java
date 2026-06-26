@@ -5,7 +5,6 @@ import android.util.Log;
 import android.util.LruCache;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.data.sources.themealdb.api.TheMealDbAPI;
 import li.masciul.sugardaddi.data.sources.themealdb.api.dto.MealDbSearchResponse;
 import li.masciul.sugardaddi.data.sources.themealdb.mappers.TheMealDbMapper;
@@ -169,9 +168,9 @@ public class TheMealDbDataSource extends BaseDataSource {
 
     @NonNull
     @Override
-    public SettingsProvider getSettingsProvider() {
+    public ManagementProvider getManagementProvider() {
         // Pass reinitialize callback so key changes trigger Retrofit rebuild
-        return new TheMealDbSettingsProvider(this::reinitialize);
+        return new TheMealDbManagementProvider(this::reinitialize);
     }
 
     @Override
@@ -249,7 +248,7 @@ public class TheMealDbDataSource extends BaseDataSource {
      *
      * Because the TheMealDB key is a URL path segment (not a query parameter),
      * changing the key requires rebuilding the Retrofit instance with the new
-     * base URL. This method is called by TheMealDbSettingsProvider via the
+     * base URL. This method is called by TheMealDbManagementProvider via the
      * ReinitializeCallback after the user saves a new key.
      */
     public void reinitialize() {

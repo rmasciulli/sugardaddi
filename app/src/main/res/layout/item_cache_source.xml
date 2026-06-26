@@ -2,7 +2,7 @@
 <!--
     item_cache_source.xml
     One row of the Settings cache card's "Downloaded data sources" table. Inflated
-    per source by SettingsActivity.renderDownloadedSources() into the TableLayout
+    per source by DataSourcesActivity.renderDownloadedSources() into the TableLayout
     (downloadedSourcesContainer): a left column with the source name + its
     product/recipe counts, and a trailing bin to remove that dataset. As a TableRow,
     the left column auto-sizes to the widest source across rows, so the bins line up.

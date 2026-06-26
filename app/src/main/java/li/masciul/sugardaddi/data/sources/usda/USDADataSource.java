@@ -28,8 +28,7 @@ import li.masciul.sugardaddi.data.network.NetworkConfig;
 import li.masciul.sugardaddi.data.sources.base.BaseDataSource;
 import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
-import li.masciul.sugardaddi.data.sources.base.DataSource.SearchResult;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 import li.masciul.sugardaddi.data.sources.usda.api.FoodDataCentralAPI;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCFoodDetail;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchRequest;
@@ -104,7 +103,7 @@ public class USDADataSource extends BaseDataSource {
 
     // ========== SETTINGS ==========
 
-    private final USDASettingsProvider settingsProvider = new USDASettingsProvider();
+    private final USDAManagementProvider settingsProvider = new USDAManagementProvider();
 
     // ========== CONSTRUCTOR ==========
 
@@ -156,7 +155,7 @@ public class USDADataSource extends BaseDataSource {
 
     @Nullable
     @Override
-    public SettingsProvider getSettingsProvider() {
+    public ManagementProvider getManagementProvider() {
         return settingsProvider;
     }
 

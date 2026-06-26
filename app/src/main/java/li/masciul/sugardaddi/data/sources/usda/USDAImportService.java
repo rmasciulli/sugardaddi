@@ -42,7 +42,7 @@ import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;
  * USDAImportService - Imports USDA Foundation Foods and SR Legacy into Room.
  *
  * TRIGGERED BY:
- *   USDASettingsProvider.startImport() - user-initiated from Settings card only.
+ *   USDAManagementProvider.startImport() - user-initiated from Settings card only.
  *   Never auto-triggered - ~215MB download requires user consent.
  *
  * PIPELINE:

@@ -7,16 +7,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import li.masciul.sugardaddi.BuildConfig;
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
- * TheCocktailDbSettingsProvider - SettingsProvider for the TheCocktailDB settings card.
+ * TheCocktailDbManagementProvider - ManagementProvider for the TheCocktailDB settings card.
  *
  * CARD LAYOUT
  * ===========
  * ┌─────────────────────────────────────┐
- * │ 🍹 TheCocktailDB      ●  [toggle]   │
+ * │ TheCocktailDB            ● [toggle] │
  * │ Open cocktail database              │
  * ├─────────────────────────────────────┤
  * │ API CREDENTIALS                     │
@@ -42,7 +42,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * rebuilding the Retrofit instance. TheCocktailDbDataSource.reinitialize() handles
  * this. Wired up via the optional ReinitializeCallback after the user saves a new key.
  */
-public class TheCocktailDbSettingsProvider implements SettingsProvider {
+public class TheCocktailDbManagementProvider implements ManagementProvider {
 
     /**
      * Optional callback fired after a new API key is saved.
@@ -58,13 +58,13 @@ public class TheCocktailDbSettingsProvider implements SettingsProvider {
 
     // ===== CONSTRUCTORS =====
 
-    public TheCocktailDbSettingsProvider() {}
+    public TheCocktailDbManagementProvider() {}
 
     /**
      * @param reinitializeCallback Called after a successful key save.
      *                             Pass TheCocktailDbDataSource::reinitialize.
      */
-    public TheCocktailDbSettingsProvider(@Nullable ReinitializeCallback reinitializeCallback) {
+    public TheCocktailDbManagementProvider(@Nullable ReinitializeCallback reinitializeCallback) {
         this.reinitializeCallback = reinitializeCallback;
     }
 

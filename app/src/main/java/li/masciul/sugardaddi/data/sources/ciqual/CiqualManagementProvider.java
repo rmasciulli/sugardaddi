@@ -9,17 +9,17 @@ import androidx.annotation.Nullable;
 
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.NutritionDao;
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 import java.util.List;
 
 /**
- * CiqualSettingsProvider - SettingsProvider implementation for the Ciqual data source.
+ * CiqualManagementProvider - ManagementProvider implementation for the Ciqual data source.
  *
  * RESPONSIBILITIES
  * ================
- * This class is the single place where SettingsActivity/DataSourceCardManager learns
+ * This class is the single place where DataSourcesActivity/DataSourceCardManager learns
  * everything it needs to render and interact with the Ciqual settings card:
  *
  *   - No credentials (Ciqual is a bundled dataset, no API key required)
@@ -44,9 +44,9 @@ import java.util.List;
  * resetDatabaseState() writes SharedPreferences synchronously (apply() is async
  * but that's fine - the card manager refreshes the UI after calling this).
  */
-public class CiqualSettingsProvider implements SettingsProvider {
+public class CiqualManagementProvider implements ManagementProvider {
 
-    private static final String TAG = "CiqualSettingsProvider";
+    private static final String TAG = "CiqualManagementProvider";
 
     // =========================================================================
     // CREDENTIALS - Ciqual has none
@@ -101,7 +101,7 @@ public class CiqualSettingsProvider implements SettingsProvider {
      * matches the current dataset version in CiqualConstants.
      *
      * Reads CiqualImportService's own SharedPreferences - this is the single source
-     * of truth for import state. The SettingsActivity no longer reaches into those
+     * of truth for import state. The DataSourcesActivity no longer reaches into those
      * prefs directly; it asks us instead.
      */
     @Override

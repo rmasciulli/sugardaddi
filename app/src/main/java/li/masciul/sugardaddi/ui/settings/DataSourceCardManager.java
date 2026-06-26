@@ -26,29 +26,29 @@ import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
  * DataSourceCardManager - inflates and manages one data source settings card.
  *
  * LIFECYCLE
  * =========
- * Create one instance per DataSource in SettingsActivity.onCreate():
+ * Create one instance per DataSource in DataSourcesActivity.onCreate():
  *
  *   DataSourceCardManager mgr = new DataSourceCardManager(source, context);
  *   mgr.attach(container);   // inflate + bind + add to parent
  *
- * Then in SettingsActivity:
+ * Then in DataSourcesActivity:
  *   onResume()  → mgr.onResume()   - register broadcast receiver, refresh status
  *   onPause()   → mgr.onPause()    - unregister receiver (prevents leaks)
  *   onDestroy() → mgr.onDestroy()  - shut down background executor
  *
  * WHAT THIS CLASS KNOWS ABOUT SOURCES
  * =====================================
- * Nothing source-specific. It calls methods on DataSource and SettingsProvider
+ * Nothing source-specific. It calls methods on DataSource and ManagementProvider
  * interfaces only. Adding a new source (USDA, TheMealDB, …) requires zero
- * changes here - the source provides its own SettingsProvider implementation.
+ * changes here - the source provides its own ManagementProvider implementation.
  *
  * THREADING
  * =========
@@ -66,7 +66,7 @@ public class DataSourceCardManager {
 
     private final DataSource source;
     @Nullable
-    private final SettingsProvider settings;
+    private final ManagementProvider settings;
     private final Context context; // Application context - never Activity
 
     // =========================================================================
@@ -118,7 +118,7 @@ public class DataSourceCardManager {
      */
     public DataSourceCardManager(@NonNull DataSource source, @NonNull Context context) {
         this.source   = source;
-        this.settings = source.getSettingsProvider();
+        this.settings = source.getManagementProvider();
         this.context  = context.getApplicationContext();
     }
 
@@ -147,18 +147,18 @@ public class DataSourceCardManager {
     // LIFECYCLE HOOKS
     // =========================================================================
 
-    /** Call from SettingsActivity.onResume() */
+    /** Call from DataSourcesActivity.onResume() */
     public void onResume() {
         registerReceiver();
         refresh();
     }
 
-    /** Call from SettingsActivity.onPause() */
+    /** Call from DataSourcesActivity.onPause() */
     public void onPause() {
         unregisterReceiver();
     }
 
-    /** Call from SettingsActivity.onDestroy() */
+    /** Call from DataSourcesActivity.onDestroy() */
     public void onDestroy() {
         bgExecutor.shutdown();
     }
@@ -422,7 +422,7 @@ public class DataSourceCardManager {
     // =========================================================================
 
     /**
-     * Called by SettingsActivity after clearing the database cache.
+     * Called by DataSourcesActivity after clearing the database cache.
      * Resets this source's import SharedPreferences so isDatabaseReady()
      * returns false, then refreshes the card UI to reflect the empty state.
      * No-op for sources without a local database (e.g. OpenFoodFacts).
@@ -551,7 +551,7 @@ public class DataSourceCardManager {
         }
         if (dbIntegrityResult != null) dbIntegrityResult.setVisibility(View.GONE);
 
-        // Delegate - the source's SettingsProvider starts its own service
+        // Delegate - the source's ManagementProvider starts its own service
         settings.startImport(context);
     }
 

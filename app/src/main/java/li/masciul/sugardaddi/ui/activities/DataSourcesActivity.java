@@ -169,7 +169,7 @@ public class DataSourcesActivity extends BaseActivity
      * and attaches it to the dataSourcesContainer LinearLayout.
      *
      * Sources are returned alphabetically by DataSourceManager.getAllSources().
-     * No source-specific code here - each card is driven by its SettingsProvider.
+     * No source-specific code here - each card is driven by its ManagementProvider.
      */
     private void setupDataSourceCards() {
         android.widget.LinearLayout container = findViewById(R.id.dataSourcesContainer);

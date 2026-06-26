@@ -5,11 +5,11 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import li.masciul.sugardaddi.data.sources.base.settings.CredentialType;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.CredentialType;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 /**
- * OpenFoodFactsSettingsProvider - SettingsProvider for OpenFoodFacts.
+ * OpenFoodFactsManagementProvider - ManagementProvider for OpenFoodFacts.
  *
  * OFF IS A NETWORK-ONLY SOURCE. It has:
  *   - No credentials required from the user (the app uses the public API)
@@ -29,7 +29,7 @@ import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
  * and wire the key into OpenFoodFactsConfig. This class is already structured
  * to make that addition trivial.
  */
-public class OpenFoodFactsSettingsProvider implements SettingsProvider {
+public class OpenFoodFactsManagementProvider implements ManagementProvider {
 
     // =========================================================================
     // CREDENTIALS - none required

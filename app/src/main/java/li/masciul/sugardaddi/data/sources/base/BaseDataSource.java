@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.NetworkConfig;
-import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
+import li.masciul.sugardaddi.data.sources.base.management.ManagementProvider;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   REMOVED: DataSourceConfig dependency.
  *   BaseDataSource no longer imports or references DataSourceConfig.
  *
- *   ADDED: default getSettingsProvider() returning null.
+ *   ADDED: default getManagementProvider() returning null.
  *   Subclasses that have user-configurable state override this.
  *
  * INITIALIZATION LIFECYCLE
@@ -224,7 +224,7 @@ public abstract class BaseDataSource implements DataSource {
      */
     @Override
     @Nullable
-    public SettingsProvider getSettingsProvider() {
+    public ManagementProvider getManagementProvider() {
         return null;
     }
 

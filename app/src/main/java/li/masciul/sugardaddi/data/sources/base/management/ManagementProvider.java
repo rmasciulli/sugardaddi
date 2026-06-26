@@ -1,4 +1,4 @@
-package li.masciul.sugardaddi.data.sources.base.settings;
+package li.masciul.sugardaddi.data.sources.base.management;
 
 import android.content.Context;
 
@@ -6,12 +6,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * SettingsProvider - UI contract between a data source and the settings screen.
+ * ManagementProvider - UI contract between a data source and the settings screen.
  *
  * DESIGN RATIONALE
  * ================
  * Each {@code DataSource} optionally produces one of these via
- * {@code DataSource.getSettingsProvider()}. Returning {@code null} means
+ * {@code DataSource.getManagementProvider()}. Returning {@code null} means
  * "this source has no user-configurable settings" - the card shows only
  * the name, status dot, and enable/disable toggle.
  *
@@ -23,9 +23,9 @@ import androidx.annotation.Nullable;
  *
  * IMPLEMENTORS
  * ============
- * - {@code CiqualSettingsProvider}        - local DB section, no credentials
- * - {@code OpenFoodFactsSettingsProvider} - no credentials, no local DB
- * - {@code USDASettingsProvider}          - credentials (API_KEY) + local DB
+ * - {@code CiqualManagementProvider}        - local DB section, no credentials
+ * - {@code OpenFoodFactsManagementProvider} - no credentials, no local DB
+ * - {@code USDAManagementProvider}          - credentials (API_KEY) + local DB
  *
  * SECTIONS
  * ========
@@ -49,7 +49,7 @@ import androidx.annotation.Nullable;
  * Methods that start services ({@code startImport}) must be called from the
  * foreground (Activity.onResume or later) to satisfy Android 12+ restrictions.
  */
-public interface SettingsProvider {
+public interface ManagementProvider {
 
     // =========================================================================
     // CREDENTIAL SECTION

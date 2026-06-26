@@ -2,10 +2,10 @@
 <!--
     item_datasource_card.xml
     ========================
-    Reusable card rendered once per registered DataSource in SettingsActivity.
+    Reusable card rendered once per registered DataSource in DataSourcesActivity.
     All optional sections (credentials, local DB) start GONE and are made VISIBLE
-    by DataSourceCardManager based on SettingsProvider.hasCredentials() /
-    SettingsProvider.hasLocalDatabase().
+    by DataSourceCardManager based on ManagementProvider.hasCredentials() /
+    ManagementProvider.hasLocalDatabase().
 
     DESIGN DECISIONS v2.0
     ──────────────────────
