@@ -434,6 +434,77 @@ public interface RecipeDao {
     @Query("DELETE FROM recipes WHERE lastUpdated < :threshold AND isFavorite = 0 AND accessCount < :minAccessCount")
     int deleteStaleRecipes(long threshold, int minAccessCount);
 
+    // ========== CACHE MANAGEMENT (settings) ==========
+    // Exact mirror of FoodProductDao's cache-management set, for the three-section
+    // cache card. The two retention pins (isFavorite, localImport) and the
+    // clear-one-pin / downgrade-or-delete rules are identical across both tables.
+    //
+    // No recipe source is currently downloadable, so recipes are never localImport
+    // = 1 today: the import-pin operations below are inert for now. They exist by
+    // design so that if a recipe source ever becomes importable, it is covered
+    // automatically with no further changes. Section-2 favourite total reuses
+    // getFavoriteCount().
+
+    /**
+     * Count of browsed-cache recipes - opened from search, neither favourited nor
+     * part of a downloaded dataset (no retention pin). Drives the section-1 count.
+     */
+    @Query("SELECT COUNT(*) FROM recipes WHERE localImport = 0 AND isFavorite = 0")
+    int getBrowsedCacheCount();
+
+    /**
+     * Count of recipes belonging to one source's downloaded dataset (localImport = 1,
+     * favourited or not). Inert until a recipe source is importable.
+     *
+     * @param sourceId The data source id
+     */
+    @Query("SELECT COUNT(*) FROM recipes WHERE sourceId = :sourceId AND localImport = 1")
+    int getDownloadCountBySource(String sourceId);
+
+    /**
+     * Section 1 - delete the browsed cache: flagless rows only. Favourites and
+     * downloaded rows are untouched. Returns the number deleted.
+     */
+    @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 0")
+    int deleteBrowsedCache();
+
+    /**
+     * Section 2, part A - delete favourites that exist only because they were
+     * favourited (no import pin). Rows that are also downloaded survive via
+     * unmarkFavoriteOnDownloads(). Returns the number deleted.
+     */
+    @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 1")
+    int deleteFavoritesOnly();
+
+    /**
+     * Section 2, part B - clear the favourite pin on rows that are also downloaded
+     * (C -> D): they stay as plain dataset rows. Inert until recipes are importable.
+     * Returns the number updated.
+     */
+    @Query("UPDATE recipes SET isFavorite = 0 WHERE localImport = 1 AND isFavorite = 1")
+    int unmarkFavoriteOnDownloads();
+
+    /**
+     * Section 3, part A - for one source, delete dataset rows that are not also
+     * favourited (D). Favourited dataset rows survive via
+     * unmarkDownloadOnFavoritesBySource(). Inert until recipes are importable.
+     * Returns the number deleted.
+     *
+     * @param sourceId The data source id whose dataset is being removed
+     */
+    @Query("DELETE FROM recipes WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 0")
+    int deleteDownloadsOnlyBySource(String sourceId);
+
+    /**
+     * Section 3, part B - for one source, clear the import pin on rows that are also
+     * favourited (C -> B): they stay as plain favourites. Inert until recipes are
+     * importable. Returns the number updated.
+     *
+     * @param sourceId The data source id whose dataset is being removed
+     */
+    @Query("UPDATE recipes SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 1")
+    int unmarkDownloadOnFavoritesBySource(String sourceId);
+
     @Query("UPDATE recipes SET lastUpdated = :timestamp WHERE id = :recipeId")
     int updateLastUpdated(String recipeId, long timestamp);
 

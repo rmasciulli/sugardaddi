@@ -398,46 +398,6 @@ public class ProductRepository {
         }
     }
 
-    /**
-     * Clear all non-favorite products from database cache
-     */
-    public void clearNonFavoriteCache() {
-        backgroundExecutor.execute(() -> {
-            try {
-                database.foodProductDao().clearNonFavoriteCache();
-                // Also clean up orphaned nutrition entries
-                database.nutritionDao().deleteOrphanedNutrition();
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Cleared non-favorite database cache");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error clearing database cache", e);
-            }
-        });
-    }
-
-    /**
-     * Clear entire cache (both search and database)
-     */
-    public void clearAllCache() {
-        // Clear database cache
-        backgroundExecutor.execute(() -> {
-            try {
-                database.foodProductDao().clearAllProducts();
-                database.nutritionDao().clearAllNutrition();
-                database.mealDao().deleteAll();
-                database.recipeDao().deleteAll();
-
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Cleared all cache (search + database)");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error clearing all cache", e);
-            }
-        });
-    }
-
     // ========== LIFECYCLE MANAGEMENT ==========
 
     /**

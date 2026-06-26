@@ -59,10 +59,16 @@ public interface NutritionDao {
     // ========== MAINTENANCE OPERATIONS ==========
 
     /**
-     * Delete orphaned nutrition entries (no matching product)
+     * Delete orphaned nutrition entries - rows whose parent entity no longer exists.
+     * Covers both product nutrition (parent in food_products) and recipe nutrition
+     * (parent in recipes). Meal nutrition is intentionally left out for now (no meal
+     * nutrition is written yet); add a meals clause here if that changes.
+     *
+     * @return Number of orphaned rows deleted
      */
-    @Query("DELETE FROM nutrition WHERE sourceType = 'product' AND sourceId NOT IN " +
-            "(SELECT id FROM food_products)")
+    @Query("DELETE FROM nutrition WHERE " +
+            "(sourceType = 'product' AND sourceId NOT IN (SELECT id FROM food_products)) " +
+            "OR (sourceType = 'recipe' AND sourceId NOT IN (SELECT id FROM recipes))")
     public abstract int deleteOrphanedNutrition();
 
     /**
@@ -78,12 +84,6 @@ public interface NutritionDao {
             "energyKcal IS NULL AND proteins IS NULL AND " +
             "carbohydrates IS NULL AND fat IS NULL")
     public abstract int deleteEmptyNutrition();
-
-    /**
-     * Clear all nutrition data
-     */
-    @Query("DELETE FROM nutrition")
-    public abstract void clearAllNutrition();
 
     // ========== MACRONUTRIENT QUERIES ==========
 

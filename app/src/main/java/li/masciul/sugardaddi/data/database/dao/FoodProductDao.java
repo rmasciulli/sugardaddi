@@ -287,16 +287,77 @@ public interface FoodProductDao {
     int deleteExpiredProducts(long threshold);
 
     /**
-     * Clear all non-favorite products
-     */
-    @Query("DELETE FROM food_products WHERE isFavorite = 0")
-    void clearNonFavoriteCache();
-
-    /**
      * Clear all products
      */
     @Query("DELETE FROM food_products")
     void clearAllProducts();
+
+    // ========== CACHE MANAGEMENT (settings) ==========
+    // Per-"pin" operations backing the three-section cache card in Settings.
+    // Every row carries two orthogonal retention pins: isFavorite and localImport.
+    //   - Browsed cache  = localImport 0, isFavorite 0  (no pin)
+    //   - Favourites     = isFavorite 1                 (favourite pin)
+    //   - Downloaded     = localImport 1                (import pin)
+    // Clearing a section clears one pin: a row that still holds the other pin is
+    // downgraded (kept), a row left with no pin is deleted. Orchestrated in
+    // ProductRepository; section-2 favourite total reuses getFavoriteCount().
+
+    /**
+     * Count of browsed-cache products - opened from search, neither favourited nor
+     * part of a downloaded dataset (no retention pin). Drives the section-1 count.
+     */
+    @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0 AND isFavorite = 0")
+    int getBrowsedCacheCount();
+
+    /**
+     * Count of products belonging to one source's downloaded dataset (localImport = 1,
+     * favourited or not). Drives a section-3 source-row count.
+     *
+     * @param sourceId The data source id (e.g. "CIQUAL", "USDA")
+     */
+    @Query("SELECT COUNT(*) FROM food_products WHERE sourceId = :sourceId AND localImport = 1")
+    int getDownloadCountBySource(String sourceId);
+
+    /**
+     * Section 1 - delete the browsed cache: flagless rows only. Favourites and
+     * downloaded rows are untouched. Returns the number deleted.
+     */
+    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 0")
+    int deleteBrowsedCache();
+
+    /**
+     * Section 2, part A - delete favourites that exist only because they were
+     * favourited (no import pin). Rows that are also downloaded survive via
+     * unmarkFavoriteOnDownloads(). Returns the number deleted.
+     */
+    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 1")
+    int deleteFavoritesOnly();
+
+    /**
+     * Section 2, part B - clear the favourite pin on rows that are also downloaded
+     * (C -> D): they stay as plain dataset rows. Returns the number updated.
+     */
+    @Query("UPDATE food_products SET isFavorite = 0 WHERE localImport = 1 AND isFavorite = 1")
+    int unmarkFavoriteOnDownloads();
+
+    /**
+     * Section 3, part A - for one source, delete dataset rows that are not also
+     * favourited (D). Favourited dataset rows survive via
+     * unmarkDownloadOnFavoritesBySource(). Returns the number deleted.
+     *
+     * @param sourceId The data source id whose dataset is being removed
+     */
+    @Query("DELETE FROM food_products WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 0")
+    int deleteDownloadsOnlyBySource(String sourceId);
+
+    /**
+     * Section 3, part B - for one source, clear the import pin on rows that are also
+     * favourited (C -> B): they stay as plain favourites. Returns the number updated.
+     *
+     * @param sourceId The data source id whose dataset is being removed
+     */
+    @Query("UPDATE food_products SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 1")
+    int unmarkDownloadOnFavoritesBySource(String sourceId);
 
     /**
      * Delete products by IDs
