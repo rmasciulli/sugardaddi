@@ -101,7 +101,7 @@
             android:name=".ui.activities.DataSourcesActivity"
             android:exported="false"
             android:label="@string/data_sources_title"
-            android:parentActivityName=".ui.activities.SettingsActivity"
+            android:parentActivityName=".ui.activities.MainActivity"
             android:theme="@style/Theme.SugarDaddi" />
 
         <!-- Settings Activity -->
