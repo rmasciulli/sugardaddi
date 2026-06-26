@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_cache_source.xml
+    One row of the Settings cache card's "Downloaded data sources" table. Inflated
+    per source by SettingsActivity.renderDownloadedSources() into the TableLayout
+    (downloadedSourcesContainer): a left column with the source name + its
+    product/recipe counts, and a trailing bin to remove that dataset. As a TableRow,
+    the left column auto-sizes to the widest source across rows, so the bins line up.
+-->
+<TableRow xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:gravity="center_vertical">
+
+    <!-- Left column: source name + counts (auto-sized table column) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:id="@+id/cacheSourceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="USDA FoodData" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/cacheSourceProductCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Products: 8158" />
+
+            <TextView
+                android:id="@+id/cacheSourceRecipeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Recipes: 0" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Trailing bin: remove this source's downloaded dataset -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/clearSourceButton"
+        style="@style/Widget.Material3.Button.IconButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        app:icon="@drawable/ic_delete"
+        app:iconSize="20dp"
+        app:iconTint="?attr/colorOnSurfaceVariant" />
+
+</TableRow>

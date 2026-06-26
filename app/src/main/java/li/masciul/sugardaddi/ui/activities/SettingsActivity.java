@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -12,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -19,6 +21,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.navigation.NavigationView;
 
@@ -31,7 +34,9 @@ import java.util.concurrent.Executors;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.data.database.AppDatabase;
+import li.masciul.sugardaddi.data.repository.CacheRepository;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
+import li.masciul.sugardaddi.data.sources.base.settings.SettingsProvider;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.ThemeManager;
@@ -85,17 +90,32 @@ public class SettingsActivity extends BaseActivity
 
     private RadioGroup    languageRadioGroup;
     private RadioGroup    themeRadioGroup;
-    private MaterialButton clearCacheButton;
 
     // =========================================================================
     // CACHE CARD
     // =========================================================================
 
-    private TextView       cacheProductCount;
-    private TextView       cacheRecipeCount;
-    private MaterialButton clearProductCacheButton;
-    private MaterialButton clearRecipeCacheButton;
-    private MaterialButton clearAllCacheButton;
+    // Section 1 - searched items (no retention pin)
+    private TextView       cacheBrowsedText;
+    private TextView       cacheBrowsedProductCount;
+    private TextView       cacheBrowsedRecipeCount;
+    private MaterialButton clearBrowsedButton;
+
+    // Section 2 - favourites
+    private TextView       cacheFavoritesText;
+    private TextView       cacheFavoriteProductCount;
+    private TextView       cacheFavoriteRecipeCount;
+    private MaterialButton clearFavoritesButton;
+
+    // Section 3 - downloaded data sources (rows inflated dynamically)
+    private TextView       cacheDownloadedText;
+    private LinearLayout   downloadedSourcesContainer;
+    private TextView       downloadedSourcesEmpty;
+
+    // Clear all
+    private MaterialButton clearAllButton;
+
+    private CacheRepository cacheRepository;
 
     // =========================================================================
     // IMAGE LIBRARY CARD
@@ -328,47 +348,103 @@ public class SettingsActivity extends BaseActivity
     // =========================================================================
 
     /**
-     * Wires the cache management card views and sets up click listeners
-     * for the three clear buttons (products, recipes, all).
+     * Binds the three-section cache card and wires each bin button to a
+     * confirmation dialog. Section 3 (downloaded sources) is built dynamically
+     * in {@link #refreshCacheCounts()}. Keeps the setupCacheCard() call site.
      */
     private void setupCacheCard() {
-        cacheProductCount       = findViewById(R.id.cacheProductCount);
-        cacheRecipeCount        = findViewById(R.id.cacheRecipeCount);
-        clearProductCacheButton = findViewById(R.id.clearProductCacheButton);
-        clearRecipeCacheButton  = findViewById(R.id.clearRecipeCacheButton);
-        clearAllCacheButton     = findViewById(R.id.clearAllCacheButton);
+        cacheRepository = new CacheRepository(this);
 
-        if (clearProductCacheButton != null) {
-            clearProductCacheButton.setOnClickListener(v -> clearProductCache());
+        cacheBrowsedProductCount   = findViewById(R.id.cacheBrowsedProductCount);
+        cacheBrowsedRecipeCount    = findViewById(R.id.cacheBrowsedRecipeCount);
+        clearBrowsedButton         = findViewById(R.id.clearBrowsedButton);
+        cacheFavoriteProductCount  = findViewById(R.id.cacheFavoriteProductCount);
+        cacheFavoriteRecipeCount   = findViewById(R.id.cacheFavoriteRecipeCount);
+        clearFavoritesButton       = findViewById(R.id.clearFavoritesButton);
+        downloadedSourcesContainer = findViewById(R.id.downloadedSourcesContainer);
+        downloadedSourcesEmpty     = findViewById(R.id.downloadedSourcesEmpty);
+        clearAllButton             = findViewById(R.id.clearAllButton);
+        cacheBrowsedText           = findViewById(R.id.cacheBrowsedText);
+        cacheFavoritesText         = findViewById(R.id.cacheFavoritesText);
+        cacheDownloadedText        = findViewById(R.id.cacheDownloadedText);
+
+        if (clearBrowsedButton != null) {
+            clearBrowsedButton.setOnClickListener(v ->
+                    confirmAndClear(R.string.cache_browsed_action, this::clearBrowsed));
         }
-        if (clearRecipeCacheButton != null) {
-            clearRecipeCacheButton.setOnClickListener(v -> clearRecipeCache());
+        if (clearFavoritesButton != null) {
+            clearFavoritesButton.setOnClickListener(v ->
+                    confirmAndClear(R.string.cache_favorites_action, this::clearFavorites));
         }
-        if (clearAllCacheButton != null) {
-            clearAllCacheButton.setOnClickListener(v -> clearAllCache());
+        if (clearAllButton != null) {
+            clearAllButton.setOnClickListener(v ->
+                    confirmAndClear(R.string.cache_clear_all_action, this::clearAll));
         }
+
+        // Static section text: description + what deleting it does.
+        if (cacheBrowsedText != null) cacheBrowsedText.setText(
+                sectionText(R.string.cache_browsed_desc, R.string.cache_browsed_action));
+        if (cacheFavoritesText != null) cacheFavoritesText.setText(
+                sectionText(R.string.cache_favorites_desc, R.string.cache_favorites_action));
+        if (cacheDownloadedText != null) cacheDownloadedText.setText(
+                sectionText(R.string.cache_downloaded_desc, R.string.cache_downloaded_note));
 
         refreshCacheCounts();
     }
 
     /**
-     * Loads the current product and recipe counts from Room on a background
-     * thread and updates the count TextViews on the main thread.
-     * Called on every onActivityResumed() so counts stay accurate.
+     * Confirmation dialog for the fixed sections (browsed / favourites / clear-all).
+     * The per-source section uses {@link #confirmRemoveSource(DataSource)} because its
+     * message needs the source name formatted in.
+     *
+     * @param messageRes Body text describing exactly what will be removed
+     * @param onConfirm  Runnable executed only if the user confirms
+     */
+    private void confirmAndClear(@StringRes int messageRes, Runnable onConfirm) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.cache_confirm_title)
+                .setMessage(messageRes)
+                .setPositiveButton(R.string.cache_confirm_remove, (d, w) -> onConfirm.run())
+                .setNegativeButton(R.string.cache_confirm_cancel, null)
+                .show();
+    }
+
+    /**
+     * Reads all per-type counts off the main thread and rebuilds the section-3
+     * source rows, then applies everything to the UI. Called on every resume so the
+     * card stays accurate after favouriting/importing elsewhere.
      */
     private void refreshCacheCounts() {
         imageSettingsExecutor.execute(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                int productCount = db.foodProductDao().getProductCount();
-                int recipeCount  = db.recipeDao().getCount();
+                int browsedProducts  = cacheRepository.getBrowsedProductCount();
+                int browsedRecipes   = cacheRepository.getBrowsedRecipeCount();
+                int favoriteProducts = cacheRepository.getFavoriteProductCount();
+                int favoriteRecipes  = cacheRepository.getFavoriteRecipeCount();
 
-                String productText = getString(R.string.cache_count_format, productCount);
-                String recipeText  = getString(R.string.cache_count_format, recipeCount);
+                // A source shows in section 3 only if it has a local database and
+                // currently holds downloaded rows (count-based, so no isImported guess).
+                List<SourceRow> sourceRows = new ArrayList<>();
+                List<DataSource> sources =
+                        DataSourceManager.getInstance(this).getAllSources();
+                for (DataSource source : sources) {
+                    SettingsProvider provider = source.getSettingsProvider();
+                    if (provider == null || !provider.hasLocalDatabase()) continue;
+
+                    String sourceId = source.getSourceId();
+                    int products = cacheRepository.getDownloadProductCount(sourceId);
+                    int recipes  = cacheRepository.getDownloadRecipeCount(sourceId);
+                    if (products > 0 || recipes > 0) {
+                        sourceRows.add(new SourceRow(source, products, recipes));
+                    }
+                }
 
                 runOnUiThread(() -> {
-                    if (cacheProductCount != null) cacheProductCount.setText(productText);
-                    if (cacheRecipeCount  != null) cacheRecipeCount.setText(recipeText);
+                    setCount(cacheBrowsedProductCount,  R.string.cache_products_count, browsedProducts);
+                    setCount(cacheBrowsedRecipeCount,   R.string.cache_recipes_count,  browsedRecipes);
+                    setCount(cacheFavoriteProductCount, R.string.cache_products_count, favoriteProducts);
+                    setCount(cacheFavoriteRecipeCount,  R.string.cache_recipes_count,  favoriteRecipes);
+                    renderDownloadedSources(sourceRows);
                 });
             } catch (Exception e) {
                 logError("refreshCacheCounts failed", e);
@@ -376,99 +452,143 @@ public class SettingsActivity extends BaseActivity
         });
     }
 
+    /** Formats "Products: N" / "Recipes: N" into a count TextView (null-safe). */
+    private void setCount(TextView view, @StringRes int formatRes, int count) {
+        if (view != null) view.setText(getSafeString(formatRes, count));
+    }
+
+
     /**
-     * Clears all cached food products (and their orphaned nutrition rows)
-     * from Room. Does not affect recipes, meals, or user-created content.
+     * Joins a section's description and its delete-consequence into one text block
+     * (blank line between). The action half stays a separate string so the confirm
+     * dialog can reuse it verbatim.
      */
-    private void clearProductCache() {
-        clearProductCacheButton.setEnabled(false);
+    private String sectionText(@StringRes int descRes, @StringRes int actionRes) {
+        return getSafeString(descRes) + " " + getSafeString(actionRes);
+    }
+
+    /**
+     * Rebuilds the dynamic section-3 list: one inflated item_cache_source row per
+     * downloaded source, or the "no sources" placeholder when the list is empty.
+     */
+    private void renderDownloadedSources(List<SourceRow> rows) {
+        if (downloadedSourcesContainer == null) return;
+        downloadedSourcesContainer.removeAllViews();
+
+        if (rows.isEmpty()) {
+            if (downloadedSourcesEmpty != null) downloadedSourcesEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+        if (downloadedSourcesEmpty != null) downloadedSourcesEmpty.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (SourceRow row : rows) {
+            View item = inflater.inflate(
+                    R.layout.item_cache_source, downloadedSourcesContainer, false);
+
+            TextView       name     = item.findViewById(R.id.cacheSourceName);
+            TextView       products = item.findViewById(R.id.cacheSourceProductCount);
+            TextView       recipes  = item.findViewById(R.id.cacheSourceRecipeCount);
+            MaterialButton bin      = item.findViewById(R.id.clearSourceButton);
+
+            name.setText(row.source.getSourceName());
+            setCount(products, R.string.cache_products_count, row.products);
+            setCount(recipes,  R.string.cache_recipes_count,  row.recipes);
+            bin.setContentDescription(
+                    getSafeString(R.string.cache_delete_source_cd, row.source.getSourceName()));
+            bin.setOnClickListener(v -> confirmRemoveSource(row.source));
+
+            downloadedSourcesContainer.addView(item);
+        }
+    }
+
+    /** Per-source confirmation dialog (message needs the source name formatted in). */
+    private void confirmRemoveSource(DataSource source) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.cache_confirm_title)
+                .setMessage(getSafeString(R.string.cache_downloaded_action, source.getSourceName()))
+                .setPositiveButton(R.string.cache_confirm_remove,
+                        (d, w) -> removeDownloadedSource(source))
+                .setNegativeButton(R.string.cache_confirm_cancel, null)
+                .show();
+    }
+
+    // ---- clear handlers (Room op on executor, then image purge + UI refresh) ----
+
+    /** Section 1 - delete searched items (no pin); favourites/downloads untouched. */
+    private void clearBrowsed() {
+        runCacheOp(() -> cacheRepository.clearBrowsedCache(), false);
+    }
+
+    /** Section 2 - delete favourites (downloaded favourites just lose the pin). */
+    private void clearFavorites() {
+        runCacheOp(() -> cacheRepository.clearFavorites(), false);
+    }
+
+    /**
+     * Section 3 - remove one source's downloaded dataset, then reset that source's
+     * import state so its data-source card re-enables download.
+     */
+    private void removeDownloadedSource(DataSource source) {
+        runCacheOp(() -> {
+            cacheRepository.removeDownloadedSource(source.getSourceId());
+            SettingsProvider provider = source.getSettingsProvider();
+            if (provider != null) provider.resetDatabaseState(this);
+        }, false);
+    }
+
+    /** Clear all - wipe every product and recipe, then reset every local source. */
+    private void clearAll() {
+        runCacheOp(() -> {
+            cacheRepository.clearAll();
+            List<DataSource> sources = DataSourceManager.getInstance(this).getAllSources();
+            for (DataSource source : sources) {
+                SettingsProvider provider = source.getSettingsProvider();
+                if (provider != null) provider.resetDatabaseState(this);
+            }
+        }, true);
+    }
+
+    /**
+     * Runs a Room cache operation on the background executor, then purges orphaned
+     * image files (or all of them on a full clear), then refreshes the card.
+     *
+     * @param roomOp    The synchronous CacheRepository call(s) to run
+     * @param fullPurge true for "clear all" (purge every image), false otherwise
+     */
+    private void runCacheOp(Runnable roomOp, boolean fullPurge) {
         imageSettingsExecutor.execute(() -> {
             try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                db.foodProductDao().clearAllProducts();
-                db.nutritionDao().deleteOrphanedNutrition();
+                roomOp.run();
 
-                // Reset database state for all local-DB sources (e.g. Ciqual, USDA).
-                List<DataSource> sources =
-                        DataSourceManager.getInstance(this).getAllSources();
-                for (DataSource source : sources) {
-                    if (source.getSettingsProvider() != null) {
-                        source.getSettingsProvider().resetDatabaseState(this);
-                    }
+                ImagePurgeManager purgeManager =
+                        ((SugarDaddiApplication) getApplication()).getImagePurgeManager();
+                if (purgeManager != null) {
+                    if (fullPurge) purgeManager.purgeAllAsync();
+                    else           purgeManager.purgeOrphansAsync();
                 }
 
                 runOnUiThread(() -> {
-                    clearProductCacheButton.setEnabled(true);
-                    android.widget.Toast.makeText(this,
-                            getSafeString(R.string.cache_cleared_products),
-                            android.widget.Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getSafeString(R.string.cache_cleared),
+                            Toast.LENGTH_SHORT).show();
                     refreshCacheCounts();
                 });
             } catch (Exception e) {
-                logError("clearProductCache failed", e);
-                runOnUiThread(() -> clearProductCacheButton.setEnabled(true));
+                logError("cache operation failed", e);
             }
         });
     }
 
-    /**
-     * Clears all cached recipes from Room.
-     * Does not affect food products, meals, or user-created content.
-     */
-    private void clearRecipeCache() {
-        clearRecipeCacheButton.setEnabled(false);
-        imageSettingsExecutor.execute(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                db.recipeDao().deleteAll();
-
-                runOnUiThread(() -> {
-                    clearRecipeCacheButton.setEnabled(true);
-                    android.widget.Toast.makeText(this,
-                            getSafeString(R.string.cache_cleared_recipes),
-                            android.widget.Toast.LENGTH_SHORT).show();
-                    refreshCacheCounts();
-                });
-            } catch (Exception e) {
-                logError("clearRecipeCache failed", e);
-                runOnUiThread(() -> clearRecipeCacheButton.setEnabled(true));
-            }
-        });
-    }
-
-    /**
-     * Clears all cached food products and recipes from Room.
-     */
-    private void clearAllCache() {
-        clearAllCacheButton.setEnabled(false);
-        imageSettingsExecutor.execute(() -> {
-            try {
-                AppDatabase db = AppDatabase.getInstance(this);
-                db.foodProductDao().clearAllProducts();
-                db.nutritionDao().deleteOrphanedNutrition();
-                db.recipeDao().deleteAll();
-
-                // Reset database state for all local-DB sources.
-                List<DataSource> sources =
-                        DataSourceManager.getInstance(this).getAllSources();
-                for (DataSource source : sources) {
-                    if (source.getSettingsProvider() != null) {
-                        source.getSettingsProvider().resetDatabaseState(this);
-                    }
-                }
-
-                runOnUiThread(() -> {
-                    clearAllCacheButton.setEnabled(true);
-                    android.widget.Toast.makeText(this,
-                            getSafeString(R.string.cache_cleared_all),
-                            android.widget.Toast.LENGTH_SHORT).show();
-                    refreshCacheCounts();
-                });
-            } catch (Exception e) {
-                logError("clearAllCache failed", e);
-                runOnUiThread(() -> clearAllCacheButton.setEnabled(true));
-            }
-        });
+    /** Lightweight holder for one downloaded-source row while building section 3. */
+    private static final class SourceRow {
+        final DataSource source;
+        final int products;
+        final int recipes;
+        SourceRow(DataSource source, int products, int recipes) {
+            this.source = source;
+            this.products = products;
+            this.recipes = recipes;
+        }
     }
 
     // =========================================================================

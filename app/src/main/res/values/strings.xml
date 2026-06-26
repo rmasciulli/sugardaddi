@@ -403,18 +403,38 @@
     <string name="menu_data_sources">Data sources</string>
 
     <!-- Settings - cache card -->
-    <string name="cache_card_title">Cache</string>
-    <string name="cache_products_label">Cached products</string>
-    <string name="cache_recipes_label">Cached recipes</string>
-    <string name="cache_clear">Clear</string>
-    <string name="cache_clear_products">Clear products</string>
-    <string name="cache_clear_recipes">Clear recipes</string>
-    <string name="cache_clear_all">Clear all cache</string>
-    <string name="cache_cleared_products">Products cache cleared</string>
-    <string name="cache_cleared_recipes">Recipes cache cleared</string>
+    <string name="cache_card_title">Cached data</string>
+
+    <string name="cache_browsed_title">Searched items</string>
+    <string name="cache_browsed_desc">Any product or recipe opened recently.</string>
+    <string name="cache_browsed_action">Clearing this cache removes every item consulted during the last 30 days. Favorites and downloaded data sources are kept.</string>
+
+    <string name="cache_favorites_title">Favorites</string>
+    <string name="cache_favorites_desc">Products and recipes you\'ve marked as favorite.</string>
+    <string name="cache_favorites_action">Clearing this cache deletes all favorites. Items that originate from a downloaded data source are kept but lose their favorite mark.</string>
+
+    <string name="cache_downloaded_title">Downloaded data sources</string>
+    <string name="cache_downloaded_desc">Datasets downloaded to your device for offline use.</string>
+    <string name="cache_downloaded_empty">No data sources downloaded.</string>
+    <string name="cache_downloaded_action">Removes the %1$s dataset from your device. Favorite items from it are kept as favorites.</string>
+    <string name="cache_downloaded_note">Clearing a source removes its content from the disk. Items marked as favorite are kept but they\'re not seen as originating from a downloaded dataset anymore.</string>
+
+    <string name="cache_clear_all_title">Clear all cached data</string>
+    <string name="cache_clear_all_action">Removes everything: searched items, favorites, and downloaded data sources.</string>
+
+    <string name="cache_products_count">Products: %1$d</string>
+    <string name="cache_recipes_count">Recipes: %1$d</string>
+
+    <string name="cache_confirm_title">Remove these items?</string>
+    <string name="cache_confirm_remove">Remove</string>
+    <string name="cache_confirm_cancel">Cancel</string>
+
+    <string name="cache_delete_browsed_cd">Remove searched items</string>
+    <string name="cache_delete_favorites_cd">Remove favorites</string>
+    <string name="cache_delete_source_cd">Remove %1$s dataset</string>
+
     <string name="cache_cleared_all">Cache cleared</string>
-    <string name="cache_count_format">%d items</string>
-    
+
     <!-- Data Source UI Labels -->
     <string name="label_data_source">Data Source</string>
     <string name="label_attribution">Attribution</string>
