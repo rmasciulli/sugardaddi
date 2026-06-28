@@ -140,6 +140,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroContainer == null || heroImage == null) return;
+        View heroExpandIcon = view.findViewById(R.id.heroExpandIcon);
 
         Object source = ImageDisplayUtils.resolveProductImageSource(product);
         if (source != null) {
@@ -148,8 +149,8 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
-        // Tap the hero to open the full original; no-op when the hero is hidden.
-        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
+        // Tap to open the full original; the expand icon shows only when openable.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, heroExpandIcon, source);
     }
 
     /**

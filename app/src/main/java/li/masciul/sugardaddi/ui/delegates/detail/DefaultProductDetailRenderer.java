@@ -129,18 +129,29 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Load the full-size product image via Glide and make it tappable to open the
-     * full original full-screen. The ImageView always loads (placeholder when no
-     * source resolves); the placeholder stays non-tappable.
-     * Local-first: userImagePath → imagePath → imageUrl → placeholder.
+     * Load the full-size product image, expose the expand affordance, and make the
+     * hero tappable to open the full original full-screen.
+     *
+     * The hero container is GONE by default in the layout and shown only when an
+     * image source resolves (userImagePath → imagePath → imageUrl); otherwise the
+     * 200dp slot collapses cleanly. (Previously the container was never toggled, so
+     * the default-product hero never appeared at all.)
      */
     private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
+        View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
-        if (heroImage == null) return;
+        if (heroContainer == null || heroImage == null) return;
+        View heroExpandIcon = view.findViewById(R.id.heroExpandIcon);
 
         Object source = ImageDisplayUtils.resolveProductImageSource(product);
-        ImageDisplayUtils.loadHeroImage(context, source, heroImage);
-        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
+        if (source != null) {
+            heroContainer.setVisibility(View.VISIBLE);
+            ImageDisplayUtils.loadHeroImage(context, source, heroImage);
+        } else {
+            heroContainer.setVisibility(View.GONE);
+        }
+        // Tap to open the full original; the expand icon shows only when openable.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, heroExpandIcon, source);
     }
 
     /**

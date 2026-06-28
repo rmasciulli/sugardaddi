@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 50% black rounded chip behind the expand glyph so it reads on light photos. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#80000000" />
+    <corners android:radius="8dp" />
+</shape>

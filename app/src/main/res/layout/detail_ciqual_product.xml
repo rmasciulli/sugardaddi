@@ -40,6 +40,21 @@
                 android:contentDescription="@string/product_image_description"
                 android:scaleType="centerCrop" />
 
+            <!-- Expand affordance: tap the hero to open it full-screen. Shown only when
+                 the image is openable (toggled by ImageDisplayUtils.bindFullScreenTap). -->
+            <ImageView
+                android:id="@+id/heroExpandIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_expand_icon_scrim"
+                android:padding="7dp"
+                android:src="@drawable/ic_fullscreen"
+                android:scaleType="fitCenter"
+                android:visibility="gone"
+                android:importantForAccessibility="no" />
+
         </FrameLayout>
 
         <!-- 2. MAIN CONTENT CARD -->

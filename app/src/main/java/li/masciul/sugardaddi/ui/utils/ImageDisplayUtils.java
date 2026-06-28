@@ -3,6 +3,7 @@ package li.masciul.sugardaddi.ui.utils;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
+import android.view.View;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -184,31 +185,43 @@ public final class ImageDisplayUtils {
     }
 
     /**
-     * Make an already-bound ImageView open the full-screen viewer on tap.
-     *
-     * Pass the FULL-IMAGE source (resolveProductImageSource / resolveRecipeImageSource),
-     * NOT the thumbnail source the card is displaying - the viewer always shows the
-     * original. For a non-favourited card that full source is usually the remote
-     * imageUrl, which the viewer fetches over the network (Option A).
-     *
-     * RECYCLING-SAFE: when {@code fullSource} is null the listener is cleared and the
-     * view made non-clickable, so a recycled RecyclerView holder never keeps a stale
-     * tap target pointing at the previous item's image. Callers must therefore call
-     * this on EVERY bind, not just when a source exists.
-     *
-     * @param context    any Context capable of starting an Activity.
-     * @param imageView  the bound card/hero ImageView (may be null - then no-op).
-     * @param fullSource result of resolve*ImageSource: a File, a URL String, or null.
+     * Convenience: tap-to-open with no affordance icon. Used by card thumbnails.
      */
     public static void bindFullScreenTap(@NonNull Context context,
                                          @Nullable ImageView imageView,
                                          @Nullable Object fullSource) {
-        if (imageView == null) return;
+        bindFullScreenTap(context, imageView, null, fullSource);
+    }
+
+    /**
+     * Make an already-bound ImageView open the full-screen viewer on tap, and drive
+     * an optional expand-affordance icon whose visibility tracks tappability.
+     *
+     * Pass the FULL-IMAGE source (resolve*ImageSource), NOT the thumbnail being shown.
+     *
+     * Single source of truth: when {@code fullSource} is null the listener is cleared,
+     * the view made non-clickable, AND {@code expandIcon} hidden - so a recycled holder
+     * never shows an "expand" hint on an image that won't open. Callers must call this
+     * on EVERY bind, not only when a source exists.
+     *
+     * @param expandIcon optional overlay icon (e.g. R.id.heroExpandIcon); null for cards.
+     * @param fullSource result of resolve*ImageSource: a File, a URL String, or null.
+     */
+    public static void bindFullScreenTap(@NonNull Context context,
+                                         @Nullable ImageView imageView,
+                                         @Nullable View expandIcon,
+                                         @Nullable Object fullSource) {
+        if (imageView == null) {
+            if (expandIcon != null) expandIcon.setVisibility(View.GONE);
+            return;
+        }
         if (fullSource == null) {
             imageView.setOnClickListener(null);
             imageView.setClickable(false);
+            if (expandIcon != null) expandIcon.setVisibility(View.GONE);
             return;
         }
         imageView.setOnClickListener(v -> ImageViewerLauncher.open(context, fullSource));
+        if (expandIcon != null) expandIcon.setVisibility(View.VISIBLE);
     }
 }
