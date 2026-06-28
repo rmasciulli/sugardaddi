@@ -136,10 +136,6 @@ public class CocktailDbRecipeSearchDelegate
         }
     }
 
-    /**
-     * Load the cocktail thumbnail via Glide.
-     * TheCocktailDB always provides strDrinkThumb for published cocktails.
-     */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
         Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
         if (source != null) {
@@ -148,6 +144,9 @@ public class CocktailDbRecipeSearchDelegate
         } else {
             holder.imageContainer.setVisibility(View.GONE);
         }
+        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
+                ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
     /**

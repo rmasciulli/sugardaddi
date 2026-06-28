@@ -188,6 +188,11 @@ public class OffProductSearchDelegate
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
+        // Tap the card image to open the FULL original (remote URL if not cached
+        // locally). Resolve the image source, not the thumbnail shown above.
+        // Always called - bindFullScreenTap clears the listener when null (recycling).
+        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                ImageDisplayUtils.resolveProductImageSource(product));
     }
 
     // Compact score dimensions for search result cards.

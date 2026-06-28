@@ -90,12 +90,6 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "-");
     }
 
-    /**
-     * Resolve and load the card thumbnail through the shared ImageDisplayUtils
-     * (user override -> auto-cached path -> remote thumbnail/image URL). The
-     * container is hidden when nothing resolves so text-only recipes collapse the
-     * 72x72 slot cleanly.
-     */
     private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
         Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
         if (source != null && holder.recipeImage != null) {
@@ -104,6 +98,9 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         } else {
             if (holder.imageContainer != null) holder.imageContainer.setVisibility(View.GONE);
         }
+        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
+                ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
     private void bindDescription(ViewHolder holder, Recipe recipe, String language) {

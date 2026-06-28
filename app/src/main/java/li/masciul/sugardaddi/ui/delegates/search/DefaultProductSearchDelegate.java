@@ -159,6 +159,9 @@ public class DefaultProductSearchDelegate
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
+        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                ImageDisplayUtils.resolveProductImageSource(product));
     }
 
     // ========== VIEW HOLDER ==========

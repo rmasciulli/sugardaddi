@@ -137,16 +137,9 @@ public class CiqualProductSearchDelegate
         }
     }
 
-    /**
-     * Loads the product thumbnail via Glide.
-     * Ciqual has no remote image URL and no auto-downloaded thumbnail.
-     * Only user-defined paths are checked.
-     *
-     * Requires: productImage view in item_search_product_ciqual.xml.
-     * Also add bindImage(holder, product) call in bind().
-     */
     private void bindImage(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
         if (holder.productImage == null) return;
+
         Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
         if (source != null) {
             if (holder.imageContainer != null) {
@@ -158,6 +151,10 @@ public class CiqualProductSearchDelegate
                 holder.imageContainer.setVisibility(View.GONE);
             }
         }
+        // Tap to open the FULL original. Ciqual has no remote image, so this is
+        // tappable only when the user set a custom full image; otherwise cleared.
+        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                ImageDisplayUtils.resolveProductImageSource(product));
     }
 
     /**
