@@ -802,4 +802,8 @@
     <string name="filter_source_all">Toutes sources confondues</string>
     <string name="filter_source_subset">%1$d source(s) sur %2$d</string>
 
+    <!-- Visionneuse d\'image plein écran -->
+    <string name="image_viewer_image_description">Image en plein écran</string>
+    <string name="image_viewer_close">Fermer</string>
+
 </resources>

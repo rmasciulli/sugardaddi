@@ -96,6 +96,12 @@
             android:screenOrientation="unspecified"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
+        <!-- Full-screen Image Viewer -->
+        <activity
+            android:name=".ui.activities.ImageViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.SugarDaddi.ImageViewer" />
+
         <!-- Data Sources Activity -->
         <activity
             android:name=".ui.activities.DataSourcesActivity"

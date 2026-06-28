@@ -825,4 +825,8 @@
     <string name="filter_source_all">From all data sources</string>
     <string name="filter_source_subset">From %1$d out of %2$d sources</string>
 
+    <!-- Full-screen image viewer -->
+    <string name="image_viewer_image_description">Full-screen image</string>
+    <string name="image_viewer_close">Close</string>
+
 </resources>

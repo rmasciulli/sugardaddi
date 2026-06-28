@@ -101,6 +101,16 @@
 
     </style>
 
+    <!-- =====================================================================
+         FULL-SCREEN IMAGE VIEWER - black, no chrome.
+         Pinned on ImageViewerActivity in the manifest.
+         ===================================================================== -->
+    <style name="Theme.SugarDaddi.ImageViewer" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 
     <!-- =====================================================================
          DIALOG / PICKER OVERLAY STYLES

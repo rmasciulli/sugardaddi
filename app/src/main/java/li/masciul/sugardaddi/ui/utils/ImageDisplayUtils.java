@@ -182,4 +182,33 @@ public final class ImageDisplayUtils {
         int sizePx = Math.round(CARD_SIZE_DP * context.getResources().getDisplayMetrics().density);
         load(context, source, imageView, sizePx, sizePx);
     }
+
+    /**
+     * Make an already-bound ImageView open the full-screen viewer on tap.
+     *
+     * Pass the FULL-IMAGE source (resolveProductImageSource / resolveRecipeImageSource),
+     * NOT the thumbnail source the card is displaying - the viewer always shows the
+     * original. For a non-favourited card that full source is usually the remote
+     * imageUrl, which the viewer fetches over the network (Option A).
+     *
+     * RECYCLING-SAFE: when {@code fullSource} is null the listener is cleared and the
+     * view made non-clickable, so a recycled RecyclerView holder never keeps a stale
+     * tap target pointing at the previous item's image. Callers must therefore call
+     * this on EVERY bind, not just when a source exists.
+     *
+     * @param context    any Context capable of starting an Activity.
+     * @param imageView  the bound card/hero ImageView (may be null - then no-op).
+     * @param fullSource result of resolve*ImageSource: a File, a URL String, or null.
+     */
+    public static void bindFullScreenTap(@NonNull Context context,
+                                         @Nullable ImageView imageView,
+                                         @Nullable Object fullSource) {
+        if (imageView == null) return;
+        if (fullSource == null) {
+            imageView.setOnClickListener(null);
+            imageView.setClickable(false);
+            return;
+        }
+        imageView.setOnClickListener(v -> ImageViewerLauncher.open(context, fullSource));
+    }
 }
