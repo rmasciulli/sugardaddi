@@ -120,6 +120,9 @@ dependencies {
     annotationProcessor(libs.glide.compiler)
     implementation(libs.glide.okhttp3.integration)
 
+    // Full-screen zoomable image viewer
+    implementation(libs.photoview)
+
     // Image picking and cropping
     implementation(libs.ucrop)
     implementation(libs.androidx.exifinterface)
