@@ -116,11 +116,12 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Load the full-size recipe image via Glide.
+     * Load the full-size recipe image via Glide and make the hero tappable to open
+     * the full original full-screen.
      * Local-first: userImagePath → imagePath → thumbnailPath → imageUrl → hide.
      *
-     * Uses explicit pixel override to avoid Glide measuring an unmeasured view
-     * and falling back to SIZE_ORIGINAL (which causes slow decode and blur).
+     * loadHeroImage uses an explicit pixel override to avoid Glide measuring an
+     * unmeasured view and decoding at SIZE_ORIGINAL (slow + blur).
      */
     private void populateImage(@NonNull View view, @NonNull Recipe recipe) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
@@ -134,6 +135,8 @@ public class CocktailDbRecipeDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
+        // Tap the hero to open the full original; no-op when the hero is hidden.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
     }
 
     /**

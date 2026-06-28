@@ -129,6 +129,11 @@ public class USDAProductDetailRenderer implements DetailRenderer {
 
     // ========== POPULATE HELPERS ==========
 
+    /**
+     * Load the full-size product image (when one resolves) and make the hero
+     * tappable to open the full original full-screen. USDA has no remote image,
+     * so the hero appears only when the user set a custom image.
+     */
     private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         View heroContainer = view.findViewById(R.id.heroImageContainer);
         ImageView heroImage = view.findViewById(R.id.heroImage);
@@ -141,6 +146,8 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
+        // Tap the hero to open the full original; no-op when the hero is hidden.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
     }
 
     /**

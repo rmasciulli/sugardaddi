@@ -110,7 +110,8 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Load the full-size recipe image via Glide.
+     * Load the full-size recipe image via Glide and make the hero tappable to open
+     * the full original full-screen.
      * Local-first: userImagePath → imagePath → thumbnailPath → imageUrl → hide.
      */
     private void populateImage(@NonNull View view, @NonNull Recipe recipe) {
@@ -125,6 +126,8 @@ public class MealDbRecipeDetailRenderer implements DetailRenderer {
         } else {
             heroContainer.setVisibility(View.GONE);
         }
+        // Tap the hero to open the full original; no-op when the hero is hidden.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
     }
 
     /**

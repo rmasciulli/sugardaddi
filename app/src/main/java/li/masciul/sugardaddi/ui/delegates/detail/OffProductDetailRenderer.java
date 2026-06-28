@@ -147,14 +147,18 @@ public class OffProductDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Load the full-size product image via Glide.
+     * Load the full-size product image via Glide and make it tappable to open the
+     * full original full-screen.
      * Local-first: userImagePath → imagePath → imageUrl → placeholder.
      */
     private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
-        ImageDisplayUtils.loadHeroImage(context, ImageDisplayUtils.resolveProductImageSource(product), heroImage);
+        Object source = ImageDisplayUtils.resolveProductImageSource(product);
+        ImageDisplayUtils.loadHeroImage(context, source, heroImage);
+        // Tap the hero to open the full original; cleared (non-tappable) when null.
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
     }
 
     /**

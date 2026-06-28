@@ -129,14 +129,18 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
     // ========== POPULATE HELPERS ==========
 
     /**
-     * Hero image: shown only when imageUrl is non-null and non-empty.
-     * The ImageView is GONE by default in the layout; we set it VISIBLE here.
+     * Load the full-size product image via Glide and make it tappable to open the
+     * full original full-screen. The ImageView always loads (placeholder when no
+     * source resolves); the placeholder stays non-tappable.
+     * Local-first: userImagePath → imagePath → imageUrl → placeholder.
      */
     private void populateImage(@NonNull View view, @NonNull FoodProduct product) {
         ImageView heroImage = view.findViewById(R.id.heroImage);
         if (heroImage == null) return;
 
-        ImageDisplayUtils.loadHeroImage(context, ImageDisplayUtils.resolveProductImageSource(product), heroImage);
+        Object source = ImageDisplayUtils.resolveProductImageSource(product);
+        ImageDisplayUtils.loadHeroImage(context, source, heroImage);
+        ImageDisplayUtils.bindFullScreenTap(context, heroImage, source);
     }
 
     /**
