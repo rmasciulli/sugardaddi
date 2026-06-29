@@ -159,8 +159,10 @@ public class DefaultProductSearchDelegate
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
-        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        // Expand affordance on the thumbnail; opens the FULL original (image source,
+        // not the thumbnail); icon shows only when openable.
         ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveProductImageSource(product));
     }
 
@@ -174,16 +176,18 @@ public class DefaultProductSearchDelegate
         final TextView  categories;
         final TextView  servingInfo;
         final ImageView productImage;
+        final ImageView cardExpandIcon;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            productName  = itemView.findViewById(R.id.productName);
-            sourceBadge  = itemView.findViewById(R.id.sourceBadge);
-            productType  = itemView.findViewById(R.id.productType);
-            brandName    = itemView.findViewById(R.id.brandName);
-            categories   = itemView.findViewById(R.id.categories);
-            servingInfo  = itemView.findViewById(R.id.servingInfo);
-            productImage = itemView.findViewById(R.id.productImage);
+            productName    = itemView.findViewById(R.id.productName);
+            sourceBadge    = itemView.findViewById(R.id.sourceBadge);
+            productType    = itemView.findViewById(R.id.productType);
+            brandName      = itemView.findViewById(R.id.brandName);
+            categories     = itemView.findViewById(R.id.categories);
+            servingInfo    = itemView.findViewById(R.id.servingInfo);
+            productImage   = itemView.findViewById(R.id.productImage);
+            cardExpandIcon = itemView.findViewById(R.id.cardExpandIcon);
         }
     }
 }

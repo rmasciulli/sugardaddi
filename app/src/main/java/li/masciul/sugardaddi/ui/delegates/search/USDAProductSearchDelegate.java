@@ -147,9 +147,10 @@ public class USDAProductSearchDelegate
                 holder.imageContainer.setVisibility(View.GONE);
             }
         }
-        // Tap to open the FULL original. USDA has no remote image, so this is
-        // tappable only when the user set a custom full image; otherwise cleared.
+        // Expand affordance; this source has no remote image, so the icon appears
+        // only on user-set images. Cleared otherwise.
         ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveProductImageSource(product));
     }
 
@@ -206,6 +207,8 @@ public class USDAProductSearchDelegate
         final MaterialCardView imageContainer;
         @Nullable
         final ImageView productImage;
+        @Nullable
+        final ImageView cardExpandIcon;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -215,8 +218,9 @@ public class USDAProductSearchDelegate
             category         = itemView.findViewById(R.id.category);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
-            imageContainer = itemView.findViewById(R.id.imageContainer);
-            productImage   = itemView.findViewById(R.id.productImage);
+            imageContainer   = itemView.findViewById(R.id.imageContainer);
+            productImage     = itemView.findViewById(R.id.productImage);
+            cardExpandIcon   = itemView.findViewById(R.id.cardExpandIcon);
         }
     }
 }

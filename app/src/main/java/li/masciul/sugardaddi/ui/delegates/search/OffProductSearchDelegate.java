@@ -188,10 +188,10 @@ public class OffProductSearchDelegate
         } else {
             holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
         }
-        // Tap the card image to open the FULL original (remote URL if not cached
-        // locally). Resolve the image source, not the thumbnail shown above.
-        // Always called - bindFullScreenTap clears the listener when null (recycling).
+        // TEST: expand affordance on the thumbnail. Opens the FULL original (image
+        // source, not the thumbnail shown); icon shows only when openable.
         ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveProductImageSource(product));
     }
 
@@ -269,6 +269,7 @@ public class OffProductSearchDelegate
         final TextView    categories;
         final TextView    servingInfo;
         final ImageView   productImage;
+        final ImageView   cardExpandIcon;
         final ImageView   greenScoreLeaf;
         final FrameLayout nutriScoreContainer;
         final android.view.ViewGroup scoreContainer;
@@ -282,6 +283,7 @@ public class OffProductSearchDelegate
             categories          = itemView.findViewById(R.id.categories);
             servingInfo         = itemView.findViewById(R.id.servingInfo);
             productImage        = itemView.findViewById(R.id.productImage);
+            cardExpandIcon      = itemView.findViewById(R.id.cardExpandIcon);
             greenScoreLeaf      = itemView.findViewById(R.id.greenScoreLeaf);
             nutriScoreContainer = itemView.findViewById(R.id.nutriScoreContainer);
             scoreContainer      = itemView.findViewById(R.id.scoreContainer);

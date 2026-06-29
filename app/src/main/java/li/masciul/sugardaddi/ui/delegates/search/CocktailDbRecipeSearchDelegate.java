@@ -144,8 +144,10 @@ public class CocktailDbRecipeSearchDelegate
         } else {
             holder.imageContainer.setVisibility(View.GONE);
         }
-        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        // Expand affordance on the thumbnail; opens the FULL original, icon shows
+        // only when openable.
         ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
@@ -230,6 +232,7 @@ public class CocktailDbRecipeSearchDelegate
         final TextView   recipeDescription;
         final View       imageContainer;
         final ImageView  recipeImage;
+        final ImageView  cardExpandIcon;
         final TextView   ingredientCount;
         final ChipGroup  tagChips;
 
@@ -241,6 +244,7 @@ public class CocktailDbRecipeSearchDelegate
             recipeDescription = itemView.findViewById(R.id.recipeDescription);
             imageContainer    = itemView.findViewById(R.id.imageContainer);
             recipeImage       = itemView.findViewById(R.id.recipeImage);
+            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
             ingredientCount   = itemView.findViewById(R.id.ingredientCount);
             tagChips          = itemView.findViewById(R.id.tagChips);
         }

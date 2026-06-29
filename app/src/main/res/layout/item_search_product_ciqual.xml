@@ -119,6 +119,19 @@
                     android:scaleType="centerCrop"
                     tools:src="@drawable/ic_food_placeholder" />
 
+                <ImageView
+                    android:id="@+id/cardExpandIcon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_expand_icon_scrim_sm"
+                    android:padding="3dp"
+                    android:src="@drawable/ic_fullscreen"
+                    android:scaleType="fitCenter"
+                    android:visibility="gone"
+                    android:importantForAccessibility="no" />
+
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Content column: category + nutrition row -->

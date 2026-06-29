@@ -156,9 +156,10 @@ public class MealDbRecipeSearchDelegate
         } else {
             holder.imageContainer.setVisibility(View.GONE);
         }
-        // Tap to open the FULL original (resolve image source, not the thumbnail).
-        // Always called so a recycled holder never keeps a stale tap target.
+        // Expand affordance on the thumbnail; opens the FULL original, icon shows
+        // only when openable.
         ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
@@ -242,6 +243,7 @@ public class MealDbRecipeSearchDelegate
         final TextView   productType;
         final View       imageContainer;
         final ImageView  recipeImage;
+        final ImageView  cardExpandIcon;
         final TextView   recipeDescription;
         final TextView   ingredientCount;
         final ChipGroup  tagsChipGroup;
@@ -253,6 +255,7 @@ public class MealDbRecipeSearchDelegate
             productType       = itemView.findViewById(R.id.productType);
             imageContainer    = itemView.findViewById(R.id.imageContainer);
             recipeImage       = itemView.findViewById(R.id.recipeImage);
+            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
             recipeDescription = itemView.findViewById(R.id.recipeDescription);
             ingredientCount   = itemView.findViewById(R.id.ingredientCount);
             tagsChipGroup     = itemView.findViewById(R.id.tagsChipGroup);

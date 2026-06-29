@@ -98,8 +98,10 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         } else {
             if (holder.imageContainer != null) holder.imageContainer.setVisibility(View.GONE);
         }
-        // Tap to open the FULL original (resolve image source, not the thumbnail shown).
+        // Expand affordance on the thumbnail; opens the FULL original, icon shows
+        // only when openable.
         ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
+                holder.cardExpandIcon,
                 ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
@@ -155,6 +157,7 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
     static class ViewHolder extends RecyclerView.ViewHolder {
         final View      imageContainer;
         final ImageView recipeImage;
+        final ImageView cardExpandIcon;
         final TextView  recipeName;
         final TextView  recipeDescription;
         final TextView  recipeTime;
@@ -165,6 +168,7 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
             super(itemView);
             imageContainer    = itemView.findViewById(R.id.imageContainer);
             recipeImage       = itemView.findViewById(R.id.recipeImage);
+            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
             recipeName        = itemView.findViewById(R.id.recipeName);
             recipeDescription = itemView.findViewById(R.id.recipeDescription);
             recipeTime        = itemView.findViewById(R.id.recipeTime);
