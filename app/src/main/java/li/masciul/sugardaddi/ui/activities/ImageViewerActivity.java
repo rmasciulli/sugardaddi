@@ -83,7 +83,7 @@ public class ImageViewerActivity extends AppCompatActivity {
      *
      * Decode is capped (override) so a large remote CDN image is not decoded at
      * full resolution into PhotoView's single in-memory bitmap; local originals
-     * are already bounded by ImageProcessor.MAX_DIMENSION_HERO, so the cap is a
+     * are already bounded by ImageProfile.HERO (maxDimension), so the cap is a
      * no-op for them.
      */
     private void loadInto(@NonNull PhotoView photoView, @NonNull String source) {

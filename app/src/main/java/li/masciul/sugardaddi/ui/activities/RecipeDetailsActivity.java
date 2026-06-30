@@ -34,7 +34,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
-import li.masciul.sugardaddi.utils.image.ImageProcessor;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
@@ -502,18 +502,15 @@ public class RecipeDetailsActivity extends BaseActivity
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
 
         File destinationFile;
-        int  maxDimension;
-        int  jpegQuality;
+        ImageProfile profile;
 
         if (isThumbnail) {
             // Deterministic name: {id}_custom.jpg - co-exists with auto-cached thumbnail.
             destinationFile = storage.getUserThumbnailFile(recipe.getSearchableId());
-            maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
-            jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
+            profile         = ImageProfile.THUMBNAIL;
         } else {
-            destinationFile = storage.getUserRecipeHeroFile(recipe.getSearchableId());
-            maxDimension    = ImageProcessor.MAX_DIMENSION_HERO;
-            jpegQuality     = ImageProcessor.JPEG_QUALITY_HERO;
+            destinationFile = storage.getUserProductHeroFile(recipe.getSearchableId());
+            profile         = ImageProfile.HERO;
         }
 
         if (destinationFile == null) {
@@ -522,10 +519,10 @@ public class RecipeDetailsActivity extends BaseActivity
             return;
         }
 
-        final File dest     = destinationFile;
-        final int     maxDim   = maxDimension;
-        final int     quality  = jpegQuality;
-        final boolean isThumb  = isThumbnail;
+        // Capture finals for lambda capture.
+        final File         dest    = destinationFile;
+        final ImageProfile prof    = profile;
+        final boolean      isThumb = isThumbnail;
 
         ImagePickerHelper.Callback callback = new ImagePickerHelper.Callback() {
             @Override
@@ -542,9 +539,9 @@ public class RecipeDetailsActivity extends BaseActivity
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(getSafeString(R.string.image_picker_choose_source))
                 .setPositiveButton(getSafeString(R.string.image_picker_camera),
-                        (d, w) -> imagePicker.showCamera(dest, maxDim, quality, callback))
+                        (d, w) -> imagePicker.showCamera(dest, prof, callback))
                 .setNegativeButton(getSafeString(R.string.image_picker_gallery),
-                        (d, w) -> imagePicker.showGallery(dest, maxDim, quality, callback))
+                        (d, w) -> imagePicker.showGallery(dest, prof, callback))
                 .show();
     }
 

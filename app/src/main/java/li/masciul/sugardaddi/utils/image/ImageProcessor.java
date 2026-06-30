@@ -42,9 +42,7 @@ import java.io.IOException;
  * <pre>
  *   File source      = ucropOutputFile;          // file produced by uCrop
  *   File destination = storageManager.getMealPhotoFile(uuid + ".jpg");
- *   File result = ImageProcessor.process(source, destination,
- *                     ImageProcessor.MAX_DIMENSION_USER_PHOTO,
- *                     ImageProcessor.JPEG_QUALITY_USER_PHOTO);
+ *   File result = ImageProcessor.process(source, destination, ImageProfile.HERO);
  *   if (result != null) {
  *       // result == destination, ready to persist path in Room
  *   }
@@ -65,38 +63,6 @@ import java.io.IOException;
 public final class ImageProcessor {
 
     private static final String TAG = "SugarDaddi_Images";
-
-    // =========================================================================
-    // PUBLIC CONSTANTS - callers use these to keep settings centralised
-    // =========================================================================
-
-    /**
-     * Maximum dimension (px) for full-size hero images (product, recipe, meal, step).
-     * A 4000×3000px shot becomes ≤ 1920×1440px after processing.
-     * Brings a 10 MB JPEG to ~200–400 KB at JPEG_QUALITY_HERO.
-     */
-    public static final int MAX_DIMENSION_HERO = 1920;
-
-    /**
-     * JPEG quality for hero images (0–100).
-     * 85 is the industry-standard balance between file size and visual quality.
-     * Visually lossless for typical viewing distances on a phone screen.
-     */
-    public static final int JPEG_QUALITY_HERO = 85;
-
-    /**
-     * Maximum dimension (px) for user-defined thumbnail overrides.
-     * Thumbnails are displayed at 72dp in search cards - 512px is sufficient
-     * for all current screen densities (up to xxxhdpi = 4× = 288px).
-     */
-    public static final int MAX_DIMENSION_THUMBNAIL = 512;
-
-    /**
-     * JPEG quality for user-defined thumbnails (0–100).
-     * Slightly lower than hero quality - thumbnails are small enough that
-     * the quality difference is imperceptible at typical display sizes.
-     */
-    public static final int JPEG_QUALITY_THUMBNAIL = 78;
 
     // =========================================================================
     // CONSTRUCTOR - utility class, not instantiable
@@ -124,14 +90,10 @@ public final class ImageProcessor {
      * @param destination  The output file to write the processed JPEG into.
      *                     The parent directory must already exist. ImagePickerHelper
      *                     ensures this via ensureFileExists() before calling.
-     * @param maxDimension Maximum allowed size of the longest edge in pixels.
-     *                     Use {@link #MAX_DIMENSION_HERO} for full-size images or
-     *                     {@link #MAX_DIMENSION_THUMBNAIL} for thumbnail overrides.
-     *                     If the source is already smaller, no scaling is applied
-     *                     but EXIF correction and recompression still occur.
-     * @param jpegQuality  JPEG compression quality (1–100).
-     *                     Use {@link #JPEG_QUALITY_HERO} or
-     *                     {@link #JPEG_QUALITY_THUMBNAIL} accordingly.
+     * @param profile     The size + quality preset to apply. If the source is
+     *                    already smaller than the profile's maxDimension, no
+     *                    scaling is applied but EXIF correction and recompression
+     *                    still occur.
      * @return The destination File on success, or {@code null} if processing failed.
      *         On failure the destination file may be empty or absent.
      */
@@ -139,8 +101,13 @@ public final class ImageProcessor {
     public static File process(
             @NonNull File source,
             @NonNull File destination,
-            int maxDimension,
-            int jpegQuality) {
+            @NonNull ImageProfile profile) {
+
+        // Destructure the profile into the two values the body below already uses.
+        // Keeping these locals means the processing logic is untouched by the
+        // switch from loose ints to a profile object.
+        final int maxDimension = profile.maxDimension;
+        final int jpegQuality  = profile.jpegQuality;
 
         // ── 1. Decode source dimensions without loading pixels ────────────────
         // BitmapFactory.Options.inJustDecodeBounds skips pixel allocation and

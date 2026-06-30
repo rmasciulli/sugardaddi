@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.utils.image.ImageProcessor;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
@@ -50,15 +51,16 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  * it does not know whether the image is a product hero, recipe thumbnail, meal photo,
  * or step photo - that is the caller's concern.
  *
+ * The caller also chooses the {@link ImageProfile} (size + quality preset) that
+ * ImageProcessor will apply after the crop.
+ *
  * Example (product hero image):
  *   File dest = storageManager.getProductHeroFile(UUID.randomUUID() + ".jpg");
- *   imagePicker.showCamera(dest, ImageProcessor.MAX_DIMENSION_HERO,
- *                          ImageProcessor.JPEG_QUALITY_HERO, callback);
+ *   imagePicker.showCamera(dest, ImageProfile.HERO, callback);
  *
  * Example (user thumbnail override, deterministic filename):
  *   File dest = storageManager.getUserThumbnailFile(product.getSearchableId());
- *   imagePicker.showGallery(dest, ImageProcessor.MAX_DIMENSION_THUMBNAIL,
- *                           ImageProcessor.JPEG_QUALITY_THUMBNAIL, callback);
+ *   imagePicker.showGallery(dest, ImageProfile.THUMBNAIL, callback);
  *
  * LIFECYCLE CONTRACT - CRITICAL
  * ==============================
@@ -88,10 +90,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *         ImageStorageManager storage =
  *             ((SugarDaddiApplication) getApplication()).getImageStorageManager();
  *         File dest = storage.getProductHeroFile(UUID.randomUUID() + ".jpg");
- *         imagePicker.showGallery(dest,
- *             ImageProcessor.MAX_DIMENSION_HERO,
- *             ImageProcessor.JPEG_QUALITY_HERO,
- *             path -> persistHeroImage(path));
+ *         imagePicker.showGallery(dest, ImageProfile.HERO, path -> persistHeroImage(path));
  *     }
  *
  *     {@literal @}Override
@@ -197,16 +196,11 @@ public class ImagePickerHelper {
     @Nullable private Callback pendingCallback;
 
     /**
-     * Maximum dimension (px) for the processed image.
-     * Set by the caller per session - determines resize behaviour in ImageProcessor.
+     * The size + quality preset for the processed image.
+     * Set by the caller per session - determines resize/compression behaviour
+     * in ImageProcessor. Cleared after delivery.
      */
-    private int pendingMaxDimension;
-
-    /**
-     * JPEG quality (1–100) for the processed image.
-     * Set by the caller per session.
-     */
-    private int pendingJpegQuality;
+    @Nullable private ImageProfile pendingProfile;
 
     // =========================================================================
     // ACTIVITY RESULT LAUNCHERS
@@ -302,26 +296,21 @@ public class ImagePickerHelper {
      * @param destinationFile The file where the final processed image will be saved.
      *                        The caller constructs this via ImageStorageManager.
      *                        Must be in a directory covered by file_paths.xml.
-     * @param maxDimension    Maximum pixel dimension for the longer edge after processing.
-     *                        Use {@link ImageProcessor#MAX_DIMENSION_HERO} or
-     *                        {@link ImageProcessor#MAX_DIMENSION_THUMBNAIL}.
-     * @param jpegQuality     JPEG compression quality (1–100).
-     *                        Use {@link ImageProcessor#JPEG_QUALITY_HERO} or
-     *                        {@link ImageProcessor#JPEG_QUALITY_THUMBNAIL}.
+     * @param profile         The size + quality preset to apply after cropping.
+     *                        Use {@link ImageProfile#HERO} for full-size images or
+     *                        {@link ImageProfile#THUMBNAIL} for thumbnail overrides.
      * @param callback        Result callback. Must not be null.
      */
     public void showCamera(
             @NonNull File destinationFile,
-            int maxDimension,
-            int jpegQuality,
+            @NonNull ImageProfile profile,
             @NonNull Callback callback) {
 
         // Store pending session state regardless of permission outcome -
         // launchCameraInternal() and the permission callback both rely on it.
         this.pendingCallback        = callback;
         this.pendingDestinationFile = destinationFile;
-        this.pendingMaxDimension    = maxDimension;
-        this.pendingJpegQuality     = jpegQuality;
+        this.pendingProfile         = profile;
 
         // On API 23+, CAMERA is a runtime permission - check before launching.
         if (androidx.core.content.ContextCompat.checkSelfPermission(
@@ -366,20 +355,19 @@ public class ImagePickerHelper {
      *
      * @param destinationFile The file where the final processed image will be saved.
      *                        The caller constructs this via ImageStorageManager.
-     * @param maxDimension    Maximum pixel dimension for the longer edge after processing.
-     * @param jpegQuality     JPEG compression quality (1–100).
+     * @param profile         The size + quality preset to apply after cropping.
+     *                        Use {@link ImageProfile#HERO} or
+     *                        {@link ImageProfile#THUMBNAIL}.
      * @param callback        Result callback. Must not be null.
      */
     public void showGallery(
             @NonNull File destinationFile,
-            int maxDimension,
-            int jpegQuality,
+            @NonNull ImageProfile profile,
             @NonNull Callback callback) {
 
         this.pendingCallback        = callback;
         this.pendingDestinationFile = destinationFile;
-        this.pendingMaxDimension    = maxDimension;
-        this.pendingJpegQuality     = jpegQuality;
+        this.pendingProfile         = profile;
 
         Log.d(TAG, "Launching gallery picker → " + destinationFile.getName());
         galleryLauncher.launch("image/*");
@@ -491,20 +479,25 @@ public class ImagePickerHelper {
      * Processes in-place (source == destination) - ImageProcessor is safe for this
      * because the bitmap is fully decoded into memory before the output stream opens.
      *
-     * Uses the maxDimension and jpegQuality provided by the caller at session start.
+     * Uses the ImageProfile provided by the caller at session start.
      */
     private void processAndDeliver(@NonNull File destinationFile,
                                    @Nullable Callback callback) {
-        // Capture session-level sizing params before clearing pending state.
-        final int maxDimension = this.pendingMaxDimension;
-        final int jpegQuality  = this.pendingJpegQuality;
+        // Capture the session profile before clearing pending state. Both public
+        // entry points (showCamera/showGallery) always set it; a null here means
+        // a broken call flow, so fail loudly rather than guess a size.
+        final ImageProfile profile = this.pendingProfile;
+        if (profile == null) {
+            clearPendingState();
+            deliverCancelled(callback, "No image profile set for processing");
+            return;
+        }
 
         processingExecutor.execute(() -> {
             File result = ImageProcessor.process(
                     destinationFile,
                     destinationFile,   // in-place: no intermediate file needed
-                    maxDimension,
-                    jpegQuality);
+                    profile);
 
             clearPendingState();
 
@@ -572,8 +565,7 @@ public class ImagePickerHelper {
         pendingCameraFile       = null;
         pendingDestinationFile  = null;
         pendingCallback         = null;
-        pendingMaxDimension     = 0;
-        pendingJpegQuality      = 0;
+        pendingProfile          = null;
     }
 
     /** Delivers a cancellation via the given callback on the main thread. */

@@ -41,7 +41,7 @@ import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
-import li.masciul.sugardaddi.utils.image.ImageProcessor;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 /**
@@ -579,18 +579,15 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
 
         // Construct the destination file - caller's responsibility per ImagePickerHelper contract.
         File destinationFile;
-        int  maxDimension;
-        int  jpegQuality;
+        ImageProfile profile;
 
         if (isThumbnail) {
             // Deterministic name: {id}_custom.jpg - co-exists with auto-cached thumbnail.
             destinationFile = storage.getUserThumbnailFile(product.getSearchableId());
-            maxDimension    = ImageProcessor.MAX_DIMENSION_THUMBNAIL;
-            jpegQuality     = ImageProcessor.JPEG_QUALITY_THUMBNAIL;
+            profile         = ImageProfile.THUMBNAIL;
         } else {
             destinationFile = storage.getUserProductHeroFile(product.getSearchableId());
-            maxDimension    = ImageProcessor.MAX_DIMENSION_HERO;
-            jpegQuality     = ImageProcessor.JPEG_QUALITY_HERO;
+            profile         = ImageProfile.HERO;
         }
 
         if (destinationFile == null) {
@@ -600,10 +597,9 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         }
 
         // Capture finals for lambda capture.
-        final File   dest     = destinationFile;
-        final int    maxDim   = maxDimension;
-        final int    quality  = jpegQuality;
-        final boolean isThumb = isThumbnail;
+        final File         dest    = destinationFile;
+        final ImageProfile prof    = profile;
+        final boolean      isThumb = isThumbnail;
 
         ImagePickerHelper.Callback callback = new ImagePickerHelper.Callback() {
             @Override
@@ -622,9 +618,9 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(getSafeString(R.string.image_picker_choose_source))
                 .setPositiveButton(getSafeString(R.string.image_picker_camera),
-                        (d, w) -> imagePicker.showCamera(dest, maxDim, quality, callback))
+                        (d, w) -> imagePicker.showCamera(dest, prof, callback))
                 .setNegativeButton(getSafeString(R.string.image_picker_gallery),
-                        (d, w) -> imagePicker.showGallery(dest, maxDim, quality, callback))
+                        (d, w) -> imagePicker.showGallery(dest, prof, callback))
                 .show();
     }
 
