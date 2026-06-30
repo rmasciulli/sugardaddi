@@ -20,10 +20,10 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * - Serving size (Foundation Foods have portions, SR Legacy rarely)
  *
  * SCORING BREAKDOWN (max 100 points):
- * - Name matching:        0–40 pts (base - exact/starts-with/contains)
- * - Category matching:   0–20 pts (base)
- * - Nutrition quality:   0–25 pts (USDA-specific - more nutrients = higher)
- * - Data type bonus:     0–10 pts (Foundation=10, SR Legacy=7, Survey=3)
+ * - Name matching:        0-40 pts (base - exact/starts-with/contains)
+ * - Category matching:   0-20 pts (base)
+ * - Nutrition quality:   0-25 pts (USDA-specific - more nutrients = higher)
+ * - Data type bonus:     0-10 pts (Foundation=10, SR Legacy=7, Survey=3)
  * - Favorite bonus:      +15 pts (common across all sources)
  *
  * MAXIMUM SCORE: 95 points (before favorite)
@@ -90,7 +90,7 @@ public class USDAScorer extends BaseScorer<FoodProduct> {
 
         int score = 0;
 
-        // ── 1. Nutrition data quality (0–25 pts) ──────────────────────────────
+        // ── 1. Nutrition data quality (0-25 pts) ──────────────────────────────
         if (product.hasNutritionData()) {
             int nutritionScore = calculateNutritionCompletenessScore(product);
             if (nutritionScore > 0) {
@@ -99,7 +99,7 @@ public class USDAScorer extends BaseScorer<FoodProduct> {
             }
         }
 
-        // ── 2. Data type bonus (0–10 pts) ─────────────────────────────────────
+        // ── 2. Data type bonus (0-10 pts) ─────────────────────────────────────
         // dataCompleteness was set by USDAMapper.dataTypeCompleteness():
         //   Foundation  → 0.95f
         //   SR Legacy   → 0.85f

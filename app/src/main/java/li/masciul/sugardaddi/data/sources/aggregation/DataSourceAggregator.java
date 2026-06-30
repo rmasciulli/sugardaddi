@@ -92,7 +92,7 @@ public class DataSourceAggregator {
 
     /**
      * Per-source search timeout.
-     * Long enough for Ciqual ES cold start (~1–3s), short enough not to block
+     * Long enough for Ciqual ES cold start (~1-3s), short enough not to block
      * the user indefinitely if a source is unreachable.
      */
     private static final int SEARCH_TIMEOUT_SECONDS = 10;

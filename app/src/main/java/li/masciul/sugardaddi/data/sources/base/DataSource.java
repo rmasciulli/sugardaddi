@@ -170,7 +170,7 @@ public interface DataSource {
      *
      * @param query    Search string (minimum 3 characters recommended)
      * @param language BCP-47 language code, e.g. "en", "fr"
-     * @param limit    Maximum results per page (1–100)
+     * @param limit    Maximum results per page (1-100)
      * @param page     1-based page number
      * @param callback Receives results, loading state, or error
      */

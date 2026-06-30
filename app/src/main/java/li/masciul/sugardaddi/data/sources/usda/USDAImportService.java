@@ -217,7 +217,7 @@ public class USDAImportService extends Service {
 
                     if (productBatch.size() >= USDAConstants.IMPORT_BATCH_SIZE) {
                         flushBatch(db, productBatch, nutritionBatch);
-                        int pct = 5 + (count / 12); // 1200 foods → 5%–15%
+                        int pct = 5 + (count / 12); // 1200 foods → 5%-15%
                         broadcastProgress("Importing Foundation Foods… (" + count + ")",
                                 Math.min(pct, 38));
                     }
@@ -296,7 +296,7 @@ public class USDAImportService extends Service {
 
                     if (productBatch.size() >= USDAConstants.IMPORT_BATCH_SIZE) {
                         flushBatch(db, productBatch, nutritionBatch);
-                        // 7700 foods: progress 40%–95%
+                        // 7700 foods: progress 40%-95%
                         int pct = 40 + (count * 55 / 7700);
                         broadcastProgress("Importing SR Legacy… (" + count + ")",
                                 Math.min(pct, 95));

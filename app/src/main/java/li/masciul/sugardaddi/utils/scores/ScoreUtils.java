@@ -11,7 +11,7 @@ import li.masciul.sugardaddi.R;
  * Handles:
  * - Nutri-Score drawable selection (with and without TPL versions)
  * - Green-Score drawable selection (leaf, horizontal, vertical)
- * - Nova Group drawable selection (groups 1–4)
+ * - Nova Group drawable selection (groups 1-4)
  * - Unknown/neutral grade handling
  * - Proper fallback for missing data
  *
@@ -247,7 +247,7 @@ public class ScoreUtils {
     // ========================
 
     /**
-     * Check if a grade is valid for Nutri-Score (A–E, excludes NEUTRAL).
+     * Check if a grade is valid for Nutri-Score (A-E, excludes NEUTRAL).
      * NEUTRAL is technically valid but not user-facing; use this for display guards.
      *
      * @param grade Nutri-Score grade string

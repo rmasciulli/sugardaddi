@@ -7,7 +7,7 @@
       Nutrient name: textAppearanceLabelSmall (11sp medium) - deepest hierarchy,
       smallest text. Still uses colorOnSurfaceVariant to remain readable without
       fighting the higher-level rows for attention.
-      Values: autoSize 10–12sp.
+      Values: autoSize 10-12sp.
 
     INDENTATION: paddingStart="32dp" signals second level of nesting.
 

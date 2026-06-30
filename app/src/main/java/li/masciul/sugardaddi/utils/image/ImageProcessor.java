@@ -305,7 +305,7 @@ public final class ImageProcessor {
      *
      * @param bitmap      The bitmap to compress.
      * @param destination The output file. Parent directory must already exist.
-     * @param quality     JPEG quality (1–100).
+     * @param quality     JPEG quality (1-100).
      * @return true if the file was written successfully.
      */
     private static boolean writeJpeg(@NonNull Bitmap bitmap,

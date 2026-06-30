@@ -145,13 +145,13 @@ public class DataSourceInfo {
     // COMPUTED
     // =========================================================================
 
-    /** @return Success rate 0.0–1.0 (1.0 if no requests yet). */
+    /** @return Success rate 0.0-1.0 (1.0 if no requests yet). */
     public double getSuccessRate() {
         if (totalRequests == 0) return 1.0;
         return (double) successCount / totalRequests;
     }
 
-    /** @return Error rate 0.0–1.0 (0.0 if no requests yet). */
+    /** @return Error rate 0.0-1.0 (0.0 if no requests yet). */
     public double getErrorRate() {
         if (totalRequests == 0) return 0.0;
         return (double) errorCount / totalRequests;

@@ -4,7 +4,7 @@
 
     TYPOGRAPHY:
       Nutrient name: textAppearanceBodyMedium (14sp regular) - primary read target.
-      Values: autoSize 12–14sp base textAppearanceBodySmall - adapt to column width.
+      Values: autoSize 12-14sp base textAppearanceBodySmall - adapt to column width.
       colorOnSurface for the name (full emphasis), colorOnSurfaceVariant for values
       (secondary, slightly dimmed to draw eye to the name column first).
 

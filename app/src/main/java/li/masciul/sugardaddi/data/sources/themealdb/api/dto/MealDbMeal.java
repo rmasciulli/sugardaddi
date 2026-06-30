@@ -79,7 +79,7 @@ public class MealDbMeal {
      * Full cooking instructions as a plain text blob. English only.
      * May contain newlines and numbered steps, but formatting is inconsistent
      * across recipes - do not rely on any specific structure.
-     * Can be very long (500–2000+ characters).
+     * Can be very long (500-2000+ characters).
      */
     @SerializedName("strInstructions")
     @Nullable

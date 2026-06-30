@@ -167,7 +167,7 @@ public class MealDbRecipeSearchDelegate
      * Bind the ingredient count derived from the recipe's FoodPortion list.
      *
      * TheMealDB ingredients are stored as FoodPortion stubs (unresolved).
-     * The count reflects how many ingredients the API returned (1–20).
+     * The count reflects how many ingredients the API returned (1-20).
      */
     private void bindIngredientCount(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
         List<FoodPortion> portions = recipe.getPortions();

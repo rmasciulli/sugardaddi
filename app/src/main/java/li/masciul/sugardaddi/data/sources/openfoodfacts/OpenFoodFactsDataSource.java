@@ -398,7 +398,7 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
      *
      * @param query    Partial user input (e.g., "choco", "milka bis")
      * @param language Language code ("en" or "fr")
-     * @param limit    Maximum suggestions to return (typically 5–10)
+     * @param limit    Maximum suggestions to return (typically 5-10)
      * @param callback Results callback - same DataSourceCallback<SearchResult> as search()
      */
     public void autocomplete(@NonNull String query, @NonNull String language, int limit,

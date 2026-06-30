@@ -33,6 +33,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.utils.image.ImageDownloader;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 // Cache
 
@@ -312,6 +313,9 @@ public class ProductRepository {
         ImageDownloader downloader = getImageDownloader();
         if (downloader == null) return;
 
+        ImageStorageManager storage = getImageStorageManager();
+        if (storage == null) return;
+
         if (isFavorite) {
             // Prefer the CDN thumbnail URL; fall back to the full image URL.
             String url = product.getThumbnailUrl();
@@ -325,7 +329,8 @@ public class ProductRepository {
             }
 
             final String finalUrl = url;
-            downloader.download(finalUrl, productId, new ImageDownloader.Callback() {
+            downloader.download(finalUrl, storage.getThumbnailFile(productId), null,
+                    new ImageDownloader.Callback() {
                 @Override
                 public void onSuccess(@NonNull String localPath) {
                     // ImageDownloader delivers this callback on the main thread.
@@ -355,7 +360,7 @@ public class ProductRepository {
         } else {
             // File deletion is handled by ImageDownloader on its own executor.
             // thumbnailPath is already null in Room (cleared before this call).
-            downloader.deleteThumbnail(productId);
+            downloader.delete(storage.getThumbnailFile(productId));
         }
     }
 
@@ -372,6 +377,20 @@ public class ProductRepository {
         }
         Log.e(TAG, "Application context is not SugarDaddiApplication "
                 + "- thumbnail pipeline unavailable");
+        return null;
+    }
+
+    /**
+     * Returns the application-scoped ImageStorageManager singleton.
+     * Used to resolve cache file paths (caller-owns-path) for ImageDownloader.
+     */
+    private ImageStorageManager getImageStorageManager() {
+        if (context.getApplicationContext() instanceof SugarDaddiApplication) {
+            return ((SugarDaddiApplication) context.getApplicationContext())
+                    .getImageStorageManager();
+        }
+        Log.e(TAG, "Application context is not SugarDaddiApplication "
+                + "- image storage unavailable");
         return null;
     }
 

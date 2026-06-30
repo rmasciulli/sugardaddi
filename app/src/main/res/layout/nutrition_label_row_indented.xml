@@ -6,7 +6,7 @@
     TYPOGRAPHY:
       Nutrient name: textAppearanceBodySmall (12sp regular) - visually subordinate
       to level-0 rows. colorOnSurfaceVariant signals secondary content.
-      Values: autoSize 11–13sp.
+      Values: autoSize 11-13sp.
 
     INDENTATION: paddingStart="16dp" on the name TextView pushes it right.
 

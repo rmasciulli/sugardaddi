@@ -457,7 +457,7 @@ public class USDADataSource extends BaseDataSource {
      *
      * @param query    Partial user input
      * @param language User language (ignored - FDC is EN-only)
-     * @param limit    Max suggestions (typically 5–10)
+     * @param limit    Max suggestions (typically 5-10)
      * @param callback Result callback
      */
     public void autocomplete(@NonNull String query, @NonNull String language,

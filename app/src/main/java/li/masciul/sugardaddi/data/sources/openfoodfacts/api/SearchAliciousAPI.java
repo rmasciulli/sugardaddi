@@ -72,7 +72,7 @@ public interface SearchAliciousAPI {
      *
      * @param query     Lucene query string (required)
      * @param langs     Comma-separated language codes, e.g. "en,fr"
-     * @param pageSize  Results per page (1–100)
+     * @param pageSize  Results per page (1-100)
      * @param page      Page number, 1-based
      * @param fields    Comma-separated field list (use SearchAliciousConstants)
      * @param sortBy    Sort field (use SearchAliciousConstants.SortBy)
