@@ -14,7 +14,7 @@ import li.masciul.sugardaddi.managers.ThemeManager;
 import li.masciul.sugardaddi.utils.cache.CacheEvictionManager;
 import li.masciul.sugardaddi.utils.image.ImagePurgeManager;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
-import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
+import li.masciul.sugardaddi.utils.image.ImageDownloader;
 import li.masciul.sugardaddi.utils.language.LanguageDetector;
 
 import java.util.List;
@@ -51,7 +51,7 @@ public class SugarDaddiApplication extends Application {
      * Downloads and caches remote thumbnails for favourited items.
      * Owns a dedicated single-thread executor and OkHttpClient.
      */
-    private ThumbnailDownloader thumbnailDownloader;
+    private ImageDownloader imageDownloader;
 
     /**
      * Application-scoped orphan image purger.
@@ -175,7 +175,7 @@ public class SugarDaddiApplication extends Application {
         imageStorageManager = new ImageStorageManager(this);
 
         // Owns a dedicated OkHttpClient + single-thread executor.
-        thumbnailDownloader = new ThumbnailDownloader(imageStorageManager);
+        imageDownloader = new ImageDownloader(imageStorageManager);
 
         imagePurgeManager = new ImagePurgeManager(this, imageStorageManager);
         cacheEvictionManager = new CacheEvictionManager(AppDatabase.getInstance(this));
@@ -290,11 +290,11 @@ public class SugarDaddiApplication extends Application {
     }
 
     /**
-     * Returns the application-scoped ThumbnailDownloader singleton.
+     * Returns the application-scoped ImageDownloader singleton.
      * Holds a shared OkHttpClient and executor - never construct your own.
      */
-    public ThumbnailDownloader getThumbnailDownloader() {
-        return thumbnailDownloader;
+    public ImageDownloader getImageDownloader() {
+        return imageDownloader;
     }
 
     /**

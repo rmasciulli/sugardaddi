@@ -1,7 +1,6 @@
 package li.masciul.sugardaddi.data.repository;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -11,7 +10,6 @@ import androidx.lifecycle.LiveData;
 
 // Database imports
 import li.masciul.sugardaddi.SugarDaddiApplication;
-import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
@@ -34,7 +32,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 // Managers and utilities
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
-import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
+import li.masciul.sugardaddi.utils.image.ImageDownloader;
 
 // Cache
 
@@ -273,7 +271,7 @@ public class ProductRepository {
                     Log.d(TAG, "Toggled favorite: " + productId + " → " + newStatus);
                 }
 
-                // Thumbnail download/deletion runs on ThumbnailDownloader's own
+                // Thumbnail download/deletion runs on ImageDownloader's own
                 // executor - does not block this backgroundExecutor thread.
                 handleThumbnailForFavorite(product, productId, newStatus);
 
@@ -299,7 +297,7 @@ public class ProductRepository {
      *
      * UNFAVOURITING
      * =============
-     * Deletes the cached file from disk via ThumbnailDownloader.deleteThumbnail().
+     * Deletes the cached file from disk via ImageDownloader.deleteThumbnail().
      * thumbnailPath is already cleared in Room before this method is called.
      *
      * @param product    FoodProduct domain object (provides image URLs).
@@ -311,7 +309,7 @@ public class ProductRepository {
             @NonNull String productId,
             boolean isFavorite) {
 
-        ThumbnailDownloader downloader = getThumbnailDownloader();
+        ImageDownloader downloader = getImageDownloader();
         if (downloader == null) return;
 
         if (isFavorite) {
@@ -327,10 +325,10 @@ public class ProductRepository {
             }
 
             final String finalUrl = url;
-            downloader.download(finalUrl, productId, new ThumbnailDownloader.Callback() {
+            downloader.download(finalUrl, productId, new ImageDownloader.Callback() {
                 @Override
                 public void onSuccess(@NonNull String localPath) {
-                    // ThumbnailDownloader delivers this callback on the main thread.
+                    // ImageDownloader delivers this callback on the main thread.
                     // Room writes must happen on a background thread.
                     backgroundExecutor.execute(() -> {
                         try {
@@ -355,22 +353,22 @@ public class ProductRepository {
             });
 
         } else {
-            // File deletion is handled by ThumbnailDownloader on its own executor.
+            // File deletion is handled by ImageDownloader on its own executor.
             // thumbnailPath is already null in Room (cleared before this call).
             downloader.deleteThumbnail(productId);
         }
     }
 
     /**
-     * Returns the application-scoped ThumbnailDownloader singleton.
+     * Returns the application-scoped ImageDownloader singleton.
      * Returns null (and logs) if the context is not SugarDaddiApplication -
      * should never happen in production.
      */
     @Nullable
-    private ThumbnailDownloader getThumbnailDownloader() {
+    private ImageDownloader getImageDownloader() {
         if (context.getApplicationContext() instanceof SugarDaddiApplication) {
             return ((SugarDaddiApplication) context.getApplicationContext())
-                    .getThumbnailDownloader();
+                    .getImageDownloader();
         }
         Log.e(TAG, "Application context is not SugarDaddiApplication "
                 + "- thumbnail pipeline unavailable");

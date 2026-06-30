@@ -25,7 +25,7 @@ import java.io.IOException;
  *
  * WHAT THIS CLASS DOES NOT DO
  * ============================
- * - No network operations     → see ThumbnailDownloader
+ * - No network operations     → see ImageDownloader
  * - No disk path management   → see ImageStorageManager
  * - No database access        → see ImagePurgeManager
  * - No camera/gallery UI      → see ImagePickerHelper

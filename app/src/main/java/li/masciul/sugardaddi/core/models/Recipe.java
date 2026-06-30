@@ -106,7 +106,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private String imageUrl;
     private String videoUrl;
 
-    // Auto-cached local paths - managed by ThumbnailDownloader / future ImageCacheManager.
+    // Auto-cached local paths - managed by ImageDownloader / future ImageCacheManager.
     private String thumbnailPath;
     private String imagePath;
 

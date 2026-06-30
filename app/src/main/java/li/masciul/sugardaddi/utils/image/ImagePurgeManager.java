@@ -41,7 +41,7 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  * WHAT THIS CLASS DOES NOT DO
  * ============================
  * - No image processing  → ImageProcessor
- * - No downloading       → ThumbnailDownloader
+ * - No downloading       → ImageDownloader
  * - No camera/gallery UI → ImagePickerHelper
  * - No gallery scanning  → ImageStorageManager
  *

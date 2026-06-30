@@ -40,7 +40,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  * ============================
  * - No disk path management        → ImageStorageManager (caller's responsibility)
  * - No image resizing/compression  → ImageProcessor
- * - No thumbnail downloading       → ThumbnailDownloader
+ * - No thumbnail downloading       → ImageDownloader
  * - No database access             → caller persists the returned path in Room
  * - No filename generation         → caller constructs the destination File
  *

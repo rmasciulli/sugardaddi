@@ -8,7 +8,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 import li.masciul.sugardaddi.SugarDaddiApplication;
-import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
@@ -20,9 +19,8 @@ import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.managers.DataSourceManager;
-import li.masciul.sugardaddi.utils.image.ThumbnailDownloader;
+import li.masciul.sugardaddi.utils.image.ImageDownloader;
 
-import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -450,7 +448,7 @@ public class RecipeRepository {
             @NonNull String recipeId,
             boolean isFavorite) {
 
-        ThumbnailDownloader downloader = getThumbnailDownloader();
+        ImageDownloader downloader = getImageDownloader();
         if (downloader == null) return;
 
         if (isFavorite) {
@@ -461,7 +459,7 @@ public class RecipeRepository {
                 return;
             }
 
-            downloader.download(url, recipeId, new ThumbnailDownloader.Callback() {
+            downloader.download(url, recipeId, new ImageDownloader.Callback() {
                 @Override
                 public void onSuccess(@NonNull String localPath) {
                     backgroundExecutor.execute(() -> {
@@ -493,13 +491,13 @@ public class RecipeRepository {
     }
 
     /**
-     * Returns the application-scoped ThumbnailDownloader singleton.
+     * Returns the application-scoped ImageDownloader singleton.
      */
     @Nullable
-    private ThumbnailDownloader getThumbnailDownloader() {
+    private ImageDownloader getImageDownloader() {
         if (context.getApplicationContext() instanceof SugarDaddiApplication) {
             return ((SugarDaddiApplication) context.getApplicationContext())
-                    .getThumbnailDownloader();
+                    .getImageDownloader();
         }
         Log.e(TAG, "Application context is not SugarDaddiApplication "
                 + "- thumbnail pipeline unavailable");

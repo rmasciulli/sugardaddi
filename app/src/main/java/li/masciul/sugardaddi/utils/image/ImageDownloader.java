@@ -20,7 +20,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * ThumbnailDownloader - Downloads remote thumbnail images to local disk.
+ * ImageDownloader - Downloads remote thumbnail images to local disk.
  *
  * RESPONSIBILITIES
  * ================
@@ -65,10 +65,10 @@ import okhttp3.ResponseBody;
  * USAGE (from a background thread or main thread - both are safe)
  * ================================================================
  * <pre>
- *   thumbnailDownloader.download(
+ *   imageDownloader.download(
  *       "https://images.openfoodfacts.org/images/products/.../front_fr.200.jpg",
  *       "OFF:3017620422003",
- *       new ThumbnailDownloader.Callback() {
+ *       new ImageDownloader.Callback() {
  *           {@literal @}Override
  *           public void onSuccess(String localPath) {
  *               // Persist localPath in Room, then reload the list item
@@ -80,7 +80,7 @@ import okhttp3.ResponseBody;
  *       });
  * </pre>
  */
-public class ThumbnailDownloader {
+public class ImageDownloader {
 
     private static final String TAG = "SugarDaddi_Images";
 
@@ -162,7 +162,7 @@ public class ThumbnailDownloader {
      * @param storageManager The storage manager used to resolve thumbnail paths.
      *                       Should be the application-scoped singleton instance.
      */
-    public ThumbnailDownloader(@NonNull ImageStorageManager storageManager) {
+    public ImageDownloader(@NonNull ImageStorageManager storageManager) {
         this.storageManager   = storageManager;
         this.downloadExecutor = Executors.newSingleThreadExecutor();
         this.mainHandler      = new Handler(Looper.getMainLooper());
@@ -382,7 +382,7 @@ public class ThumbnailDownloader {
      * @param reason   Human-readable error description.
      */
     private void deliverError(@NonNull Callback callback, @NonNull String reason) {
-        Log.w(TAG, "ThumbnailDownloader error: " + reason);
+        Log.w(TAG, "ImageDownloader error: " + reason);
         mainHandler.post(() -> callback.onError(reason));
     }
-}
+}

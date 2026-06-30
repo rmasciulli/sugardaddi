@@ -30,7 +30,7 @@ import java.io.OutputStream;
  *
  * WHAT THIS CLASS DOES NOT DO
  * ============================
- * - No network operations   → ThumbnailDownloader
+ * - No network operations   → ImageDownloader
  * - No image processing     → ImageProcessor
  * - No database access      → ImagePurgeManager
  * - No camera/gallery UI    → ImagePickerHelper

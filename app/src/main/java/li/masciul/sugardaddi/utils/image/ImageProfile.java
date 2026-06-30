@@ -37,8 +37,8 @@ package li.masciul.sugardaddi.utils.image;
  * <pre>
  *   ImageProcessor.process(source, dest, ImageProfile.HERO);
  *   imagePicker.showGallery(dest, ImageProfile.THUMBNAIL, callback);
- *   thumbnailDownloader.download(url, heroFile,  ImageProfile.HERO, callback);
- *   thumbnailDownloader.download(url, thumbFile, null,              callback); // raw
+ *   imageDownloader.download(url, heroFile,  ImageProfile.HERO, callback);
+ *   imageDownloader.download(url, thumbFile, null,              callback); // raw
  * </pre>
  */
 public enum ImageProfile {

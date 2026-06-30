@@ -39,7 +39,7 @@
     <!--
         Thumbnails - auto-cached remote images.
         Declared so thumbnails can be shared with external viewers if needed.
-        The camera does NOT write here; ThumbnailDownloader manages this directory.
+        The camera does NOT write here; ImageDownloader manages this directory.
     -->
     <external-files-path
         name="sugardaddi_thumbnails"
