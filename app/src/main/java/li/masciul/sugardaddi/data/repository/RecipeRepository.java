@@ -20,8 +20,10 @@ import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.data.sources.base.DataSourceCallback;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.utils.image.ImageDownloader;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
+import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -228,6 +230,12 @@ public class RecipeRepository {
         }
 
         recipeDao.insert(entity);   // REPLACE on conflict
+
+        // Heal-on-open: keep a favourite's thumbnail + hero cached for offline use.
+        if (entity.isFavorite()) {
+            cacheFavouriteImages(recipe, recipe.getSearchableId(),
+                    entity.getThumbnailPath(), entity.getImagePath());
+        }
     }
 
     // ── Cache-first external-recipe resolver (mirror of ProductRepository.resolveProduct) ──
@@ -449,49 +457,84 @@ public class RecipeRepository {
             @NonNull String recipeId,
             boolean isFavorite) {
 
-        ImageDownloader downloader = getImageDownloader();
-        if (downloader == null) return;
-
-        ImageStorageManager storage = getImageStorageManager();
-        if (storage == null) return;
-
         if (isFavorite) {
-            String url = recipe.getImageUrl();
-            if (url == null || url.trim().isEmpty()) {
-                Log.d(TAG, "No image URL available for recipe " + recipeId
-                        + " - skipping thumbnail download");
-                return;
+            cacheFavouriteImages(recipe, recipeId, null, null);
+        } else {
+            // Unfavourite: remove the cached thumbnail. (Hero cleanup: commit 4.)
+            ImageDownloader downloader = getImageDownloader();
+            ImageStorageManager storage = getImageStorageManager();
+            if (downloader != null && storage != null) {
+                downloader.delete(storage.getThumbnailFile(recipeId));
             }
+        }
+    }
 
-            downloader.download(url, storage.getThumbnailFile(recipeId), null,
-                    new ImageDownloader.Callback() {
+    /**
+     * Ensures a favourited recipe's thumbnail and hero are cached on disk, healing
+     * any that are missing. See ProductRepository#cacheFavouriteImages - same
+     * contract. Recipes expose a single image URL, used for both slots; the
+     * downloader's dedup makes the overlap cheap when they resolve identically.
+     *
+     * @param recipe        Domain object providing the remote image URL.
+     * @param recipeId      Source-qualified id (cache filename + Room key).
+     * @param thumbnailPath Current cached thumbnail path, or null if not yet cached.
+     * @param imagePath     Current cached hero path, or null if not yet cached.
+     */
+    private void cacheFavouriteImages(@NonNull Recipe recipe,
+                                      @NonNull String recipeId,
+                                      @Nullable String thumbnailPath,
+                                      @Nullable String imagePath) {
+        ImageDownloader downloader = getImageDownloader();
+        ImageStorageManager storage = getImageStorageManager();
+        if (downloader == null || storage == null) return;
+
+        String url = recipe.getImageUrl();
+        if (url == null || url.trim().isEmpty()) return;
+
+        // --- Thumbnail (raw passthrough) ---
+        File thumb = storage.getThumbnailFile(recipeId);
+        if (thumb != null && (thumbnailPath == null || !thumb.exists())) {
+            downloader.download(url, thumb, null, new ImageDownloader.Callback() {
                 @Override
                 public void onSuccess(@NonNull String localPath) {
                     backgroundExecutor.execute(() -> {
                         try {
-                            database.recipeDao().updateThumbnailPath(recipeId, localPath);
-                            if (ApiConfig.DEBUG_LOGGING) {
-                                Log.d(TAG, "Thumbnail cached for recipe "
-                                        + recipeId + ": " + localPath);
-                            }
+                            recipeDao.updateThumbnailPath(recipeId, localPath);
                         } catch (Exception e) {
                             Log.w(TAG, "Failed to persist thumbnailPath for recipe "
                                     + recipeId, e);
                         }
                     });
                 }
-
                 @Override
                 public void onError(@NonNull String reason) {
-                    // Non-fatal - Glide will load from the remote URL instead.
-                    Log.d(TAG, "Thumbnail download failed for recipe "
+                    Log.d(TAG, "Thumbnail cache failed for recipe "
                             + recipeId + ": " + reason);
                 }
             });
+        }
 
-        } else {
-            // thumbnailPath already cleared in Room before this call.
-            downloader.delete(storage.getThumbnailFile(recipeId));
+        // --- Hero (resized/recompressed via ImageProfile.HERO) ---
+        File hero = storage.getRecipeHeroFile(recipeId);
+        if (hero != null && (imagePath == null || !hero.exists())) {
+            downloader.download(url, hero, ImageProfile.HERO, new ImageDownloader.Callback() {
+                @Override
+                public void onSuccess(@NonNull String localPath) {
+                    backgroundExecutor.execute(() -> {
+                        try {
+                            recipeDao.updateImagePath(recipeId, localPath);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to persist imagePath for recipe "
+                                    + recipeId, e);
+                        }
+                    });
+                }
+                @Override
+                public void onError(@NonNull String reason) {
+                    Log.d(TAG, "Hero cache failed for recipe "
+                            + recipeId + ": " + reason);
+                }
+            });
         }
     }
 

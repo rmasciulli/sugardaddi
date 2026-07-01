@@ -33,10 +33,12 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.utils.image.ImageDownloader;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
 // Cache
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -310,57 +312,101 @@ public class ProductRepository {
             @NonNull String productId,
             boolean isFavorite) {
 
-        ImageDownloader downloader = getImageDownloader();
-        if (downloader == null) return;
-
-        ImageStorageManager storage = getImageStorageManager();
-        if (storage == null) return;
-
         if (isFavorite) {
-            // Prefer the CDN thumbnail URL; fall back to the full image URL.
-            String url = product.getThumbnailUrl();
-            if (url == null || url.trim().isEmpty()) {
-                url = product.getImageUrl();
-            }
-            if (url == null || url.trim().isEmpty()) {
-                Log.d(TAG, "No image URL available for product " + productId
-                        + " - skipping thumbnail download");
-                return;
-            }
-
-            final String finalUrl = url;
-            downloader.download(finalUrl, storage.getThumbnailFile(productId), null,
-                    new ImageDownloader.Callback() {
-                @Override
-                public void onSuccess(@NonNull String localPath) {
-                    // ImageDownloader delivers this callback on the main thread.
-                    // Room writes must happen on a background thread.
-                    backgroundExecutor.execute(() -> {
-                        try {
-                            database.foodProductDao().updateThumbnailPath(productId, localPath);
-                            if (ApiConfig.DEBUG_LOGGING) {
-                                Log.d(TAG, "Thumbnail cached for product "
-                                        + productId + ": " + localPath);
-                            }
-                        } catch (Exception e) {
-                            Log.w(TAG, "Failed to persist thumbnailPath for "
-                                    + productId, e);
-                        }
-                    });
-                }
-
-                @Override
-                public void onError(@NonNull String reason) {
-                    // Non-fatal - Glide will load from the remote URL instead.
-                    Log.d(TAG, "Thumbnail download failed for product "
-                            + productId + ": " + reason);
-                }
-            });
-
+            // Cache both thumbnail and hero (best-effort, non-blocking). Paths are
+            // unknown here, so pass null - cacheFavouriteImages attempts both and
+            // the downloader dedups anything already on disk (e.g. re-favouriting).
+            cacheFavouriteImages(product, productId, null, null);
         } else {
-            // File deletion is handled by ImageDownloader on its own executor.
-            // thumbnailPath is already null in Room (cleared before this call).
-            downloader.delete(storage.getThumbnailFile(productId));
+            // Unfavourite: remove the cached thumbnail. (Hero cleanup: commit 4.)
+            // thumbnailPath is already cleared in Room before this call.
+            ImageDownloader downloader = getImageDownloader();
+            ImageStorageManager storage = getImageStorageManager();
+            if (downloader != null && storage != null) {
+                downloader.delete(storage.getThumbnailFile(productId));
+            }
+        }
+    }
+
+    /**
+     * Ensures a favourited product's thumbnail and hero are cached on disk,
+     * healing any that are missing.
+     *
+     * <p>Best-effort and non-blocking: each download runs on the ImageDownloader
+     * executor and persists its path on success. A file already present (path set
+     * and file on disk) is skipped, so a healthy favourite does no work. Failures
+     * are non-fatal - the remote URL stays the display fallback.</p>
+     *
+     * <p>Called both when the user favourites an item and on every detail open of
+     * a favourite (heal-on-open via saveProductToDatabaseSync). The downloader's
+     * deduplication makes the overlap on a fresh favourite a cheap no-op.</p>
+     *
+     * @param product       Domain object providing the remote image URLs.
+     * @param productId     Source-qualified id (cache filename + Room key).
+     * @param thumbnailPath Current cached thumbnail path, or null if not yet cached.
+     * @param imagePath     Current cached hero path, or null if not yet cached.
+     */
+    private void cacheFavouriteImages(@NonNull FoodProduct product,
+                                      @NonNull String productId,
+                                      @Nullable String thumbnailPath,
+                                      @Nullable String imagePath) {
+        ImageDownloader downloader = getImageDownloader();
+        ImageStorageManager storage = getImageStorageManager();
+        if (downloader == null || storage == null) return;
+
+        // --- Thumbnail (raw passthrough; prefer the dedicated thumbnail URL) ---
+        File thumb = storage.getThumbnailFile(productId);
+        if (thumb != null && (thumbnailPath == null || !thumb.exists())) {
+            String thumbUrl = product.getThumbnailUrl();
+            if (thumbUrl == null || thumbUrl.trim().isEmpty()) {
+                thumbUrl = product.getImageUrl();
+            }
+            if (thumbUrl != null && !thumbUrl.trim().isEmpty()) {
+                downloader.download(thumbUrl, thumb, null, new ImageDownloader.Callback() {
+                    @Override
+                    public void onSuccess(@NonNull String localPath) {
+                        backgroundExecutor.execute(() -> {
+                            try {
+                                database.foodProductDao().updateThumbnailPath(productId, localPath);
+                            } catch (Exception e) {
+                                Log.w(TAG, "Failed to persist thumbnailPath for product "
+                                        + productId, e);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onError(@NonNull String reason) {
+                        Log.d(TAG, "Thumbnail cache failed for product "
+                                + productId + ": " + reason);
+                    }
+                });
+            }
+        }
+
+        // --- Hero (resized/recompressed via ImageProfile.HERO) ---
+        File hero = storage.getProductHeroFile(productId);
+        if (hero != null && (imagePath == null || !hero.exists())) {
+            String heroUrl = product.getImageUrl();
+            if (heroUrl != null && !heroUrl.trim().isEmpty()) {
+                downloader.download(heroUrl, hero, ImageProfile.HERO, new ImageDownloader.Callback() {
+                    @Override
+                    public void onSuccess(@NonNull String localPath) {
+                        backgroundExecutor.execute(() -> {
+                            try {
+                                database.foodProductDao().updateImagePath(productId, localPath);
+                            } catch (Exception e) {
+                                Log.w(TAG, "Failed to persist imagePath for product "
+                                        + productId, e);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onError(@NonNull String reason) {
+                        Log.d(TAG, "Hero cache failed for product "
+                                + productId + ": " + reason);
+                    }
+                });
+            }
         }
     }
 
@@ -501,8 +547,12 @@ public class ProductRepository {
             boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
 
             FoodProductEntity productEntity = FoodProductEntity.fromFoodProduct(product);
+            // Heal-on-open: a favourite should keep its thumbnail + hero cached for
+            // offline use. Download whichever is missing (never cached, or a prior
+            // attempt failed). Healthy favourites short-circuit to no work.
             if (asFavorite || preserveFavorite) {
-                productEntity.setFavorite(true);
+                cacheFavouriteImages(product, product.getSearchableId(),
+                        productEntity.getThumbnailPath(), productEntity.getImagePath());
             }
 
             if (existingEntity != null) {
