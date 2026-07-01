@@ -258,10 +258,11 @@ public class ProductRepository {
                     newStatus = !entity.isFavorite();
                     entity.setFavorite(newStatus);
 
-                    // Clear thumbnailPath immediately when unfavouriting so Room
-                    // is consistent before the file is deleted from disk.
+                    // Clear both cached-image paths when unfavouriting so Room is
+                    // consistent before the files are deleted from disk.
                     if (!newStatus) {
                         entity.setThumbnailPath(null);
+                        entity.setImagePath(null);
                     }
                     database.foodProductDao().updateProduct(entity);
                 } else {
@@ -318,12 +319,13 @@ public class ProductRepository {
             // the downloader dedups anything already on disk (e.g. re-favouriting).
             cacheFavouriteImages(product, productId, null, null);
         } else {
-            // Unfavourite: remove the cached thumbnail. (Hero cleanup: commit 4.)
-            // thumbnailPath is already cleared in Room before this call.
+            // Unfavourite: remove the cached thumbnail and hero from disk.
+            // Both paths are already cleared in Room before this call.
             ImageDownloader downloader = getImageDownloader();
             ImageStorageManager storage = getImageStorageManager();
             if (downloader != null && storage != null) {
                 downloader.delete(storage.getThumbnailFile(productId));
+                downloader.delete(storage.getProductHeroFile(productId));
             }
         }
     }

@@ -404,8 +404,10 @@ public class RecipeRepository {
                     recipeDao.update(existing);
 
                     if (!favorite) {
+                        // Clear both cached-image paths before the files are deleted.
                         existing.setThumbnailPath(null);
-                        recipeDao.update(existing); // second write to clear the path
+                        existing.setImagePath(null);
+                        recipeDao.update(existing); // second write to clear the paths
                     }
                     handleThumbnailForFavorite(recipe, recipe.getSearchableId(), favorite);
 
@@ -460,11 +462,13 @@ public class RecipeRepository {
         if (isFavorite) {
             cacheFavouriteImages(recipe, recipeId, null, null);
         } else {
-            // Unfavourite: remove the cached thumbnail. (Hero cleanup: commit 4.)
+            // Unfavourite: remove the cached thumbnail and hero from disk.
+            // Both paths are already cleared in Room before this call.
             ImageDownloader downloader = getImageDownloader();
             ImageStorageManager storage = getImageStorageManager();
             if (downloader != null && storage != null) {
                 downloader.delete(storage.getThumbnailFile(recipeId));
+                downloader.delete(storage.getRecipeHeroFile(recipeId));
             }
         }
     }
