@@ -16,15 +16,15 @@ import li.masciul.sugardaddi.ui.activities.ImageViewerActivity;
  * the thumbnail they are displaying - the viewer always shows the original.
  *
  * The source from resolve*ImageSource is an Object that is either:
- *   - a File   (a local original: userImagePath, or - once Option C ships -
- *               an auto-cached imagePath), or
+ *   - a File   (a local original: a user-set userImagePath, or an
+ *               auto-cached imagePath), or
  *   - a String (a remote imageUrl), or
  *   - null     (no image at all; this launcher then no-ops).
  *
  * We normalise that to a single String extra and let the Activity decide, by
  * disk existence, whether to load it as a local File (with an mtime cache
  * signature) or as a remote URL - mirroring ImageDisplayUtils' own logic.
- * Opening a remote URL performs a network fetch by design (Option A): there is
+ * Opening a remote URL performs a network fetch by design: there is
  * no guarantee of a local original for non-favourited search results.
  */
 public final class ImageViewerLauncher {

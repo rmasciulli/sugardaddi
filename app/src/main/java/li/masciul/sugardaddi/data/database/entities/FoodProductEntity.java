@@ -113,9 +113,10 @@ public class FoodProductEntity {
     private String imageUrl;
 
     /**
-     * Auto-cached local paths - managed by ImageDownloader / future ImageCacheManager.
-     * Downloaded automatically (e.g. on favourite). Deleted when no longer needed.
-     * Stored in "sugardaddi/thumbnails/" and "sugardaddi/products/" respectively.
+     * Auto-cached local paths - written by the repositories (cacheFavouriteImages)
+     * via ImageDownloader. Downloaded automatically (e.g. on favourite). Deleted when
+     * no longer needed. Stored in "sugardaddi/thumbnails/" and "sugardaddi/products/"
+     * respectively.
      */
     private String thumbnailPath;
     private String imagePath;

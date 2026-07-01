@@ -560,8 +560,9 @@ public interface RecipeDao {
     int updateThumbnailPath(String recipeId, String path);
 
     /**
-     * Updates the auto-cached full-size image path for a recipe.
-     * Must be called from a background thread.
+     * Updates the auto-cached full-size (hero) image path for a recipe.
+     * Called by the repositories' cacheFavouriteImages via ImageDownloader when a
+     * favourite's hero is cached to disk. Must be called from a background thread.
      */
     @Query("UPDATE recipes SET imagePath = :path WHERE id = :recipeId")
     int updateImagePath(String recipeId, String path);

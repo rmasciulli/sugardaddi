@@ -159,7 +159,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private String thumbnailUrl;
     private String imageUrl;
 
-    // Auto-cached local paths - managed by ImageDownloader / future ImageCacheManager.
+    // Auto-cached local paths - written by the repositories (cacheFavouriteImages) via ImageDownloader.
     private String thumbnailPath;
     private String imagePath;
 
