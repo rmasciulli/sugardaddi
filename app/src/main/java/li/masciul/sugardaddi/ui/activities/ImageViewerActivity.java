@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -81,12 +82,23 @@ public class ImageViewerActivity extends AppCompatActivity {
      * Glide cache on its mtime so an in-place overwrite isn't served stale);
      * otherwise treat it as a remote URL.
      *
-     * Decode is capped (override) so a large remote CDN image is not decoded at
-     * full resolution into PhotoView's single in-memory bitmap; local originals
-     * are already bounded by ImageProfile.HERO (maxDimension), so the cap is a
-     * no-op for them.
+     * Sizing policy: "fit if larger, native if smaller". Large images are scaled
+     * down to fit the screen; images smaller than the screen are shown at their
+     * true pixel size, centered, never upscaled (which looks soft/stretched).
+     * Enforced on BOTH sides:
+     *   - Glide centerInside: returns the source untouched when it already fits
+     *     within the decode cap, downsampling only when larger (this also caps a
+     *     large remote CDN image so it is not decoded at full resolution into
+     *     PhotoView's single in-memory bitmap). Local heroes, bounded by
+     *     ImageProfile.HERO, fall under the cap and decode at native size.
+     *   - PhotoView CENTER_INSIDE: clamps the display scale to at most 1.0, so a
+     *     small bitmap shows at native size rather than stretched to fill.
+     * Pinch-to-zoom past native remains available in both cases.
      */
     private void loadInto(@NonNull PhotoView photoView, @NonNull String source) {
+        // Never enlarge to fill the screen: fit-if-larger, native-if-smaller.
+        photoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+
         File file = new File(source);
         Object model = file.exists() ? file : source;
 
@@ -97,7 +109,7 @@ public class ImageViewerActivity extends AppCompatActivity {
         RequestBuilder<Drawable> request = Glide.with(this)
                 .load(model)
                 .override(cap, cap)
-                .fitCenter()                       // PhotoView wants the whole image, not a crop.
+                .centerInside()                    // fit if larger, never upscale.
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .error(R.drawable.ic_food_error);
 
