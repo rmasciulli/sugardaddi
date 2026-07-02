@@ -412,7 +412,7 @@ public interface FoodProductDao {
 
     /**
      * Updates the auto-cached full-size (hero) image path for a product.
-     * Called by the repositories' cacheFavouriteImages via ImageDownloader when a
+     * Called by the repositories' cacheFavoriteImages via ImageDownloader when a
      * favourite's hero is cached to disk. Must be called from a background thread.
      */
     @Query("UPDATE food_products SET imagePath = :path WHERE id = :productId")

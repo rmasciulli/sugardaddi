@@ -235,7 +235,7 @@ public class ProductRepository {
     /**
      * Toggles the favourite status of a product.
      *
-     * After the Room write completes, handleThumbnailForFavorite() is called
+     * After the Room write completes, handleFavoriteImages() is called
      * to download or delete the cached thumbnail in the background. The
      * FavoriteCallback fires before the thumbnail operation completes - the
      * UI does not wait for it.
@@ -277,7 +277,7 @@ public class ProductRepository {
 
                 // Thumbnail download/deletion runs on ImageDownloader's own
                 // executor - does not block this backgroundExecutor thread.
-                handleThumbnailForFavorite(product, productId, newStatus);
+                handleFavoriteImages(product, productId, newStatus);
 
                 final boolean finalNewStatus = newStatus;
                 runOnMainThread(() -> callback.onFavoriteToggled(finalNewStatus));
@@ -308,16 +308,16 @@ public class ProductRepository {
      * @param productId  Source-qualified ID (Room primary key).
      * @param isFavorite The new favourite state just written to Room.
      */
-    private void handleThumbnailForFavorite(
+    private void handleFavoriteImages(
             @NonNull FoodProduct product,
             @NonNull String productId,
             boolean isFavorite) {
 
         if (isFavorite) {
             // Cache both thumbnail and hero (best-effort, non-blocking). Paths are
-            // unknown here, so pass null - cacheFavouriteImages attempts both and
+            // unknown here, so pass null - cacheFavoriteImages attempts both and
             // the downloader dedups anything already on disk (e.g. re-favouriting).
-            cacheFavouriteImages(product, productId, null, null);
+            cacheFavoriteImages(product, productId, null, null);
         } else {
             // Unfavourite: remove the cached thumbnail and hero from disk.
             // Both paths are already cleared in Room before this call.
@@ -348,7 +348,7 @@ public class ProductRepository {
      * @param thumbnailPath Current cached thumbnail path, or null if not yet cached.
      * @param imagePath     Current cached hero path, or null if not yet cached.
      */
-    private void cacheFavouriteImages(@NonNull FoodProduct product,
+    private void cacheFavoriteImages(@NonNull FoodProduct product,
                                       @NonNull String productId,
                                       @Nullable String thumbnailPath,
                                       @Nullable String imagePath) {
@@ -553,7 +553,7 @@ public class ProductRepository {
             // offline use. Download whichever is missing (never cached, or a prior
             // attempt failed). Healthy favourites short-circuit to no work.
             if (asFavorite || preserveFavorite) {
-                cacheFavouriteImages(product, product.getSearchableId(),
+                cacheFavoriteImages(product, product.getSearchableId(),
                         productEntity.getThumbnailPath(), productEntity.getImagePath());
             }
 

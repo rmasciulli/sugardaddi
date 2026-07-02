@@ -233,7 +233,7 @@ public class RecipeRepository {
 
         // Heal-on-open: keep a favourite's thumbnail + hero cached for offline use.
         if (entity.isFavorite()) {
-            cacheFavouriteImages(recipe, recipe.getSearchableId(),
+            cacheFavoriteImages(recipe, recipe.getSearchableId(),
                     entity.getThumbnailPath(), entity.getImagePath());
         }
     }
@@ -409,7 +409,7 @@ public class RecipeRepository {
                         existing.setImagePath(null);
                         recipeDao.update(existing); // second write to clear the paths
                     }
-                    handleThumbnailForFavorite(recipe, recipe.getSearchableId(), favorite);
+                    handleFavoriteImages(recipe, recipe.getSearchableId(), favorite);
 
                     runOnMainThread(callback::onSuccess);
                 } else {
@@ -417,7 +417,7 @@ public class RecipeRepository {
                     runOnMainThread(() -> saveExternalRecipe(recipe, new RecipeCallback() {
                         @Override
                         public void onSuccess(Recipe saved) {
-                            handleThumbnailForFavorite(recipe, recipe.getSearchableId(), favorite);
+                            handleFavoriteImages(recipe, recipe.getSearchableId(), favorite);
                             callback.onSuccess();
                         }
                         @Override
@@ -454,13 +454,13 @@ public class RecipeRepository {
      * @param recipeId   Source-qualified ID (Room primary key).
      * @param isFavorite The new favourite state just written to Room.
      */
-    private void handleThumbnailForFavorite(
+    private void handleFavoriteImages(
             @NonNull Recipe recipe,
             @NonNull String recipeId,
             boolean isFavorite) {
 
         if (isFavorite) {
-            cacheFavouriteImages(recipe, recipeId, null, null);
+            cacheFavoriteImages(recipe, recipeId, null, null);
         } else {
             // Unfavourite: remove the cached thumbnail and hero from disk.
             // Both paths are already cleared in Room before this call.
@@ -475,7 +475,7 @@ public class RecipeRepository {
 
     /**
      * Ensures a favourited recipe's thumbnail and hero are cached on disk, healing
-     * any that are missing. See ProductRepository#cacheFavouriteImages - same
+     * any that are missing. See ProductRepository#cacheFavoriteImages - same
      * contract. Recipes expose a single image URL, used for both slots; the
      * downloader's dedup makes the overlap cheap when they resolve identically.
      *
@@ -484,7 +484,7 @@ public class RecipeRepository {
      * @param thumbnailPath Current cached thumbnail path, or null if not yet cached.
      * @param imagePath     Current cached hero path, or null if not yet cached.
      */
-    private void cacheFavouriteImages(@NonNull Recipe recipe,
+    private void cacheFavoriteImages(@NonNull Recipe recipe,
                                       @NonNull String recipeId,
                                       @Nullable String thumbnailPath,
                                       @Nullable String imagePath) {
