@@ -488,25 +488,6 @@ public class SearchAliciousHit {
     }
 
     /**
-     * Get best available image URL for list display.
-     *
-     * Priority (fastest/smallest first):
-     * 1. image_front_small_url (optimized thumbnail)
-     * 2. image_front_url (full front image)
-     * 3. image_small_url (generic small)
-     * 4. image_url (full size - avoid for lists)
-     *
-     * @return Best available image URL, or null
-     */
-    @Nullable
-    public String getBestImageUrl() {
-        if (imageFrontSmallUrl != null) return imageFrontSmallUrl;
-        if (imageFrontUrl != null) return imageFrontUrl;
-        if (imageSmallUrl != null) return imageSmallUrl;
-        return imageUrl;
-    }
-
-    /**
      * Check if product has sufficient data quality for display.
      * Requires: barcode, product name, completeness >= 0.5.
      */

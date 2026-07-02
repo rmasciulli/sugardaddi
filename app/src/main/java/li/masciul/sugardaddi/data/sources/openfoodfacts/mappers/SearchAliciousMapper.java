@@ -167,20 +167,30 @@ public class SearchAliciousMapper {
     }
 
     /**
-     * Map images with fallback priority.
-     * Uses hit.getBestImageUrl() which prefers small front image for list performance.
+     * Map images: hero from the display-tier URL, thumbnail from the small-tier URL.
+     *
+     * Mirrors OpenFoodFactsMapper so imageUrl always carries the display-quality
+     * (hero) image and thumbnailUrl the small (list) image. The search card binds
+     * the thumbnail (resolveProductThumbnailSource), so list performance is
+     * unaffected; only the hero and full-screen viewer benefit from the larger URL.
      */
     private static void mapImages(FoodProduct product, SearchAliciousHit hit) {
-        String imageUrl = hit.getBestImageUrl();
-        if (imageUrl != null) {
-            product.setImageUrl(imageUrl);
-            // If we have a dedicated small/thumbnail URL, set it separately
-            String thumbUrl = hit.getImageFrontSmallUrl() != null
-                    ? hit.getImageFrontSmallUrl()
-                    : hit.getImageSmallUrl();
-            if (thumbUrl != null) {
-                product.setThumbnailUrl(thumbUrl);
-            }
+        // Hero: prefer the front display image, fall back to the generic one.
+        String heroUrl = hit.getImageFrontUrl();
+        if (heroUrl == null || heroUrl.trim().isEmpty()) {
+            heroUrl = hit.getImageUrl();
+        }
+        if (heroUrl != null && !heroUrl.trim().isEmpty()) {
+            product.setImageUrl(heroUrl);
+        }
+
+        // Thumbnail: prefer the small front image, fall back to the small generic.
+        String thumbUrl = hit.getImageFrontSmallUrl();
+        if (thumbUrl == null || thumbUrl.trim().isEmpty()) {
+            thumbUrl = hit.getImageSmallUrl();
+        }
+        if (thumbUrl != null && !thumbUrl.trim().isEmpty()) {
+            product.setThumbnailUrl(thumbUrl);
         }
     }
 
