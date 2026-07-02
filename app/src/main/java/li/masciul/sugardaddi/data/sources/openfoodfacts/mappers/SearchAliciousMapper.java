@@ -181,7 +181,8 @@ public class SearchAliciousMapper {
             heroUrl = hit.getImageUrl();
         }
         if (heroUrl != null && !heroUrl.trim().isEmpty()) {
-            product.setImageUrl(heroUrl);
+            // Upgrade the 400px display URL to the full-resolution original for the hero.
+            product.setImageUrl(OffImageUrls.toFullResolutionUrl(heroUrl));
         }
 
         // Thumbnail: prefer the small front image, fall back to the small generic.

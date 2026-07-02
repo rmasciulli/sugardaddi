@@ -276,9 +276,10 @@ public class OpenFoodFactsMapper {
             imageUrl = offProduct.getImageUrl();
         }
 
-        // Set if we found any image
+        // Set if we found any image - upgrade the 400px display URL to the full
+        // original for the hero (thumbnail below keeps the small variant).
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            product.setImageUrl(imageUrl);
+            product.setImageUrl(OffImageUrls.toFullResolutionUrl(imageUrl));
         }
 
         // Try thumbnail
