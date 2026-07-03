@@ -44,11 +44,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 /**
- * ProductRepository - product detail loading, caching, and favourite management.
+ * ProductRepository - product detail loading, caching, and favorite management.
  *
  *   - Cache-first detail loading (resolveProduct): Room-first reads with
  *     stale-while-revalidate, dual-table storage (FoodProductEntity + NutritionEntity).
- *   - Favourite management and thumbnail caching.
+ *   - Favorite management and thumbnail caching.
  *   - Cache maintenance (clear / stats / validity).
  */
 public class ProductRepository {
@@ -85,7 +85,7 @@ public class ProductRepository {
          * The candidate is offered, not applied - the detail screen shows the
          * refresh FAB and applies it via applyCandidate() on tap, so data never
          * changes under the user mid-view. Default no-op: callers that don't show
-         * a detail screen (search, favourites) ignore it.
+         * a detail screen (search, favorites) ignore it.
          */
         default void onRefreshAvailable(FoodProduct candidate) {}
     }
@@ -233,7 +233,7 @@ public class ProductRepository {
     }
 
     /**
-     * Toggles the favourite status of a product.
+     * Toggles the favorite status of a product.
      *
      * After the Room write completes, handleFavoriteImages() is called
      * to download or delete the cached thumbnail in the background. The
@@ -266,7 +266,7 @@ public class ProductRepository {
                     }
                     database.foodProductDao().updateProduct(entity);
                 } else {
-                    // Not yet in Room - save as favourite
+                    // Not yet in Room - save as favorite
                     saveProductToDatabase(product, true);
                     newStatus = true;
                 }
@@ -306,7 +306,7 @@ public class ProductRepository {
      *
      * @param product    FoodProduct domain object (provides image URLs).
      * @param productId  Source-qualified ID (Room primary key).
-     * @param isFavorite The new favourite state just written to Room.
+     * @param isFavorite The new favorite state just written to Room.
      */
     private void handleFavoriteImages(
             @NonNull FoodProduct product,
@@ -319,7 +319,7 @@ public class ProductRepository {
             // the downloader dedups anything already on disk (e.g. re-favouriting).
             cacheFavoriteImages(product, productId, null, null);
         } else {
-            // Unfavourite: remove the cached thumbnail and hero from disk.
+            // Unfavorite: remove the cached thumbnail and hero from disk.
             // Both paths are already cleared in Room before this call.
             ImageDownloader downloader = getImageDownloader();
             ImageStorageManager storage = getImageStorageManager();
@@ -331,17 +331,17 @@ public class ProductRepository {
     }
 
     /**
-     * Ensures a favourited product's thumbnail and hero are cached on disk,
+     * Ensures a favorited product's thumbnail and hero are cached on disk,
      * healing any that are missing.
      *
      * <p>Best-effort and non-blocking: each download runs on the ImageDownloader
      * executor and persists its path on success. A file already present (path set
-     * and file on disk) is skipped, so a healthy favourite does no work. Failures
+     * and file on disk) is skipped, so a healthy favorite does no work. Failures
      * are non-fatal - the remote URL stays the display fallback.</p>
      *
-     * <p>Called both when the user favourites an item and on every detail open of
-     * a favourite (heal-on-open via saveProductToDatabaseSync). The downloader's
-     * deduplication makes the overlap on a fresh favourite a cheap no-op.</p>
+     * <p>Called both when the user favorites an item and on every detail open of
+     * a favorite (heal-on-open via saveProductToDatabaseSync). The downloader's
+     * deduplication makes the overlap on a fresh favorite a cheap no-op.</p>
      *
      * @param product       Domain object providing the remote image URLs.
      * @param productId     Source-qualified id (cache filename + Room key).
@@ -520,7 +520,7 @@ public class ProductRepository {
     /**
      * Fire-and-forget save of a product (+ nutrition). Enqueues the synchronous
      * save on the background executor. Used by callers that don't read the result
-     * back (e.g. toggleFavorite's new-favourite branch).
+     * back (e.g. toggleFavorite's new-favorite branch).
      */
     private void saveProductToDatabase(FoodProduct product, boolean asFavorite) {
         if (product == null) return;
@@ -541,17 +541,17 @@ public class ProductRepository {
     private void saveProductToDatabaseSync(FoodProduct product, boolean asFavorite) {
         if (product == null) return;
         try {
-            // Existing favourite status must survive a refresh. asFavorite covers the
-            // "save as new favourite" path; preserveFavorite covers refreshing a row
-            // that was already a favourite.
+            // Existing favorite status must survive a refresh. asFavorite covers the
+            // "save as new favorite" path; preserveFavorite covers refreshing a row
+            // that was already a favorite.
             FoodProductEntity existingEntity = database.foodProductDao()
                     .getProductById(product.getSearchableId());
             boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
 
             FoodProductEntity productEntity = FoodProductEntity.fromFoodProduct(product);
-            // Heal-on-open: a favourite should keep its thumbnail + hero cached for
+            // Heal-on-open: a favorite should keep its thumbnail + hero cached for
             // offline use. Download whichever is missing (never cached, or a prior
-            // attempt failed). Healthy favourites short-circuit to no work.
+            // attempt failed). Healthy favorites short-circuit to no work.
             if (asFavorite || preserveFavorite) {
                 cacheFavoriteImages(product, product.getSearchableId(),
                         productEntity.getThumbnailPath(), productEntity.getImagePath());
@@ -667,7 +667,7 @@ public class ProductRepository {
     }
 
     /** Stale once older than the source's freshness window. Refresh is independent
-     *  of favourite/localImport - those only affect eviction. */
+     *  of favorite/localImport - those only affect eviction. */
     private boolean isStale(long lastUpdatedMs, CacheStrategy strategy) {
         if (strategy.isNeverStale()) return false;
         return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();

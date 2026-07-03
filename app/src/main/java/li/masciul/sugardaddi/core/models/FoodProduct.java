@@ -894,7 +894,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
      * True if the source-provided content matches another product within tolerance.
      * Compares what the user would care about changing - names, ingredients,
      * nutrition, ratings, dietary/allergen flags, serving, source image URLs.
-     * Excludes everything local or derived: image *paths*, favourite, timestamps,
+     * Excludes everything local or derived: image *paths*, favorite, timestamps,
      * accessCount, completeness, searchableText, translations, identity, and the
      * grp-derived category lists (categoryList/categoryHierarchy) - the raw
      * categoriesText/categoryCode are compared instead. Logistics fields

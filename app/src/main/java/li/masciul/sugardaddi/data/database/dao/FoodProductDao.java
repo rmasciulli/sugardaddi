@@ -281,7 +281,7 @@ public interface FoodProductDao {
 
     /**
      * Delete cached products not viewed since {@code threshold}, never touching
-     * favourites or bulk-imported (localImport) rows. Returns the number deleted.
+     * favorites or bulk-imported (localImport) rows. Returns the number deleted.
      */
     @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0")
     int deleteExpiredProducts(long threshold);
@@ -296,14 +296,14 @@ public interface FoodProductDao {
     // Per-"pin" operations backing the three-section cache card in Settings.
     // Every row carries two orthogonal retention pins: isFavorite and localImport.
     //   - Browsed cache  = localImport 0, isFavorite 0  (no pin)
-    //   - Favourites     = isFavorite 1                 (favourite pin)
+    //   - Favorites     = isFavorite 1                 (favorite pin)
     //   - Downloaded     = localImport 1                (import pin)
     // Clearing a section clears one pin: a row that still holds the other pin is
     // downgraded (kept), a row left with no pin is deleted. Orchestrated in
-    // ProductRepository; section-2 favourite total reuses getFavoriteCount().
+    // ProductRepository; section-2 favorite total reuses getFavoriteCount().
 
     /**
-     * Count of browsed-cache products - opened from search, neither favourited nor
+     * Count of browsed-cache products - opened from search, neither favorited nor
      * part of a downloaded dataset (no retention pin). Drives the section-1 count.
      */
     @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0 AND isFavorite = 0")
@@ -311,7 +311,7 @@ public interface FoodProductDao {
 
     /**
      * Count of products belonging to one source's downloaded dataset (localImport = 1,
-     * favourited or not). Drives a section-3 source-row count.
+     * favorited or not). Drives a section-3 source-row count.
      *
      * @param sourceId The data source id (e.g. "CIQUAL", "USDA")
      */
@@ -319,22 +319,22 @@ public interface FoodProductDao {
     int getDownloadCountBySource(String sourceId);
 
     /**
-     * Section 1 - delete the browsed cache: flagless rows only. Favourites and
+     * Section 1 - delete the browsed cache: flagless rows only. Favorites and
      * downloaded rows are untouched. Returns the number deleted.
      */
     @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 0")
     int deleteBrowsedCache();
 
     /**
-     * Section 2, part A - delete favourites that exist only because they were
-     * favourited (no import pin). Rows that are also downloaded survive via
+     * Section 2, part A - delete favorites that exist only because they were
+     * favorited (no import pin). Rows that are also downloaded survive via
      * unmarkFavoriteOnDownloads(). Returns the number deleted.
      */
     @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 1")
     int deleteFavoritesOnly();
 
     /**
-     * Section 2, part B - clear the favourite pin on rows that are also downloaded
+     * Section 2, part B - clear the favorite pin on rows that are also downloaded
      * (C -> D): they stay as plain dataset rows. Returns the number updated.
      */
     @Query("UPDATE food_products SET isFavorite = 0 WHERE localImport = 1 AND isFavorite = 1")
@@ -342,7 +342,7 @@ public interface FoodProductDao {
 
     /**
      * Section 3, part A - for one source, delete dataset rows that are not also
-     * favourited (D). Favourited dataset rows survive via
+     * favorited (D). Favorited dataset rows survive via
      * unmarkDownloadOnFavoritesBySource(). Returns the number deleted.
      *
      * @param sourceId The data source id whose dataset is being removed
@@ -352,7 +352,7 @@ public interface FoodProductDao {
 
     /**
      * Section 3, part B - for one source, clear the import pin on rows that are also
-     * favourited (C -> B): they stay as plain favourites. Returns the number updated.
+     * favorited (C -> B): they stay as plain favorites. Returns the number updated.
      *
      * @param sourceId The data source id whose dataset is being removed
      */
@@ -375,7 +375,7 @@ public interface FoodProductDao {
      * Returns all non-null local image paths for food products.
      *
      * Covers all four local path columns:
-     *   thumbnailPath     - auto-cached thumbnail (downloaded on favourite)
+     *   thumbnailPath     - auto-cached thumbnail (downloaded on favorite)
      *   imagePath         - auto-cached full-size (future use, currently NULL)
      *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
      *   userImagePath     - user-defined full-size override
@@ -397,7 +397,7 @@ public interface FoodProductDao {
      * Updates the locally cached thumbnail path for a food product.
      *
      * Called by ProductRepository after a thumbnail download completes
-     * (on favourite) or to clear the path (on unfavourite, pass null).
+     * (on favorite) or to clear the path (on unfavorite, pass null).
      *
      * Using a targeted UPDATE rather than a full updateProduct() avoids
      * loading and re-serialising the entire entity to change one field.
@@ -413,7 +413,7 @@ public interface FoodProductDao {
     /**
      * Updates the auto-cached full-size (hero) image path for a product.
      * Called by the repositories' cacheFavoriteImages via ImageDownloader when a
-     * favourite's hero is cached to disk. Must be called from a background thread.
+     * favorite's hero is cached to disk. Must be called from a background thread.
      */
     @Query("UPDATE food_products SET imagePath = :path WHERE id = :productId")
     void updateImagePath(String productId, String path);

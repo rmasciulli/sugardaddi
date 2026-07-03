@@ -19,15 +19,15 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * only on Room.
  *
  * THE MODEL - two orthogonal retention pins on every row:
- *   - isFavorite   (favourite pin)
+ *   - isFavorite   (favorite pin)
  *   - localImport  (downloaded-dataset pin)
  * Clearing a "section" clears one pin; a row that still holds the other pin is
  * downgraded (kept), a row left with no pin is deleted:
  *
  *   Section 1  Searched items     no pin                  -> delete
- *   Section 2  Favourites         favourite pin           -> delete if no import pin,
- *                                                            else clear favourite pin
- *   Section 3  Downloaded source  import pin (per source) -> delete if no favourite
+ *   Section 2  Favorites         favorite pin           -> delete if no import pin,
+ *                                                            else clear favorite pin
+ *   Section 3  Downloaded source  import pin (per source) -> delete if no favorite
  *                                                            pin, else clear import pin
  *
  * Every operation is mirrored across both tables (FoodProductDao + RecipeDao) so that
@@ -67,13 +67,13 @@ public class CacheRepository {
         return database.recipeDao().getBrowsedCacheCount();
     }
 
-    /** Section 2 - favourite products (favourited, downloaded or not). */
+    /** Section 2 - favorite products (favorited, downloaded or not). */
     @WorkerThread
     public int getFavoriteProductCount() {
         return database.foodProductDao().getFavoriteCount();
     }
 
-    /** Section 2 - favourite recipes. */
+    /** Section 2 - favorite recipes. */
     @WorkerThread
     public int getFavoriteRecipeCount() {
         return database.recipeDao().getFavoriteCount();
@@ -97,7 +97,7 @@ public class CacheRepository {
 
     /**
      * Section 1 - clear the browsed search cache: rows with no retention pin
-     * (localImport 0, isFavorite 0) in both tables. Favourites and downloaded datasets
+     * (localImport 0, isFavorite 0) in both tables. Favorites and downloaded datasets
      * are untouched.
      */
     @WorkerThread
@@ -111,8 +111,8 @@ public class CacheRepository {
     }
 
     /**
-     * Section 2 - clear favourites: delete rows favourited with no import pin, and on
-     * rows that are also downloaded, clear only the favourite pin (they stay as plain
+     * Section 2 - clear favorites: delete rows favorited with no import pin, and on
+     * rows that are also downloaded, clear only the favorite pin (they stay as plain
      * dataset rows). Mirrored across both tables.
      */
     @WorkerThread
@@ -124,13 +124,13 @@ public class CacheRepository {
             database.recipeDao().unmarkFavoriteOnDownloads();
             database.nutritionDao().deleteOrphanedNutrition();
         });
-        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Cleared favourites (products + recipes)");
+        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Cleared favorites (products + recipes)");
     }
 
     /**
      * Section 3 - remove one source's downloaded dataset: delete its dataset rows that
-     * are not favourited, and on rows that are also favourited, clear only the import
-     * pin (they stay as plain favourites). Mirrored across both tables.
+     * are not favorited, and on rows that are also favorited, clear only the import
+     * pin (they stay as plain favorites). Mirrored across both tables.
      *
      * Room only - the caller resets the source's import state
      * (ManagementProvider.resetDatabaseState) and purges orphaned image files.

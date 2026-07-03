@@ -341,7 +341,7 @@ public class SearchCache {
      * from Room.
      *
      * Symmetric twin of enrichProductsFromDatabase(), scoped to images only. When the
-     * user has previously opened or favourited a recipe, its Room row may carry a
+     * user has previously opened or favorited a recipe, its Room row may carry a
      * custom photo/thumbnail (or our auto-cached copy). A fresh network search result
      * never has those local paths, so without this overlay the card falls back to the
      * source thumbnail and the user's custom image is silently dropped - visible only

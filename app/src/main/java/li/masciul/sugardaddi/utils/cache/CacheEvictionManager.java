@@ -11,7 +11,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 
 /**
  * CacheEvictionManager - deletes cached products and recipes the user hasn't
- * opened within RETENTION_MS, freeing the database. Favourites and bulk-imported
+ * opened within RETENTION_MS, freeing the database. Favorites and bulk-imported
  * (localImport) rows are never evicted.
  *
  * Row deletion only: image files are reclaimed by ImagePurgeManager's orphan

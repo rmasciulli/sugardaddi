@@ -25,7 +25,7 @@ import li.masciul.sugardaddi.ui.activities.ImageViewerActivity;
  * disk existence, whether to load it as a local File (with an mtime cache
  * signature) or as a remote URL - mirroring ImageDisplayUtils' own logic.
  * Opening a remote URL performs a network fetch by design: there is
- * no guarantee of a local original for non-favourited search results.
+ * no guarantee of a local original for non-favorited search results.
  */
 public final class ImageViewerLauncher {
 

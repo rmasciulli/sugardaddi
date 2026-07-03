@@ -164,7 +164,7 @@ public class RecipeRepository {
     /**
      * Persist an externally-sourced recipe to Room (fire-and-forget + callback).
      *
-     * For toggling favourites on an already-cached recipe use setRecipeFavorite(),
+     * For toggling favorites on an already-cached recipe use setRecipeFavorite(),
      * which preserves user-set fields instead of replacing the row.
      */
     public void saveExternalRecipe(@NonNull Recipe recipe, @NonNull RecipeCallback callback) {
@@ -218,7 +218,7 @@ public class RecipeRepository {
                 entity.setUserImagePath(existingEntity.getUserImagePath());
             }
 
-            // Favourite: this runs on every detail open, so never unfavourite.
+            // Favorite: this runs on every detail open, so never unfavorite.
             if (existingEntity.isFavorite()) {
                 entity.setFavorite(true);
             }
@@ -231,7 +231,7 @@ public class RecipeRepository {
 
         recipeDao.insert(entity);   // REPLACE on conflict
 
-        // Heal-on-open: keep a favourite's thumbnail + hero cached for offline use.
+        // Heal-on-open: keep a favorite's thumbnail + hero cached for offline use.
         if (entity.isFavorite()) {
             cacheFavoriteImages(recipe, recipe.getSearchableId(),
                     entity.getThumbnailPath(), entity.getImagePath());
@@ -282,7 +282,7 @@ public class RecipeRepository {
     }
 
     /** Stale once older than the source's freshness window. Refresh is independent
-     *  of favourite/localImport - those only affect eviction. */
+     *  of favorite/localImport - those only affect eviction. */
     private boolean isStale(long lastUpdatedMs, CacheStrategy strategy) {
         if (strategy.isNeverStale()) return false;
         return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();
@@ -372,14 +372,14 @@ public class RecipeRepository {
     }
 
     /**
-     * Toggle the favourite flag on a recipe, persisting the change to Room.
+     * Toggle the favorite flag on a recipe, persisting the change to Room.
      *
      * If the recipe is not yet cached (first interaction) it is saved in full
-     * via saveExternalRecipe(); if already cached, only the favourite flag and
-     * timestamp are updated, and on unfavourite the cached thumbnail is cleared.
+     * via saveExternalRecipe(); if already cached, only the favorite flag and
+     * timestamp are updated, and on unfavorite the cached thumbnail is cleared.
      *
-     * @param recipe   The recipe to favourite/unfavourite.
-     * @param favorite True to favourite, false to unfavourite.
+     * @param recipe   The recipe to favorite/unfavorite.
+     * @param favorite True to favorite, false to unfavorite.
      * @param callback Operation result - called on the main thread.
      */
     public void setRecipeFavorite(@NonNull Recipe recipe,
@@ -398,7 +398,7 @@ public class RecipeRepository {
                         : null;
 
                 if (existing != null) {
-                    // Already in Room - update only the favourite flag and timestamp
+                    // Already in Room - update only the favorite flag and timestamp
                     existing.setFavorite(favorite);
                     existing.touch();
                     recipeDao.update(existing);
@@ -428,9 +428,9 @@ public class RecipeRepository {
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "Error updating favourite for recipe", e);
+                Log.e(TAG, "Error updating favorite for recipe", e);
                 runOnMainThread(() -> callback.onError(
-                        "Failed to update favourite: " + e.getMessage()));
+                        "Failed to update favorite: " + e.getMessage()));
             }
         });
     }
@@ -452,7 +452,7 @@ public class RecipeRepository {
      *
      * @param recipe     Recipe domain object (provides imageUrl).
      * @param recipeId   Source-qualified ID (Room primary key).
-     * @param isFavorite The new favourite state just written to Room.
+     * @param isFavorite The new favorite state just written to Room.
      */
     private void handleFavoriteImages(
             @NonNull Recipe recipe,
@@ -462,7 +462,7 @@ public class RecipeRepository {
         if (isFavorite) {
             cacheFavoriteImages(recipe, recipeId, null, null);
         } else {
-            // Unfavourite: remove the cached thumbnail and hero from disk.
+            // Unfavorite: remove the cached thumbnail and hero from disk.
             // Both paths are already cleared in Room before this call.
             ImageDownloader downloader = getImageDownloader();
             ImageStorageManager storage = getImageStorageManager();
@@ -474,7 +474,7 @@ public class RecipeRepository {
     }
 
     /**
-     * Ensures a favourited recipe's thumbnail and hero are cached on disk, healing
+     * Ensures a favorited recipe's thumbnail and hero are cached on disk, healing
      * any that are missing. See ProductRepository#cacheFavoriteImages - same
      * contract. Recipes expose a single image URL, used for both slots; the
      * downloader's dedup makes the overlap cheap when they resolve identically.

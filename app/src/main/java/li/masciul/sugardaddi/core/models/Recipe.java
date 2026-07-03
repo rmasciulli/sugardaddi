@@ -463,7 +463,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
      * Compares names, instructions, cuisine, ingredients (portions), nutrition,
      * times, difficulty, dietary/allergen flags and source media URLs. Step content
      * is captured via the full instructions text - no separate stepStructure diff.
-     * Excludes everything local or derived: image paths, favourite/template flags,
+     * Excludes everything local or derived: image paths, favorite/template flags,
      * the social fields, translations, searchableText, identity, tags, recipeSource,
      * and the Category objects (categoriesText is compared instead).
      */

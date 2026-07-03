@@ -5,7 +5,7 @@ package li.masciul.sugardaddi.data.sources.base;
  *
  * Deliberately "dumb": it only knows how long a normally-fetched row from this
  * source stays fresh. Row-level overrides (localImport rows never go stale,
- * favourites get a longer floor) are applied by the repository resolvers, which
+ * favorites get a longer floor) are applied by the repository resolvers, which
  * are the ones holding the row.
  */
 public final class CacheStrategy {

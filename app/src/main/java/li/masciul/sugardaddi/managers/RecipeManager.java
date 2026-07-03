@@ -15,7 +15,7 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  *
  * Mirrors the design of {@link ProductManager}: sits between the UI layer
  * (RecipeDetailsActivity) and the data layer (RecipeRepository), providing
- * clean state management, loading lifecycle callbacks, and favourite toggling.
+ * clean state management, loading lifecycle callbacks, and favorite toggling.
  *
  * IDENTIFIER HANDLING
  * ===================
@@ -39,7 +39,7 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  * FAVOURITE HANDLING
  * ==================
  * External recipes (e.g. TheMealDB) are persisted to Room on first
- * favourite interaction via RecipeRepository.setRecipeFavorite().
+ * favorite interaction via RecipeRepository.setRecipeFavorite().
  *
  * NOTE ON DATASOURCE INSTANCE
  * ============================
@@ -107,23 +107,23 @@ public class RecipeManager {
         void onRecipeLoading();
 
         /**
-         * Called after the initial load to report the recipe's favourite state.
+         * Called after the initial load to report the recipe's favorite state.
          * The activity should update the toolbar star icon accordingly.
          *
-         * @param isFavorite true if this recipe is in the user's favourites
+         * @param isFavorite true if this recipe is in the user's favorites
          */
         void onFavoriteStatusChanged(boolean isFavorite);
 
         /**
-         * Called after a favourite toggle completes successfully.
+         * Called after a favorite toggle completes successfully.
          *
-         * @param newStatus true if the recipe is now a favourite
+         * @param newStatus true if the recipe is now a favorite
          * @param message   Human-readable confirmation string (for Snackbar/Toast)
          */
         void onFavoriteToggled(boolean newStatus, @NonNull String message);
 
         /**
-         * Called when a favourite operation fails.
+         * Called when a favorite operation fails.
          *
          * @param message Human-readable error description
          */
@@ -289,7 +289,7 @@ public class RecipeManager {
     }
 
     /**
-     * Toggle the favourite state of the currently-loaded recipe.
+     * Toggle the favorite state of the currently-loaded recipe.
      * Recipes are persisted to Room on first toggle via
      * {@link RecipeRepository#setRecipeFavorite}. Does nothing if
      * no recipe is currently loaded.
@@ -301,7 +301,7 @@ public class RecipeManager {
         }
 
         if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Toggling favourite for: "
+            Log.d(TAG, "Toggling favorite for: "
                     + currentRecipe.getDisplayName(currentRecipe.getCurrentLanguage()));
         }
 
@@ -318,11 +318,11 @@ public class RecipeManager {
                         isFavorite = newFavoriteState;
 
                         String message = newFavoriteState
-                                ? "Added to favourites"
-                                : "Removed from favourites";
+                                ? "Added to favorites"
+                                : "Removed from favorites";
 
                         if (ApiConfig.DEBUG_LOGGING) {
-                            Log.d(TAG, "Favourite toggled: " + message);
+                            Log.d(TAG, "Favorite toggled: " + message);
                         }
 
                         notifyFavoriteStatusChanged(newFavoriteState);
@@ -331,7 +331,7 @@ public class RecipeManager {
 
                     @Override
                     public void onError(String error) {
-                        Log.e(TAG, "Favourite toggle failed: " + error);
+                        Log.e(TAG, "Favorite toggle failed: " + error);
                         notifyFavoriteError(error);
                     }
                 });
@@ -356,7 +356,7 @@ public class RecipeManager {
         return isLoading;
     }
 
-    /** @return true if the currently-loaded recipe is marked as a favourite */
+    /** @return true if the currently-loaded recipe is marked as a favorite */
     public boolean isFavorite() {
         return isFavorite;
     }
@@ -398,10 +398,10 @@ public class RecipeManager {
     // ========== PRIVATE HELPERS ==========
 
     /**
-     * Load the favourite status for the currently-loaded recipe from Room.
+     * Load the favorite status for the currently-loaded recipe from Room.
      *
      * Called after a successful load to initialise the toolbar star icon.
-     * For external recipes not yet persisted, the favourite flag on the
+     * For external recipes not yet persisted, the favorite flag on the
      * in-memory Recipe object is authoritative (defaults to false).
      */
     private void loadFavoriteStatus() {

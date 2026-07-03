@@ -99,7 +99,7 @@ public class SettingsActivity extends BaseActivity
     private TextView       cacheBrowsedRecipeCount;
     private MaterialButton clearBrowsedButton;
 
-    // Section 2 - favourites
+    // Section 2 - favorites
     private TextView       cacheFavoritesText;
     private TextView       cacheFavoriteProductCount;
     private TextView       cacheFavoriteRecipeCount;
@@ -391,7 +391,7 @@ public class SettingsActivity extends BaseActivity
     }
 
     /**
-     * Confirmation dialog for the fixed sections (browsed / favourites / clear-all).
+     * Confirmation dialog for the fixed sections (browsed / favorites / clear-all).
      * The per-source section uses {@link #confirmRemoveSource(DataSource)} because its
      * message needs the source name formatted in.
      *
@@ -513,12 +513,12 @@ public class SettingsActivity extends BaseActivity
 
     // ---- clear handlers (Room op on executor, then image purge + UI refresh) ----
 
-    /** Section 1 - delete searched items (no pin); favourites/downloads untouched. */
+    /** Section 1 - delete searched items (no pin); favorites/downloads untouched. */
     private void clearBrowsed() {
         runCacheOp(() -> cacheRepository.clearBrowsedCache(), false);
     }
 
-    /** Section 2 - delete favourites (downloaded favourites just lose the pin). */
+    /** Section 2 - delete favorites (downloaded favorites just lose the pin). */
     private void clearFavorites() {
         runCacheOp(() -> cacheRepository.clearFavorites(), false);
     }

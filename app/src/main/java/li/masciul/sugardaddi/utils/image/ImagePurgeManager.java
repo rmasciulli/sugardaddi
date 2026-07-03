@@ -349,7 +349,7 @@ public class ImagePurgeManager {
 
             for (RecipeStepMetadata step : steps) {
                 // imageUrl      - remote image from TheMealDB/TheCocktailDB, never stored locally
-                // imagePath     - auto-cached local copy of imageUrl (downloaded on favourite)
+                // imagePath     - auto-cached local copy of imageUrl (downloaded on favorite)
                 // userImagePath - user-defined local photo set via ImagePickerHelper
                 String imagePath = step.getImagePath();
                 if (imagePath != null && !imagePath.trim().isEmpty()) {

@@ -189,27 +189,27 @@
     <string name="unit_liters">l</string>
 
     <!-- Favorites -->
-    <string name="menu_favorites">Favorites</string>
-    <string name="add_to_favorites">Add to favorites</string>
-    <string name="remove_from_favorites">Remove from favorites</string>
-    <string name="added_to_favorites">Added to favorites</string>
-    <string name="removed_from_favorites">Removed from favorites</string>
+    <string name="menu_favorites">Favourites</string>
+    <string name="add_to_favorites">Add to favourites</string>
+    <string name="remove_from_favorites">Remove from favourites</string>
+    <string name="added_to_favorites">Added to favourites</string>
+    <string name="removed_from_favorites">Removed from favourites</string>
     <string name="no_favorites">No favorite items yet</string>
-    <string name="favorites_subtitle">Tap the heart icon to add items to favorites</string>
+    <string name="favorites_subtitle">Tap the heart icon to add items to favourites</string>
 
     <!-- Enhanced Favorites -->
-    <string name="favorite_add_failed">Failed to add to favorites</string>
-    <string name="favorite_remove_failed">Failed to remove from favorites</string>
-    <string name="favorites_sync">Syncing favorites…</string>
+    <string name="favorite_add_failed">Failed to add to favourites</string>
+    <string name="favorite_remove_failed">Failed to remove from favourites</string>
+    <string name="favorites_sync">Syncing favourites…</string>
 
     <!-- Favorites Activity -->
-    <string name="favorites_title">Favorites</string>
-    <string name="search_favorites_hint">Search favorites…</string>
+    <string name="favorites_title">Favourites</string>
+    <string name="search_favorites_hint">Search favourites…</string>
     <string name="filter_all">All</string>
     <string name="filter_products">Products</string>
     <string name="filter_recipes">Recipes</string>
-    <string name="favorites_count_format">%d favorites</string>
-    <string name="favorites_filtered_count">%1$d of %2$d favorites</string>
+    <string name="favorites_count_format">%d favourites</string>
+    <string name="favorites_filtered_count">%1$d of %2$d favourites</string>
     <string name="no_favorites_match">No results found</string>
     <string name="no_favorites_match_subtitle">Try a different search or filter</string>
     <string name="favorite_time_format">%d min</string>
@@ -327,7 +327,7 @@
     <string name="content_description_try_again">Try searching again</string>
     <string name="product_image_description">Product image</string>
     <string name="content_description_product_image">Product image</string>
-    <string name="content_description_favorite_button">Add to favorites</string>
+    <string name="content_description_favorite_button">Add to favourites</string>
     <string name="content_description_share_button">Share product</string>
     <string name="content_description_back_button">Go back</string>
     <string name="content_description_search_button">Search</string>
@@ -343,7 +343,7 @@
 
     <!-- Permissions -->
     <string name="permission_camera">Camera permission needed for barcode scanning</string>
-    <string name="permission_storage">Storage permission needed to save favorites</string>
+    <string name="permission_storage">Storage permission needed to save favourites</string>
 
     <!-- Test Data -->
     <string name="test_data_loaded">Test data loaded</string>
@@ -360,7 +360,7 @@
     <string name="long_click_hint">Long press to view details</string>
 
     <!-- SettingsActivity strings -->
-    <string name="cache_stats">Cache: %1$d products, %2$d favorites</string>
+    <string name="cache_stats">Cache: %1$d products, %2$d favourites</string>
     <string name="cache_stats_failed">Failed to load cache statistics</string>
 
     <!-- ========== IMAGE LIBRARY CARD ========== -->
@@ -409,18 +409,18 @@
     <string name="cache_browsed_desc">Any product or recipe you’ve searched and opened recently.</string>
     <string name="cache_browsed_action">Clearing this cache removes every item you’ve consulted in the last 30 days. Your favorites and downloaded data sources are kept.</string>
 
-    <string name="cache_favorites_title">Favorites</string>
-    <string name="cache_favorites_desc">Products and recipes you’ve marked as favorite.</string>
-    <string name="cache_favorites_action">Clearing this cache deletes all your favorites. Items that originate from a data source you downloaded are kept but are unmarked as favorite.</string>
+    <string name="cache_favorites_title">Favourites</string>
+    <string name="cache_favorites_desc">Products and recipes you’ve marked as favourite.</string>
+    <string name="cache_favorites_action">Clearing this cache deletes all your favourites. Items that originate from a data source you downloaded are kept but are unmarked as favorite.</string>
 
     <string name="cache_downloaded_title">Downloaded data sources</string>
     <string name="cache_downloaded_desc">Datasets you’ve downloaded to your device for offline use.</string>
     <string name="cache_downloaded_empty">No data sources downloaded.</string>
-    <string name="cache_downloaded_action">Removes the %1$s dataset from your device. Favorite items from it are kept as favorites.</string>
+    <string name="cache_downloaded_action">Removes the %1$s dataset from your device. Favourite items from it are kept as favorites.</string>
     <string name="cache_downloaded_note">Clearing a source removes its data from the disk. Items you’ve marked as favorite are kept but they’re not categorised as being from a downloaded data source anymore.</string>
 
     <string name="cache_clear_all_title">Clear all cached data</string>
-    <string name="cache_clear_all_action">Removes everything: searched items, favorites, and downloaded data sources.</string>
+    <string name="cache_clear_all_action">Removes everything: searched items, favourites, and downloaded data sources.</string>
 
     <string name="cache_products_count">Products: %1$d</string>
     <string name="cache_recipes_count">Recipes: %1$d</string>
@@ -430,7 +430,7 @@
     <string name="cache_confirm_cancel">Cancel</string>
 
     <string name="cache_delete_browsed_cd">Remove searched items</string>
-    <string name="cache_delete_favorites_cd">Remove favorites</string>
+    <string name="cache_delete_favorites_cd">Remove favourites</string>
     <string name="cache_delete_source_cd">Remove %1$s dataset</string>
 
     <string name="cache_cleared_all">Cache cleared</string>

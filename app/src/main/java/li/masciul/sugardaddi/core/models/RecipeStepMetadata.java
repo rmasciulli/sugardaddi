@@ -34,7 +34,7 @@ public class RecipeStepMetadata {
     // ========== MEDIA ==========
     private String imageUrl;        // Remote step image from source (TheMealDB etc.)
     private String videoUrl;        // Remote step video from source
-    private String imagePath;       // Auto-cached local copy of imageUrl (downloaded on favourite)
+    private String imagePath;       // Auto-cached local copy of imageUrl (downloaded on favorite)
     private String userImagePath;   // User-defined local photo (set via ImagePickerHelper)
 
     // ========== FLAGS ==========

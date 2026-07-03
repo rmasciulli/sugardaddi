@@ -83,7 +83,7 @@ public final class ImageDisplayUtils {
         File userThumb = existingFile(product.getUserThumbnailPath());   // user's thumbnail
         if (userThumb != null) return userThumb;
 
-        File thumbPath = existingFile(product.getThumbnailPath());       // auto-cached on favourite
+        File thumbPath = existingFile(product.getThumbnailPath());       // auto-cached on favorite
         if (thumbPath != null) return thumbPath;
 
         String thumbUrl = product.getThumbnailUrl();                    // remote small image
@@ -171,7 +171,7 @@ public final class ImageDisplayUtils {
         load(context, source, imageView, dm.widthPixels, Math.round(HERO_HEIGHT_DP * dm.density));
     }
 
-    /** Load a search/favourites card thumbnail (72dp square). */
+    /** Load a search/favorites card thumbnail (72dp square). */
     public static void loadCardThumbnail(@NonNull Context context,
                                          @Nullable Object source,
                                          @Nullable ImageView imageView) {

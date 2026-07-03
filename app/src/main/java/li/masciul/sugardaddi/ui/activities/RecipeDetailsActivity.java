@@ -47,7 +47,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *
  *   WHAT THIS ACTIVITY OWNS:
  *     - Toolbar setup and navigation
- *     - Menu (favourite, share, video link)
+ *     - Menu (favorite, share, video link)
  *     - RecipeManager lifecycle (load, cancel)
  *     - State machine: loading / content / error
  *     - DetailRendererRegistry: resolves to the correct recipe renderer
@@ -69,7 +69,7 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
  *
  * MENU
  * ====
- *   Favourite : toggles border/filled star via RecipeManager.toggleFavorite()
+ *   Favorite : toggles border/filled star via RecipeManager.toggleFavorite()
  *   Share     : shares recipe name and source as plain text
  *   Video     : opens videoUrl in browser - shown only when recipe.getVideoUrl() != null
  *
@@ -266,7 +266,7 @@ public class RecipeDetailsActivity extends BaseActivity
 
     @Override
     public void onFavoriteStatusChanged(boolean isFavorite) {
-        // Refresh the favourite icon in the toolbar
+        // Refresh the favorite icon in the toolbar
         invalidateOptionsMenu();
     }
 
@@ -394,7 +394,7 @@ public class RecipeDetailsActivity extends BaseActivity
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        // Favourite icon: filled vs border depending on current state
+        // Favorite icon: filled vs border depending on current state
         MenuItem favoriteItem = menu.findItem(R.id.action_favorite);
         if (favoriteItem != null) {
             boolean isFavorite = recipeManager.isFavorite();

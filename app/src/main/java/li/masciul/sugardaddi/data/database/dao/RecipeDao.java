@@ -426,7 +426,7 @@ public interface RecipeDao {
 
     /**
      * Delete cached recipes not viewed since {@code threshold}, never touching
-     * favourites or bulk-imported (localImport) rows. Returns the number deleted.
+     * favorites or bulk-imported (localImport) rows. Returns the number deleted.
      */
     @Query("DELETE FROM recipes WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0")
     int deleteExpiredRecipes(long threshold);
@@ -442,11 +442,11 @@ public interface RecipeDao {
     // No recipe source is currently downloadable, so recipes are never localImport
     // = 1 today: the import-pin operations below are inert for now. They exist by
     // design so that if a recipe source ever becomes importable, it is covered
-    // automatically with no further changes. Section-2 favourite total reuses
+    // automatically with no further changes. Section-2 favorite total reuses
     // getFavoriteCount().
 
     /**
-     * Count of browsed-cache recipes - opened from search, neither favourited nor
+     * Count of browsed-cache recipes - opened from search, neither favorited nor
      * part of a downloaded dataset (no retention pin). Drives the section-1 count.
      */
     @Query("SELECT COUNT(*) FROM recipes WHERE localImport = 0 AND isFavorite = 0")
@@ -454,7 +454,7 @@ public interface RecipeDao {
 
     /**
      * Count of recipes belonging to one source's downloaded dataset (localImport = 1,
-     * favourited or not). Inert until a recipe source is importable.
+     * favorited or not). Inert until a recipe source is importable.
      *
      * @param sourceId The data source id
      */
@@ -462,22 +462,22 @@ public interface RecipeDao {
     int getDownloadCountBySource(String sourceId);
 
     /**
-     * Section 1 - delete the browsed cache: flagless rows only. Favourites and
+     * Section 1 - delete the browsed cache: flagless rows only. Favorites and
      * downloaded rows are untouched. Returns the number deleted.
      */
     @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 0")
     int deleteBrowsedCache();
 
     /**
-     * Section 2, part A - delete favourites that exist only because they were
-     * favourited (no import pin). Rows that are also downloaded survive via
+     * Section 2, part A - delete favorites that exist only because they were
+     * favorited (no import pin). Rows that are also downloaded survive via
      * unmarkFavoriteOnDownloads(). Returns the number deleted.
      */
     @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 1")
     int deleteFavoritesOnly();
 
     /**
-     * Section 2, part B - clear the favourite pin on rows that are also downloaded
+     * Section 2, part B - clear the favorite pin on rows that are also downloaded
      * (C -> D): they stay as plain dataset rows. Inert until recipes are importable.
      * Returns the number updated.
      */
@@ -486,7 +486,7 @@ public interface RecipeDao {
 
     /**
      * Section 3, part A - for one source, delete dataset rows that are not also
-     * favourited (D). Favourited dataset rows survive via
+     * favorited (D). Favorited dataset rows survive via
      * unmarkDownloadOnFavoritesBySource(). Inert until recipes are importable.
      * Returns the number deleted.
      *
@@ -497,7 +497,7 @@ public interface RecipeDao {
 
     /**
      * Section 3, part B - for one source, clear the import pin on rows that are also
-     * favourited (C -> B): they stay as plain favourites. Inert until recipes are
+     * favorited (C -> B): they stay as plain favorites. Inert until recipes are
      * importable. Returns the number updated.
      *
      * @param sourceId The data source id whose dataset is being removed
@@ -512,7 +512,7 @@ public interface RecipeDao {
      * Returns all non-null local image paths for recipes.
      *
      * Covers all four local path columns:
-     *   thumbnailPath     - auto-cached thumbnail (downloaded on favourite)
+     *   thumbnailPath     - auto-cached thumbnail (downloaded on favorite)
      *   imagePath         - auto-cached full-size (future use, currently NULL)
      *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
      *   userImagePath     - user-defined full-size override
@@ -549,7 +549,7 @@ public interface RecipeDao {
      * Updates the locally cached thumbnail path for a recipe.
      *
      * Called by RecipeRepository after a thumbnail download completes
-     * (on favourite) or to clear the path (on unfavourite, pass null).
+     * (on favorite) or to clear the path (on unfavorite, pass null).
      *
      * Added in: database v12 (image system)
      *
@@ -562,7 +562,7 @@ public interface RecipeDao {
     /**
      * Updates the auto-cached full-size (hero) image path for a recipe.
      * Called by the repositories' cacheFavoriteImages via ImageDownloader when a
-     * favourite's hero is cached to disk. Must be called from a background thread.
+     * favorite's hero is cached to disk. Must be called from a background thread.
      */
     @Query("UPDATE recipes SET imagePath = :path WHERE id = :recipeId")
     int updateImagePath(String recipeId, String path);

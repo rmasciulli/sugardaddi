@@ -48,7 +48,7 @@ public class SugarDaddiApplication extends Application {
 
     /**
      * Application-scoped thumbnail downloader.
-     * Downloads and caches remote thumbnails for favourited items.
+     * Downloads and caches remote thumbnails for favorited items.
      * Owns a dedicated single-thread executor and OkHttpClient.
      */
     private ImageDownloader imageDownloader;

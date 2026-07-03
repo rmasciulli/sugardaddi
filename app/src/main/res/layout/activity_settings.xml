@@ -269,7 +269,7 @@
                             android:layout_marginVertical="12dp"
                             android:background="?attr/colorOutlineVariant" />
 
-                        <!-- SECTION 2: Favourites -->
+                        <!-- SECTION 2: Favorites -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

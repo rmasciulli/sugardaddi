@@ -2,7 +2,7 @@
 <!--
     menu_recipe_details.xml - Toolbar menu for RecipeDetailsActivity.
     ALWAYS VISIBLE:
-      - Favourite : toggles border/filled star
+      - Favorite : toggles border/filled star
     OVERFLOW (⋮):
       - Share
       - Open in browser   hidden when source has no website
@@ -14,7 +14,7 @@
 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <!-- Favourite (toggles between border and filled star) -->
+    <!-- Favorite (toggles between border and filled star) -->
     <item
         android:id="@+id/action_favorite"
         android:icon="@drawable/ic_favorite_rounded_border"

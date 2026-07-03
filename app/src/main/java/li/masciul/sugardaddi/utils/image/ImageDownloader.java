@@ -71,7 +71,7 @@ import okhttp3.ResponseBody;
  * =======================
  * Glide's disk cache is opaque and managed entirely by Glide. We need a file at
  * a predictable, app-controlled path so that:
- *   - Room can persist the path alongside the favourite record
+ *   - Room can persist the path alongside the favorite record
  *   - ImagePurgeManager can cross-reference disk files against Room at startup
  *   - Unfavouriting can delete the exact file immediately
  * Glide's cache provides none of these guarantees.
@@ -178,7 +178,7 @@ public class ImageDownloader {
     /**
      * Single-thread executor dedicated to downloads and their processing step.
      * Keeps work sequential to avoid saturating the network with parallel fetches
-     * when the user favourites multiple items quickly.
+     * when the user favorites multiple items quickly.
      */
     private final ExecutorService downloadExecutor;
 
@@ -313,7 +313,7 @@ public class ImageDownloader {
     /**
      * Deletes a locally cached image file, if it exists.
      *
-     * This is the mirror of {@link #download}: call it when the user unfavourites
+     * This is the mirror of {@link #download}: call it when the user unfavorites
      * an item, passing the same destination File that was downloaded (resolved via
      * {@link ImageStorageManager}). Works for any cached image - thumbnail or hero -
      * because the caller owns the path.
@@ -480,4 +480,4 @@ public class ImageDownloader {
         Log.w(TAG, "ImageDownloader error: " + reason);
         mainHandler.post(() -> callback.onError(reason));
     }
-}
+}

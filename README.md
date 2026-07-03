@@ -161,7 +161,7 @@ Dataset already bundled in the APK (committed to git):
 ## Roadmap
 
 - [ ] **Nutrition for TheMealDB and TheCocktailDB** - recipe and cocktail ingredients are currently stored as unresolved `FoodPortion` stubs. The next step is to map them to real `FoodProduct` entries via fuzzy matching against the food databases, enabling nutritional computation for recipes and cocktails. This includes a confidence threshold, manual override UX, and Room persistence of confirmed mappings.
-- [ ] **Persistent image storage** - three related use cases: keep favourite item images available offline, allow users to attach photos to meal journal entries, and allow photos to be attached to individual recipe steps. Requires `FileProvider` for camera intent, a disk storage strategy, and Room schema updates to reference image paths.
+- [ ] **Persistent image storage** - three related use cases: keep favorite item images available offline, allow users to attach photos to meal journal entries, and allow photos to be attached to individual recipe steps. Requires `FileProvider` for camera intent, a disk storage strategy, and Room schema updates to reference image paths.
 - [ ] **Category comparison** - compare a product against its Ciqual category average
 
 ## Licence
