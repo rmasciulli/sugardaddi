@@ -36,7 +36,7 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  * - Cancels any in-flight operation before starting a new one
  * - Provides isFavorite state for toolbar icon updates
  *
- * FAVOURITE HANDLING
+ * FAVORITE HANDLING
  * ==================
  * External recipes (e.g. TheMealDB) are persisted to Room on first
  * favorite interaction via RecipeRepository.setRecipeFavorite().

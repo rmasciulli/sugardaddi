@@ -194,7 +194,7 @@
     <string name="remove_from_favorites">Remove from favourites</string>
     <string name="added_to_favorites">Added to favourites</string>
     <string name="removed_from_favorites">Removed from favourites</string>
-    <string name="no_favorites">No favorite items yet</string>
+    <string name="no_favorites">No favourite items yet</string>
     <string name="favorites_subtitle">Tap the heart icon to add items to favourites</string>
 
     <!-- Enhanced Favorites -->
@@ -407,17 +407,17 @@
 
     <string name="cache_browsed_title">Searched items</string>
     <string name="cache_browsed_desc">Any product or recipe you’ve searched and opened recently.</string>
-    <string name="cache_browsed_action">Clearing this cache removes every item you’ve consulted in the last 30 days. Your favorites and downloaded data sources are kept.</string>
+    <string name="cache_browsed_action">Clearing this cache removes every item you’ve consulted in the last 30 days. Your favourites and downloaded data sources are kept.</string>
 
     <string name="cache_favorites_title">Favourites</string>
     <string name="cache_favorites_desc">Products and recipes you’ve marked as favourite.</string>
-    <string name="cache_favorites_action">Clearing this cache deletes all your favourites. Items that originate from a data source you downloaded are kept but are unmarked as favorite.</string>
+    <string name="cache_favorites_action">Clearing this cache deletes all your favourites. Items that originate from a data source you downloaded are kept but are unmarked as favourite.</string>
 
     <string name="cache_downloaded_title">Downloaded data sources</string>
     <string name="cache_downloaded_desc">Datasets you’ve downloaded to your device for offline use.</string>
     <string name="cache_downloaded_empty">No data sources downloaded.</string>
-    <string name="cache_downloaded_action">Removes the %1$s dataset from your device. Favourite items from it are kept as favorites.</string>
-    <string name="cache_downloaded_note">Clearing a source removes its data from the disk. Items you’ve marked as favorite are kept but they’re not categorised as being from a downloaded data source anymore.</string>
+    <string name="cache_downloaded_action">Removes the %1$s dataset from your device. Favourite items from it are kept as favourites.</string>
+    <string name="cache_downloaded_note">Clearing a source removes its data from the disk. Items you’ve marked as favourite are kept but they’re not categorised as being from a downloaded data source anymore.</string>
 
     <string name="cache_clear_all_title">Clear all cached data</string>
     <string name="cache_clear_all_action">Removes everything: searched items, favourites, and downloaded data sources.</string>
