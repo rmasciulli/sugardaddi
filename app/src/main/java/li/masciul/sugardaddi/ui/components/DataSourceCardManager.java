@@ -1,4 +1,4 @@
-package li.masciul.sugardaddi.ui.settings;
+package li.masciul.sugardaddi.ui.components;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

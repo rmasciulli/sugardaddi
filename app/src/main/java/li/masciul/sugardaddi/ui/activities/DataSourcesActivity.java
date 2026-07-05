@@ -18,7 +18,7 @@ import java.util.List;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.managers.DataSourceManager;
-import li.masciul.sugardaddi.ui.settings.DataSourceCardManager;
+import li.masciul.sugardaddi.ui.components.DataSourceCardManager;
 
 /**
  * DataSourcesActivity - manages registered data sources.
