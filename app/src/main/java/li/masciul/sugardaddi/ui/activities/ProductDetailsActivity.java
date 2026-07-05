@@ -40,6 +40,7 @@ import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
+import li.masciul.sugardaddi.ui.scan.ProductBarcodeScanner;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
@@ -84,6 +85,13 @@ import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 public class ProductDetailsActivity extends BaseActivity implements ProductManager.ProductListener {
 
     public static final String EXTRA_FOOD_ITEM = "extra_food_item";
+
+    /**
+     * Boolean extra - true when this lookup was launched by scanning a barcode.
+     * Makes the error-state retry reopen the scanner (rescan) instead of replaying the
+     * same query, since a failed scan lookup almost always means the barcode was wrong.
+     */
+    public static final String EXTRA_FROM_BARCODE_SCAN = "extra_from_barcode_scan";
 
     /**
      * Fallback data passed from the search result (MainActivity).
@@ -143,6 +151,9 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     // Meal context - set when launched with RETURN_TO_MEAL intent extra
     private String returnToMealId = null;
 
+    // Scan context - set when launched from a barcode scan (EXTRA_FROM_BARCODE_SCAN)
+    private boolean fromBarcodeScan = false;
+
     // ========== LIFECYCLE ==========
 
     @Override
@@ -158,6 +169,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         initializeUIComponents();
         initializeBusinessLogic();
         setupMealContext();
+
+        fromBarcodeScan = getIntent().getBooleanExtra(EXTRA_FROM_BARCODE_SCAN, false);
 
         // Load product from intent
         String productId = getIntent().getStringExtra(EXTRA_FOOD_ITEM);
@@ -199,7 +212,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         // Retry button in error state
         View retryButton = findViewById(R.id.retryButton);
         if (retryButton != null) {
-            retryButton.setOnClickListener(v -> productManager.refreshProduct());
+            retryButton.setOnClickListener(v -> onRetry());
         }
 
         // Refresh product information FAB
@@ -396,6 +409,10 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
      *   8. Show the content state
      */
     private void displayProduct(@NonNull FoodProduct product, @NonNull String language) {
+        // The barcode resolved to a real product, so a later retry (e.g. a failed manual
+        // refresh) should re-query rather than reopen the scanner.
+        fromBarcodeScan = false;
+
         // 1. Resolve renderer
         DetailRenderer renderer = rendererRegistry.resolve(product);
         logDebug("Dispatching to renderer: " + renderer.getClass().getSimpleName());
@@ -473,6 +490,23 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                     errorMessage.setText(error.getMessage());
                     break;
             }
+        }
+    }
+
+    /**
+     * Error-state retry handler.
+     *
+     * A scan-originated lookup usually failed because the scanned value was wrong (a
+     * misread, or the wrong barcode on the packaging), so replaying the same query is
+     * futile - instead we reopen the scanner to rescan. The scanner opens a fresh detail
+     * screen and replaces this one (CLEAR_TOP). Any other origin (search result, favorite,
+     * meal) re-queries the same product as before.
+     */
+    private void onRetry() {
+        if (fromBarcodeScan) {
+            new ProductBarcodeScanner(this).scanAndOpenProduct();
+        } else {
+            productManager.refreshProduct();
         }
     }
 

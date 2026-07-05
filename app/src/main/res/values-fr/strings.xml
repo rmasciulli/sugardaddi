@@ -7,7 +7,6 @@
     <!-- Navigation & Titles -->
     <string name="main_activity_title">Scanner alimentaire</string>
     <string name="product_details_title">Détails du produit</string>
-    <string name="scanner_title">Scanner le code-barres</string>
     <string name="about_title">À propos de sugardaddi</string>
 
     <!-- Language Selector -->
@@ -45,23 +44,16 @@
 
     <!-- Scanner -->
     <string name="scan_product">Scanner le produit</string>
-    <string name="scan_instructions">Pointez la caméra vers le code-barres</string>
-    <string name="scan_overlay_text">Alignez le code-barres dans le cadre</string>
     <string name="scanning_failed">Échec du scan : %1$s</string>
     <string name="barcode_test_failed">Échec du test de code-barres</string>
 
     <!-- Enhanced Scanner States -->
     <string name="manual_barcode_entry">Saisir le code-barres manuellement</string>
     <string name="barcode_hint">Saisir le code-barres du produit</string>
-    <string name="barcode_scanned_success">Code-barres scanné avec succès !</string>
-    <string name="barcode_scan_failed">Échec du scan du code-barres</string>
     <string name="barcode_invalid_format">Format de code-barres invalide</string>
     <string name="barcode_too_short">Code-barres trop court (minimum %d chiffres)</string>
     <string name="barcode_too_long">Code-barres trop long (maximum %d chiffres)</string>
     <string name="scanner_initializing">Initialisation de la caméra…</string>
-    <string name="scanner_permission_denied">Permission de caméra requise pour scanner</string>
-    <string name="scanner_camera_error">Erreur de caméra</string>
-    <string name="scanner_module_failed">Échec de l\'installation du module scanner</string>
     <string name="scan_or_enter">Scanner le code-barres ou saisir manuellement</string>
 
     <!-- Product Information -->

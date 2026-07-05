@@ -7,7 +7,6 @@
     <!-- Navigation & Titles -->
     <string name="main_activity_title">Food Scanner</string>
     <string name="product_details_title">Product Details</string>
-    <string name="scanner_title">Scan Barcode</string>
     <string name="about_title">About sugardaddi</string>
 
     <!-- Language Selector -->
@@ -45,23 +44,16 @@
 
     <!-- Scanner -->
     <string name="scan_product">Scan Product</string>
-    <string name="scan_instructions">Point camera at barcode</string>
-    <string name="scan_overlay_text">Align barcode within frame</string>
     <string name="scanning_failed">Scanning failed: %1$s</string>
     <string name="barcode_test_failed">Barcode test failed</string>
 
     <!-- Enhanced Scanner States -->
     <string name="manual_barcode_entry">Enter barcode manually</string>
     <string name="barcode_hint">Enter product barcode</string>
-    <string name="barcode_scanned_success">Barcode scanned successfully!</string>
-    <string name="barcode_scan_failed">Failed to scan barcode</string>
     <string name="barcode_invalid_format">Invalid barcode format</string>
     <string name="barcode_too_short">Barcode too short (minimum %d digits)</string>
     <string name="barcode_too_long">Barcode too long (maximum %d digits)</string>
     <string name="scanner_initializing">Initializing camera…</string>
-    <string name="scanner_permission_denied">Camera permission required for scanning</string>
-    <string name="scanner_camera_error">Camera error occurred</string>
-    <string name="scanner_module_failed">Scanner module installation failed</string>
     <string name="scan_or_enter">Scan barcode or enter manually</string>
 
     <!-- Product Information -->

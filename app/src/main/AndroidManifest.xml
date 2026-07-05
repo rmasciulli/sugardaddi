@@ -82,14 +82,6 @@
             android:parentActivityName=".ui.activities.MainActivity"
             android:theme="@style/Theme.SugarDaddi" />
 
-        <!-- Barcode Scanner Activity -->
-        <activity
-            android:name=".ui.activities.BarcodeScannerActivity"
-            android:exported="false"
-            android:label="@string/scan_product"
-            android:parentActivityName=".ui.activities.MainActivity"
-            android:theme="@style/Theme.SugarDaddi" />
-
         <!-- uCrop - required for the image crop step in ImagePickerHelper -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"

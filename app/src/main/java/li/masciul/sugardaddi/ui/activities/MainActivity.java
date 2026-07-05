@@ -41,6 +41,7 @@ import li.masciul.sugardaddi.data.sources.base.DataSource;
 import li.masciul.sugardaddi.managers.DataSourceManager;
 import li.masciul.sugardaddi.ui.adapters.AutocompleteAdapter;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
+import li.masciul.sugardaddi.ui.scan.ProductBarcodeScanner;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -387,7 +388,7 @@ public class MainActivity extends BaseActivity implements
 
         // 4. Barcode FAB
         fabScan.setOnClickListener(v ->
-                startActivity(new Intent(this, BarcodeScannerActivity.class)));
+                new ProductBarcodeScanner(this).scanAndOpenProduct());
 
         // 5. Error retry
         tryAgainButton.setOnClickListener(v -> {
