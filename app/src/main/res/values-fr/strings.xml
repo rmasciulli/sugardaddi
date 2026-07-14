@@ -103,7 +103,7 @@
     <string name="amount_with_serving">Quantité (%1$s)</string>
     <string name="custom_amount_with_unit">Quantité personnalisée (%1$s)</string>
     <string name="nutrition_per_serving">par portion (%1$s)</string>
-    <string name="custom_amount_with_serving">Quantité personnalisée (Une portion: %1$s)</string>
+    <string name="custom_amount_with_serving">Quantité personnalisée (Une portion : %1$s)</string>
     <string name="custom_amount_default">Quantité personnalisée</string>
     <string name="nutrition_info">Informations Nutritionnelles :</string>
 
@@ -499,6 +499,16 @@
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
     <string name="source_website_themealdb">https://www.themealdb.com</string>
     <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
+
+    <!-- Confidence badge labels -->
+    <string name="confidence_scientific">Données de référence scientifique</string>
+    <string name="confidence_declared">Déclaré par le fabricant</string>
+    <string name="confidence_computed">Calculé à partir des ingrédients</string>
+    <string name="confidence_estimated">Valeur estimée</string>
+    <string name="confidence_user">Valeur saisie par l\'utilisateur</string>
+
+    <!-- Secondary (nutrition-specific) attribution -->
+    <string name="nutrition_secondary_attribution">Données nutritionnelles via %1$s</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Créez un nouveau repas</string>

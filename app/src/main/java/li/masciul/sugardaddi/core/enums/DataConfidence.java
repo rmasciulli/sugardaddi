@@ -1,6 +1,10 @@
 package li.masciul.sugardaddi.core.enums;
 
+import android.content.Context;
+
 import androidx.annotation.Nullable;
+
+import li.masciul.sugardaddi.R;
 
 /**
  * DataConfidence - Describes the provenance and reliability of nutrition data.
@@ -96,6 +100,47 @@ public enum DataConfidence {
      * No validation - treat as personal reference only.
      */
     USER;
+
+    // =========================================================================
+    // DISPLAY (i18n)
+    // =========================================================================
+
+    /**
+     * Get localized display name for this confidence level.
+     */
+    public String getDisplayName(Context context) {
+        switch (this) {
+            case SCIENTIFIC: return context.getString(R.string.confidence_scientific);
+            case DECLARED: return context.getString(R.string.confidence_declared);
+            case COMPUTED: return context.getString(R.string.confidence_computed);
+            case ESTIMATED: return context.getString(R.string.confidence_estimated);
+            case USER: return context.getString(R.string.confidence_user);
+            default: return context.getString(R.string.confidence_estimated);
+        }
+    }
+
+    /**
+     * Emoji indicator for this confidence level. Not localized - the symbols
+     * (🔬 🏷️ 🧮 ~ ✏️) carry the same meaning in every language, so unlike
+     * DataSourceType's emoji this is a plain constant, not a string resource.
+     */
+    public String getEmoji() {
+        switch (this) {
+            case SCIENTIFIC: return "\uD83D\uDD2C";     // 🔬
+            case DECLARED: return "\uD83C\uDFF7\uFE0F"; // 🏷️
+            case COMPUTED: return "\uD83E\uDDEE";       // 🧮
+            case ESTIMATED: return "~";
+            case USER: return "\u270F\uFE0F";           // ✏️
+            default: return "~";
+        }
+    }
+
+    /**
+     * Display name prefixed with the emoji indicator.
+     */
+    public String getDisplayWithEmoji(Context context) {
+        return getEmoji() + " " + getDisplayName(context);
+    }
 
     // =========================================================================
     // UTILITY METHODS

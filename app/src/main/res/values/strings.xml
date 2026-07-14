@@ -500,6 +500,16 @@
     <string name="source_website_themealdb">https://www.themealdb.com</string>
     <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
 
+    <!-- Confidence badge labels -->
+    <string name="confidence_scientific">Scientific reference data</string>
+    <string name="confidence_declared">Declared by manufacturer</string>
+    <string name="confidence_computed">Calculated from ingredients</string>
+    <string name="confidence_estimated">Estimated value</string>
+    <string name="confidence_user">User-entered value</string>
+
+    <!-- Secondary (nutrition-specific) attribution -->
+    <string name="nutrition_secondary_attribution">Nutrition data via %1$s</string>
+
     <!-- Meal Creation -->
     <string name="create_meal_title">Create a new meal</string>
     <string name="select_date_time">Select the date and time</string>

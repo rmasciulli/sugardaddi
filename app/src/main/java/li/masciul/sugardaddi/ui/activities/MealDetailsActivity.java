@@ -25,7 +25,6 @@ import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.core.enums.NutrientBannerStyle;
 import li.masciul.sugardaddi.core.models.FoodPortion;
-import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.data.repository.MealRepository;
@@ -490,14 +489,11 @@ public class MealDetailsActivity extends BaseActivity {
         }
 
         // Create nutrition label manager with container
-        NutritionLabelManager labelManager = new NutritionLabelManager(this, nutritionLabelContainer, NutritionLabelMode.SUMMARY);
+        NutritionLabelManager<Meal> labelManager = new NutritionLabelManager<>(this, nutritionLabelContainer, NutritionLabelMode.SUMMARY);
 
-        // Create a temporary FoodProduct to display nutrition
-        FoodProduct tempProduct = new FoodProduct();
-        tempProduct.setNutrition(nutrition);
-
-        // Display the nutrition label
-        labelManager.displayProduct(tempProduct);
+        // Display the nutrition label directly - Meal implements both
+        // Nutritional and Searchable, so no wrapper object is needed
+        labelManager.display(currentMeal);
     }
 
     // ========== ACTIONS ==========

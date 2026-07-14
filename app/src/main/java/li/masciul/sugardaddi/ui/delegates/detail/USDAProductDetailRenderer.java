@@ -62,7 +62,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
     private final Context context;
 
     /** Holds reference to the current NutritionLabelManager for amount updates. */
-    private NutritionLabelManager nutritionLabelManager;
+    private NutritionLabelManager<FoodProduct> nutritionLabelManager;
 
     /** TextWatcher reference for cleanup in destroy(). */
     private TextWatcher customAmountWatcher;
@@ -252,11 +252,11 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         LinearLayout nutritionContainer = view.findViewById(R.id.nutritionContainer);
         if (nutritionContainer == null) return;
 
-        nutritionLabelManager = new NutritionLabelManager(
+        nutritionLabelManager = new NutritionLabelManager<>(
                 context, nutritionContainer, NutritionLabelMode.DETAILED);
 
         double defaultAmount = getSmartDefaultAmount(product);
-        nutritionLabelManager.displayProduct(product, defaultAmount);
+        nutritionLabelManager.display(product, defaultAmount);
 
         TextInputLayout   amountLayout = view.findViewById(R.id.customAmountInputLayout);
         TextInputEditText amountInput  = view.findViewById(R.id.customAmountEditText);

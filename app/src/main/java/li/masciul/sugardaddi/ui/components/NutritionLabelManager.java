@@ -16,9 +16,12 @@ import java.util.Comparator;
 import java.util.List;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.core.enums.DataConfidence;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
+import li.masciul.sugardaddi.core.interfaces.Nutritional;
+import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientCategory;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientInfo;
 import li.masciul.sugardaddi.core.models.ServingSize;
@@ -26,22 +29,49 @@ import li.masciul.sugardaddi.core.models.ServingSize;
 /**
  * NutritionLabelManager - Nutrition Facts Label Display Component
  *
- * FIXED v2.1 - Column Alignment & Dynamic Headers
+ * GENERALIZED v3.0 - Item-agnostic display + source transparency
+ *
+ * Renders an EU-style nutrition facts label for any item that both carries
+ * nutrition data and can identify its own origin. Previously coupled to
+ * {@code FoodProduct} directly; generalized so the same component serves
+ * products, recipes, and meals without a wrapper/adapter object.
+ *
+ * TYPE BOUND: {@code <T extends Searchable & Nutritional>}
+ * Two distinct capabilities are needed from the displayed item, and both are
+ * required together - a bounded generic is used instead of a plain
+ * {@code Nutritional} parameter plus a separately-passed {@code DataSourceType},
+ * because the latter would let a caller pass an item and a "source" that don't
+ * actually belong together. {@link Nutritional} supplies the nutrition facts
+ * themselves (values, serving size, liquid/solid unit). {@link Searchable}
+ * supplies {@code getDataSource()} - the item's OWN origin (e.g. TheMealDB),
+ * which is compared against the nutrition's origin (see below) to decide
+ * whether a secondary attribution is shown.
  *
  * ARCHITECTURE:
  * - Column 1: Nutrient name (with hierarchy indentation)
  * - Column 2: per 100g (ALWAYS visible - EU legal requirement)
  * - Column 3: per XXg (dynamic, updates with custom amount)
  *
- * KEY FIXES (v2.1):
- * - Proper column alignment across all row types
- * - Simplified 3rd column header: "per 20g" (not "per serving (12.5g)")
- * - Dynamic header updates when custom amount changes
- * - Consistent row padding (indentation only on nutrient name)
+ * SOURCE TRANSPARENCY (v3.0):
+ * Every label now shows the {@link DataConfidence} of the displayed nutrition
+ * (e.g. "🔬 Scientific reference data") directly under the header. If the
+ * nutrition's own origin ({@link Nutrition#getDataSource()}, a free-text
+ * field such as "FATSECRET") differs from the displayed item's origin
+ * ({@code item.getDataSource()}, e.g. {@code THEMEALDB}), a second,
+ * smaller attribution line is shown for the nutrition specifically - this is
+ * the case for a TheMealDB/TheCocktailDB recipe whose ingredients provide no
+ * nutrition data and whose values were instead estimated by FatSecret. The
+ * item's own primary attribution panel (populated separately, elsewhere, via
+ * {@code DetailRendererUtils.populateAttribution}) is untouched by this -
+ * it still correctly credits the item's real content source.
  *
- * @version 2.1 - ALIGNMENT & DYNAMIC HEADERS FIXED
+ * @param <T> the displayed item's type; must be both searchable (for its own
+ *            data source) and nutritional (for the facts being displayed).
+ *            FoodProduct, Recipe, and Meal all satisfy this bound today.
+ *
+ * @version 3.0 - GENERALIZED (Nutritional/Searchable) + CONFIDENCE/ATTRIBUTION
  */
-public class NutritionLabelManager {
+public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
     private static final double DEFAULT_CUSTOM_AMOUNT = 20.0;
 
@@ -52,7 +82,7 @@ public class NutritionLabelManager {
     private NutritionLabelMode mode = NutritionLabelMode.DETAILED;
 
     private boolean isExpanded = false;
-    private FoodProduct currentProduct;
+    private T currentItem;
     private double currentCustomAmount = DEFAULT_CUSTOM_AMOUNT;
 
     private View headerView;
@@ -83,29 +113,29 @@ public class NutritionLabelManager {
     // ========================================================================
 
     /**
-     * Display product with default custom amount (serving size or 20g)
+     * Display an item with default custom amount (serving size or 20g)
      */
-    public void displayProduct(FoodProduct product) {
-        double defaultAmount = getDefaultCustomAmount(product);
-        displayProduct(product, defaultAmount);
+    public void display(T item) {
+        double defaultAmount = getDefaultCustomAmount(item);
+        display(item, defaultAmount);
     }
 
     /**
-     * Display product with specific custom amount
+     * Display an item with a specific custom amount
      */
-    public void displayProduct(FoodProduct product, double customAmount) {
-        if (product == null) {
+    public void display(T item, double customAmount) {
+        if (item == null) {
             container.setVisibility(View.GONE);
             return;
         }
 
-        Nutrition nutrition = product.getNutrition();
+        Nutrition nutrition = item.getNutrition();
         if (nutrition == null || !nutrition.hasData()) {
             container.setVisibility(View.GONE);
             return;
         }
 
-        this.currentProduct = product;
+        this.currentItem = item;
         this.currentCustomAmount = customAmount;
         this.isExpanded = false;
         this.optionalRows.clear();
@@ -113,7 +143,7 @@ public class NutritionLabelManager {
         container.removeAllViews();
         container.setVisibility(View.VISIBLE);
 
-        buildNutritionLabel(product, nutrition, customAmount);
+        buildNutritionLabel(item, nutrition, customAmount);
     }
 
     /**
@@ -121,13 +151,13 @@ public class NutritionLabelManager {
      * CRITICAL: Preserves expanded/collapsed state AND updates header
      */
     public void updateCustomAmount(double customAmount) {
-        if (currentProduct != null && customAmount > 0) {
+        if (currentItem != null && customAmount > 0) {
             this.currentCustomAmount = customAmount;
 
             // PRESERVE STATE: Remember if expanded before rebuilding
             boolean wasExpanded = this.isExpanded;
 
-            displayProduct(currentProduct, customAmount);
+            display(currentItem, customAmount);
 
             // RESTORE STATE: Re-expand if it was expanded
             if (wasExpanded && !isExpanded) {
@@ -160,7 +190,7 @@ public class NutritionLabelManager {
     public void clear() {
         container.removeAllViews();
         container.setVisibility(View.GONE);
-        currentProduct = null;
+        currentItem = null;
         isExpanded = false;
         optionalRows.clear();
     }
@@ -173,8 +203,8 @@ public class NutritionLabelManager {
      * Get default custom amount for column 3
      * Priority: serving size > 20g fallback
      */
-    private double getDefaultCustomAmount(FoodProduct product) {
-        ServingSize serving = product.getServingSize();
+    private double getDefaultCustomAmount(T item) {
+        ServingSize serving = item.getServingSize();
         if (serving != null && serving.isValid()) {
             Double servingGrams = serving.getAsGrams();
             if (servingGrams != null && servingGrams > 0) {
@@ -197,9 +227,10 @@ public class NutritionLabelManager {
         return false;
     }
 
-    private void buildNutritionLabel(FoodProduct product, Nutrition nutrition, double customAmount) {
+    private void buildNutritionLabel(T item, Nutrition nutrition, double customAmount) {
         isFirstCategoryHeader = true;  // Reset for each new label
-        addHeader(product, customAmount);  // FIXED: Pass customAmount for dynamic header
+        addHeader(item, customAmount);  // Column headers + dynamic 3rd column
+        addSourceInfoRow(item, nutrition);  // Confidence badge + optional secondary attribution
 
         LinearLayout subContainer = new LinearLayout(context);
         subContainer.setOrientation(LinearLayout.VERTICAL);
@@ -218,14 +249,14 @@ public class NutritionLabelManager {
         nutrientSection.setOrientation(LinearLayout.VERTICAL);
         subContainer.addView(nutrientSection);
 
-        buildNutrientsUnified(nutrition, product, customAmount);
+        buildNutrientsUnified(nutrition, customAmount);
 
         if (!optionalRows.isEmpty()) {
             addToggleButton();
         }
     }
 
-    private void buildNutrientsUnified(Nutrition nutrition, FoodProduct product, double customAmount) {
+    private void buildNutrientsUnified(Nutrition nutrition, double customAmount) {
         List<NutrientInfo> allNutrients = new ArrayList<>();
 
         for (NutrientInfo info : NutrientInfo.values()) {
@@ -268,19 +299,19 @@ public class NutritionLabelManager {
             }
 
             Double value = parent.getValue(nutrition);
-            View parentRow = addNutrientRow(nutrientSection, parent, value, product, customAmount);
+            View parentRow = addNutrientRow(nutrientSection, parent, value, customAmount);
 
             if (!parent.isMandatory()) {
                 optionalRows.add(parentRow);
                 parentRow.setVisibility(View.GONE);
             }
 
-            addChildNutrients(parent, children, nutrition, product, customAmount);
+            addChildNutrients(parent, children, nutrition, customAmount);
         }
     }
 
     private void addChildNutrients(NutrientInfo parent, List<NutrientInfo> candidates,
-                                   Nutrition nutrition, FoodProduct product, double customAmount) {
+                                   Nutrition nutrition, double customAmount) {
         List<NutrientInfo> directChildren = getChildrenOf(parent, candidates);
         directChildren.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
 
@@ -288,7 +319,7 @@ public class NutritionLabelManager {
             Double childValue = child.getValue(nutrition);
 
             if (child.isMandatory() || childValue != null) {
-                View childRow = addNutrientRow(nutrientSection, child, childValue, product, customAmount);
+                View childRow = addNutrientRow(nutrientSection, child, childValue, customAmount);
 
                 if (!child.isMandatory()) {
                     optionalRows.add(childRow);
@@ -302,7 +333,7 @@ public class NutritionLabelManager {
                     Double grandchildValue = grandchild.getValue(nutrition);
 
                     if (grandchild.isMandatory() || grandchildValue != null) {
-                        View grandchildRow = addNutrientRow(nutrientSection, grandchild, grandchildValue, product, customAmount);
+                        View grandchildRow = addNutrientRow(nutrientSection, grandchild, grandchildValue, customAmount);
 
                         if (!grandchild.isMandatory()) {
                             optionalRows.add(grandchildRow);
@@ -438,9 +469,8 @@ public class NutritionLabelManager {
 
     /**
      * Add table header with simplified, dynamic 3rd column
-     * FIXED: Column 3 now shows "per 20g" (updates dynamically)
      */
-    private void addHeader(FoodProduct product, double customAmount) {
+    private void addHeader(T item, double customAmount) {
         // Choose header layout based on mode
         int headerLayout = (mode == NutritionLabelMode.SUMMARY)
                 ? R.layout.nutrition_label_header_summary
@@ -461,7 +491,7 @@ public class NutritionLabelManager {
             col1.setText(R.string.nutrition_label_nutrient_column);
 
             // Column 2: ALWAYS per 100g (EU requirement)
-            String unit = product.isLiquid() ? "ml" : "g";
+            String unit = item.isLiquid() ? "ml" : "g";
             col2.setText(context.getString(R.string.nutrition_per_100, unit));
 
             // Column 3: SIMPLIFIED - Just "per 20g" (dynamic)
@@ -473,10 +503,63 @@ public class NutritionLabelManager {
     }
 
     /**
+     * Add the source-transparency row directly under the header: a
+     * {@link DataConfidence} badge for the displayed nutrition, and - only
+     * when the nutrition's own origin differs from the displayed item's own
+     * origin (e.g. a TheMealDB recipe whose nutrition was estimated by
+     * FatSecret) - a small secondary attribution line naming that origin.
+     *
+     * The item's PRIMARY attribution (who provided the product/recipe itself)
+     * is handled elsewhere by {@code DetailRendererUtils.populateAttribution}
+     * and is not touched here - this row is nutrition-specific.
+     */
+    private void addSourceInfoRow(T item, Nutrition nutrition) {
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.VERTICAL);
+
+        int paddingPx = (int) (6 * context.getResources().getDisplayMetrics().density);
+        int bottomPaddingPx = (int) (8 * context.getResources().getDisplayMetrics().density);
+        row.setPadding(paddingPx, 0, paddingPx, bottomPaddingPx);
+
+        int mutedColor = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurfaceVariant,
+                ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant));
+
+        // Confidence badge - always shown; null-safe fallback to ESTIMATED
+        // mirrors how the value is treated on read from Room (see
+        // DataConfidence javadoc) without mutating the Nutrition object here.
+        DataConfidence confidence = nutrition.getDataConfidence() != null
+                ? nutrition.getDataConfidence()
+                : DataConfidence.ESTIMATED;
+
+        TextView confidenceView = new TextView(context);
+        confidenceView.setText(confidence.getDisplayWithEmoji(context));
+        confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
+        confidenceView.setTextColor(mutedColor);
+        row.addView(confidenceView);
+
+        // Secondary attribution - only when the nutrition's actual source
+        // resolves to a real DataSourceType and differs from the item's own.
+        DataSourceType nutritionSource = DataSourceType.fromString(nutrition.getDataSource());
+        DataSourceType itemSource = item.getDataSource();
+
+        if (nutritionSource != null && nutritionSource != itemSource) {
+            TextView attributionView = new TextView(context);
+            attributionView.setText(context.getString(R.string.nutrition_secondary_attribution,
+                    nutritionSource.getDisplayWithEmoji(context)));
+            attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
+            attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
+            attributionView.setTextColor(mutedColor);
+            row.addView(attributionView);
+        }
+
+        container.addView(row);
+    }
+
+    /**
      * Add nutrient row with proper column alignment
      */
-    private View addNutrientRow(LinearLayout parent, NutrientInfo info, Double value,
-                                FoodProduct product, double customAmount) {
+    private View addNutrientRow(LinearLayout parent, NutrientInfo info, Double value, double customAmount) {
         View row;
 
         // Set nutrient name with dash for level 2+

@@ -63,7 +63,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
     private final Context context;
 
     // NutritionLabelManager is stateful; keep a reference for amount updates and cleanup.
-    private NutritionLabelManager nutritionLabelManager;
+    private NutritionLabelManager<FoodProduct> nutritionLabelManager;
 
     // Keep a reference to the TextWatcher so we can remove it on destroy()
     // to prevent memory leaks when the activity is destroyed.
@@ -374,12 +374,12 @@ public class OffProductDetailRenderer implements DetailRenderer {
         if (nutritionContainer == null) return;
 
         // Create a new NutritionLabelManager for this view instance
-        nutritionLabelManager = new NutritionLabelManager(
+        nutritionLabelManager = new NutritionLabelManager<>(
                 context, nutritionContainer, NutritionLabelMode.DETAILED);
 
         // Calculate smart default amount: serving size if available, otherwise 20g
         double defaultAmount = getSmartDefaultAmount(product);
-        nutritionLabelManager.displayProduct(product, defaultAmount);
+        nutritionLabelManager.display(product, defaultAmount);
 
         // Wire custom amount input
         TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
