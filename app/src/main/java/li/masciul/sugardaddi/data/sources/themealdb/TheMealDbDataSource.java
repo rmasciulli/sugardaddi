@@ -280,7 +280,9 @@ public class TheMealDbDataSource extends BaseDataSource {
      * @param query    Search query. Must not be null.
      * @param language Language code - ignored (TheMealDB is English-only).
      * @param limit    Max results - capped to MAX_SEARCH_RESULTS.
-     * @param page     Page number - ignored (TheMealDB has no pagination).
+     * @param page     Page number (1-based). The upstream API has no real pagination -
+     *                 the full match list is fetched every call and paginated locally
+     *                 by slicing it according to page/limit.
      * @param callback Result callback. Always called on the main thread.
      */
     @Override
@@ -332,26 +334,33 @@ public class TheMealDbDataSource extends BaseDataSource {
                 // Map DTOs to Recipe domain objects
                 List<Recipe> all = mapper.mapSearchResponse(response.body());
 
-                // Cap to MAX_SEARCH_RESULTS - no pagination on TheMealDB
-                int effectiveLimit = Math.min(
-                        Math.min(limit, TheMealDbConstants.MAX_SEARCH_RESULTS),
-                        all.size());
-                List<Recipe> capped = all.subList(0, effectiveLimit);
+                // TheMealDB's search.php has no server-side pagination - it always
+                // returns every match for the query in one response. Real pagination
+                // is done locally here: slice the already-fetched full list by page,
+                // and report hasMore based on whether more of that already-fetched
+                // data remains. Previously this always took [0, effectiveLimit)
+                // regardless of page and hardcoded hasMore=false - silently
+                // discarding everything beyond the first page's worth on every call,
+                // even though the full list had already been fetched.
+                int cappedTotal = Math.min(all.size(), TheMealDbConstants.MAX_SEARCH_RESULTS);
+                int fromIndex = Math.min((page - 1) * limit, cappedTotal);
+                int toIndex = Math.min(fromIndex + limit, cappedTotal);
+                List<Recipe> pageItems = all.subList(fromIndex, toIndex);
 
                 // Populate LRU cache - detail lookups for these results are free
-                for (Recipe recipe : capped) {
+                for (Recipe recipe : pageItems) {
                     if (recipe.getOriginalId() != null) {
                         recipeCache.put(recipe.getOriginalId(), recipe);
                     }
                 }
 
                 // Widen List<Recipe> to List<Searchable> for SearchResult
-                List<Searchable> items = new ArrayList<>(capped);
+                List<Searchable> items = new ArrayList<>(pageItems);
 
                 SearchResult result = new SearchResult(
                         items,
                         all.size(),
-                        false,          // No pagination - TheMealDB is all-or-nothing
+                        toIndex < cappedTotal, // more of the already-fetched data remains
                         query,
                         language,
                         TheMealDbConstants.SOURCE_ID
@@ -360,8 +369,8 @@ public class TheMealDbDataSource extends BaseDataSource {
                 onOperationSuccess();
 
                 if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "TheMealDB search '" + query + "': "
-                            + capped.size() + " results (total API: " + all.size() + ")");
+                    Log.d(TAG, "TheMealDB search '" + query + "': page " + page + ", "
+                            + pageItems.size() + " results (total API: " + all.size() + ")");
                 }
 
                 executeOnMainThread(() -> callback.onSuccess(result));
