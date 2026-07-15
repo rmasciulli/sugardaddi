@@ -137,6 +137,18 @@ public class SearchManager {
     /** True once onSearchComplete has delivered final results for the current query. */
     private boolean finalResultDelivered = false;
 
+    /**
+     * Incremented every time resetSearchState() runs (i.e. every new page-1
+     * search). Each performSearch()/loadMoreResults() call captures the
+     * current value as myGeneration and compares it against the live field
+     * in every async callback, so a slow, superseded call can never deliver
+     * results over a newer one - even when both calls share the exact same
+     * query text, which a plain query.equals(currentQuery) check can't
+     * distinguish (two overlapping rounds for "cheese" look identical by
+     * that comparison alone).
+     */
+    private int searchGeneration = 0;
+
     // =========================================================================
     // PAGINATION STATE  (all reset by resetSearchState on new query)
     // =========================================================================
@@ -433,6 +445,13 @@ public class SearchManager {
 
         notifyLoadingMore();
 
+        // Captured once, at call time - same purpose as in performSearch():
+        // a page-1 search started while this pagination call is still
+        // in flight (e.g. stuck behind a slow source's retries) must not
+        // let this call's callbacks touch state that now belongs to the
+        // newer round.
+        final int myGeneration = searchGeneration;
+
         // Use an unmodifiable snapshot of exhaustedSources - the set must not be
         // modified while the aggregator is iterating it on a background thread.
         final Set<String> exhaustedSnapshot =
@@ -448,6 +467,17 @@ public class SearchManager {
 
                     @Override
                     public void onSearchComplete(@NonNull AggregatedSearchResult result) {
+                        if (myGeneration != searchGeneration) {
+                            // A newer page-1 search has already started - this
+                            // pagination call belongs to a superseded round.
+                            if (ApiConfig.DEBUG_LOGGING) {
+                                Log.d(TAG, "Discarding stale page " + currentPage
+                                        + " (generation " + myGeneration + " != "
+                                        + searchGeneration + ")");
+                            }
+                            return;
+                        }
+
                         // Update exhaustion state from this page's results
                         updateExhaustedSources(result.getSourceHasMore());
 
@@ -460,25 +490,35 @@ public class SearchManager {
                         isPaginationActive = false;
 
                         if (fresh.isEmpty()) {
-                            // All results were cross-page duplicates - treat as exhausted
+                            // All results were cross-page duplicates - treat as exhausted.
+                            // Must still notify the adapter: hasMorePages here is a
+                            // SearchManager field, separate from the adapter's own
+                            // hasMoreItems/isLoadingMore, which only update via an
+                            // actual updateItems()/addMoreItems() call. Without this,
+                            // the footer's spinner was left stuck spinning forever -
+                            // "disappears naturally" was never actually true.
                             if (ApiConfig.DEBUG_LOGGING) {
                                 Log.d(TAG, "Page " + currentPage
                                         + " contained only duplicates - marking exhausted");
                             }
                             hasMorePages = false;
-                            // No callback - footer disappears naturally when hasMore=false
+                            notifyMoreResults(Collections.emptyList(), false);
                             return;
                         }
 
                         finalResultDelivered = true;
 
                         // Enrich without caching (page 1 cache is the canonical entry)
-                        searchCache.enrichAndCache(fresh, currentQuery, false, () ->
-                                notifyMoreResults(fresh, hasMorePages));
+                        searchCache.enrichAndCache(fresh, currentQuery, false, () -> {
+                            if (myGeneration == searchGeneration) {
+                                notifyMoreResults(fresh, hasMorePages);
+                            }
+                        });
                     }
 
                     @Override
                     public void onSearchError(@NonNull String error) {
+                        if (myGeneration != searchGeneration) return;
                         isPaginationActive = false;
                         currentPage--; // Roll back so the user can retry
                         Log.w(TAG, "Pagination error page " + (currentPage + 1) + ": " + error);
@@ -628,6 +668,21 @@ public class SearchManager {
 
         // ── Live search via aggregator ────────────────────────────────────────
         // exhaustedSources is empty for page 1 (reset by resetSearchState).
+
+        // Captured once, at call time - compared against the live field in
+        // every callback below so a superseded call can never deliver.
+        final int myGeneration = searchGeneration;
+
+        // Running total of everything delivered via onPartialResult this
+        // round. Each source used to replace the previous one's partial
+        // outright (notifySearchResults -> adapter.updateItems is a full
+        // list swap), so a fast source's results vanished the instant the
+        // next source finished - visible as sources "disappearing" from the
+        // feed whenever one source (e.g. OFF) was slow. All
+        // AggregatorCallback methods are posted to the main thread by the
+        // aggregator, so plain mutation here is safe - no synchronization.
+        final List<Searchable> accumulatedPartials = new ArrayList<>();
+
         aggregator.searchAll(
                 query,
                 ApiConfig.API_PAGE_SIZE,
@@ -664,10 +719,23 @@ public class SearchManager {
                                         .process(partialItems, query, lang);
 
                         if (!filtered.isEmpty()) {
-                            // Enrich on background thread, then deliver (no cache put yet)
-                            searchCache.enrichAndCache(filtered, query, false, () -> {
-                                if (query.equals(currentQuery) && !finalResultDelivered) {
-                                    notifySearchResults(filtered, true);
+                            // Accumulate onto whatever earlier sources already
+                            // delivered this round, instead of replacing them.
+                            accumulatedPartials.addAll(filtered);
+                            List<Searchable> toDeliver = new ArrayList<>(accumulatedPartials);
+
+                            // Enrich on background thread, then deliver the running
+                            // total (no cache put yet - page 1 cache is written once,
+                            // in onSearchComplete below).
+                            searchCache.enrichAndCache(toDeliver, query, false, () -> {
+                                // toDeliver.size() == accumulatedPartials.size() guards
+                                // against a slower enrichAndCache callback for an
+                                // earlier, smaller snapshot completing after a later,
+                                // larger one - enrichAndCache is async, so completion
+                                // order isn't guaranteed to match arrival order.
+                                if (myGeneration == searchGeneration && !finalResultDelivered
+                                        && toDeliver.size() == accumulatedPartials.size()) {
+                                    notifySearchResults(toDeliver, true);
                                 }
                             });
                         }
@@ -677,10 +745,16 @@ public class SearchManager {
                     public void onSearchComplete(@NonNull AggregatedSearchResult result) {
                         isSearchActive = false;
 
-                        if (!query.equals(currentQuery)) {
-                            // Query changed while this call was in flight - discard
+                        if (myGeneration != searchGeneration) {
+                            // A newer search started while this call was in flight -
+                            // even for the identical query text, this call is
+                            // superseded and must not deliver. It would otherwise
+                            // dedup against IDs the newer call already registered
+                            // and wipe its correctly-shown results down to empty).
                             if (ApiConfig.DEBUG_LOGGING) {
-                                Log.d(TAG, "Discarding stale result for '" + query + "'");
+                                Log.d(TAG, "Discarding stale result for '" + query
+                                        + "' (generation " + myGeneration + " != "
+                                        + searchGeneration + ")");
                             }
                             return;
                         }
@@ -706,9 +780,16 @@ public class SearchManager {
 
                         lastSuccessfulQuery = query;
 
-                        // Enrich on background thread AND cache (page 1 only)
-                        searchCache.enrichAndCache(fresh, query, true, () ->
-                                notifySearchResults(fresh, hasMorePages));
+                        // Enrich on background thread AND cache (page 1 only).
+                        // enrichAndCache is async - a newer search can start and
+                        // bump searchGeneration in the gap before this completes,
+                        // so re-check here even though onSearchComplete itself
+                        // already passed the generation check synchronously above.
+                        searchCache.enrichAndCache(fresh, query, true, () -> {
+                            if (myGeneration == searchGeneration) {
+                                notifySearchResults(fresh, hasMorePages);
+                            }
+                        });
 
                         if (ApiConfig.DEBUG_LOGGING) {
                             Log.d(TAG, "Search complete: '" + query + "' → "
@@ -719,7 +800,7 @@ public class SearchManager {
                     @Override
                     public void onSearchError(@NonNull String error) {
                         isSearchActive = false;
-                        if (query.equals(currentQuery)) {
+                        if (myGeneration == searchGeneration) {
                             Log.e(TAG, "Search error for '" + query + "': " + error);
                             notifySearchError(Error.network(error, null));
                         }
@@ -773,6 +854,7 @@ public class SearchManager {
         currentPage          = 1;
         hasMorePages         = true;
         finalResultDelivered = false;
+        searchGeneration++;
         exhaustedSources.clear();
         seenSearchableIds.clear();
     }
