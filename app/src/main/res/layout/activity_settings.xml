@@ -130,6 +130,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="4dp">
+
                             <com.google.android.material.radiobutton.MaterialRadioButton
                                 android:id="@+id/radioSystemTheme"
                                 android:layout_width="match_parent"
@@ -139,12 +140,6 @@
                                 android:paddingTop="10dp"
                                 android:paddingBottom="10dp" />
 
-                            <TextView
-                                android:id="@+id/textView"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="TextView" />
-
                             <com.google.android.material.radiobutton.MaterialRadioButton
                                 android:id="@+id/radioLightTheme"
                                 android:layout_width="match_parent"
@@ -153,6 +148,7 @@
                                 android:textAppearance="?attr/textAppearanceBodyLarge"
                                 android:paddingTop="10dp"
                                 android:paddingBottom="10dp" />
+
                             <com.google.android.material.radiobutton.MaterialRadioButton
                                 android:id="@+id/radioDarkTheme"
                                 android:layout_width="match_parent"
