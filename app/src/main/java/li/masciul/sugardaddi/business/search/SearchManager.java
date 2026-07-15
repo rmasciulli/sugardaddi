@@ -122,9 +122,6 @@ public class SearchManager {
     /** The query currently being searched or last searched. */
     private String currentQuery = "";
 
-    /** Last query that produced successful results (used by retryLastSearch). */
-    private String lastSuccessfulQuery = "";
-
     /** True while a search call is in flight (page 1). */
     private boolean isSearchActive = false;
 
@@ -534,24 +531,6 @@ public class SearchManager {
     }
 
     /**
-     * Retry the last search that produced results.
-     * Falls back to currentQuery if no successful search has been made yet.
-     */
-    public void retryLastSearch() {
-        String queryToRetry = !lastSuccessfulQuery.isEmpty()
-                ? lastSuccessfulQuery : currentQuery;
-
-        if (!queryToRetry.isEmpty()) {
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Retrying search: '" + queryToRetry + "'");
-            }
-            search(queryToRetry);
-        } else {
-            Log.w(TAG, "retryLastSearch: no query to retry");
-        }
-    }
-
-    /**
      * Re-enrich the currently displayed results against Room without re-searching.
      *
      * Thin facade over SearchCache.refreshFromDatabase(): MainActivity owns the
@@ -568,7 +547,8 @@ public class SearchManager {
 
     /**
      * Cancel all in-flight and pending searches.
-     * Does not clear state - allows retryLastSearch() to still work.
+     * Does not clear state (currentQuery, pagination, etc.) - a subsequent
+     * search() call for the same query can still proceed normally afterward.
      */
     public void cancel() {
         cancelAllSearches();
@@ -647,7 +627,6 @@ public class SearchManager {
         if (cached != null) {
             cacheHits++;
             isSearchActive = false;
-            lastSuccessfulQuery = query;
 
             // Register cached IDs for cross-page deduplication
             for (Searchable item : cached) {
@@ -777,8 +756,6 @@ public class SearchManager {
 
                         // Level-2 deduplication and ID registration
                         List<Searchable> fresh = deduplicateAndRegister(filtered);
-
-                        lastSuccessfulQuery = query;
 
                         // Enrich on background thread AND cache (page 1 only).
                         // enrichAndCache is async - a newer search can start and
