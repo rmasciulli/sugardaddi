@@ -211,13 +211,19 @@ public interface FoodProductDao {
     /**
      * Search products from a specific source (e.g., CIQUAL local search).
      * Searches searchableText which contains both FR and EN names for Ciqual products.
+     *
+     * NOTE: offset must be computed by the caller as (page - 1) * limit, using
+     * the same 1-based page convention as DataSource.search(). Previously this
+     * had no OFFSET at all, so every page silently re-ran the identical query -
+     * page 2+ returned the exact same top-N rows as page 1, which downstream
+     * dedup then filtered out entirely as cross-page duplicates.
      */
     @Query("SELECT * FROM food_products WHERE sourceId = :sourceId AND (" +
             "name LIKE '%' || :searchTerm || '%' OR " +
             "searchableText LIKE '%' || :searchTerm || '%') " +
-            "ORDER BY dataCompleteness DESC LIMIT :limit")
+            "ORDER BY dataCompleteness DESC LIMIT :limit OFFSET :offset")
     List<FoodProductEntity> searchProductsBySource(
-            String sourceId, String searchTerm, int limit);
+            String sourceId, String searchTerm, int limit, int offset);
 
     // ========== FAVORITES MANAGEMENT ==========
 

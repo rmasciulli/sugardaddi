@@ -361,9 +361,10 @@ public class CiqualDataSource extends BaseDataSource {
         if (CiqualImportService.isImported(context)) {
             backgroundExecutor.execute(() -> {
                 try {
+                    int offset = Math.max(0, (page - 1) * limit);
                     List<FoodProductEntity> entities =
                             productDao.searchProductsBySource(
-                                    CiqualConstants.SOURCE_ID, query, limit);
+                                    CiqualConstants.SOURCE_ID, query, limit, offset);
 
                     if (entities != null && !entities.isEmpty()) {
                         List<FoodProduct> products = new ArrayList<>();
@@ -390,7 +391,7 @@ public class CiqualDataSource extends BaseDataSource {
                     logError("Local Ciqual search failed, falling back to ES", e);
                 }
                 // No local results - fall through to ES
-                searchElasticsearch(query, effectiveLanguage, limit, callback);
+                searchElasticsearch(query, effectiveLanguage, limit, page, callback);
             });
             return;
         }
@@ -401,7 +402,7 @@ public class CiqualDataSource extends BaseDataSource {
             handleError(error, callback);
             return;
         }
-        searchElasticsearch(query, effectiveLanguage, limit, callback);
+        searchElasticsearch(query, effectiveLanguage, limit, page, callback);
     }
 
     /**
@@ -409,9 +410,10 @@ public class CiqualDataSource extends BaseDataSource {
      * local-first path above can delegate here cleanly.
      */
     private void searchElasticsearch(@NonNull String query, @NonNull String effectiveLanguage,
-                                     int limit, @NonNull DataSourceCallback<SearchResult> callback) {
+                                     int limit, int page, @NonNull DataSourceCallback<SearchResult> callback) {
         try {
-            String json = CiqualSearchRequest.buildSearchQuery(query, effectiveLanguage, 0, limit);
+            int offset = Math.max(0, (page - 1) * limit);
+            String json = CiqualSearchRequest.buildSearchQuery(query, effectiveLanguage, offset, limit);
             RequestBody body = RequestBody.create(MediaType.parse("application/json"), json);
             Call<CiqualElasticsearchResponse> call = elasticsearchApi.search(body);
             activeCalls.add(call);

@@ -241,8 +241,9 @@ public class USDADataSource extends BaseDataSource {
         if (USDAImportService.isImported(context)) {
             backgroundExecutor.execute(() -> {
                 try {
+                    int offset = Math.max(0, (page - 1) * limit);
                     List<FoodProductEntity> entities =
-                            productDao.searchProductsBySource(USDAConstants.SOURCE_ID, query, limit);
+                            productDao.searchProductsBySource(USDAConstants.SOURCE_ID, query, limit, offset);
 
                     if (entities != null && !entities.isEmpty()) {
                         List<FoodProduct> products = new ArrayList<>();
