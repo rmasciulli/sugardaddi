@@ -41,14 +41,6 @@ import li.masciul.sugardaddi.data.repository.RecipeRepository;
  * External recipes (e.g. TheMealDB) are persisted to Room on first
  * favorite interaction via RecipeRepository.setRecipeFavorite().
  *
- * NOTE ON DATASOURCE INSTANCE
- * ============================
- * RecipeRepository creates its own TheMealDbDataSource instance. This means
- * two instances exist alongside the one in DataSourceManager - each with a
- * separate LRU cache. This is a known limitation and should be resolved in a
- * future refactor by injecting the shared DataSourceManager instance into the
- * repository instead of constructing its own.
- *
  * LIFECYCLE
  * =========
  * Call cleanup() in RecipeDetailsActivity.onDestroy() to release the listener
