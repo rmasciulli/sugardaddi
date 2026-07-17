@@ -448,6 +448,7 @@
     <string name="source_name_imported">Import&#233;</string>
     <string name="source_name_themealdb">The MealDB</string>
     <string name="source_name_thecocktaildb">TheCocktailDB</string>
+    <string name="source_name_fatsecret">FatSecret</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Produit alimentaire</string>
@@ -465,6 +466,7 @@
     <string name="source_emoji_imported">&#x1F525;</string>
     <string name="source_emoji_themealdb">&#x1F4D6;</string>
     <string name="source_emoji_thecocktaildb">🍹</string>
+    <string name="source_emoji_fatsecret">🧮</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Base de données collaborative de produits alimentaires</string>
@@ -475,6 +477,7 @@
     <string name="source_description_imported">Données importées d\'autres applications</string>
     <string name="source_description_themealdb">Base de données de recettes ouverte. Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
     <string name="source_description_thecocktaildb">Base de données de cocktails ouverte. Utilisation gratuite pour le développement. Une diffusion publique requiert un abonnement Patreon.</string>
+    <string name="source_description_fatsecret">Base de données nutritionnelle et de recettes avec correspondance d\'ingrédients et estimation nutritionnelle.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Données issues d\'OpenFoodFacts.org</string>
@@ -485,6 +488,7 @@
     <string name="source_attribution_imported">Données importées</string>
     <string name="source_attribution_themealdb">Données issues de TheMealDB</string>
     <string name="source_attribution_thecocktaildb">Données issues de TheCocktailDB</string>
+    <string name="source_attribution_fatsecret">Données de FatSecret</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">La base de données Open Food Facts est disponible sous la licence Open Database License. Les contenus individuels de la base de données sont disponibles sous la Database Contents License. Avertissement : les informations et données sont fournies à titre purement indicatif. Elles peuvent contenir des erreurs et ne doivent pas être utilisées à des fins médicales.</string>
@@ -492,6 +496,7 @@
     <string name="source_full_attribution_usda">Département américain de l\'Agriculture, Service de recherche agricole. FoodData Central, 2019. fdc.nal.usda.gov. Les données sont fournies par l\'USDA et appartiennent au domaine public.</string>
     <string name="source_full_attribution_themealdb">TheMealDB est une base de données ouverte et collaborative qui regroupe des recettes du monde entier. Elle propose une API de recettes gratuite et facile à utiliser. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires. Utilisé dans le cadre du niveau de développement gratuit.</string>
     <string name="source_full_attribution_thecocktaildb">TheCocktailDB est une base de données ouverte et collaborative qui regroupe des cocktails du monde entier. Elle propose une API de cocktails gratuite et facile à utiliser. Vous pouvez également acheter une clé pour soutenir le projet et accéder à des fonctionnalités premium supplémentaires. Utilisé dans le cadre du niveau de développement gratuit.</string>
+    <string name="source_full_attribution_fatsecret">FatSecret Platform fournit des données nutritionnelles et de recettes, et estime la nutrition par traitement du langage naturel pour les recettes qui n\'en fournissent pas. Utilisé sous licence Premier Free pour un usage non commercial et open source, avec attribution comme requis par les conditions de FatSecret.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
@@ -499,6 +504,7 @@
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
     <string name="source_website_themealdb">https://www.themealdb.com</string>
     <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
+    <string name="source_website_fatsecret">https://platform.fatsecret.com</string>
 
     <!-- Confidence badge labels -->
     <string name="confidence_scientific">Données de référence scientifique</string>

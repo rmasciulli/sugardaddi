@@ -448,6 +448,7 @@
     <string name="source_name_imported">Imported</string>
     <string name="source_name_themealdb">TheMealDB</string>
     <string name="source_name_thecocktaildb">TheCocktailDB</string>
+    <string name="source_name_fatsecret">FatSecret</string>
 
     <!-- Product Type Labels (shown in search result cards) -->
     <string name="product_type_food">Food product</string>
@@ -465,6 +466,7 @@
     <string name="source_emoji_imported">&#x1F525;</string>
     <string name="source_emoji_themealdb">&#x1F4D6;</string>
     <string name="source_emoji_thecocktaildb">🍹</string>
+    <string name="source_emoji_fatsecret">🧮</string>
 
     <!-- Data Source Descriptions (Short) -->
     <string name="source_description_openfoodfacts">Open database of food products</string>
@@ -475,6 +477,7 @@
     <string name="source_description_imported">Data imported from other apps</string>
     <string name="source_description_themealdb">Open recipe database. Free for development use. Public release requires a Patreon subscription.</string>
     <string name="source_description_thecocktaildb">Open cocktail database. Free for development use. Public release requires a Patreon subscription.</string>
+    <string name="source_description_fatsecret">Nutrition and recipe database with ingredient-matching and nutrition estimation.</string>
 
     <!-- Data Source Attributions (Short - for inline use) -->
     <string name="source_attribution_openfoodfacts">Data from OpenFoodFacts.org</string>
@@ -485,6 +488,7 @@
     <string name="source_attribution_imported">Imported data</string>
     <string name="source_attribution_themealdb">Data from TheMealDB</string>
     <string name="source_attribution_thecocktaildb">Data from TheCocktailDB</string>
+    <string name="source_attribution_fatsecret">Data from FatSecret</string>
 
     <!-- Data Source Full Attributions (Long - for legal/about screens) -->
     <string name="source_full_attribution_openfoodfacts">The Open Food Facts database is available under the Open Database License. The individual contents of the database are available under the Database Contents License. Warning: the information and data is provided only for indicative information. It can contain errors and must not be used for medical purposes.</string>
@@ -492,6 +496,7 @@
     <string name="source_full_attribution_usda">U.S. Department of Agriculture, Agricultural Research Service. FoodData Central, 2019. fdc.nal.usda.gov. The data is provided by USDA and is in the public domain.</string>
     <string name="source_full_attribution_themealdb">TheMealDB is an open, collaborative database that brings together recipes from around the world. It offers a free, easy-to-use API. You can purchase a license to support the project and gain access to additional premium features. Used under the terms of the free development tier.</string>
     <string name="source_full_attribution_thecocktaildb">TheCocktailDB is an open, collaborative database that brings together cocktails from around the world. It offers a free, easy-to-use API. You can purchase a license to support the project and gain access to additional premium features. Used under the terms of the free development tier.</string>
+    <string name="source_full_attribution_fatsecret">FatSecret Platform provides nutrition and recipe data, and estimates nutrition via natural language processing for recipes that provide none of their own. Used under a Premier Free license for non-commercial, open-source use, with attribution as required by FatSecret\'s terms.</string>
 
     <!-- Data Source Websites -->
     <string name="source_website_openfoodfacts">https://world.openfoodfacts.org/</string>
@@ -499,6 +504,7 @@
     <string name="source_website_usda">https://fdc.nal.usda.gov/</string>
     <string name="source_website_themealdb">https://www.themealdb.com</string>
     <string name="source_website_thecocktaildb">https://www.thecocktaildb.com</string>
+    <string name="source_website_fatsecret">https://platform.fatsecret.com</string>
 
     <!-- Confidence badge labels -->
     <string name="confidence_scientific">Scientific reference data</string>

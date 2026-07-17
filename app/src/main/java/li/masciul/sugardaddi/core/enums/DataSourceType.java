@@ -79,7 +79,7 @@ public enum DataSourceType {
     /**
      * TheMealDB - Open recipe database (themealdb.com)
      * - Allows caching: No (public release requires Patreon subscription per ToS;
-     *                       development key "1" is free but not for distribution)
+     *                   development key "1" is free but not for distribution)
      * - Requires network: Yes (no local bundle - recipes are fetched on demand)
      * - Data quality: Good for recipe structure; NO nutrition data provided
      */
@@ -91,7 +91,27 @@ public enum DataSourceType {
      * - Requires network: Yes
      * - Data quality: Good for cocktail structure; NO nutrition data provided
      */
-    THECOCKTAILDB("THECOCKTAILDB", false, true);
+    THECOCKTAILDB("THECOCKTAILDB", false, true),
+
+    /**
+     * FatSecret Platform - Nutrition database, recipe database, and NLP-based
+     * ingredient/recipe nutrition estimation
+     * - Allows caching: Yes (Premier Free confirmed in writing: indefinite
+     *                   on-device storage is fully permitted; only
+     *                   server-side storage is capped at 24h, which
+     *                   doesn't apply here - SugarDaddi has no backend)
+     * - Requires network: Yes
+     * - Data quality: Good, both for its own recipe/food data and for
+     *                 estimating nutrition on recipes from other sources
+     *                 (TheMealDB/TheCocktailDB) that provide none of their
+     *                 own
+     * - Access: Unlike every other source here, an individual building
+     *           SugarDaddi from source cannot simply self-register a
+     *           comparable key - Premier Free access is granted per
+     *           organization by FatSecret. Integration code must treat a
+     *           missing/unconfigured key as a normal, expected state.
+     */
+    FATSECRET("FATSECRET", true, true);
 
     // ========== ENUM FIELDS ==========
 
@@ -129,6 +149,9 @@ public enum DataSourceType {
      * - OpenFoodFacts: YES (Open Database License allows caching)
      * - Ciqual: NO (Terms prohibit caching)
      * - USDA: NO (Terms prohibit caching)
+     * - FatSecret: YES (Premier Free permits indefinite on-device storage;
+     *              their 24h cap applies only to server-side storage, which
+     *              doesn't apply here)
      * - User content: YES (User owns the data)
      *
      * @return true if caching is allowed
@@ -258,6 +281,7 @@ public enum DataSourceType {
             case IMPORTED: return R.string.source_name_imported;
             case THEMEALDB: return R.string.source_name_themealdb;
             case THECOCKTAILDB: return R.string.source_name_thecocktaildb;
+            case FATSECRET: return R.string.source_name_fatsecret;
             default: return 0;
         }
     }
@@ -275,6 +299,7 @@ public enum DataSourceType {
             case IMPORTED: return R.string.source_description_imported;
             case THEMEALDB: return R.string.source_description_themealdb;
             case THECOCKTAILDB: return R.string.source_description_thecocktaildb;
+            case FATSECRET: return R.string.source_description_fatsecret;
             default: return 0;
         }
     }
@@ -292,6 +317,7 @@ public enum DataSourceType {
             case IMPORTED: return R.string.source_attribution_imported;
             case THEMEALDB: return R.string.source_attribution_themealdb;
             case THECOCKTAILDB: return R.string.source_attribution_thecocktaildb;
+            case FATSECRET: return R.string.source_attribution_fatsecret;
             default: return 0;
         }
     }
@@ -306,6 +332,7 @@ public enum DataSourceType {
             case USDA: return R.string.source_full_attribution_usda;
             case THEMEALDB: return R.string.source_full_attribution_themealdb;
             case THECOCKTAILDB: return R.string.source_full_attribution_thecocktaildb;
+            case FATSECRET: return R.string.source_full_attribution_fatsecret;
             default: return 0; // User content doesn't need full attribution
         }
     }
@@ -320,6 +347,7 @@ public enum DataSourceType {
             case USDA: return R.string.source_website_usda;
             case THEMEALDB: return R.string.source_website_themealdb;
             case THECOCKTAILDB: return R.string.source_website_thecocktaildb;
+            case FATSECRET: return R.string.source_website_fatsecret;
             default: return 0;
         }
     }
@@ -337,6 +365,7 @@ public enum DataSourceType {
             case IMPORTED: return R.string.source_emoji_imported;
             case THEMEALDB: return R.string.source_emoji_themealdb;
             case THECOCKTAILDB: return R.string.source_emoji_thecocktaildb;
+            case FATSECRET: return R.string.source_emoji_fatsecret;
             default: return 0;
         }
     }
@@ -362,7 +391,7 @@ public enum DataSourceType {
      */
     public boolean isPublic() {
         return this == OPENFOODFACTS || this == CIQUAL || this == USDA ||
-               this == THEMEALDB || this == THECOCKTAILDB;
+                this == THEMEALDB || this == THECOCKTAILDB || this == FATSECRET;
     }
 
     /**
