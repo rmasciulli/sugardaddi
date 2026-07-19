@@ -527,7 +527,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
         // Confidence badge - always shown; null-safe fallback to ESTIMATED
         // mirrors how the value is treated on read from Room (see
-        // DataConfidence javadoc) without mutating the Nutrition object here.
+        // DataConfidence Javadoc) without mutating the Nutrition object here.
         DataConfidence confidence = nutrition.getDataConfidence() != null
                 ? nutrition.getDataConfidence()
                 : DataConfidence.ESTIMATED;
