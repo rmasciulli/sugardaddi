@@ -94,7 +94,7 @@ app/src/main/java/li/masciul/sugardaddi/
 └── utils/
     ├── image/                   # ImageProfile, ImageDownloader, ImageStorageManager, ImagePurgeManager
     ├── cache/                   # CacheEvictionManager
-    └── (CategoryCleaner, ScoreOverlayHelper, ScoreUtils, …)
+    └── CategoryCleaner, ScoreOverlayHelper, ScoreUtils, …
 ```
 
 ## Data sources
@@ -152,7 +152,7 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **Search:** `recipes/search/v3` and `foods/search/v1` - both confirmed accessible on FatSecret's free Basic tier, no paid tier required for search itself
 - **Detail:** `recipe/v2` and `food/v5` - full structured nutrition, normalized to per-100g
 - **Coverage:** Curated recipes with ingredients and directions; branded foods (restaurant items, packaged products) and generic foods not otherwise well covered by Ciqual/USDA/OFF
-- **Access is different from every other source here:** FatSecret's own terms require OAuth2 tokens to be requested through a server-side proxy - the consumer key/secret can never ship inside a distributed app. This project uses a private proxy, `glucogate` (separate private repository, not part of this project), that holds those credentials; the app only ever talks to the proxy, authenticated with its own separate, low-stakes shared secret (`GLUCOGATE_BASE_URL` / `GLUCOGATE_PROXY_SECRET` in `local.properties`). **There is no public fallback the way there is for USDA/TheMealDB/TheCocktailDB** - without a proxy of your own, the app builds and runs fine, FatSecret search and recipe/food nutrition are just unavailable, same as any other optional source with no key configured.
+- **Access is different from every other source here:** FatSecret's own terms require OAuth2 tokens to be requested through a server-side proxy - the consumer key/secret can never ship inside a distributed app. This project uses a private proxy, `glucogate` (separate private repository, not part of this project), that holds those credentials; the app only ever talks to the proxy, authenticated with its own separate, low-stakes shared secret (`GLUCOGATE_BASE_URL` / `GLUCOGATE_PROXY_SECRET` in `local.properties`). There is no public fallback the way there is for USDA/TheMealDB/TheCocktailDB - without a proxy of your own, the app builds and runs fine, FatSecret search and recipe/food nutrition are just unavailable, same as any other optional source with no key configured.
 - **Attribution:** [FatSecret Platform](https://platform.fatsecret.com) - Premier Free license, non-commercial/open-source use, attribution required per FatSecret's terms
 
 ## Getting started
