@@ -223,6 +223,15 @@ public final class USDAMapper {
             mapNutrientById(n, id, val);
         }
 
+        // FDC has no distinct "salt"/sodium-chloride nutrient ID - only
+        // elemental sodium (1093). Derive salt using the standard EU
+        // labeling formula (salt = sodium x 2.5) when sodium was found and
+        // nothing already set salt directly. sodium is mg, salt is g (see
+        // Nutrition's field comments) so we need to divide by 1000.
+        if (n.getSalt() == null && n.getSodium() != null) {
+            n.setSalt(n.getSodium() * 2.5 / 1000.0);
+        }
+
         // All USDA FDC data types (Foundation, SR Legacy, Survey) are lab-measured
         // by USDA nutritionists - SCIENTIFIC confidence for all.
         n.setDataConfidence(DataConfidence.SCIENTIFIC);
