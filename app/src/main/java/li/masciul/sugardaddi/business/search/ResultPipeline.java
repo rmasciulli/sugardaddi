@@ -216,11 +216,20 @@ public class ResultPipeline {
         List<FoodPortion> portions = recipe.getPortions();
         if (portions == null || portions.isEmpty()) return false;
 
-        // Must have at least some preparation guidance
-        boolean hasSteps = recipe.getStepCount() > 0;
-        boolean hasRawInstructions = recipe.getInstructions(language) != null
-                && !recipe.getInstructions(language).trim().isEmpty();
-        if (!hasSteps && !hasRawInstructions) return false;
+        // Must have at least some preparation guidance - waived for
+        // previews (search-result-only recipes explicitly missing full
+        // detail by design, e.g. FatSecret's recipes/search/v3). A
+        // non-preview recipe with genuinely empty instructions still
+        // correctly fails this gate - the waiver only applies when the
+        // source itself has explicitly marked the object as partial via
+        // Recipe.setPreview(true), not inferred from empty fields alone
+        // (which would also silently let real bad data through).
+        if (!recipe.isPreview()) {
+            boolean hasSteps = recipe.getStepCount() > 0;
+            boolean hasRawInstructions = recipe.getInstructions(language) != null
+                    && !recipe.getInstructions(language).trim().isEmpty();
+            if (!hasSteps && !hasRawInstructions) return false;
+        }
 
         return true;
     }

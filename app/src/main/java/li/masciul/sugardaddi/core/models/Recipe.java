@@ -99,6 +99,17 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private boolean isFavorite = false;
     private boolean isTemplate = false;
 
+    // True when this Recipe was built from a lightweight search result that
+    // structurally lacks full detail (e.g. FatSecret's recipes/search/v3,
+    // which returns ingredient names but no directions - only its per-ID
+    // recipe/v2 call does). Defaults false: every source until FatSecret
+    // has always returned complete recipes even from search (TheMealDB's
+    // search.php returns the full recipe in one call), so nothing existing
+    // needs to opt out - only a mapper building a genuinely partial object
+    // needs to opt in. See ResultPipeline.meetsQualityRequirements(Recipe)
+    // for the one place this is read.
+    private boolean isPreview = false;
+
     // ========== MEDIA ==========
 
     // Remote URLs - provided by the data source.
@@ -1006,6 +1017,12 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     public boolean isTemplate() { return isTemplate; }
     public void setTemplate(boolean template) { this.isTemplate = template; touch(); }
+
+    public boolean isPreview() { return isPreview; }
+    // No touch() - this is a mapper-time structural fact about where the
+    // data came from, not a user edit, same as setOriginalId()/setDataSource().
+    public void setPreview(boolean preview) { this.isPreview = preview; }
+
 
     // ========== MEDIA ==========
 

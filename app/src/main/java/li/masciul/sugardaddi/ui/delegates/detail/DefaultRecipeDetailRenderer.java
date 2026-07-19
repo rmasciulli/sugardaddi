@@ -13,9 +13,11 @@ import androidx.annotation.NonNull;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeStep;
+import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.List;
@@ -47,6 +49,8 @@ import java.util.List;
 public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
     private final Context context;
+
+    private NutritionLabelManager<Recipe> nutritionLabelManager;
 
     public DefaultRecipeDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -81,6 +85,14 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         populateNotes(view, recipe, language);
         populateNutritionState(view, recipe);
         populateAttribution(view, recipe);
+    }
+
+    @Override
+    public void destroy() {
+        if (nutritionLabelManager != null) {
+            nutritionLabelManager.clear();
+            nutritionLabelManager = null;
+        }
     }
 
     /**
@@ -333,19 +345,31 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
     }
 
     /**
-     * Nutrition state: show a "no nutrition data" placeholder.
+     * Nutrition state: show the real label when data exists, a placeholder
+     * when it doesn't.
      *
-     * User recipes start with no nutrition data. Rather than showing nothing,
-     * we show a clear placeholder so the user understands the section exists
-     * but is currently empty. When nutrition is eventually added (manual entry
-     * or ingredient resolution), this card will be replaced by a full label.
+     * This was previously placeholder-only - the "Future: when
+     * NutritionLabelManager supports Recipe" comment predates
+     * NutritionLabelManager actually being generalized to support Recipe.
+     * Went unnoticed because no recipe source ever had real nutrition data
+     * to display through this renderer until FatSecret.
      */
     private void populateNutritionState(@NonNull View view, @NonNull Recipe recipe) {
+        LinearLayout nutritionContainer = view.findViewById(R.id.nutritionContainer);
         View noNutritionCard = view.findViewById(R.id.noNutritionCard);
-        // Show the placeholder whenever there's no nutrition data.
-        // Future: when NutritionLabelManager supports Recipe, inflate it here instead.
-        noNutritionCard.setVisibility(
-                recipe.hasNutritionData() ? View.GONE : View.VISIBLE);
+        if (nutritionContainer == null || noNutritionCard == null) return;
+
+        if (recipe.hasNutritionData()) {
+            nutritionContainer.setVisibility(View.VISIBLE);
+            noNutritionCard.setVisibility(View.GONE);
+
+            nutritionLabelManager = new NutritionLabelManager<>(
+                    context, nutritionContainer, NutritionLabelMode.DETAILED);
+            nutritionLabelManager.display(recipe);
+        } else {
+            nutritionContainer.setVisibility(View.GONE);
+            noNutritionCard.setVisibility(View.VISIBLE);
+        }
     }
 
     private void populateAttribution(@NonNull View view, @NonNull Recipe recipe) {

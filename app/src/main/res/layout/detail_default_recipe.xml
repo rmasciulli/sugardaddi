@@ -282,6 +282,28 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- ================================================= -->
+        <!-- NUTRITION LABEL                                    -->
+        <!-- Shown only when hasNutritionData() is true         -->
+        <!-- Same structure as detail_default_product.xml's     -->
+        <!-- nutritionContainer, for NutritionLabelManager       -->
+        <!-- ================================================= -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_nutrition_block"
+            android:padding="1dp">
+
+            <LinearLayout
+                android:id="@+id/nutritionContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/colorSurface" />
+
+        </LinearLayout>
+
+        <!-- ================================================= -->
         <!-- NO NUTRITION PLACEHOLDER                          -->
         <!-- Shown only when hasNutritionData() is false       -->
         <!-- ================================================= -->

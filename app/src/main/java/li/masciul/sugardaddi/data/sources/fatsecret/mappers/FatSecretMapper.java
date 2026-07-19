@@ -109,8 +109,14 @@ public final class FatSecretMapper {
         // No structured nutrition from search results - see class Javadoc.
         // A getProduct() call (mapFoodDetail below) is required for real values.
 
+        // Without this, dataCompleteness stays at its default and every
+        // FatSecret search result fails ResultPipeline's minimum-completeness
+        // quality gate outright - found via 20 items in, 0 out in production.
+        product.calculateCompleteness();
+
         return product;
     }
+
 
     // ========================================================================
     // FOOD: DETAIL → FOODPRODUCT
@@ -273,7 +279,7 @@ public final class FatSecretMapper {
             recipe.setImageUrl(result.recipeImage);
         }
 
-        // Partial nutrition IS structured here (unlike food search) - see class Javadoc.
+        // Partial nutrition IS structured here (unlike food search) - see class javadoc.
         if (result.recipeNutrition != null) {
             RecipeSearchResponse.RecipeNutritionSummary rn = result.recipeNutrition;
             if (rn.calories != null || rn.carbohydrate != null || rn.protein != null || rn.fat != null) {
@@ -284,11 +290,22 @@ public final class FatSecretMapper {
                 n.setFat(rn.fat);
                 // FatSecret's own aggregate for the whole recipe, derived from
                 // its ingredients - COMPUTED, matching TheMealDB's convention
-                // for the same kind of value (see DataConfidence Javadoc).
+                // for the same kind of value (see DataConfidence javadoc).
                 n.setDataConfidence(DataConfidence.COMPUTED);
                 n.setDataSource(DataSourceType.FATSECRET.getId());
                 recipe.setNutrition(n);
             }
+        }
+
+        // recipes/search/v3 gives ingredient NAMES only (no quantities, no
+        // directions - that's recipe/v2's job). Mark this recipe as a
+        // preview so ResultPipeline waives the instructions requirement it
+        // can never satisfy from search data alone (see Recipe.isPreview
+        // javadoc) - a real getRecipe() call replaces this with full detail
+        // when the user actually opens it.
+        recipe.setPreview(true);
+        if (result.recipeIngredients != null && result.recipeIngredients.ingredient != null) {
+            recipe.setPortions(mapIngredientNames(recipe, result.recipeIngredients.ingredient));
         }
 
         recipe.setLastUpdated(System.currentTimeMillis());
@@ -296,6 +313,39 @@ public final class FatSecretMapper {
         recipe.calculateCompleteness();
 
         return recipe;
+    }
+
+    /**
+     * Map a bare list of ingredient name strings (recipes/search/v3's
+     * ingredient shape) to FoodPortion stubs - same name-stub pattern as
+     * mapRecipeIngredients() below, but for the simpler case where only a
+     * name is available, no food_id/quantity/measurement.
+     */
+    @NonNull
+    private static List<FoodPortion> mapIngredientNames(
+            @NonNull Recipe recipe,
+            @NonNull List<String> ingredientNames) {
+
+        List<FoodPortion> portions = new ArrayList<>(ingredientNames.size());
+
+        for (int i = 0; i < ingredientNames.size(); i++) {
+            String ingredientName = ingredientNames.get(i);
+            if (ingredientName == null || ingredientName.trim().isEmpty()) continue;
+
+            FoodPortion portion = new FoodPortion(
+                    "FOOD_PRODUCT",
+                    ingredientName.trim(),
+                    new ServingSize()
+            );
+            portion.setOrderIndex(i);
+            portion.setEstimated(true);
+            portion.setParentType("RECIPE");
+            portion.setParentId(recipe.getId());
+
+            portions.add(portion);
+        }
+
+        return portions;
     }
 
     // ========================================================================

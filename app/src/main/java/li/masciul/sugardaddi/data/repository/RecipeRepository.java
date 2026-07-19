@@ -13,7 +13,9 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.RecipeDao;
+import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
+import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
@@ -231,6 +233,24 @@ public class RecipeRepository {
 
         recipeDao.insert(entity);   // REPLACE on conflict
 
+        // Nutrition lives in a separate table (RecipeWithNutrition's Room
+        // @Relation joins on NutritionEntity.sourceId == RecipeEntity.id) -
+        // was never being written here at all, only ever read. Invisible
+        // until now because no recipe source had real nutrition to lose in
+        // this exact spot before FatSecret (TheMealDB/TheCocktailDB never
+        // call recipe.setNutrition() in their own mappers). Mirrors
+        // ProductRepository's proven, working equivalent exactly.
+        if (recipe.getNutrition() != null) {
+            NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                    recipe.getNutrition(), "recipe", recipe.getSearchableId());
+            database.nutritionDao().insertNutrition(nutritionEntity);
+            if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Saved recipe with nutrition: " + recipe.getSearchableId());
+            }
+        } else if (ApiConfig.DEBUG_LOGGING) {
+            Log.d(TAG, "Saved recipe without nutrition: " + recipe.getSearchableId());
+        }
+
         // Heal-on-open: keep a favorite's thumbnail + hero cached for offline use.
         if (entity.isFavorite()) {
             cacheFavoriteImages(recipe, recipe.getSearchableId(),
@@ -262,7 +282,12 @@ public class RecipeRepository {
 
                     boolean stale = isStale(cached.getLastUpdated(), source.getCacheStrategy());
 
-                    Recipe recipe = cached.toRecipe();
+                    // cached.toRecipe() never includes nutrition (RecipeEntity's own
+                    // comment confirms it deliberately doesn't) - only the
+                    // RecipeWithNutrition relation does, via its Room @Relation join.
+                    RecipeWithNutrition cachedWithNutrition = recipeDao.getByIdWithNutrition(cached.getId());
+                    Recipe recipe = (cachedWithNutrition != null)
+                            ? cachedWithNutrition.toRecipe() : cached.toRecipe();
                     runOnMainThread(() -> callback.onSuccess(recipe));
 
                     if (stale) {
@@ -355,13 +380,13 @@ public class RecipeRepository {
     /** Re-read the just-saved row so merged local image paths reach the UI. */
     @WorkerThread
     private Recipe reReadRecipeOrFallback(@NonNull Recipe fetched) {
-        RecipeEntity saved = recipeDao.getById(fetched.getSearchableId());
+        RecipeWithNutrition saved = recipeDao.getByIdWithNutrition(fetched.getSearchableId());
         return (saved != null) ? saved.toRecipe() : fetched;
     }
 
     public void readFromCache(@NonNull String searchableId, @NonNull RecipeCallback callback) {
         backgroundExecutor.execute(() -> {
-            RecipeEntity cached = recipeDao.getById(searchableId);
+            RecipeWithNutrition cached = recipeDao.getByIdWithNutrition(searchableId);
             if (cached != null) {
                 Recipe recipe = cached.toRecipe();
                 runOnMainThread(() -> callback.onSuccess(recipe));
