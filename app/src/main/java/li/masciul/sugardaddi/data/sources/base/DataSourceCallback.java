@@ -21,7 +21,7 @@ import li.masciul.sugardaddi.core.models.Error;
  *
  * USAGE EXAMPLE:
  * ```java
- * dataSource.search("banana", "en", 10, new DataSourceCallback<SearchResult>() {
+ * dataSource.search("banana", "en", 10, 1, requestedTypes, new DataSourceCallback<SearchResult>() {
  *     @Override
  *     public void onSuccess(SearchResult result) {
  *         // Update UI with results

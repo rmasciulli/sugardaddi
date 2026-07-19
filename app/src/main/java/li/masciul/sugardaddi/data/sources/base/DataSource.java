@@ -166,18 +166,33 @@ public interface DataSource {
     }
 
     /**
-     * Search for food products matching the query.
+     * Search for food products or recipes matching the query.
      *
-     * @param query    Search string (minimum 3 characters recommended)
-     * @param language BCP-47 language code, e.g. "en", "fr"
-     * @param limit    Maximum results per page (1-100)
-     * @param page     1-based page number
-     * @param callback Receives results, loading state, or error
+     * @param query          Search string (minimum 3 characters recommended)
+     * @param language       BCP-47 language code, e.g. "en", "fr"
+     * @param limit          Maximum results per page (1-100)
+     * @param page           1-based page number
+     * @param requestedTypes The subset of this source's own getProducedTypes()
+     *                       the caller actually wants this call to return.
+     *                       Exists for multi-type sources (a source that
+     *                       produces both FOOD and RECIPE items, e.g.
+     *                       FatSecret) so a single-type filter ("recipes
+     *                       only") doesn't force the source to also query
+     *                       and then discard the other type - it can skip
+     *                       that upstream call entirely. Single-type
+     *                       sources can safely ignore this parameter: if
+     *                       their one produced type isn't in this set, the
+     *                       aggregator won't have called them at all (see
+     *                       SearchFilter.allowsSource()), so by the time
+     *                       search() runs, requestedTypes always includes
+     *                       whatever a single-type source produces anyway.
+     * @param callback       Receives results, loading state, or error
      */
     void search(@NonNull String query,
                 @NonNull String language,
                 int limit,
                 int page,
+                @NonNull Set<ProductType> requestedTypes,
                 @NonNull DataSourceCallback<SearchResult> callback);
 
     /**

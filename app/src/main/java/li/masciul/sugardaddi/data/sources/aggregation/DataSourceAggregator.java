@@ -8,6 +8,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import li.masciul.sugardaddi.business.search.SearchFilter;
+import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.logging.ErrorLogger;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -19,6 +20,7 @@ import li.masciul.sugardaddi.managers.LanguageManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -239,6 +241,7 @@ public class DataSourceAggregator {
                     final Error[]                   errorHolder  = new Error[1];
 
                     source.search(query, language, limit, page,
+                            computeRequestedTypes(filter, source),
                             new DataSourceCallback<DataSource.SearchResult>() {
                                 @Override
                                 public void onSuccess(DataSource.SearchResult result) {
@@ -328,6 +331,36 @@ public class DataSourceAggregator {
                 }
             });
         }
+    }
+
+    // =========================================================================
+    // TYPE FILTERING (multi-type sources)
+    // =========================================================================
+
+    /**
+     * Computes the subset of a source's own {@link DataSource#getProducedTypes()}
+     * that the active filter actually wants for this call.
+     *
+     * Exists for multi-type sources (currently only FatSecret, which produces
+     * both FOOD and RECIPE) - without this, a "recipes only" filter would
+     * still leave a multi-type source no way to know it shouldn't also query
+     * its food endpoint, since {@link SearchFilter#allowsSource} only decides
+     * whether to call the source at all, not which of its types to ask for.
+     *
+     * Single-type sources always get back their one produced type here: if
+     * it weren't in the filter's allowed types, allowsSource() would already
+     * have excluded them from sourcesToSearch before this is ever called.
+     */
+    @NonNull
+    private static Set<ProductType> computeRequestedTypes(@NonNull SearchFilter filter,
+                                                          @NonNull DataSource source) {
+        Set<ProductType> produced = source.getProducedTypes();
+        if (!filter.isTypeFilterActive()) {
+            return produced;
+        }
+        Set<ProductType> requested = new HashSet<>(produced);
+        requested.retainAll(filter.getAllowedTypes());
+        return requested;
     }
 
     // =========================================================================

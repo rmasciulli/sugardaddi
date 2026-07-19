@@ -290,7 +290,11 @@ public class TheMealDbDataSource extends BaseDataSource {
                        @NonNull String language,
                        int limit,
                        int page,
+                       @NonNull Set<ProductType> requestedTypes,
                        @NonNull DataSourceCallback<SearchResult> callback) {
+        // requestedTypes intentionally unused - TheMealDB is a recipe-only
+        // source; the aggregator already excludes it entirely when RECIPE
+        // isn't in the active filter (see DataSource.search() Javadoc).
         if (!checkEnabled(callback)) return;
 
         if (api == null) {

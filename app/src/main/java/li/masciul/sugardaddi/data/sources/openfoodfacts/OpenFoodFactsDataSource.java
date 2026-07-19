@@ -266,7 +266,11 @@ public class OpenFoodFactsDataSource extends BaseDataSource {
      */
     @Override
     public void search(@NonNull String query, @NonNull String language, int limit,
-                       int page, @NonNull DataSourceCallback<SearchResult> callback) {
+                       int page, @NonNull Set<ProductType> requestedTypes,
+                       @NonNull DataSourceCallback<SearchResult> callback) {
+        // requestedTypes intentionally unused - OpenFoodFacts is a food-only
+        // source; the aggregator already excludes it entirely when FOOD isn't
+        // in the active filter (see DataSource.search() Javadoc).
         if (!checkEnabled(callback)) return;
 
         // Verify APIs are initialized
