@@ -44,7 +44,8 @@ import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
  * Carbs detail:  2000=sugars, 1050=sugars-alt, 1009=starch
  * Fat detail:    1258=saturated, 1292=monounsat, 1293=polyunsat, 1257=trans
  * Minerals:      1093=sodium, 1087=calcium, 1089=iron, 1090=magnesium,
- *                1091=phosphorus, 1092=potassium, 1095=zinc
+ *                1091=phosphorus, 1092=potassium, 1095=zinc (all mg,
+ *                stored directly - see mapNutrientById for why)
  * Vitamins:      1106=vit-A, 1114=vit-D, 1109=vit-E, 1185=vit-K1,
  *                1165=vit-B1, 1166=vit-B2, 1167=vit-B3, 1170=vit-B5,
  *                1175=vit-B6, 1177=vit-B9(folate), 1178=vit-B12, 1162=vit-C
@@ -265,17 +266,26 @@ public final class USDAMapper {
             case 1405: n.setEPA(val);  break; // 20:5 n-3 (EPA)  - rare in Foundation
             case 1406: n.setDHA(val);  break; // 22:6 n-3 (DHA)
 
-            // Minerals - mg in FDC, converted to g for our model
-            case 1093: n.setSodium(val / 1000.0);    break; // mg → g
-            case 1087: n.setCalcium(val / 1000.0);   break;
-            case 1089: n.setIron(val / 1000.0);      break;
-            case 1090: n.setMagnesium(val / 1000.0); break;
-            case 1091: n.setPhosphorus(val / 1000.0);break;
-            case 1092: n.setPotassium(val / 1000.0); break;
-            case 1095: n.setZinc(val / 1000.0);      break;
+            // Minerals - FDC's native unit is mg, matching Nutrition's own
+            // "mg per 100g/ml" field convention directly (same as Ciqual's
+            // mapper, which stores ANSES's mg values with no conversion) -
+            // no division needed.
+            case 1093: n.setSodium(val);    break;
+            case 1087: n.setCalcium(val);   break;
+            case 1089: n.setIron(val);      break;
+            case 1090: n.setMagnesium(val); break;
+            case 1091: n.setPhosphorus(val);break;
+            case 1092: n.setPotassium(val); break;
+            case 1095: n.setZinc(val);      break;
 
-            // Compute salt from sodium: salt = sodium × 2.5 (if not already set)
-            // We do this after the loop in mapDetailNutrition if salt remains null.
+            // NOTE: salt (Nutrition.salt, documented in g per 100g/ml -
+            // a different unit than sodium's mg) is not computed anywhere
+            // in this mapper despite an earlier comment here claiming it
+            // happened "after the loop in mapDetailNutrition" - checked,
+            // it doesn't. USDA products currently have no salt value at
+            // all. Not fixed here - flagging as a separate, smaller gap
+            // (a missing feature, not a unit bug) rather than folding it
+            // into this fix unrequested.
 
             // Fat-soluble vitamins
             case 1106: n.setVitaminA(val);    break; // µg RAE
