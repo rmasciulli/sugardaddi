@@ -11,7 +11,7 @@ Today, application stores are full of nutrition apps. The problem is that nearly
 - the information is inaccurate or approximate (especially for AI-based apps)
 - usage fees require a subscription
 
-That's why I decided to work on sugardaddi. A free, open-source app to effectively and easily track what you consume. A modular system where anyone can easily add their own data sources, whether free or paid. By default, the project already includes Ciqual (ANSES), Open Food Facts, USDA FoodData Central, TheMealDB, and TheCocktailDB. For USDA, be sure to register and obtain an API key on their official website to take full advantage of it.
+That's why I decided to work on sugardaddi. A free, open-source app to effectively and easily track what you consume. A modular system where anyone can easily add their own data sources, whether free or paid. By default, the project already includes Ciqual (ANSES), Open Food Facts, USDA FoodData Central, TheMealDB, TheCocktailDB, and FatSecret Platform (recipes and branded/generic foods). For USDA, be sure to register and obtain an API key on their official website to take full advantage of it. FatSecret requires a self-hosted proxy server and isn't available out of the box for other contributors - see the Data Sources section below.
 
 The project is still in alpha (core architecture complete), it's actively developed.
 
@@ -33,6 +33,9 @@ The project is still in alpha (core architecture complete), it's actively develo
 - **Delegate pattern** - `ItemViewDelegate{}` and `DetailRenderer{}` interfaces allow each data source to define its own search card and detail screen layouts independently. Food sources (OFF, Ciqual, USDA) and recipe sources (TheMealDB, TheCocktailDB) share the same pipeline but render through source-specific delegates, with `DefaultProductSearchDelegate{}` and `DefaultRecipeSearchDelegate{}` as catch-all fallbacks.
 - **Hybrid translation** - primary content stored in the language received; `ProductTranslation{}` and `RecipeTranslation{}` maps hold other languages. Default language is English.
 - **Generic settings cards** - `DataSourceCardManager{}` + `ManagementProvider{}` interface drive the settings screen. Each source declares its own credentials, local DB state, and broadcast actions. Adding a new source requires zero changes to `DataSourcesActivity{}`.
+- **Multi-type sources** - most sources produce exactly one `ProductType` (food or recipe), declared statically via `getProducedTypes()`. A source producing both (currently only FatSecret, via its own recipe and food databases) instead receives a `requestedTypes` parameter on `DataSource.search()` - `DataSourceAggregator` intersects the source's own produced types with the active filter, so a "recipes only" search never triggers a wasted food-endpoint call. Kept as one `DataSource{}` registration rather than split by type, since a settings card should represent one account, not one capability.
+- **Persistent image storage** - `ImageProfile{}` is the single source of truth for size/quality presets (thumbnail vs. hero). `ImageDownloader{}` uses a caller-owns-path pattern with temp-then-rename writes, so a partially-downloaded file is never mistaken for a complete one. `ImageStorageManager{}` resolves on-disk destinations (auto-cached vs. user-provided images kept separate). Favoriting an item triggers `cacheFavoriteImages{}`, which downloads and persists both a thumbnail and a full-resolution hero for guaranteed offline access - healed automatically on next open if a file is ever missing. `CacheEvictionManager{}` (Room rows) and `ImagePurgeManager{}` (orphan files, via a union of every path field that must survive eviction) keep storage bounded without ever discarding a favorite's images.
+- **Full-image viewer** - `ImageViewerLauncher{}` + `ImageViewerActivity{}` (PhotoView-based pan/zoom) open a tappable full-resolution view of any hero image, whether it's a local `File` (already cached) or a remote URL (fetched on demand). Wired into every detail screen and search delegate via a single shared tap-to-expand binding, not duplicated per source.
 
 ## Architecture overview
 
@@ -60,8 +63,8 @@ app/src/main/java/li/masciul/sugardaddi/
 ├── data/
 │   ├── database/                # Room DB - food_products, nutrition, meals, recipes
 │   │   ├── dao/                 # FoodProductDao, NutritionDao, MealDao, RecipeDao
-│   │   ├── entities/            # Room entities with typed converters
-│   │   └── relations/           # FoodProductWithNutrition, MealWithNutrition…
+│   │   ├── entities/             # Room entities with typed converters
+│   │   └── relations/           # FoodProductWithNutrition, RecipeWithNutrition, MealWithNutrition…
 │   ├── sources/                 # One package per data source
 │   │   ├── base/                # BaseDataSource, DataSourceCallback, ManagementProvider
 │   │   ├── aggregation/         # DataSourceAggregator, SmartMergeStrategy
@@ -70,21 +73,28 @@ app/src/main/java/li/masciul/sugardaddi/
 │   │   ├── usda/                # USDA FoodData Central REST API + optional local import
 │   │   ├── themealdb/           # TheMealDB REST API - recipe search and detail
 │   │   ├── thecocktaildb/       # TheCocktailDB REST API - cocktail search and detail
+│   │   ├── fatsecret/           # FatSecret Platform via a private proxy - recipe + food search/detail
+│   │   │   ├── api/dto/         # Response DTOs, incl. SingleOrArrayDeserializer for FatSecret's inconsistent list-wrapping
+│   │   │   └── mappers/         # FatSecretMapper - per-100g normalization, %DV-vs-absolute unit handling
 │   │   └── user/                # User-created content (planned)
 │   ├── network/                 # OkHttp/Retrofit client, logging interceptor
 │   └── repository/              # ProductRepository, RecipeRepository, MealRepository
 │
 ├── ui/
-│   ├── activities/              # MainActivity, ProductDetailsActivity, RecipeDetailsActivity…
+│   ├── activities/              # MainActivity, ProductDetailsActivity, RecipeDetailsActivity, ImageViewerActivity…
 │   ├── delegates/
 │   │   ├── search/              # Per-source search card delegates (OFF, Ciqual, USDA, MealDB, CocktailDB, Default)
 │   │   └── detail/              # Per-source detail renderers (OFF, Ciqual, USDA, MealDB, CocktailDB, Default)
-│   ├── components/              # NutritionLabelManager, AllergenIconHelper, NutrientBannerView
+│   ├── components/              # NutritionLabelManager (generic over Searchable+Nutritional), AllergenIconHelper, NutrientBannerView
 │   ├── settings/                # DataSourceCardManager (generic settings card per source)
+│   ├── utils/                   # ImageDisplayUtils, ImageViewerLauncher - shared tap-to-expand image binding
 │   └── adapters/                # SearchResultsAdapter, TimelineAdapter, MealPortionsAdapter
 │
 ├── managers/                    # DataSourceManager, LanguageManager, ThemeManager
-└── utils/                       # CategoryCleaner, ScoreOverlayHelper, ScoreUtils
+└── utils/
+    ├── image/                   # ImageProfile, ImageDownloader, ImageStorageManager, ImagePurgeManager
+    ├── cache/                   # CacheEvictionManager
+    └── (CategoryCleaner, ScoreOverlayHelper, ScoreUtils, …)
 ```
 
 ## Data sources
@@ -136,6 +146,15 @@ Data sources are ordered by relevance to the primary target audience (EU users w
 - **API key:** Free development key (`1`) is hardcoded. A Patreon key is required for public release. Add to `local.properties` as `THECOCKTAILDB_API_KEY=your_key`.
 - **Attribution:** [TheCocktailDB.com](https://www.thecocktaildb.com) - free tier for open-source projects
 
+**FatSecret Platform**
+
+- **Type:** Recipe database + branded/generic food database (US)
+- **Search:** `recipes/search/v3` and `foods/search/v1` - both confirmed accessible on FatSecret's free Basic tier, no paid tier required for search itself
+- **Detail:** `recipe/v2` and `food/v5` - full structured nutrition, normalized to per-100g
+- **Coverage:** Curated recipes with ingredients and directions; branded foods (restaurant items, packaged products) and generic foods not otherwise well covered by Ciqual/USDA/OFF
+- **Access is different from every other source here:** FatSecret's own terms require OAuth2 tokens to be requested through a server-side proxy - the consumer key/secret can never ship inside a distributed app. This project uses a private proxy, `glucogate` (separate private repository, not part of this project), that holds those credentials; the app only ever talks to the proxy, authenticated with its own separate, low-stakes shared secret (`GLUCOGATE_BASE_URL` / `GLUCOGATE_PROXY_SECRET` in `local.properties`). **There is no public fallback the way there is for USDA/TheMealDB/TheCocktailDB** - without a proxy of your own, the app builds and runs fine, FatSecret search and recipe/food nutrition are just unavailable, same as any other optional source with no key configured.
+- **Attribution:** [FatSecret Platform](https://platform.fatsecret.com) - Premier Free license, non-commercial/open-source use, attribution required per FatSecret's terms
+
 ## Getting started
 
 ### Prerequisites
@@ -160,8 +179,9 @@ Dataset already bundled in the APK (committed to git):
 
 ## Roadmap
 
-- [ ] **Nutrition for TheMealDB and TheCocktailDB** - recipe and cocktail ingredients are currently stored as unresolved `FoodPortion` stubs. The next step is to map them to real `FoodProduct` entries via fuzzy matching against the food databases, enabling nutritional computation for recipes and cocktails. This includes a confidence threshold, manual override UX, and Room persistence of confirmed mappings.
-- [ ] **Persistent image storage** - three related use cases: keep favorite item images available offline, allow users to attach photos to meal journal entries, and allow photos to be attached to individual recipe steps. Requires `FileProvider` for camera intent, a disk storage strategy, and Room schema updates to reference image paths.
+- [x] **Nutrition for TheMealDB and TheCocktailDB** - solved differently than originally planned: rather than fuzzy-matching their ingredient stubs against the food databases, FatSecret's recipe/food search+detail endpoints provide this directly for FatSecret's own recipes. TheMealDB/TheCocktailDB ingredients are still unresolved `FoodPortion` stubs, with no fuzzy-matching plan currently active.
+- [ ] **Resolve FatSecret recipe ingredients to real FoodProduct entries** - unlike TheMealDB/TheCocktailDB, FatSecret's `recipe/v2` ingredients already carry a real `food_id` per ingredient, making per-ingredient resolution via `food/v5` genuinely feasible (not just a fuzzy match) - not yet implemented.
+- [x] **Persistent image storage** - shipped: favorite-time hero/thumbnail caching with heal-on-open, `ImageProfile`/`ImageDownloader`/`ImageStorageManager`/`ImagePurgeManager`, and a full-resolution tap-to-expand viewer (`ImageViewerActivity`) on every detail screen and search card. Meal-journal photo capture and per-step recipe photos are not yet built - the underlying storage system is ready for both, just not wired to those specific UI flows yet.
 - [ ] **Category comparison** - compare a product against its Ciqual category average
 
 ## Licence

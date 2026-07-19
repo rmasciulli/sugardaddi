@@ -355,19 +355,20 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
      * to display through this renderer until FatSecret.
      */
     private void populateNutritionState(@NonNull View view, @NonNull Recipe recipe) {
+        View nutritionCard = view.findViewById(R.id.nutritionCard);
         LinearLayout nutritionContainer = view.findViewById(R.id.nutritionContainer);
         View noNutritionCard = view.findViewById(R.id.noNutritionCard);
-        if (nutritionContainer == null || noNutritionCard == null) return;
+        if (nutritionCard == null || nutritionContainer == null || noNutritionCard == null) return;
 
         if (recipe.hasNutritionData()) {
-            nutritionContainer.setVisibility(View.VISIBLE);
+            nutritionCard.setVisibility(View.VISIBLE);
             noNutritionCard.setVisibility(View.GONE);
 
             nutritionLabelManager = new NutritionLabelManager<>(
                     context, nutritionContainer, NutritionLabelMode.DETAILED);
             nutritionLabelManager.display(recipe);
         } else {
-            nutritionContainer.setVisibility(View.GONE);
+            nutritionCard.setVisibility(View.GONE);
             noNutritionCard.setVisibility(View.VISIBLE);
         }
     }
