@@ -55,6 +55,19 @@ android {
             ?: System.getenv("THECOCKTAILDB_API_KEY")
             ?: "1"
         buildConfigField("String", "THECOCKTAILDB_API_KEY", "\"$cocktailDbApiKey\"")
+
+        // glucogate proxy - unlike the three sources above, there is no
+        // public fallback value here. glucogate holds the real FatSecret
+        // credentials server-side; this app only ever talks to glucogate
+        // itself, authenticated with its own, unrelated shared secret. An
+        // empty string means "not configured" - FatSecretConfig.isConfigured()
+        // reads that as "FatSecret features unavailable for this build"
+        // rather than falling back to something that works.
+        val glucogateBaseUrl: String = localProperties.getProperty("GLUCOGATE_BASE_URL") ?: ""
+        buildConfigField("String", "GLUCOGATE_BASE_URL", "\"$glucogateBaseUrl\"")
+
+        val glucogateProxySecret: String = localProperties.getProperty("GLUCOGATE_PROXY_SECRET") ?: ""
+        buildConfigField("String", "GLUCOGATE_PROXY_SECRET", "\"$glucogateProxySecret\"")
     }
 
     androidResources {

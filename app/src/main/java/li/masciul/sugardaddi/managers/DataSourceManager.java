@@ -14,6 +14,8 @@ import li.masciul.sugardaddi.data.sources.ciqual.CiqualConfig;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualDataSource;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConfig;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsDataSource;
+import li.masciul.sugardaddi.data.sources.fatsecret.FatSecretConfig;
+import li.masciul.sugardaddi.data.sources.fatsecret.FatSecretDataSource;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.TheCocktailDbConfig;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.TheCocktailDbDataSource;
 import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConfig;
@@ -208,6 +210,15 @@ public class DataSourceManager {
 
         // ── TheCocktailDB ─────────────────────────────────────────────────
         registerAndInit(new TheCocktailDbDataSource(context, new TheCocktailDbConfig(context)));
+
+        // ── FatSecret (via glucogate) ────────────────────────────────────
+        // One registration producing both FOOD and RECIPE items - see
+        // FatSecretDataSource's class Javadoc for why this stays one source
+        // rather than being split by type. Registered even when
+        // unconfigured (no GLUCOGATE_BASE_URL) - init completes gracefully
+        // with isAvailable()=false, so callers always have a real,
+        // initialized instance to check against rather than a null lookup.
+        registerAndInit(new FatSecretDataSource(context, new FatSecretConfig()));
 
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "Triggered async init for " + pendingInitializations.get() + " sources");
