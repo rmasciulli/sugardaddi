@@ -20,6 +20,7 @@ app/build/
 .idea/deploymentTargetSelector.xml
 .idea/deviceManager.xml
 .idea/libraries/
+.idea/markdown.xml
 .idea/misc.xml
 .idea/tasks.xml
 .idea/vcs.xml
