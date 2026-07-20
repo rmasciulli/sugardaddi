@@ -490,8 +490,10 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             // Column 1: Nutrient name
             col1.setText(R.string.nutrition_label_nutrient_column);
 
-            // Column 2: ALWAYS per 100g (EU requirement)
-            String unit = item.isLiquid() ? "ml" : "g";
+            // Column 2: per-100 in the unit the nutrition data was
+            // expressed in by its source (never converted between g and
+            // ml - density is not ours to assume).
+            String unit = item.getNutrition().getBasis().getUnitLabel();
             col2.setText(context.getString(R.string.nutrition_per_100, unit));
 
             // Column 3: SIMPLIFIED - Just "per 20g" (dynamic)

@@ -219,7 +219,7 @@ public class USDAProductDetailRenderer implements DetailRenderer {
                 if (hasCarbs && nutritionSummary != null) {
                     // Honour app language for the nutrient label
                     String carbLabel = "fr".equals(language) ? "glucides" : "carbohydrates";
-                    String unit      = product.isLiquid() ? "100ml" : "100g";
+                    String unit = "100" + nutrition.getBasis().getUnitLabel();
                     nutritionSummary.setText(String.format(
                             Locale.getDefault(),
                             "%.1fg of %s per %s",
@@ -287,7 +287,9 @@ public class USDAProductDetailRenderer implements DetailRenderer {
     private void updateAmountHint(@NonNull TextInputLayout layout,
                                   @NonNull FoodProduct product) {
         ServingSize serving = product.getServingSize();
-        String unit = product.isLiquid() ? "ml" : "g";
+        String unit = product.getNutrition() != null
+                ? product.getNutrition().getBasis().getUnitLabel()
+                : "g";
         if (serving != null && serving.isValid()) {
             Double servingGrams = serving.getAsGrams();
             if (servingGrams != null && servingGrams > 0) {

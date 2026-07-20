@@ -168,7 +168,7 @@ public class USDAProductSearchDelegate
         Double carbs = nutrition.getCarbohydrates();
         if (carbs != null && carbs > 0) {
             String label = "fr".equals(language) ? "glucides" : "carbohydrates";
-            String unit  = product.isLiquid() ? "100ml" : "100g";
+            String unit = "100" + nutrition.getBasis().getUnitLabel();
             holder.nutritionSummary.setText(
                     String.format(Locale.getDefault(), "%.1fg of %s per %s", carbs, label, unit));
             holder.nutritionSummary.setVisibility(View.VISIBLE);

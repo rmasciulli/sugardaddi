@@ -225,7 +225,7 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
                 nutritionSummaryRow.setVisibility(View.VISIBLE);
                 if (hasCarbs && nutritionSummary != null) {
                     String carbLabel = "fr".equals(language) ? "glucides" : "carbohydrates";
-                    String unit = product.isLiquid() ? "100ml" : "100g";
+                    String unit = "100" + nutrition.getBasis().getUnitLabel();
                     nutritionSummary.setText(String.format(
                             java.util.Locale.getDefault(),
                             "%.1fg of %s per %s", nutrition.getCarbohydrates(), carbLabel, unit));
@@ -314,7 +314,9 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
 
     private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull FoodProduct product) {
         ServingSize serving = product.getServingSize();
-        String unit = product.isLiquid() ? "ml" : "g";
+        String unit = product.getNutrition() != null
+                ? product.getNutrition().getBasis().getUnitLabel()
+                : "g";
 
         if (serving != null && serving.isValid()) {
             Double servingGrams = serving.getAsGrams();

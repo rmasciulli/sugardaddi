@@ -331,7 +331,9 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
 
     private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull FoodProduct product) {
         ServingSize serving = product.getServingSize();
-        String unit = product.isLiquid() ? "ml" : "g";
+        String unit = product.getNutrition() != null
+                ? product.getNutrition().getBasis().getUnitLabel()
+                : "g";
         if (serving != null && serving.isValid()) {
             Double servingGrams = serving.getAsGrams();
             if (servingGrams != null && servingGrams > 0) {
