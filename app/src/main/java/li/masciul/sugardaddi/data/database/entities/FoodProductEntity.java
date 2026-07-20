@@ -135,10 +135,6 @@ public class FoodProductEntity {
     private String novaGroup;
     private String quantity;
 
-    // ========== PHYSICAL PROPERTIES ==========
-    private boolean isLiquid = false;
-    private Double density;
-
     // ========== DIETARY FLAGS ==========
     private boolean isOrganic = false;
     private boolean isVegan = false;
@@ -263,10 +259,6 @@ public class FoodProductEntity {
         product.setNovaGroup(this.novaGroup);
         product.setQuantity(this.quantity);
 
-        // Set physical properties
-        product.setLiquid(this.isLiquid);
-        product.setDensity(this.density);
-
         // Set dietary characteristics
         product.setOrganic(this.isOrganic);
         product.setVegan(this.isVegan);
@@ -371,10 +363,6 @@ public class FoodProductEntity {
         entity.setEcoScore(product.getEcoScore());
         entity.setNovaGroup(product.getNovaGroup());
         entity.setQuantity(product.getQuantity());
-
-        // Set physical properties
-        entity.setLiquid(product.isLiquid());
-        entity.setDensity(product.getDensity());
 
         // Set dietary characteristics
         entity.setOrganic(product.isOrganic());
@@ -558,13 +546,6 @@ public class FoodProductEntity {
 
     public String getQuantity() { return quantity; }
     public void setQuantity(String quantity) { this.quantity = quantity; }
-
-    // Physical properties
-    public boolean isLiquid() { return isLiquid; }
-    public void setLiquid(boolean liquid) { isLiquid = liquid; }
-
-    public Double getDensity() { return density; }
-    public void setDensity(Double density) { this.density = density; }
 
     // Dietary flags
     public boolean isOrganic() { return isOrganic; }

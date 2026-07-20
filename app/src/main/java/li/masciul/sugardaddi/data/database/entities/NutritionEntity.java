@@ -40,22 +40,21 @@ public class NutritionEntity {
     // ========== PRIMARY KEY ==========
     @PrimaryKey
     @NonNull
-    private String nutritionId = "";  // Format: "sourceType:sourceId" e.g., "product:OFF:3017620422003"
+    private String nutritionId = "";    // Format: "sourceType:sourceId" e.g., "product:OFF:3017620422003"
 
     // ========== SOURCE IDENTIFICATION ==========
     @NonNull
-    private String sourceType = "";     // "product", "recipe", "meal"
+    private String sourceType = ""; // "product", "recipe", "meal"
     @NonNull
-    private String sourceId = "";       // The ID of the source entity
-    private String dataSource;          // "OFF", "ciqual", "user", etc.
+    private String sourceId = "";   // The ID of the source entity
+    private String dataSource;      // "OFF", "ciqual", "user", etc.
 
     // ========== CATEGORIZATION (for analytics) ==========
-    private String category;            // "dairy", "fruits", etc.
-    private String subcategory;         // "milk", "apples", etc.
+    private String category;        // "dairy", "fruits", etc.
+    private String subcategory;     // "milk", "apples", etc.
 
     // ========== MEASUREMENT BASIS ==========
-    private String measurementBasis = "per_100g";  // or "per_100ml", "per_serving"
-    private boolean isLiquid = false;
+    private String measurementBasis = "per_100g";  // NutritionBasis ids: "per_100g" or "per_100ml"
 
     // ========== ENERGY ==========
     private Double energyKj;        // Kilojoules per 100g/ml
@@ -253,9 +252,6 @@ public class NutritionEntity {
     // Measurement
     public String getMeasurementBasis() { return measurementBasis; }
     public void setMeasurementBasis(String measurementBasis) { this.measurementBasis = measurementBasis; }
-
-    public boolean isLiquid() { return isLiquid; }
-    public void setLiquid(boolean liquid) { isLiquid = liquid; }
 
     // Energy
     public Double getEnergyKj() { return energyKj; }

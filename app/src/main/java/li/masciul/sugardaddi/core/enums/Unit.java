@@ -212,13 +212,6 @@ public enum Unit {
     }
 
     /**
-     * Get appropriate unit for liquid vs solid
-     */
-    public static Unit getDefaultUnit(boolean isLiquid) {
-        return isLiquid ? ML : G;
-    }
-
-    /**
      * Get all units of a specific type
      */
     public static Unit[] getUnitsOfType(UnitType type) {

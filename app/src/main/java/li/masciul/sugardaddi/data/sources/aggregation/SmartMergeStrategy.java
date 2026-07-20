@@ -261,7 +261,6 @@ public class SmartMergeStrategy implements MergeStrategy {
 
         copy.setBarcode(original.getBarcode());
         copy.setNutrition(original.getNutrition());
-        copy.setLiquid(original.isLiquid());
         copy.setLastUpdated(original.getLastUpdated());
 
         // Copy hybrid translation data

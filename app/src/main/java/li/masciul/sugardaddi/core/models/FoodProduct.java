@@ -173,10 +173,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private String novaGroup;                   // 1-4 processing level
     private String quantity;                    // "500g", "1L", etc.
 
-    // ========== PHYSICAL PROPERTIES ==========
-    private boolean isLiquid;
-    private Double density;                     // g/ml conversion factor
-
     // ========== DIETARY FLAGS ==========
     private boolean isOrganic;
     private boolean isVegan;
@@ -927,7 +923,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         if (!ContentCompare.stringsEqual(imageUrl, other.imageUrl)) return false;
 
         // Structural / dietary flags (primitives - no null handling needed)
-        if (isLiquid != other.isLiquid) return false;
         if (isOrganic != other.isOrganic) return false;
         if (isVegan != other.isVegan) return false;
         if (isVegetarian != other.isVegetarian) return false;
@@ -935,7 +930,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         if (isPalmOilFree != other.isPalmOilFree) return false;
         if (isFairTrade != other.isFairTrade) return false;
         if (allergenFlags != other.allergenFlags) return false;
-        if (!ContentCompare.numbersEqual(density, other.density)) return false;
 
         // Lists (order-insensitive). Allergens are compared via allergenFlags above.
         if (!ContentCompare.listsEqual(additives, other.additives)) return false;
@@ -946,11 +940,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         if (!ContentCompare.servingEqual(servingSize, other.servingSize)) return false;
 
         return true;
-    }
-
-    @Override
-    public boolean isLiquid() {
-        return isLiquid;
     }
 
     // AllergenAware interface - only requires these two methods
@@ -1140,18 +1129,6 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
     public void setQuantity(String quantity) {
         this.quantity = quantity;
-    }
-
-    public void setLiquid(boolean liquid) {
-        this.isLiquid = liquid;
-    }
-
-    public Double getDensity() {
-        return density;
-    }
-
-    public void setDensity(Double density) {
-        this.density = density;
     }
 
     public boolean isOrganic() {

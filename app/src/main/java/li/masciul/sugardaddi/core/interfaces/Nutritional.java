@@ -32,12 +32,6 @@ public interface Nutritional {
     ServingSize getServingSize();
 
     /**
-     * Check if this item is liquid (affects unit calculations)
-     * @return true if liquid, false if solid
-     */
-    boolean isLiquid();
-
-    /**
      * Calculate nutrition for a specific quantity
      * @param quantity Amount to calculate for
      * @param unit Unit of measurement

@@ -699,21 +699,6 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
     }
 
     @Override
-    public boolean isLiquid() {
-        if (portions.isEmpty()) return false;
-
-        for (FoodPortion portion : portions) {
-            if (portion.getFoodProduct() != null && !portion.getFoodProduct().isLiquid()) {
-                return false;
-            }
-            if (portion.getRecipe() != null && !portion.getRecipe().isLiquid()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
     public int getAllergenFlags() {
         return allergenFlags;
     }

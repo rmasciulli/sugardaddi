@@ -1389,23 +1389,6 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         this.servingSize = servingSize; touch();
     }
 
-    @Override
-    public boolean isLiquid() {
-        if (portions == null || portions.isEmpty()) {
-            return false;
-        }
-
-        for (FoodPortion portion : portions) {
-            if (portion.getFoodProduct() != null && !portion.getFoodProduct().isLiquid()) {
-                return false;
-            }
-            if (portion.getRecipe() != null && !portion.getRecipe().isLiquid()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Helper method
     public Nutrition calculateNutrition() {
         Nutrition total = new Nutrition();
