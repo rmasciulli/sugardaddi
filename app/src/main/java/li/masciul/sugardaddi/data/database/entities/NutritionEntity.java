@@ -6,6 +6,7 @@ import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.core.models.Nutrition;
 
 /**
@@ -615,6 +616,9 @@ public class NutritionEntity {
     public Nutrition toNutrition() {
         Nutrition nutrition = new Nutrition();
 
+        // Measurement basis
+        nutrition.setBasis(NutritionBasis.fromId(this.measurementBasis));
+
         // Energy
         nutrition.setEnergyKj(this.energyKj);
         nutrition.setEnergyKcal(this.energyKcal);
@@ -769,6 +773,9 @@ public class NutritionEntity {
         entity.setSourceId(sourceId);
 
         if (nutrition != null) {
+            // Measurement basis
+            entity.setMeasurementBasis(nutrition.getBasis().getId());
+
             // Energy
             entity.setEnergyKj(nutrition.getEnergyKj());
             entity.setEnergyKcal(nutrition.getEnergyKcal());

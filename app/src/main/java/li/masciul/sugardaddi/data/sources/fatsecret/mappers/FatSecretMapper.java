@@ -10,6 +10,7 @@ import java.util.List;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.FoodProduct;
@@ -199,6 +200,13 @@ public final class FatSecretMapper {
         }
 
         Nutrition n = new Nutrition();
+        // Basis follows the unit the chosen serving was expressed in: an
+        // exact-100ml serving (preference 1) yields honest per-100ml
+        // values; everything else reaching here is gram-based, since
+        // preference 2 only accepts "g" servings.
+        n.setBasis("ml".equalsIgnoreCase(chosen.metricServingUnit)
+                ? NutritionBasis.PER_100ML
+                : NutritionBasis.PER_100G);
         n.setEnergyKcal(scaled(chosen.calories, scale));
         n.setCarbohydrates(scaled(chosen.carbohydrate, scale));
         n.setProteins(scaled(chosen.protein, scale));
@@ -289,29 +297,24 @@ public final class FatSecretMapper {
             recipe.setImageUrl(result.recipeImage);
         }
 
-        // Partial nutrition IS structured here (unlike food search) - see class javadoc.
-        if (result.recipeNutrition != null) {
-            RecipeSearchResponse.RecipeNutritionSummary rn = result.recipeNutrition;
-            if (rn.calories != null || rn.carbohydrate != null || rn.protein != null || rn.fat != null) {
-                Nutrition n = new Nutrition();
-                n.setEnergyKcal(rn.calories);
-                n.setCarbohydrates(rn.carbohydrate);
-                n.setProteins(rn.protein);
-                n.setFat(rn.fat);
-                // FatSecret's own aggregate for the whole recipe, derived from
-                // its ingredients - COMPUTED, matching TheMealDB's convention
-                // for the same kind of value (see DataConfidence javadoc).
-                n.setDataConfidence(DataConfidence.COMPUTED);
-                n.setDataSource(DataSourceType.FATSECRET.getId());
-                recipe.setNutrition(n);
-            }
-        }
+        // recipe_nutrition is deliberately NOT mapped. The docs omit its
+        // basis, but the endpoint's own sort options ("caloriesPerServing
+        // Ascending/Descending") and the numbers in the docs' example
+        // confirm the values are PER SERVING - not per 100 of anything -
+        // and the search response carries no grams_per_portion to
+        // normalize with. Storing them would plant per-serving numbers in
+        // a per-100 model with no truthful NutritionBasis to declare.
+        // Real per-100g nutrition arrives with the recipe/v2 detail call
+        // when the user opens the recipe (see mapToRecipe). Nothing on the
+        // search side consumes preview nutrition: the quality gate never
+        // requires it, RecipeScorer ignores it, and no recipe search
+        // delegate displays it.
 
         // recipes/search/v3 gives ingredient NAMES only (no quantities, no
         // directions - that's recipe/v2's job). Mark this recipe as a
         // preview so ResultPipeline waives the instructions requirement it
         // can never satisfy from search data alone (see Recipe.isPreview
-        // javadoc) - a real getRecipe() call replaces this with full detail
+        // Javadoc) - a real getRecipe() call replaces this with full detail
         // when the user actually opens it.
         recipe.setPreview(true);
         if (result.recipeIngredients != null && result.recipeIngredients.ingredient != null) {
@@ -458,6 +461,10 @@ public final class FatSecretMapper {
         double scale = 100.0 / gramsPerPortion;
 
         Nutrition n = new Nutrition();
+        // Normalized by grams_per_portion - per-100g by construction.
+        // Explicit (despite matching the default) because this is the
+        // normalization site where the basis is actually decided.
+        n.setBasis(NutritionBasis.PER_100G);
         n.setEnergyKcal(scaled(serving.calories, scale));
         n.setCarbohydrates(scaled(serving.carbohydrate, scale));
         n.setProteins(scaled(serving.protein, scale));
@@ -471,8 +478,17 @@ public final class FatSecretMapper {
         n.setCholesterol(scaled(serving.cholesterol, scale));
         n.setSodium(scaled(serving.sodium, scale));
         n.setPotassium(scaled(serving.potassium, scale));
+
         // vitaminAPercentDv/vitaminCPercentDv/calciumPercentDv/ironPercentDv
-        // intentionally not mapped - %DV, not absolute values, see class Javadoc.
+        // intentionally not mapped. They are %DV, not absolute values, and
+        // FatSecret does not document which FDA reference table the
+        // percentages are computed against (pre-2016 and current tables
+        // differ by 30-50% for calcium/vitamin C; vitamin A even changed
+        // unit, IU vs mcg RAE). Converting on a guessed table would produce
+        // plausible-looking but unverifiable numbers. The correct future
+        // path is ingredient resolution via food.get (ingredients carry
+        // real food_ids), which yields true absolute values - see
+        // mapRecipeIngredients().
 
         // Salt derived from sodium (salt = sodium x 2.5, mg to g) - same
         // rationale as the food path above: FatSecret has no salt field.

@@ -2,6 +2,8 @@ package li.masciul.sugardaddi.core.models;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,13 +11,16 @@ import java.util.Map;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 
 
 /**
  * Nutrition - Universal nutrition model supporting all data sources
  *
  * CRITICAL CONVENTIONS:
- * 1. ALL values are stored per 100g (solids) or 100ml (liquids)
+ * 1. ALL values are per 100 of the object's measurement basis (see the
+ *    basis field below) - per-100g or per-100ml, as declared by the data
+ *    source. The two are never equivalent and never converted (density).
  * 2. NULL means "unknown/not measured", 0.0 means "confirmed zero"
  * 3. Energy is stored in both kJ and kcal for international compatibility
  * 4. Minerals/vitamins use standard scientific units (mg, µg)
@@ -25,7 +30,14 @@ import li.masciul.sugardaddi.core.enums.DataConfidence;
  */
 public class Nutrition {
     // ========== STORAGE CONVENTION ==========
-    private static final String MEASUREMENT_BASIS = "per_100g_or_100ml";
+    /**
+     * The measurement basis every per-100 value in this object is
+     * expressed in, as declared by the data source - see
+     * {@link NutritionBasis}. This is a property of the DATA, not of the
+     * item's physical nature: the app never converts between bases and
+     * never relabels one as the other. Never null; defaults to PER_100G.
+     */
+    private NutritionBasis basis = NutritionBasis.PER_100G;
 
     // ========== ENERGY ==========
     private Double energyKj;        // Kilojoules per 100g/ml
@@ -200,6 +212,9 @@ public class Nutrition {
      */
     public Nutrition(Nutrition source) {
         if (source != null) {
+            // Storage convention
+            this.basis = source.basis;
+
             // Energy
             this.energyKj = source.energyKj;
             this.energyKcal = source.energyKcal;
@@ -338,6 +353,9 @@ public class Nutrition {
      */
     public Nutrition copy() {
         Nutrition copy = new Nutrition();
+
+        // Storage convention
+        copy.basis = this.basis;
 
         // Energy
         copy.energyKj = this.energyKj;
@@ -621,6 +639,9 @@ public class Nutrition {
 
         Nutrition scaled = new Nutrition(this);
 
+        // Storage convention
+        scaled.basis = this.basis;
+
         // Scale all non-null values
         if (energyKj != null) scaled.energyKj = energyKj * multiplier;
         if (energyKcal != null) scaled.energyKcal = energyKcal * multiplier;
@@ -738,6 +759,12 @@ public class Nutrition {
         if (other == null) return new Nutrition(this);
 
         Nutrition sum = new Nutrition();
+
+        // Aggregation (meals, recipe totals) is gram-driven throughout the
+        // app; a sum of absolute amounts re-normalized per 100g is by
+        // definition gram-basis. Callers mixing bases upstream are
+        // responsible for that decision - add() cannot resolve it.
+        sum.basis = NutritionBasis.PER_100G;
 
         sum.energyKj = addNullable(this.energyKj, other.energyKj);
         sum.energyKcal = addNullable(this.energyKcal, other.energyKcal);
@@ -879,6 +906,21 @@ public class Nutrition {
     }
 
     // ========== GETTERS AND SETTERS ==========
+
+    // Storage convention
+
+    /**
+     * Never returns null - see field Javadoc.
+     */
+    @NonNull
+    public NutritionBasis getBasis() { return basis; }
+
+    /**
+     * Null-tolerant: null normalizes to PER_100G (legacy Room rows).
+     */
+    public void setBasis(NutritionBasis basis) {
+        this.basis = basis != null ? basis : NutritionBasis.PER_100G;
+    }
 
     // Energy
     public Double getEnergyKj() { return energyKj; }

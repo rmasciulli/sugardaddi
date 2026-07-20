@@ -306,6 +306,14 @@ public class SmartMergeStrategy implements MergeStrategy {
      * Merge nutrition data
      */
     private void mergeNutrition(Nutrition primary, Nutrition secondary) {
+        // Never fill fields across differing measurement bases - a per-100ml
+        // value dropped into a per-100g object (or vice versa) is silently
+        // off by the density factor. Whole-object adoption above is fine:
+        // the basis travels with the object.
+        if (primary.getBasis() != secondary.getBasis()) {
+            return;
+        }
+
         // Fill missing values from secondary
         if (primary.getEnergyKcal() == null && secondary.getEnergyKcal() != null) {
             primary.setEnergyKcal(secondary.getEnergyKcal());

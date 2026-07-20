@@ -4,6 +4,7 @@ import android.util.Log;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsProduct;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsNutriments;
@@ -17,6 +18,7 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * OpenFoodFactsMapper - Maps OpenFoodFacts DTOs to domain models
@@ -507,6 +509,26 @@ public class OpenFoodFactsMapper {
     }
 
     /**
+     * OFF's "_100g" nutriment fields hold values per 100g OR per 100ml
+     * depending on how the product is sold (OFF's own documented field
+     * semantics - the suffix does not mean grams). OFF signals volume via
+     * the quantity string ("33 cl", "1 L", "6 x 25cl"), which OFF itself
+     * parses server-side into product_quantity. A volume unit in the
+     * quantity string means the label - and therefore the _100g fields -
+     * are per-100ml. Unrecognized or absent quantity defaults to per-100g,
+     * matching the app's historical behavior for all OFF rows.
+     */
+    private static final Pattern VOLUME_QUANTITY = Pattern.compile(
+            "(?i)(?:^|[\\d\\s.,x*(])\\s*(ml|cl|dl|l|litre|liter)s?\\b");
+
+    private static NutritionBasis resolveBasis(String quantity) {
+        if (quantity != null && VOLUME_QUANTITY.matcher(quantity).find()) {
+            return NutritionBasis.PER_100ML;
+        }
+        return NutritionBasis.PER_100G;
+    }
+
+    /**
      * Map nutrition with per-serving to per-100g conversion AND energy conversion
      *
      * FEATURES:
@@ -521,6 +543,12 @@ public class OpenFoodFactsMapper {
 
         OpenFoodFactsNutriments off = offProduct.getNutriments();
         Nutrition nutrition = new Nutrition();
+
+        // Basis of everything mapped below - see resolveBasis(). Applies
+        // equally to the per-serving conversion path: OFF's serving_quantity
+        // is itself expressed in the product's sold unit (g or ml), so the
+        // converted per-100 values inherit the same basis.
+        nutrition.setBasis(resolveBasis(offProduct.getQuantity()));
 
         // Check if data needs conversion from serving to 100g
         String nutritionDataPer = offProduct.getNutritionDataPer();
