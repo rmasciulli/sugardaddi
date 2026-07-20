@@ -220,6 +220,15 @@ public final class FatSecretMapper {
         n.setCalcium(scaled(chosen.calcium, scale));
         n.setIron(scaled(chosen.iron, scale));
 
+        // FatSecret exposes no salt field - only elemental sodium. Derive
+        // salt via the standard EU labeling formula (salt = sodium x 2.5)
+        // when sodium is present and nothing already set salt directly.
+        // sodium is mg, salt is g, hence the /1000. Same derivation as
+        // USDAMapper - both are US-convention, sodium-only sources.
+        if (n.getSalt() == null && n.getSodium() != null) {
+            n.setSalt(n.getSodium() * 2.5 / 1000.0);
+        }
+
         // Brand foods (e.g. McDonald's) are manufacturer-declared label
         // values; Generic foods aggregate multiple contributor sources of
         // varying rigor. Neither is independently lab-verified the way
@@ -464,6 +473,12 @@ public final class FatSecretMapper {
         n.setPotassium(scaled(serving.potassium, scale));
         // vitaminAPercentDv/vitaminCPercentDv/calciumPercentDv/ironPercentDv
         // intentionally not mapped - %DV, not absolute values, see class Javadoc.
+
+        // Salt derived from sodium (salt = sodium x 2.5, mg to g) - same
+        // rationale as the food path above: FatSecret has no salt field.
+        if (n.getSalt() == null && n.getSodium() != null) {
+            n.setSalt(n.getSodium() * 2.5 / 1000.0);
+        }
 
         n.setDataConfidence(DataConfidence.COMPUTED);
         n.setDataSource(DataSourceType.FATSECRET.getId());
