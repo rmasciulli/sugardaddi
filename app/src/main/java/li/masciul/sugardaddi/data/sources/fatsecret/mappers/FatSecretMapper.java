@@ -10,6 +10,7 @@ import java.util.List;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
@@ -401,9 +402,19 @@ public final class FatSecretMapper {
             }
         }
 
-        // ── Ingredients → FoodPortion stubs (same pattern as TheMealDbMapper) ──
+        // ── Ingredients → FoodPortion stubs (same pattern as TheMealDbMapper)
         if (detail.ingredients != null && detail.ingredients.ingredient != null) {
             recipe.setPortions(mapRecipeIngredients(recipe, detail.ingredients.ingredient));
+        }
+
+        // ── Portion weight → ServingSize ────────────────────────────────────
+        // Persisted with the recipe (RecipeEntity.servingSize) and used by the
+        // detail screen as the smart default amount for the nutrition label.
+        // Set independently of the nutrition block below: the portion weight
+        // is valid on its own even when servingSizes is missing and per-100g
+        // normalization is impossible.
+        if (detail.gramsPerPortion != null && detail.gramsPerPortion > 0) {
+            recipe.setServingSize(new ServingSize(detail.gramsPerPortion, Unit.G));
         }
 
         // ── Nutrition, normalized via gramsPerPortion ───────────────────────

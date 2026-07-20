@@ -8,17 +8,19 @@ import androidx.room.TypeConverters;
 import androidx.annotation.NonNull;
 
 import li.masciul.sugardaddi.core.enums.DataSourceType;
+import li.masciul.sugardaddi.core.enums.Difficulty;
+import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeTranslation;
 import li.masciul.sugardaddi.core.models.RecipeStepMetadata;
 import li.masciul.sugardaddi.core.models.RecipeStepTranslation;
-import li.masciul.sugardaddi.core.models.FoodPortion;
-import li.masciul.sugardaddi.core.enums.Difficulty;
+import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.converters.GeneralConverters;
 import li.masciul.sugardaddi.data.database.converters.RecipeTranslationMapConverter;
 import li.masciul.sugardaddi.data.database.converters.RecipeStepMetadataListConverter;
 import li.masciul.sugardaddi.data.database.converters.RecipeStepTranslationListConverter;
+import li.masciul.sugardaddi.data.database.converters.ServingSizeConverter;
 
 import java.util.*;
 
@@ -118,7 +120,22 @@ public class RecipeEntity {
     private int servings = 1;
     private int prepTimeMinutes = 0;
     private int cookTimeMinutes = 0;
-    private String difficulty; // Stored as String (ID)
+
+    /**
+     * Weight of one portion (e.g. FatSecret's grams_per_portion).
+     * Stored as JSON via ServingSizeConverter, same pattern as
+     * FoodProductEntity.servingSize. Null when the source provides no
+     * portion weight (TheMealDB, TheCocktailDB, user recipes today).
+     */
+    @TypeConverters(ServingSizeConverter.class)
+    private ServingSize servingSize;
+
+    /**
+     * The difficulty of the recipe. Stored as a String (ID).
+     * The latter is then converted to a Difficulty type object
+     * thanks to Difficulty.fromId().
+     */
+    private String difficulty;
 
     // ========== INGREDIENTS ==========
     private String portionsJson; // List<FoodPortion> as JSON
@@ -178,9 +195,11 @@ public class RecipeEntity {
     private boolean isFavorite = false;
     private int accessCount = 0;
 
-    // True for rows populated by a downloaded dataset (Ciqual / USDA bulk import).
-    // Such rows are exempt from TTL eviction - they're dataset members, not
-    // on-demand cache - and are removed only via Settings ▸ cache management.
+    /**
+     * True for rows populated by a downloaded dataset (Ciqual / USDA bulk import).
+     * Such rows are exempt from TTL eviction - they're dataset members, not
+     * on-demand cache - and are removed only via Settings ▸ cache management
+     */
     private boolean localImport = false;
 
     // ========== TIMESTAMPS ==========
@@ -241,6 +260,7 @@ public class RecipeEntity {
         recipe.setServings(this.servings);
         recipe.setPrepTimeMinutes(this.prepTimeMinutes);
         recipe.setCookTimeMinutes(this.cookTimeMinutes);
+        recipe.setServingSize(this.servingSize);
 
         // Convert difficulty
         if (this.difficulty != null) {
@@ -365,6 +385,7 @@ public class RecipeEntity {
         entity.setServings(recipe.getServings() != null ? recipe.getServings() : 1);
         entity.setPrepTimeMinutes(recipe.getPrepTimeMinutes() != null ? recipe.getPrepTimeMinutes() : 0);
         entity.setCookTimeMinutes(recipe.getCookTimeMinutes() != null ? recipe.getCookTimeMinutes() : 0);
+        entity.setServingSize(recipe.getServingSize());
 
         // Convert difficulty
         if (recipe.getDifficulty() != null) {
@@ -537,6 +558,9 @@ public class RecipeEntity {
 
     public String getDifficulty() { return difficulty; }
     public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+
+    public ServingSize getServingSize() { return servingSize; }
+    public void setServingSize(ServingSize servingSize) { this.servingSize = servingSize; }
 
     public String getPortionsJson() { return portionsJson; }
     public void setPortionsJson(String portionsJson) { this.portionsJson = portionsJson; }
