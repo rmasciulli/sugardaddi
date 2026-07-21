@@ -752,6 +752,7 @@ public class NutritionEntity {
 
         // Metadata
         nutrition.setDataSource(this.dataSource);
+        nutrition.setLastUpdated(this.lastUpdated);
         nutrition.setDataCompleteness(this.dataCompleteness);
 
         return nutrition;

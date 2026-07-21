@@ -582,21 +582,38 @@ public class ProductRepository {
 
             productEntity.touch();   // stamps lastUpdated = now (the sync time)
 
-            database.foodProductDao().insertProduct(productEntity);
+            // Product + nutrition commit as one unit. Previously two
+            // independent writes: if insertNutrition failed after
+            // insertProduct had already committed, the product's fresh
+            // lastUpdated survived while its nutrition stayed stale or
+            // missing. The staleness check below now catches that case on
+            // next open regardless, but atomicity closes the gap at the
+            // source instead of relying on detection-and-retry.
+            database.runInTransaction(() -> {
+                database.foodProductDao().insertProduct(productEntity);
 
-            // Nutrition lives in a separate table.
-            if (product.getNutrition() != null) {
-                NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
-                        product.getNutrition(), "product", product.getSearchableId());
-                database.nutritionDao().insertNutrition(nutritionEntity);
-                if (ApiConfig.DEBUG_LOGGING) {
-                    Log.d(TAG, "Saved product with nutrition: "
+                // Nutrition lives in a separate table.
+                if (product.getNutrition() != null) {
+                    NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                            product.getNutrition(), "product", product.getSearchableId());
+                    // REPLACE discards the row; preserve the original creation
+                    // date the same way FoodProductEntity's image paths are
+                    // preserved above.
+                    NutritionEntity existingNutrition = database.nutritionDao()
+                            .getNutritionBySource("product", product.getSearchableId());
+                    if (existingNutrition != null) {
+                        nutritionEntity.setCreatedAt(existingNutrition.getCreatedAt());
+                    }
+                    database.nutritionDao().insertNutrition(nutritionEntity);
+                    if (ApiConfig.DEBUG_LOGGING) {
+                        Log.d(TAG, "Saved product with nutrition: "
+                                + product.getSearchableId() + " (favorite: " + asFavorite + ")");
+                    }
+                } else if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Saved product without nutrition: "
                             + product.getSearchableId() + " (favorite: " + asFavorite + ")");
                 }
-            } else if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Saved product without nutrition: "
-                        + product.getSearchableId() + " (favorite: " + asFavorite + ")");
-            }
+            });
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to save product to database", e);
@@ -641,7 +658,16 @@ public class ProductRepository {
                     database.foodProductDao().updateProduct(cached.product);
 
                     // Staleness comes from the source strategy + row overrides.
-                    boolean stale = isStale(cached.product.getLastUpdated(), strategy);
+                    // Nutrition is checked independently of the parent row: it can
+                    // go stale (or missing) on its own - a failed write, or a
+                    // future nutrition-only refresh (ingredient resolution,
+                    // FatSecret) that never touches the parent's own sync clock.
+                    // isStale() is a pure (timestamp, policy) check, so it applies
+                    // identically to either row.
+                    boolean nutritionStale = (cached.nutrition == null)
+                            || isStale(cached.nutrition.getLastUpdated(), strategy);
+                    boolean stale = isStale(cached.product.getLastUpdated(), strategy)
+                            || nutritionStale;
 
                     // Always show the cached version immediately.
                     FoodProduct product = cached.toFoodProduct();

@@ -231,25 +231,38 @@ public class RecipeRepository {
             entity.setAccessCount(existingEntity.getAccessCount());
         }
 
-        recipeDao.insert(entity);   // REPLACE on conflict
+        // Recipe + nutrition commit as one unit - see ProductRepository's
+        // equivalent for the rationale (split writes previously let a
+        // nutrition-write failure hide behind a fresh parent timestamp).
+        database.runInTransaction(() -> {
+            recipeDao.insert(entity);   // REPLACE on conflict
 
-        // Nutrition lives in a separate table (RecipeWithNutrition's Room
-        // @Relation joins on NutritionEntity.sourceId == RecipeEntity.id) -
-        // was never being written here at all, only ever read. Invisible
-        // until now because no recipe source had real nutrition to lose in
-        // this exact spot before FatSecret (TheMealDB/TheCocktailDB never
-        // call recipe.setNutrition() in their own mappers). Mirrors
-        // ProductRepository's proven, working equivalent exactly.
-        if (recipe.getNutrition() != null) {
-            NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
-                    recipe.getNutrition(), "recipe", recipe.getSearchableId());
-            database.nutritionDao().insertNutrition(nutritionEntity);
-            if (ApiConfig.DEBUG_LOGGING) {
-                Log.d(TAG, "Saved recipe with nutrition: " + recipe.getSearchableId());
+            // Nutrition lives in a separate table (RecipeWithNutrition's Room
+            // @Relation joins on NutritionEntity.sourceId == RecipeEntity.id) -
+            // was never being written here at all, only ever read. Invisible
+            // until now because no recipe source had real nutrition to lose in
+            // this exact spot before FatSecret (TheMealDB/TheCocktailDB never
+            // call recipe.setNutrition() in their own mappers). Mirrors
+            // ProductRepository's proven, working equivalent exactly.
+            if (recipe.getNutrition() != null) {
+                NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                        recipe.getNutrition(), "recipe", recipe.getSearchableId());
+                // REPLACE discards the row; preserve the original creation
+                // date the same way RecipeEntity's own fields are preserved
+                // above.
+                NutritionEntity existingNutrition = database.nutritionDao()
+                        .getNutritionBySource("recipe", recipe.getSearchableId());
+                if (existingNutrition != null) {
+                    nutritionEntity.setCreatedAt(existingNutrition.getCreatedAt());
+                }
+                database.nutritionDao().insertNutrition(nutritionEntity);
+                if (ApiConfig.DEBUG_LOGGING) {
+                    Log.d(TAG, "Saved recipe with nutrition: " + recipe.getSearchableId());
+                }
+            } else if (ApiConfig.DEBUG_LOGGING) {
+                Log.d(TAG, "Saved recipe without nutrition: " + recipe.getSearchableId());
             }
-        } else if (ApiConfig.DEBUG_LOGGING) {
-            Log.d(TAG, "Saved recipe without nutrition: " + recipe.getSearchableId());
-        }
+        });
 
         // Heal-on-open: keep a favorite's thumbnail + hero cached for offline use.
         if (entity.isFavorite()) {
@@ -280,14 +293,19 @@ public class RecipeRepository {
                     cached.recordAccess();  // accessCount + lastViewed
                     recipeDao.update(cached);
 
-                    boolean stale = isStale(cached.getLastUpdated(), source.getCacheStrategy());
-
                     // cached.toRecipe() never includes nutrition (RecipeEntity's own
                     // comment confirms it deliberately doesn't) - only the
                     // RecipeWithNutrition relation does, via its Room @Relation join.
                     RecipeWithNutrition cachedWithNutrition = recipeDao.getByIdWithNutrition(cached.getId());
                     Recipe recipe = (cachedWithNutrition != null)
                             ? cachedWithNutrition.toRecipe() : cached.toRecipe();
+
+                    // See ProductRepository.resolveProduct() for the rationale -
+                    // nutrition staleness is independent of the recipe row.
+                    boolean nutritionStale = (cachedWithNutrition == null || cachedWithNutrition.nutrition == null)
+                            || isStale(cachedWithNutrition.nutrition.getLastUpdated(), source.getCacheStrategy());
+                    boolean stale = isStale(cached.getLastUpdated(), source.getCacheStrategy())
+                            || nutritionStale;
                     runOnMainThread(() -> callback.onSuccess(recipe));
 
                     if (stale) {
