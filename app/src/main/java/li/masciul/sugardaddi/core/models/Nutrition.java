@@ -343,7 +343,11 @@ public class Nutrition {
 
             this.dataSource = source.dataSource;
             this.dataCompleteness = source.dataCompleteness;
-            this.lastUpdated = System.currentTimeMillis();
+            this.dataConfidence = source.dataConfidence;
+            // A copy is the same data - it keeps the source's age. Only
+            // the default constructor stamps "now" (fresh objects being
+            // filled by a mapper).
+            this.lastUpdated = source.lastUpdated;
         }
     }
 
@@ -475,7 +479,8 @@ public class Nutrition {
         // Metadata
         copy.dataSource = this.dataSource;
         copy.dataCompleteness = this.dataCompleteness;
-        copy.lastUpdated = System.currentTimeMillis();
+        copy.dataConfidence = this.dataConfidence;
+        copy.lastUpdated = this.lastUpdated;
 
         // Copy source-specific data if needed
         if (this.sourceSpecificData != null) {
@@ -748,7 +753,13 @@ public class Nutrition {
         if (organicAcids != null) scaled.organicAcids = organicAcids * multiplier;
         if (ash != null) scaled.ash = ash * multiplier;
 
-        scaled.dataSource = this.dataSource + " (scaled)";
+        // Origin is unchanged by scaling - dataSource is a machine-readable
+        // id (DataSourceType.fromString reads it for attribution) and must
+        // never be decorated.
+        scaled.dataSource = this.dataSource;
+        // Scaling changes the amount, not the provenance - a scaled
+        // SCIENTIFIC value is still a SCIENTIFIC measurement.
+        scaled.dataConfidence = this.dataConfidence;
         return scaled;
     }
 
@@ -871,7 +882,20 @@ public class Nutrition {
         sum.organicAcids = addNullable(this.organicAcids, other.organicAcids);
         sum.ash = addNullable(this.ash, other.ash);
 
-        sum.dataSource = "calculated";
+        // Preserve the origin when both operands share one (a sum of two
+        // Ciqual values is still Ciqual-derived data); mixed or unknown
+        // origins get the "calculated" sentinel, which deliberately
+        // resolves to no DataSourceType and thus no attribution line.
+        sum.dataSource = (this.dataSource != null && this.dataSource.equals(other.dataSource))
+                ? this.dataSource
+                : "calculated";
+        // An aggregate is never more trustworthy than its weakest input,
+        // and never better than COMPUTED - it is by definition a value the
+        // app calculated, not one a lab measured or a label declared, even
+        // when both inputs are SCIENTIFIC. This implements the propagation
+        // the COMPUTED tier's own Javadoc describes ("each ingredient's
+        // confidence level propagates upward").
+        sum.dataConfidence = weakestConfidence(this.dataConfidence, other.dataConfidence);
         return sum;
     }
 
@@ -880,6 +904,31 @@ public class Nutrition {
         if (a == null) return b;
         if (b == null) return a;
         return a + b;
+    }
+
+    /**
+     * Confidence tier for an aggregate of two Nutrition objects: the
+     * weaker of the two inputs, floored at COMPUTED (see the comment at
+     * the call site in add()).
+     *
+     * Null inputs count as ESTIMATED, matching the display-time fallback
+     * in NutritionLabelManager.
+     *
+     * RELIES ON DECLARATION ORDER: DataConfidence declares its constants
+     * strongest-first (SCIENTIFIC..USER, documented as load-bearing in
+     * that enum's Javadoc), so a higher ordinal means weaker confidence.
+     *
+     * @param a Confidence of the first operand, may be null.
+     * @param b Confidence of the second operand, may be null.
+     * @return Never null.
+     */
+    private static DataConfidence weakestConfidence(DataConfidence a, DataConfidence b) {
+        DataConfidence ca = a != null ? a : DataConfidence.ESTIMATED;
+        DataConfidence cb = b != null ? b : DataConfidence.ESTIMATED;
+        DataConfidence weaker = ca.ordinal() >= cb.ordinal() ? ca : cb;
+        return weaker.ordinal() >= DataConfidence.COMPUTED.ordinal()
+                ? weaker
+                : DataConfidence.COMPUTED;
     }
 
     /**

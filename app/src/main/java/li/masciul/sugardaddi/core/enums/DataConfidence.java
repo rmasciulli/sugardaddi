@@ -12,7 +12,10 @@ import li.masciul.sugardaddi.R;
  * Attached to every {@link li.masciul.sugardaddi.core.models.Nutrition} object
  * to give users and the app transparency about how trustworthy a nutrition value is.
  *
- * ORDERED FROM HIGHEST TO LOWEST CONFIDENCE.
+ * ORDERED FROM HIGHEST TO LOWEST CONFIDENCE. This declaration order is
+ * LOAD-BEARING: Nutrition.weakestConfidence() compares ordinals to find
+ * the weaker of two tiers. Do not reorder or insert constants without
+ * updating that logic.
  *
  * UI USAGE
  * ========
