@@ -195,9 +195,21 @@ public class Nutrition {
     private DataConfidence dataConfidence;
 
     // ========== METADATA ==========
-    private String dataSource;        // "OFF", "ciqual", "usda", etc.
-    private float completeness = -1;   // % of basic fields with data
-    private float dataCompleteness = -1; // Alternative completeness measure
+    private String dataSource;              // "OFF", "ciqual", "usda", etc.
+    private float completeness = -1;        // % of basic fields with data
+    private float dataCompleteness = -1;    // Alternative completeness measure
+
+    /**
+     * Age of this data. Populated from NutritionEntity.lastUpdated on every
+     * load (see NutritionEntity.toNutrition()) and preserved honestly
+     * through copy()/scale(). NOT written back to the entity on save -
+     * NutritionEntity generates its own write-time timestamp independently
+     * (see its constructor), so the persisted "when was this actually
+     * written" signal the cache relies on is never at the mercy of
+     * whatever this in-memory object happens to carry (e.g. a copy()
+     * built from stale source data). Read-only from the entity's
+     * perspective; do not add a reverse sync.
+     */
     private long lastUpdated;
     private Map<String, Object> sourceSpecificData = new HashMap<>();
 
