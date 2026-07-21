@@ -314,6 +314,49 @@
                     android:textColor="?attr/colorOnSurface"
                     android:layout_marginBottom="12dp" />
 
+                <!-- Custom amount input - same widget/style as detail_default_product.xml.
+                     Lives inside nutritionCard, so it's hidden along with the rest of the
+                     card when the recipe has no nutrition data (see
+                     DefaultRecipeDetailRenderer.populateNutritionState). -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_nutrition_block"
+                    android:padding="1dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/customAmountInputLayout"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/custom_amount_default"
+                        app:boxBackgroundColor="?attr/colorSurface"
+                        app:boxStrokeColor="@android:color/transparent"
+                        app:boxStrokeWidthFocused="0dp"
+                        app:boxCornerRadiusTopStart="7dp"
+                        app:boxCornerRadiusTopEnd="7dp"
+                        app:boxCornerRadiusBottomStart="7dp"
+                        app:boxCornerRadiusBottomEnd="7dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/customAmountEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/colorSurface"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

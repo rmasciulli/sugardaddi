@@ -1,6 +1,8 @@
 package li.masciul.sugardaddi.ui.delegates.detail;
 
 import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +12,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -17,10 +22,12 @@ import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeStep;
+import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * DefaultRecipeDetailRenderer - Catch-all detail renderer for Recipe items.
@@ -51,6 +58,8 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
     private final Context context;
 
     private NutritionLabelManager<Recipe> nutritionLabelManager;
+
+    private TextWatcher customAmountWatcher;
 
     public DefaultRecipeDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -93,6 +102,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
             nutritionLabelManager.clear();
             nutritionLabelManager = null;
         }
+        customAmountWatcher = null;
     }
 
     /**
@@ -106,8 +116,6 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         }
         return null;
     }
-
-    // destroy() default no-op is sufficient - no TextWatchers or heavy resources held.
 
     // ========== POPULATE HELPERS ==========
 
@@ -366,7 +374,34 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
             nutritionLabelManager = new NutritionLabelManager<>(
                     context, nutritionContainer, NutritionLabelMode.DETAILED);
-            nutritionLabelManager.display(recipe);
+
+            double defaultAmount = getSmartDefaultAmount(recipe);
+            nutritionLabelManager.display(recipe, defaultAmount);
+
+            TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
+            TextInputEditText amountInput = view.findViewById(R.id.customAmountEditText);
+
+            if (amountLayout != null && amountInput != null) {
+                updateAmountHint(amountLayout, recipe);
+
+                customAmountWatcher = new TextWatcher() {
+                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                    @Override public void afterTextChanged(Editable s) {}
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        if (nutritionLabelManager == null) return;
+                        try {
+                            String input = s.toString().trim();
+                            if (!input.isEmpty()) {
+                                double amount = Double.parseDouble(input);
+                                if (amount > 0) nutritionLabelManager.updateCustomAmount(amount);
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
+                };
+                amountInput.addTextChangedListener(customAmountWatcher);
+            }
         } else {
             nutritionCard.setVisibility(View.GONE);
             noNutritionCard.setVisibility(View.VISIBLE);
@@ -375,5 +410,51 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
     private void populateAttribution(@NonNull View view, @NonNull Recipe recipe) {
         DetailRendererUtils.populateAttribution(context, view, recipe.getDataSource());
+    }
+
+    // ========== NUTRITION AMOUNT HELPERS ==========
+
+    /**
+     * Hint text for the custom-amount field: shows the serving size in grams
+     * when known, a generic prompt otherwise. Unit comes from the recipe's
+     * own nutrition basis (per-100g or per-100ml, as declared by its
+     * source) - never assumed from the recipe's physical nature.
+     */
+    private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull Recipe recipe) {
+        ServingSize serving = recipe.getServingSize();
+        String unit = recipe.getNutrition() != null
+                ? recipe.getNutrition().getBasis().getUnitLabel()
+                : "g";
+        if (serving != null && serving.isValid()) {
+            Double servingGrams = serving.getAsGrams();
+            if (servingGrams != null && servingGrams > 0) {
+                layout.setHint(context.getString(R.string.custom_amount_with_serving,
+                        formatAmount(servingGrams) + unit));
+                return;
+            }
+        }
+        layout.setHint(context.getString(R.string.custom_amount_default));
+    }
+
+    /**
+     * Default amount for the nutrition label's third column: the recipe's
+     * own portion weight when known (e.g. FatSecret's grams_per_portion,
+     * see RecipeEntity.servingSize), 150g otherwise - a plated-portion
+     * default, distinct from FoodProduct's 20g fallback (a spoonful of a
+     * product vs. a serving of a dish are different scales).
+     */
+    private double getSmartDefaultAmount(@NonNull Recipe recipe) {
+        ServingSize serving = recipe.getServingSize();
+        if (serving != null && serving.isValid()) {
+            Double servingGrams = serving.getAsGrams();
+            if (servingGrams != null && servingGrams > 0) return servingGrams;
+        }
+        return 150.0;
+    }
+
+    private String formatAmount(double amount) {
+        return (amount == Math.floor(amount))
+                ? String.format(Locale.getDefault(), "%.0f", amount)
+                : String.format(Locale.getDefault(), "%.1f", amount);
     }
 }
