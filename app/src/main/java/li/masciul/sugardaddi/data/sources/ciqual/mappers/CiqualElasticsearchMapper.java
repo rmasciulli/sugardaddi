@@ -687,6 +687,17 @@ public class CiqualElasticsearchMapper {
 
         Log.d(TAG, "Matched " + matchedCount + " nutrients out of " + compos.size() + " entries");
 
+        // Ciqual usually reports salt directly (lab-measured, matched above
+        // via PATTERN_SALT) - but like any per-product field in a real
+        // dataset, some specific entries lack it even when sodium is
+        // present. Fallback only: never overrides a real measured value,
+        // which is better data than a formula. Same derivation as
+        // USDAMapper/FatSecretMapper (salt = sodium x 2.5, mg to g) for
+        // consistency across all four numeric sources.
+        if (nutrition.getSalt() == null && nutrition.getSodium() != null) {
+            nutrition.setSalt(nutrition.getSodium() * 2.5 / 1000.0);
+        }
+
         // Return nutrition object only if we matched at least some basic nutrients
         if (matchedCount > 0) {
             nutrition.setDataConfidence(DataConfidence.SCIENTIFIC);
