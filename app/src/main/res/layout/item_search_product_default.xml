@@ -95,12 +95,16 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Product image: 72x72dp -->
+            <!-- Product image: 72x72dp, optional - GONE by default, matches
+                 item_search_product_ciqual/usda's pattern. bindImage() shows it
+                 only when a real thumbnail source resolves; no placeholder icon. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/imageContainer"
                 android:layout_width="72dp"
                 android:layout_height="72dp"
                 android:layout_marginEnd="12dp"
+                android:visibility="gone"
+                tools:visibility="visible"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"

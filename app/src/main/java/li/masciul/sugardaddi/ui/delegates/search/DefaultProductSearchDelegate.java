@@ -154,10 +154,14 @@ public class DefaultProductSearchDelegate
 
     private void bindImage(ViewHolder holder, FoodProduct product) {
         Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
-        if (source != null) {
+        if (source != null && holder.imageContainer != null) {
             ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
-        } else {
-            holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
+            holder.imageContainer.setVisibility(View.VISIBLE);
+        } else if (holder.imageContainer != null) {
+            // No real thumbnail - collapse the slot entirely rather than
+            // showing a generic placeholder icon, matching how Ciqual/USDA
+            // cards (sources with no images at all) already behave.
+            holder.imageContainer.setVisibility(View.GONE);
         }
         // Expand affordance on the thumbnail; opens the FULL original (image source,
         // not the thumbnail); icon shows only when openable.
@@ -175,6 +179,7 @@ public class DefaultProductSearchDelegate
         final TextView  brandName;
         final TextView  categories;
         final TextView  servingInfo;
+        final View      imageContainer;
         final ImageView productImage;
         final ImageView cardExpandIcon;
 
@@ -186,6 +191,7 @@ public class DefaultProductSearchDelegate
             brandName      = itemView.findViewById(R.id.brandName);
             categories     = itemView.findViewById(R.id.categories);
             servingInfo    = itemView.findViewById(R.id.servingInfo);
+            imageContainer = itemView.findViewById(R.id.imageContainer);
             productImage   = itemView.findViewById(R.id.productImage);
             cardExpandIcon = itemView.findViewById(R.id.cardExpandIcon);
         }
