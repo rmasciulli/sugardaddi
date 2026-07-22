@@ -470,6 +470,15 @@ public class CiqualImportService extends Service {
             }
             n.setDataConfidence(confidence);
 
+            // Same per-product gap as the live Elasticsearch path (see
+            // CiqualElasticsearchMapper) - most Ciqual entries report salt
+            // directly (code 10100), but some specific foods in the bulk
+            // dataset lack it even with sodium present. Fallback only:
+            // never overrides a real measured value.
+            if (n.getSalt() == null && n.getSodium() != null) {
+                n.setSalt(n.getSodium() * 2.5 / 1000.0);
+            }
+
             NutritionEntity ne = NutritionEntity.fromNutrition(n, "product", entityId);
             ne.setDataSource(CiqualConstants.SOURCE_ID);
             batch.add(ne);
