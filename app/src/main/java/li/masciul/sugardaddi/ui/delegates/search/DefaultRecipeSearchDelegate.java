@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Recipe;
@@ -76,11 +77,29 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         Recipe recipe = (Recipe) item;
 
         bindName(holder, recipe, language);
+        bindSourceBadge(holder, recipe);
         bindImage(holder, recipe);
         bindDescription(holder, recipe, language);
         bindTime(holder, recipe);
         bindServings(holder, recipe);
         bindDifficulty(holder, recipe);
+        // Separators depend on which of time/servings/difficulty actually
+        // rendered above, so this runs last.
+        bindSeparators(holder);
+    }
+
+    /** Mirrors DefaultProductSearchDelegate.bindSourceBadge() exactly. */
+    private void bindSourceBadge(ViewHolder holder, Recipe recipe) {
+        DataSourceType source = recipe.getDataSource();
+        if (source != null) {
+            String label = source.getDisplayName(context);
+            if (label != null && !label.isEmpty()) {
+                holder.sourceBadge.setText(label);
+                holder.sourceBadge.setVisibility(View.VISIBLE);
+                return;
+            }
+        }
+        holder.sourceBadge.setVisibility(View.GONE);
     }
 
     // ========== BINDING HELPERS ==========
@@ -152,6 +171,24 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         }
     }
 
+    /**
+     * The two dot separators sit between time/servings/difficulty and must
+     * not outlive their neighbors. Each separator is shown only when BOTH
+     * the field before and after it are visible - previously they were
+     * static in the layout and rendered alone (two lonely dots) whenever a
+     * recipe had none of the three fields, e.g. several FatSecret entries.
+     */
+    private void bindSeparators(ViewHolder holder) {
+        boolean timeVisible       = holder.recipeTime.getVisibility() == View.VISIBLE;
+        boolean servingsVisible   = holder.recipeServings.getVisibility() == View.VISIBLE;
+        boolean difficultyVisible = holder.recipeDifficulty.getVisibility() == View.VISIBLE;
+
+        holder.separator1.setVisibility(
+                (timeVisible && servingsVisible) ? View.VISIBLE : View.GONE);
+        holder.separator2.setVisibility(
+                (servingsVisible && difficultyVisible) ? View.VISIBLE : View.GONE);
+    }
+
     // ========== VIEW HOLDER ==========
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -159,10 +196,13 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
         final ImageView recipeImage;
         final ImageView cardExpandIcon;
         final TextView  recipeName;
+        final TextView  sourceBadge;
         final TextView  recipeDescription;
         final TextView  recipeTime;
         final TextView  recipeServings;
         final TextView  recipeDifficulty;
+        final View      separator1;
+        final View      separator2;
 
         ViewHolder(View itemView) {
             super(itemView);
@@ -170,10 +210,13 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
             recipeImage       = itemView.findViewById(R.id.recipeImage);
             cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
             recipeName        = itemView.findViewById(R.id.recipeName);
+            sourceBadge       = itemView.findViewById(R.id.sourceBadge);
             recipeDescription = itemView.findViewById(R.id.recipeDescription);
             recipeTime        = itemView.findViewById(R.id.recipeTime);
             recipeServings    = itemView.findViewById(R.id.recipeServings);
             recipeDifficulty  = itemView.findViewById(R.id.recipeDifficulty);
+            separator1        = itemView.findViewById(R.id.separator1);
+            separator2        = itemView.findViewById(R.id.separator2);
         }
     }
 }
