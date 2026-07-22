@@ -103,10 +103,15 @@ public final class FatSecretMapper {
         product.setSourceIdentifier(new SourceIdentifier(DataSourceType.FATSECRET.getId(), foodIdStr));
         product.setDataSource(DataSourceType.FATSECRET);
 
-        String name = food.brandName != null && !food.brandName.trim().isEmpty()
-                ? food.foodName.trim()  // Brand name is stored separately, not prefixed onto the name
-                : food.foodName.trim();
-        product.setName(name, language);
+        product.setName(food.foodName.trim(), language);
+
+        // Brand is stored separately (FoodProduct.brand - the same field OFF
+        // already populates and DefaultProductDetailRenderer/SearchDelegate
+        // already display), not prefixed onto the name. Available on search
+        // results too, unlike rating.
+        if (food.brandName != null && !food.brandName.trim().isEmpty()) {
+            product.setBrand(food.brandName.trim(), language);
+        }
 
         // No structured nutrition from search results - see class Javadoc.
         // A getProduct() call (mapFoodDetail below) is required for real values.
@@ -142,6 +147,11 @@ public final class FatSecretMapper {
         product.setDataSource(DataSourceType.FATSECRET);
 
         product.setName(detail.foodName.trim(), language);
+
+        // See mapFoodSearchResult() for the rationale.
+        if (detail.brandName != null && !detail.brandName.trim().isEmpty()) {
+            product.setBrand(detail.brandName.trim(), language);
+        }
 
         Nutrition nutrition = mapFoodServings(
                 detail.servings != null ? detail.servings.serving : null);
