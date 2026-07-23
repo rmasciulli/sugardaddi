@@ -7,6 +7,8 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -113,6 +115,11 @@ public final class FatSecretMapper {
             product.setBrand(food.brandName.trim(), language);
         }
 
+        // Best-effort estimate for the search card - see
+        // parseFoodDescriptionNutrition()'s javadoc for exactly when this
+        // does and doesn't produce a value.
+        product.setNutrition(parseFoodDescriptionNutrition(food.foodDescription));
+
         // No structured nutrition from search results - see class Javadoc.
         // A getProduct() call (mapFoodDetail below) is required for real values.
 
@@ -122,6 +129,59 @@ public final class FatSecretMapper {
         product.calculateCompleteness();
 
         return product;
+    }
+
+    /**
+     * Matches FatSecret's food_description ONLY when the quantity clause is
+     * an explicit gram figure - e.g. "Per 100g", "Per 212g", "Per 1034g".
+     * Confirmed against real search data (not just FatSecret's docs example):
+     * every Generic food expresses its quantity this way, even when not
+     * literally 100g. Branded foods never do - "Per 1 bar", "Per 3 squares",
+     * "Per 1 cup" have no gram equivalent anywhere in the string, so they
+     * never match and are correctly left unparsed (same gap as food.get's
+     * missing metric_serving_amount for these same items).
+     *
+     * Tolerant of the double-space-before-dash quirk seen in real responses
+     * ("Per 2 squares  - Calories...").
+     */
+    private static final Pattern FOOD_DESCRIPTION_PATTERN = Pattern.compile(
+            "^Per\\s+(\\d+(?:\\.\\d+)?)g\\s*-\\s*" +
+                    "Calories:\\s*(\\d+(?:\\.\\d+)?)kcal\\s*\\|\\s*" +
+                    "Fat:\\s*(\\d+(?:\\.\\d+)?)g\\s*\\|\\s*" +
+                    "Carbs:\\s*(\\d+(?:\\.\\d+)?)g\\s*\\|\\s*" +
+                    "Protein:\\s*(\\d+(?:\\.\\d+)?)g",
+            Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Best-effort nutrition estimate from a search result's food_description,
+     * scaled to per-100g. Returns null when the quantity clause isn't an
+     * explicit gram figure - see FOOD_DESCRIPTION_PATTERN's javadoc. This is
+     * a preview only: opening the item still calls mapFoodDetail(), whose
+     * own (independent, more complete when available) nutrition replaces
+     * this the moment the detail screen loads.
+     */
+    @Nullable
+    private static Nutrition parseFoodDescriptionNutrition(@Nullable String description) {
+        if (description == null) return null;
+        Matcher m = FOOD_DESCRIPTION_PATTERN.matcher(description.trim());
+        if (!m.find()) return null;
+
+        double grams = Double.parseDouble(m.group(1));
+        if (grams <= 0) return null;
+        double scale = 100.0 / grams;
+
+        Nutrition n = new Nutrition();
+        n.setBasis(NutritionBasis.PER_100G);
+        n.setEnergyKcal(Double.parseDouble(m.group(2)) * scale);
+        n.setFat(Double.parseDouble(m.group(3)) * scale);
+        n.setCarbohydrates(Double.parseDouble(m.group(4)) * scale);
+        n.setProteins(Double.parseDouble(m.group(5)) * scale);
+        // Parsed from a formatted summary string and linearly scaled, not a
+        // lab measurement or the source's own declared per-100g figure -
+        // ESTIMATED is the honest tier here.
+        n.setDataConfidence(DataConfidence.ESTIMATED);
+        n.setDataSource(DataSourceType.FATSECRET.getId());
+        return n;
     }
 
 

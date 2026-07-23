@@ -174,20 +174,49 @@
                     tools:visibility="visible"
                     tools:text="Cereals and cereal products" />
 
-                <!-- Serving/weight: Roboto Condensed italic, muted -->
-                <TextView
-                    android:id="@+id/servingInfo"
+                <!-- Nutrition row: carbs left, kcal badge right - same convention
+                     as item_search_product_ciqual/usda.xml. Carbs lead because
+                     this is a glycemic-tracking app; kcal is secondary. Row is
+                     GONE entirely when there's no nutrition at all (e.g. every
+                     FatSecret search result - see FatSecretMapper's own
+                     comment: search results carry no structured nutrition). -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_condensed"
-                    android:textStyle="italic"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:text="100 g" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/nutritionSummary"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/roboto_condensed"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="20.3g carbohydrates per 100g" />
+
+                    <TextView
+                        android:id="@+id/kcalBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:paddingHorizontal="7dp"
+                        android:paddingVertical="2dp"
+                        android:textAppearance="?attr/textAppearanceLabelSmall"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:background="@drawable/rounded_corner_8dp"
+                        android:backgroundTint="?attr/colorTertiaryContainer"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="180 kcal" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

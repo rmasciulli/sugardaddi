@@ -13,6 +13,7 @@ import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
@@ -74,7 +75,8 @@ public class DefaultProductSearchDelegate
         bindProductType(holder, product);
         bindBrand(holder, product, language);
         bindCategory(holder, product, language);
-        bindServingInfo(holder, product);
+        bindNutritionSummary(holder, product, language);
+        bindKcalBadge(holder, product);
         bindImage(holder, product);
     }
 
@@ -135,21 +137,46 @@ public class DefaultProductSearchDelegate
         }
     }
 
-    private void bindServingInfo(ViewHolder holder, FoodProduct product) {
-        StringBuilder info = new StringBuilder();
-        ServingSize servingSize = product.getServingSize();
-        String servingText = servingSize != null ? servingSize.getDisplayText() : null;
-        info.append(servingText != null && !servingText.trim().isEmpty()
-                ? servingText : "100g");
-        if (product.getNutrition() != null) {
-            Double energy = product.getNutrition().getEnergyKcal();
-            if (energy != null && energy > 0) {
-                info.append(" \u00b7 ");
-                info.append(String.format(Locale.getDefault(), "%.0f kcal/100g", energy));
-            }
+    /**
+     * Carbs summary, basis-aware unit - same convention as
+     * CiqualProductSearchDelegate/USDAProductSearchDelegate. Carbs lead
+     * because this is a glycemic-tracking app. GONE when there's no
+     * nutrition at all, which is every FatSecret search result today.
+     */
+    private void bindNutritionSummary(ViewHolder holder, FoodProduct product, String language) {
+        Nutrition nutrition = product.getNutrition();
+        if (nutrition == null) {
+            holder.nutritionSummary.setVisibility(View.GONE);
+            return;
         }
-        holder.servingInfo.setText(info.toString());
-        holder.servingInfo.setVisibility(View.VISIBLE);
+        Double carbs = nutrition.getCarbohydrates();
+        if (carbs != null && carbs > 0) {
+            String label = "fr".equals(language) ? "glucides" : "carbohydrates";
+            String unit = "100" + nutrition.getBasis().getUnitLabel();
+            String text = String.format(Locale.getDefault(),
+                    "%.1fg of %s per %s", carbs, label, unit);
+            holder.nutritionSummary.setText(text);
+            holder.nutritionSummary.setVisibility(View.VISIBLE);
+        } else {
+            holder.nutritionSummary.setVisibility(View.GONE);
+        }
+    }
+
+    /** Kcal pill badge, integer value, tertiary container styling. */
+    private void bindKcalBadge(ViewHolder holder, FoodProduct product) {
+        Nutrition nutrition = product.getNutrition();
+        if (nutrition == null) {
+            holder.kcalBadge.setVisibility(View.GONE);
+            return;
+        }
+        Double kcal = nutrition.getEnergyKcal();
+        if (kcal != null && kcal > 0) {
+            holder.kcalBadge.setText(
+                    String.format(Locale.getDefault(), "%.0f kcal", kcal));
+            holder.kcalBadge.setVisibility(View.VISIBLE);
+        } else {
+            holder.kcalBadge.setVisibility(View.GONE);
+        }
     }
 
     private void bindImage(ViewHolder holder, FoodProduct product) {
@@ -178,7 +205,8 @@ public class DefaultProductSearchDelegate
         final TextView  productType;   // source qualifier, e.g. "USDA"
         final TextView  brandName;
         final TextView  categories;
-        final TextView  servingInfo;
+        final TextView  nutritionSummary;
+        final TextView  kcalBadge;
         final View      imageContainer;
         final ImageView productImage;
         final ImageView cardExpandIcon;
@@ -190,7 +218,8 @@ public class DefaultProductSearchDelegate
             productType    = itemView.findViewById(R.id.productType);
             brandName      = itemView.findViewById(R.id.brandName);
             categories     = itemView.findViewById(R.id.categories);
-            servingInfo    = itemView.findViewById(R.id.servingInfo);
+            nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
+            kcalBadge        = itemView.findViewById(R.id.kcalBadge);
             imageContainer = itemView.findViewById(R.id.imageContainer);
             productImage   = itemView.findViewById(R.id.productImage);
             cardExpandIcon = itemView.findViewById(R.id.cardExpandIcon);
