@@ -2,10 +2,17 @@
 <!--
     chip_tag_compact.xml
     Compact read-only chip for tag display in search cards.
-    Inflated programmatically by MealDbRecipeSearchDelegate.bindTags().
+    Inflated programmatically by MealDbRecipeSearchDelegate.bindTags()
+    (and CocktailDb/FatSecret's equivalents, plus FatSecretRecipeDetailRenderer).
 
     Uses Widget.Material3.Chip.Filter style - confirmed present in the project
     (used in activity_favorites.xml). Reduced text size via textAppearanceLabelSmall.
+    chipMinHeight and icon visibility are overridden below: Filter's default
+    32dp height and reserved checkmark-icon space are both meant for
+    selectable chips, but every chip inflated from this layout is always
+    setCheckable(false) - the icon space was being reserved for a checkmark
+    that can never appear, making the chip visibly wider/taller than a plain
+    text label needs.
 -->
 <com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -14,10 +21,13 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:textAppearance="?attr/textAppearanceLabelSmall"
+    app:chipMinHeight="24dp"
     app:chipStartPadding="6dp"
     app:chipEndPadding="6dp"
     app:textStartPadding="0dp"
     app:textEndPadding="0dp"
+    app:chipIconVisible="false"
+    app:checkedIconVisible="false"
     app:ensureMinTouchTargetSize="false"
     android:clickable="false"
     android:focusable="false"
