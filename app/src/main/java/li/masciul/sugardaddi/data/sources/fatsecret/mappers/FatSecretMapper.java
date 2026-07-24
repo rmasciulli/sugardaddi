@@ -465,6 +465,42 @@ public final class FatSecretMapper {
         if (detail.cookingTimeMin != null) {
             recipe.setCookTimeMinutes(detail.cookingTimeMin);
         }
+
+        // Star rating - detail-only (recipes.search never carries it). No
+        // rating_count exists anywhere in FatSecret's schema, so
+        // Recipe.ratingCount stays at its default (0); the UI must not
+        // imply a review count that was never provided.
+        if (detail.rating != null && detail.rating > 0) {
+            recipe.setRating(detail.rating.floatValue());
+        }
+
+        // Tags from both recipe_types (small, curated - "Dessert",
+        // "Beverage") and recipe_categories (rich, up to a dozen+ - "Low
+        // Calorie", "Weight Watchers Points"). Lowercase storage, matching
+        // TheMealDbMapper's own convention - display-side capitalization
+        // happens in the renderer, same as MealDB/CocktailDB's cards.
+        java.util.Set<String> tags = new java.util.HashSet<>();
+
+        if (detail.recipeTypes != null && detail.recipeTypes.recipeType != null) {
+            for (String type : detail.recipeTypes.recipeType) {
+                if (type != null && !type.trim().isEmpty()) {
+                    tags.add(type.trim().toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+        }
+
+        if (detail.recipeCategories != null && detail.recipeCategories.recipeCategory != null) {
+            for (RecipeGetResponse.RecipeCategory category : detail.recipeCategories.recipeCategory) {
+                if (category.recipeCategoryName != null && !category.recipeCategoryName.trim().isEmpty()) {
+                    tags.add(category.recipeCategoryName.trim().toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+        }
+
+        if (!tags.isEmpty()) {
+            recipe.setTags(tags);
+        }
+
         if (detail.recipeImages != null && detail.recipeImages.recipeImage != null
                 && !detail.recipeImages.recipeImage.isEmpty()) {
             recipe.setImageUrl(detail.recipeImages.recipeImage.get(0));

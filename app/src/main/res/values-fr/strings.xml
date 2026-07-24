@@ -795,6 +795,7 @@
     <string name="share_recipe_source_prefix">via</string>
     <string name="share_recipe_subject">%s - recette SugarDaddi</string>
     <string name="recipe_section_ingredients">Ingrédients</string>
+    <string name="recipe_section_categories">Catégories</string>
     <string name="recipe_section_instructions">Instructions</string>
     <string name="recipe_section_notes">Notes</string>
     <string name="recipe_no_nutrition_data">Aucune donnée nutritionnelle disponible pour cette recette.</string>

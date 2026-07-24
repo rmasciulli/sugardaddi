@@ -32,6 +32,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DefaultRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
+import li.masciul.sugardaddi.ui.delegates.detail.FatSecretRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
@@ -154,6 +155,7 @@ public class RecipeDetailsActivity extends BaseActivity
         rendererRegistry = new DetailRendererRegistry();
         rendererRegistry.register(new MealDbRecipeDetailRenderer(this));
         rendererRegistry.register(new CocktailDbRecipeDetailRenderer(this));
+        rendererRegistry.register(new FatSecretRecipeDetailRenderer(this));
         rendererRegistry.register(new DefaultRecipeDetailRenderer(this)); // must be last
         logDebug("Recipe renderer registry initialized with "
                 + rendererRegistry.size() + " renderers");

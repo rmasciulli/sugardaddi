@@ -49,6 +49,9 @@ public final class ViewType {
     /** TheCocktailDB cocktail - external cocktail recipe, no local storage */
     public static final int RECIPE_COCKTAILDB = 22;
 
+    /** FatSecret recipe - external recipe fetched on demand, no local storage */
+    public static final int RECIPE_FATSECRET = 23;
+
     // ========== SPECIAL VIEW TYPES ==========
 
     /** Loading footer for pagination */
