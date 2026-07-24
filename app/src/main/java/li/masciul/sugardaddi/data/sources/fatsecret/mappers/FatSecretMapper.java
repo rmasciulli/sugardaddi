@@ -116,7 +116,7 @@ public final class FatSecretMapper {
         }
 
         // Best-effort estimate for the search card - see
-        // parseFoodDescriptionNutrition()'s javadoc for exactly when this
+        // parseFoodDescriptionNutrition()'s Javadoc for exactly when this
         // does and doesn't produce a value.
         product.setNutrition(parseFoodDescriptionNutrition(food.foodDescription));
 
@@ -155,7 +155,7 @@ public final class FatSecretMapper {
     /**
      * Best-effort nutrition estimate from a search result's food_description,
      * scaled to per-100g. Returns null when the quantity clause isn't an
-     * explicit gram figure - see FOOD_DESCRIPTION_PATTERN's javadoc. This is
+     * explicit gram figure - see FOOD_DESCRIPTION_PATTERN's Javadoc. This is
      * a preview only: opening the item still calls mapFoodDetail(), whose
      * own (independent, more complete when available) nutrition replaces
      * this the moment the detail screen loads.
@@ -360,11 +360,29 @@ public final class FatSecretMapper {
         recipe.setDataSource(DataSourceType.FATSECRET);
 
         recipe.setName(result.recipeName.trim(), language);
+
         if (result.recipeDescription != null) {
             recipe.setDescription(result.recipeDescription.trim(), language);
         }
+
         if (result.recipeImage != null) {
             recipe.setImageUrl(result.recipeImage);
+        }
+
+        // Tags from recipe_types only - recipe_categories doesn't exist in
+        // the search shape (see RecipeSearchResponse's class Javadoc: only
+        // recipe_types is present here). Same lowercase convention as the
+        // detail path (mapToRecipe) and TheMealDbMapper.
+        if (result.recipeTypes != null && result.recipeTypes.recipeType != null) {
+            java.util.Set<String> tags = new java.util.HashSet<>();
+            for (String type : result.recipeTypes.recipeType) {
+                if (type != null && !type.trim().isEmpty()) {
+                    tags.add(type.trim().toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+            if (!tags.isEmpty()) {
+                recipe.setTags(tags);
+            }
         }
 
         // recipe_nutrition is deliberately NOT mapped. The docs omit its
@@ -387,6 +405,7 @@ public final class FatSecretMapper {
         // Javadoc) - a real getRecipe() call replaces this with full detail
         // when the user actually opens it.
         recipe.setPreview(true);
+
         if (result.recipeIngredients != null && result.recipeIngredients.ingredient != null) {
             recipe.setPortions(mapIngredientNames(recipe, result.recipeIngredients.ingredient));
         }

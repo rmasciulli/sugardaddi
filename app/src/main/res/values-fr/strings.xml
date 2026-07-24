@@ -783,6 +783,9 @@
     <string name="recipe_ingredient_count">%d ingrédients</string>
     <string name="recipe_source_themealdb">TheMealDB</string>
 
+    <!-- FatSecret recipe card -->
+    <string name="recipe_source_fatsecret">FatSecret</string>
+
     <!-- TheCocktailDB recipe card -->
     <string name="recipe_source_thecocktaildb">TheCocktailDB</string>
 
