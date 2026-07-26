@@ -17,6 +17,17 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_replace_image"
+        android:title="@string/menu_replace_image"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_remove_image"
+        android:title="@string/menu_remove_image"
+        android:visible="false"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_delete_meal"
         android:title="@string/delete_meal"
         android:icon="@drawable/ic_delete"

@@ -36,7 +36,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Header: Meal Type & Date/Time -->
+            <!-- Header: Photo, Meal Type & Date/Time -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -44,13 +44,91 @@
                 android:layout_marginBottom="16dp"
                 android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/mealTypeEmoji"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="32sp"
+                <!-- Photo: always visible, two states.
+                     EMPTY: tinted background + centered large camera icon,
+                       whole container clickable -> showImageSourceDialog().
+                     FILLED: the photo (tap -> full-screen viewer, via
+                       bindFullScreenTap) + a small camera badge overlaid
+                       bottom-right (tap -> showImageSourceDialog() directly,
+                       without detouring through the viewer). Avatar-with-
+                       edit-badge pattern, same idea as a profile photo. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/mealImageContainer"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:layout_marginEnd="12dp"
-                    tools:text="🍿" />
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="?attr/colorOutlineVariant"
+                    app:cardBackgroundColor="?attr/colorSurfaceVariant">
+
+                    <ImageView
+                        android:id="@+id/mealImagePlaceholder"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_camera_add"
+                        android:contentDescription="@string/menu_replace_image"
+                        android:importantForAccessibility="no" />
+
+                    <ImageView
+                        android:id="@+id/mealImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="@string/product_image_description"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:src="@drawable/ic_food_placeholder" />
+
+                    <ImageView
+                        android:id="@+id/mealImageCameraBadge2"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="3dp"
+                        android:background="@drawable/bg_expand_icon_scrim_sm"
+                        android:contentDescription="@string/menu_replace_image"
+                        android:padding="3dp"
+                        android:scaleType="fitCenter"
+                        android:visibility="gone"
+                        app:srcCompat="@drawable/ic_camera_add"
+                        tools:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/mealImageCameraBadge3"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="3dp"
+                        android:background="@drawable/bg_expand_icon_scrim_sm"
+                        android:contentDescription="@string/menu_replace_image"
+                        android:padding="3dp"
+                        android:scaleType="fitCenter"
+                        android:visibility="gone"
+                        app:srcCompat="@drawable/ic_camera_add"
+                        tools:visibility="visible" />
+
+                    <!-- Standard expand-icon hint, same as every other thumbnail
+                         in the app (search cards, hero images) - shown and
+                         driven entirely by ImageDisplayUtils.bindFullScreenTap().
+                         Replace/remove live in the toolbar menu only, matching
+                         ProductDetailsActivity/RecipeDetailsActivity exactly. -->
+                    <ImageView
+                        android:id="@+id/mealImageExpandIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="3dp"
+                        android:background="@drawable/bg_expand_icon_scrim_sm"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_fullscreen"
+                        android:scaleType="fitCenter"
+                        android:visibility="gone"
+                        android:importantForAccessibility="no" />
+
+                </com.google.android.material.card.MaterialCardView>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -58,12 +136,15 @@
                     android:layout_weight="1"
                     android:orientation="vertical">
 
+                    <!-- Emoji + meal type in one string, one TextView - no
+                         second view to align against, so no alignment bug
+                         is possible. -->
                     <TextView
                         android:id="@+id/mealTypeText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                        tools:text="Snack" />
+                        tools:text="🍿 Snack" />
 
                     <TextView
                         android:id="@+id/mealDateTimeText"

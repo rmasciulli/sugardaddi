@@ -270,6 +270,19 @@ public interface MealDao {
     @Query("SELECT AVG(satisfaction) FROM meals WHERE mealType = :mealType AND satisfaction > 0")
     Float getAverageSatisfactionByType(String mealType);
 
+    // ========== PHOTO ==========
+
+    /**
+     * Updates the user-defined photo path for a meal journal entry.
+     * Called by MealDetailsActivity after ImagePickerHelper delivers a path.
+     * Pass null to clear the photo. Meals have no remote source, so this is
+     * the only image path a meal has - unlike FoodProduct/Recipe, there is
+     * no separate auto-cached "imagePath" to fall back to.
+     * Must be called from a background thread.
+     */
+    @Query("UPDATE meals SET userImagePath = :path WHERE id = :mealId")
+    void updateUserImagePath(String mealId, String path);
+
     // ========== COST TRACKING ==========
 
     @Query("SELECT * FROM meals WHERE estimatedCost IS NOT NULL ORDER BY mealDateTime DESC")

@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,7 +28,13 @@ import li.masciul.sugardaddi.core.enums.NutrientBannerStyle;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.data.repository.MealRepository;
+import li.masciul.sugardaddi.data.database.AppDatabase;
+import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
+import li.masciul.sugardaddi.utils.image.ImageStorageManager;
+import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.managers.LanguageManager;
 import li.masciul.sugardaddi.ui.adapters.MealPortionsAdapter;
 import li.masciul.sugardaddi.ui.components.NutrientBannerHelper;
@@ -35,10 +42,13 @@ import li.masciul.sugardaddi.ui.components.NutrientBannerView;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.Executors;
 
 /**
  * MealDetailsActivity - View and edit meal details
@@ -64,9 +74,15 @@ public class MealDetailsActivity extends BaseActivity {
     // ========== UI COMPONENTS ==========
 
     // Header
-    private TextView mealTypeEmojiView;
     private TextView mealTypeText;
     private TextView mealDateTimeText;
+    private View mealImageContainer;
+    private ImageView mealImagePlaceholder;
+    private ImageView mealImage;
+    private ImageView mealImageExpandIcon;;
+
+    // Photo picker - must be created in onCreate(), before onStart()
+    private ImagePickerHelper imagePicker;
 
     // Summary
     private LinearLayout nutrientBannersContainer;
@@ -99,6 +115,7 @@ public class MealDetailsActivity extends BaseActivity {
 
         // Initialize
         mealRepository = new MealRepository(this);
+        imagePicker = new ImagePickerHelper(this);
         lastLanguage = getCurrentLanguage();
 
         // Get meal ID from intent
@@ -143,9 +160,12 @@ public class MealDetailsActivity extends BaseActivity {
 
     private void initializeViews() {
         // Header
-        mealTypeEmojiView = findViewById(R.id.mealTypeEmoji);
         mealTypeText = findViewById(R.id.mealTypeText);
         mealDateTimeText = findViewById(R.id.mealDateTimeText);
+        mealImageContainer = findViewById(R.id.mealImageContainer);
+        mealImagePlaceholder = findViewById(R.id.mealImagePlaceholder);
+        mealImage = findViewById(R.id.mealImage);
+        mealImageExpandIcon = findViewById(R.id.mealImageExpandIcon);
 
         // Summary
         nutrientBannersContainer = findViewById(R.id.nutrientBannersContainer);
@@ -279,6 +299,12 @@ public class MealDetailsActivity extends BaseActivity {
                 editModeItem.setTitle(R.string.edit_meal);
             }
         }
+
+        MenuItem removeImageItem = menu.findItem(R.id.action_remove_image);
+        if (removeImageItem != null) {
+            removeImageItem.setVisible(currentMeal != null && currentMeal.hasImage());
+        }
+
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -293,6 +319,12 @@ public class MealDetailsActivity extends BaseActivity {
             return true;
         } else if (itemId == R.id.action_edit_properties) {
             editMealProperties();
+            return true;
+        } else if (itemId == R.id.action_replace_image) {
+            showImageSourceDialog();
+            return true;
+        } else if (itemId == R.id.action_remove_image) {
+            removeMealPhoto();
             return true;
         } else if (itemId == R.id.action_delete_meal) {
             deleteMeal();
@@ -357,13 +389,108 @@ public class MealDetailsActivity extends BaseActivity {
     private void updateHeader() {
         // Meal type
         MealType mealType = currentMeal.getMealType();
-        mealTypeEmojiView.setText(mealType.getEmoji());
         String mealTypeName = getMealTypeName(mealType);
-        mealTypeText.setText(mealTypeName);
+        mealTypeText.setText(mealType.getEmoji() + " " + mealTypeName);
 
         // Date and time - use locale-aware formatting
         String dateTime = formatDateTimeForLocale(currentMeal.getStartTime());
         mealDateTimeText.setText(dateTime);
+
+        updateMealPhoto();
+    }
+
+    /**
+     * Two-state photo container. EMPTY: placeholder icon shown, camera
+     * badge hidden, tapping the whole container opens the replace dialog.
+     * FILLED: photo shown, camera badge shown (its own tap target ->
+     * replace dialog directly), tapping the photo itself opens the
+     * full-screen viewer via bindFullScreenTap - which on its own would
+     * make the container non-clickable when empty, so the container's
+     * click listener is driven explicitly here instead of left to that
+     * helper alone.
+     */
+    private void updateMealPhoto() {
+        Object source = ImageDisplayUtils.resolveMealThumbnailSource(currentMeal);
+
+        if (source != null) {
+            mealImagePlaceholder.setVisibility(View.GONE);
+            mealImage.setVisibility(View.VISIBLE);
+            ImageDisplayUtils.loadCardThumbnail(this, source, mealImage);
+            // Handles the expand icon's visibility and the photo's own
+            // click-to-view-fullscreen internally - same call every other
+            // thumbnail in the app uses.
+            ImageDisplayUtils.bindFullScreenTap(this, mealImage, mealImageExpandIcon, source);
+            mealImageContainer.setOnClickListener(null);
+            mealImageContainer.setClickable(false);
+        } else {
+            mealImagePlaceholder.setVisibility(View.VISIBLE);
+            mealImage.setVisibility(View.GONE);
+            mealImageExpandIcon.setVisibility(View.GONE);
+            mealImageContainer.setOnClickListener(v -> showImageSourceDialog());
+        }
+    }
+
+    // ========== PHOTO MANAGEMENT ==========
+
+    private void showImageSourceDialog() {
+        if (currentMeal == null) return;
+
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+        File dest = storage.getMealPhotoFile(UUID.randomUUID() + ".jpg");
+        if (dest == null) {
+            Toast.makeText(this, getSafeString(R.string.image_storage_unavailable),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ImagePickerHelper.Callback callback = new ImagePickerHelper.Callback() {
+            @Override
+            public void onImageReady(@NonNull String localPath) {
+                persistMealPhoto(localPath);
+            }
+
+            @Override
+            public void onCancelled(@NonNull String reason) {
+                Log.d(TAG, "Meal photo pick cancelled: " + reason);
+            }
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle(getSafeString(R.string.image_picker_choose_source))
+                .setPositiveButton(getSafeString(R.string.image_picker_camera),
+                        (d, w) -> imagePicker.showCamera(dest, ImageProfile.HERO, callback))
+                .setNegativeButton(getSafeString(R.string.image_picker_gallery),
+                        (d, w) -> imagePicker.showGallery(dest, ImageProfile.HERO, callback))
+                .show();
+    }
+
+    private void persistMealPhoto(@NonNull String localPath) {
+        if (mealId == null) return;
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase.getInstance(this).mealDao().updateUserImagePath(mealId, localPath);
+            runOnUiThread(() -> {
+                Toast.makeText(this, getSafeString(R.string.image_replaced),
+                        Toast.LENGTH_SHORT).show();
+                loadMeal();
+            });
+        });
+    }
+
+    private void removeMealPhoto() {
+        if (currentMeal == null || currentMeal.getUserImagePath() == null) return;
+        final String pathToDelete = currentMeal.getUserImagePath();
+        ImageStorageManager storage =
+                ((SugarDaddiApplication) getApplication()).getImageStorageManager();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            storage.deleteFile(pathToDelete);
+            AppDatabase.getInstance(this).mealDao().updateUserImagePath(mealId, null);
+            runOnUiThread(() -> {
+                Toast.makeText(this, getSafeString(R.string.image_removed),
+                        Toast.LENGTH_SHORT).show();
+                loadMeal();
+            });
+        });
     }
 
     /**
@@ -718,6 +845,7 @@ public class MealDetailsActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (imagePicker != null) imagePicker.shutdown();
         mealRepository = null;
     }
 }

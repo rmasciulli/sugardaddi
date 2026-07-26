@@ -19,6 +19,7 @@ import java.io.File;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Recipe;
 
 /**
@@ -126,6 +127,15 @@ public final class ImageDisplayUtils {
         if (imageUrl != null && !imageUrl.trim().isEmpty()) return imageUrl;
 
         return null;
+    }
+
+    /**
+     * Card/thumbnail source for a meal photo. Simpler than the product/recipe
+     * resolvers: meals have exactly one image field (userImagePath) and no
+     * remote source to fall back to - the user's own photo or nothing.
+     */
+    public static Object resolveMealThumbnailSource(@NonNull Meal meal) {
+        return existingFile(meal.getUserImagePath());
     }
 
     // ===================================================================
