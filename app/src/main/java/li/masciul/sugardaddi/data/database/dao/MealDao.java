@@ -402,6 +402,56 @@ public interface MealDao {
     @Query("SELECT AVG(satisfaction) FROM meals WHERE mealDateTime >= :startTime AND mealDateTime <= :endTime AND satisfaction > 0")
     Double getAverageSatisfactionInRange(long startTime, long endTime);
 
+    // ========== NUTRITION STATISTICS (via nutrition JOIN, sourceType='meal') ==========
+
+    /**
+     * Average nutrients per meal in a date range - answers "average nutrient
+     * values per meal". mealType is optional (null = all types); pass a
+     * MealType.name() to answer "average per type of meal". Plain SELECT with
+     * an explicit JOIN, not a @Relation traversal, so no @Transaction needed.
+     */
+    @Query("SELECT AVG(n.energyKcal) as avgCalories, AVG(n.carbohydrates) as avgCarbs, " +
+            "AVG(n.proteins) as avgProtein, AVG(n.fat) as avgFat, AVG(n.fiber) as avgFiber, " +
+            "AVG(n.sugars) as avgSugar, AVG(n.sodium) as avgSodium, COUNT(*) as mealCount " +
+            "FROM meals m JOIN nutrition n ON n.sourceId = m.id AND n.sourceType = 'meal' " +
+            "WHERE m.mealDateTime >= :startTime AND m.mealDateTime <= :endTime " +
+            "AND (:mealType IS NULL OR m.mealType = :mealType)")
+    NutritionDao.MealNutritionAverages getAverageNutritionInRange(
+            long startTime, long endTime, String mealType);
+
+    /**
+     * Per-day nutrient totals in a date range, bucketed by the user's own
+     * local calendar day. 'localtime' is correct here specifically because
+     * this SQLite instance runs on the user's own device - it resolves to
+     * their actual local day, not a server's (verified: a timestamp at
+     * 00:45 UTC correctly buckets to the PREVIOUS day under 'localtime' in
+     * a UTC-4 zone, vs the wrong next-day bucket without it - e.g. a late
+     * dinner at 8:45pm EDT must not land on tomorrow). Foundation for
+     * "average nutrient value per day" (AVG() the totalX columns across the
+     * returned rows) and for any future daily trend display - one query,
+     * not one round trip per day.
+     */
+    @Query("SELECT date(m.mealDateTime / 1000, 'unixepoch', 'localtime') as day, " +
+            "SUM(n.energyKcal) as totalCalories, SUM(n.carbohydrates) as totalCarbs, " +
+            "SUM(n.proteins) as totalProtein, SUM(n.fat) as totalFat, " +
+            "SUM(n.fiber) as totalFiber, SUM(n.sugars) as totalSugar, " +
+            "SUM(n.sodium) as totalSodium, COUNT(*) as mealCount " +
+            "FROM meals m JOIN nutrition n ON n.sourceId = m.id AND n.sourceType = 'meal' " +
+            "WHERE m.mealDateTime >= :startTime AND m.mealDateTime <= :endTime " +
+            "GROUP BY day ORDER BY day")
+    List<NutritionDao.DailyNutritionTotal> getDailyNutritionTotals(long startTime, long endTime);
+
+    /**
+     * Meal count in range, optionally filtered by type - "average number of
+     * snacks per day/week" is this with mealType="SNACK", divided by
+     * whatever day-count the caller's window represents (computed in Java,
+     * same as every other window boundary already is - see
+     * getMealCountInRange/getAverageSatisfactionInRange above).
+     */
+    @Query("SELECT COUNT(*) FROM meals WHERE mealDateTime >= :startTime AND mealDateTime <= :endTime " +
+            "AND (:mealType IS NULL OR mealType = :mealType)")
+    int getMealCountInRangeByType(long startTime, long endTime, String mealType);
+
     @Transaction
     @Query("SELECT * FROM meals WHERE mealDateTime >= :startTime AND mealDateTime <= :endTime ORDER BY mealDateTime ASC")
     List<MealWithNutrition> getMealsForWeekWithNutrition(long startTime, long endTime);

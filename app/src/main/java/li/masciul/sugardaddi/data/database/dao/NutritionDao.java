@@ -313,4 +313,35 @@ public interface NutritionDao {
      */
     @Query("SELECT * FROM nutrition WHERE dataConfidence = :confidence")
     List<NutritionEntity> getByConfidence(DataConfidence confidence);
+
+    // ========== MEAL NUTRITION STATISTICS ==========
+    // Result rows for MealDao's statistics queries (getAverageNutritionInRange,
+    // getDailyNutritionTotals) - defined here since they describe rows from
+    // the nutrition table, mirroring CategoryAverages above, even though the
+    // queries that produce them live in MealDao (they join through meals).
+
+    /** One row: averaged nutrients across all meals matching a query's filters. */
+    public static class MealNutritionAverages {
+        public Double avgCalories;
+        public Double avgCarbs;
+        public Double avgProtein;
+        public Double avgFat;
+        public Double avgFiber;
+        public Double avgSugar;
+        public Double avgSodium;
+        public int mealCount;
+    }
+
+    /** One row per local calendar day: summed nutrients for that day's meals. */
+    public static class DailyNutritionTotal {
+        public String day;              // "YYYY-MM-DD", user's local calendar day
+        public Double totalCalories;
+        public Double totalCarbs;
+        public Double totalProtein;
+        public Double totalFat;
+        public Double totalFiber;
+        public Double totalSugar;
+        public Double totalSodium;
+        public int mealCount;
+    }
 }
