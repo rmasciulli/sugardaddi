@@ -60,15 +60,17 @@ public interface NutritionDao {
 
     /**
      * Delete orphaned nutrition entries - rows whose parent entity no longer exists.
-     * Covers both product nutrition (parent in food_products) and recipe nutrition
-     * (parent in recipes). Meal nutrition is intentionally left out for now (no meal
-     * nutrition is written yet); add a meals clause here if that changes.
+     * Covers product, recipe, and meal nutrition. deleteMeal() already deletes a
+     * meal's nutrition row explicitly on the normal path; this catches anything
+     * that slips through some other removal path (bulk delete, migration, etc.)
+     * without leaving it orphaned forever.
      *
      * @return Number of orphaned rows deleted
      */
     @Query("DELETE FROM nutrition WHERE " +
             "(sourceType = 'product' AND sourceId NOT IN (SELECT id FROM food_products)) " +
-            "OR (sourceType = 'recipe' AND sourceId NOT IN (SELECT id FROM recipes))")
+            "OR (sourceType = 'recipe' AND sourceId NOT IN (SELECT id FROM recipes)) " +
+            "OR (sourceType = 'meal' AND sourceId NOT IN (SELECT id FROM meals))")
     public abstract int deleteOrphanedNutrition();
 
     /**
