@@ -127,20 +127,25 @@ public class MealRepository {
                 }
                 meal.calculateCompleteness();
 
-                // Save meal entity
+                // Meal + nutrition commit as one unit - same rationale as
+                // ProductRepository/RecipeRepository: a nutrition-write
+                // failure after a successful meal insert would otherwise
+                // leave the meal row committed with no persisted nutrition
+                // snapshot, invisible until something goes looking for it.
+                // No createdAt-preservation lookup needed here specifically:
+                // meal.getId() was just freshly generated above, so no
+                // existing nutrition row can exist for it yet.
                 MealEntity entity = MealEntity.fromMeal(meal);
-                long result = mealDao.insert(entity);
-
-                // Save nutrition if available
                 Nutrition nutrition = meal.getNutrition();
-                if (nutrition != null && nutrition.hasData()) {
-                    NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
-                            nutrition,
-                            "meal",
-                            meal.getId()
-                    );
-                    nutritionDao.insertNutrition(nutritionEntity);
-                }
+
+                database.runInTransaction(() -> {
+                    mealDao.insert(entity);
+                    if (nutrition != null && nutrition.hasData()) {
+                        NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                                nutrition, "meal", meal.getId());
+                        nutritionDao.insertNutrition(nutritionEntity);
+                    }
+                });
 
                 cacheMeal(meal);
 
@@ -312,31 +317,35 @@ public class MealRepository {
                 meal.calculateCompleteness();
                 meal.touch();
 
-                // Update meal entity
+                // Meal + nutrition commit as one unit - see createMeal()'s
+                // comment for the rationale. The existing-row lookup and
+                // @Update/@Insert branch are gone: NutritionEntity's
+                // nutritionId is deterministic (sourceType:sourceId), so
+                // insertNutrition()'s REPLACE strategy already overwrites
+                // the correct row unconditionally, same as
+                // ProductRepository/RecipeRepository - the branch was
+                // doing extra work to reach the same outcome REPLACE gives
+                // for free.
                 MealEntity entity = MealEntity.fromMeal(meal);
-                int updated = mealDao.update(entity);
-                Log.d(TAG, "updateMeal - updated meal entity, rows: " + updated);
-
-                // Update or insert nutrition
                 Nutrition nutrition = meal.getNutrition();
-                Log.d(TAG, "updateMeal - saving nutrition: " + nutrition);
-                Log.d(TAG, "  hasData: " + (nutrition != null ? nutrition.hasData() : "null"));
+                Log.d(TAG, "updateMeal - saving nutrition: " + nutrition
+                        + " hasData: " + (nutrition != null ? nutrition.hasData() : "null"));
 
-                if (nutrition != null && nutrition.hasData()) {
-                    NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
-                            nutrition,
-                            "meal",
-                            meal.getId()
-                    );
-
-                    NutritionEntity existing = nutritionDao.getNutritionBySource("meal", meal.getId());
-                    if (existing != null) {
-                        nutritionDao.updateNutrition(nutritionEntity);
-                    } else {
+                database.runInTransaction(() -> {
+                    mealDao.update(entity);
+                    if (nutrition != null && nutrition.hasData()) {
+                        NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
+                                nutrition, "meal", meal.getId());
+                        // REPLACE discards the row; preserve the original
+                        // creation date the same way Product/Recipe do.
+                        NutritionEntity existingNutrition =
+                                nutritionDao.getNutritionBySource("meal", meal.getId());
+                        if (existingNutrition != null) {
+                            nutritionEntity.setCreatedAt(existingNutrition.getCreatedAt());
+                        }
                         nutritionDao.insertNutrition(nutritionEntity);
-                        Log.d(TAG, "updateMeal - inserted/updated nutrition entity");
                     }
-                }
+                });
 
                 cacheMeal(meal);
 
