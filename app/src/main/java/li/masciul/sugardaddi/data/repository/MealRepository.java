@@ -932,49 +932,19 @@ public class MealRepository {
         for (MealWithNutrition mealWithNutrition : mealsWithNutrition) {
             if (mealWithNutrition == null) continue;
 
+            // toMeal() already sets providedNutrition from the persisted
+            // NutritionEntity snapshot (nutrition.toNutrition()) - no need
+            // to re-resolve every FOOD_PRODUCT portion and recompute live.
+            // That was only ever necessary because the write path used to
+            // be unreliable; it's fixed now (see MealRepository.createMeal/
+            // updateMeal), so the persisted value can be trusted directly.
             Meal meal = mealWithNutrition.toMeal();
             if (meal == null) continue;
-
-            // CRITICAL: Populate transient foodProduct fields and recalculate nutrition
-            // Same issue as getMealWithProducts - need fresh calculated nutrition
-            populateProductsForMeal(meal);
 
             meals.add(meal);
         }
 
         return meals;
-    }
-
-    /**
-     * Helper method to populate products for a meal and recalculate nutrition
-     * Used by convertToMeals to ensure correct nutrition in list views
-     */
-    private void populateProductsForMeal(Meal meal) {
-        if (meal == null) return;
-
-        List<FoodPortion> portions = meal.getPortions();
-        if (portions != null && !portions.isEmpty()) {
-            for (FoodPortion portion : portions) {
-                String itemId = portion.getItemId();
-                if (itemId != null && "FOOD_PRODUCT".equals(portion.getItemType())) {
-                    try {
-                        var productWithNutrition =
-                                database.combinedProductDao()
-                                        .getProductWithNutritionById(itemId);
-
-                        if (productWithNutrition != null) {
-                            portion.setFoodProduct(productWithNutrition.toFoodProduct());
-                        }
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to load product for portion: " + itemId, e);
-                    }
-                }
-            }
-        }
-
-        // Clear old provided nutrition and recalculate
-        meal.setProvidedNutrition(null);
-        meal.calculateNutrition();
     }
 
     private void cacheMeal(Meal meal) {
