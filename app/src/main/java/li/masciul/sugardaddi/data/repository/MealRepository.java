@@ -89,6 +89,46 @@ public class MealRepository {
         void onError(String error);
     }
 
+    public interface NutritionAveragesCallback {
+        void onSuccess(NutritionDao.MealNutritionAverages averages);
+        void onError(String error);
+    }
+
+    public interface DailyNutritionTotalsCallback {
+        void onSuccess(List<NutritionDao.DailyNutritionTotal> dailyTotals);
+        void onError(String error);
+    }
+
+    public interface MealCountCallback {
+        void onSuccess(int totalCount, double averagePerDay);
+        void onError(String error);
+    }
+
+    /**
+     * Rolling statistics window, always measured back from "now" - not
+     * calendar-day-aligned. LAST_24_HOURS needs no special case: it's just
+     * days=1 in the same uniform (now - days*24h) formula every other
+     * window uses.
+     */
+    public enum StatsWindow {
+        LAST_24_HOURS(1),
+        LAST_7_DAYS(7),
+        LAST_14_DAYS(14),
+        LAST_30_DAYS(30),
+        LAST_60_DAYS(60),
+        LAST_90_DAYS(90);
+
+        private final int days;
+
+        StatsWindow(int days) {
+            this.days = days;
+        }
+
+        public int getDays() {
+            return days;
+        }
+    }
+
     // ========== CONSTRUCTOR ==========
 
     public MealRepository(Context context) {
@@ -763,6 +803,107 @@ public class MealRepository {
                 });
             }
         });
+    }
+
+    // ========== NUTRITION STATISTICS (window-based, via nutrition JOIN) ==========
+
+    /**
+     * Average nutrients per meal over a rolling window. mealType is
+     * nullable - null answers "average per meal" across all types; a
+     * specific MealType answers "average per meal of that type" (e.g.
+     * SNACK for "average nutrients per snack").
+     */
+    public void getNutritionAverages(StatsWindow window, MealType mealType,
+                                     NutritionAveragesCallback callback) {
+        if (window == null) {
+            if (callback != null) callback.onError("Window cannot be null");
+            return;
+        }
+        backgroundExecutor.execute(() -> {
+            try {
+                long[] bounds = computeWindowBoundaries(window);
+                String typeFilter = mealType != null ? mealType.name() : null;
+                NutritionDao.MealNutritionAverages averages =
+                        mealDao.getAverageNutritionInRange(bounds[0], bounds[1], typeFilter);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onSuccess(averages);
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error calculating nutrition averages", e);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onError(
+                            "Failed to calculate nutrition averages: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * Per-day nutrient totals over a rolling window - the "average nutrient
+     * value per day" answer is AVG() over the returned list's totalX
+     * fields; this returns the full daily breakdown rather than a single
+     * collapsed number, since a trend is more useful for the same query
+     * cost. Days with no logged meals simply don't appear as a row.
+     */
+    public void getDailyNutritionTotals(StatsWindow window, DailyNutritionTotalsCallback callback) {
+        if (window == null) {
+            if (callback != null) callback.onError("Window cannot be null");
+            return;
+        }
+        backgroundExecutor.execute(() -> {
+            try {
+                long[] bounds = computeWindowBoundaries(window);
+                List<NutritionDao.DailyNutritionTotal> totals =
+                        mealDao.getDailyNutritionTotals(bounds[0], bounds[1]);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onSuccess(totals);
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error calculating daily nutrition totals", e);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onError(
+                            "Failed to calculate daily nutrition totals: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * Meal count over a rolling window, plus the average per day already
+     * computed for convenience. mealType is nullable - null answers
+     * "average meals per day"; MealType.SNACK answers "average snacks per
+     * day". For "average snacks per week", multiply averagePerDay by 7 -
+     * no separate query needed, the precision is the same either way.
+     */
+    public void getMealCount(StatsWindow window, MealType mealType, MealCountCallback callback) {
+        if (window == null) {
+            if (callback != null) callback.onError("Window cannot be null");
+            return;
+        }
+        backgroundExecutor.execute(() -> {
+            try {
+                long[] bounds = computeWindowBoundaries(window);
+                String typeFilter = mealType != null ? mealType.name() : null;
+                int count = mealDao.getMealCountInRangeByType(bounds[0], bounds[1], typeFilter);
+                double averagePerDay = count / (double) window.getDays();
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onSuccess(count, averagePerDay);
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error calculating meal count", e);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onError(
+                            "Failed to calculate meal count: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /** (now - window.getDays()*24h) to now, in epoch millis. */
+    private long[] computeWindowBoundaries(StatsWindow window) {
+        long endTime = System.currentTimeMillis();
+        long startTime = endTime - (window.getDays() * 24L * 60 * 60 * 1000);
+        return new long[]{startTime, endTime};
     }
 
     // ========== LIVEDATA (for UI observation) ==========
