@@ -238,7 +238,7 @@ public class FatSecretDataSource extends BaseDataSource {
 
     private void searchFoodsOnly(String query, String language, int limit, int fatSecretPage,
                                  DataSourceCallback<SearchResult> callback) {
-        api.searchFoods(query, fatSecretPage, limit, "json").enqueue(new Callback<FoodSearchResponse>() {
+        api.searchFoods(query, fatSecretPage, limit, "json", true, true, true).enqueue(new Callback<FoodSearchResponse>() {
             @Override
             public void onResponse(@NonNull Call<FoodSearchResponse> call,
                                    @NonNull Response<FoodSearchResponse> response) {
@@ -326,7 +326,7 @@ public class FatSecretDataSource extends BaseDataSource {
             }
         });
 
-        api.searchFoods(query, fatSecretPage, limit, "json").enqueue(new Callback<FoodSearchResponse>() {
+        api.searchFoods(query, fatSecretPage, limit, "json", true, true, true).enqueue(new Callback<FoodSearchResponse>() {
             @Override
             public void onResponse(@NonNull Call<FoodSearchResponse> call,
                                    @NonNull Response<FoodSearchResponse> response) {
@@ -402,7 +402,7 @@ public class FatSecretDataSource extends BaseDataSource {
         onOperationStart();
         callback.onLoading();
 
-        api.getFood(productId, "json").enqueue(new Callback<FoodGetResponse>() {
+        api.getFood(productId, "json", true, true, true).enqueue(new Callback<FoodGetResponse>() {
             @Override
             public void onResponse(@NonNull Call<FoodGetResponse> call,
                                    @NonNull Response<FoodGetResponse> response) {

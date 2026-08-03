@@ -42,12 +42,18 @@ public interface FatSecretAPI {
             @Query("search_expression") String searchExpression,
             @Query("page_number") int pageNumber,
             @Query("max_results") int maxResults,
-            @Query("format") String format
+            @Query("format") String format,
+            @Query("include_food_images") boolean includeFoodImages,
+            @Query("include_food_attributes") boolean includeFoodAttributes,
+            @Query("include_sub_categories") boolean includeSubCategories
     );
 
     @GET("fatsecret/food")
     Call<FoodGetResponse> getFood(
             @Query("food_id") String foodId,
-            @Query("format") String format
+            @Query("format") String format,
+            @Query("include_food_images") boolean includeFoodImages,
+            @Query("include_food_attributes") boolean includeFoodAttributes,
+            @Query("include_sub_categories") boolean includeSubCategories
     );
 }
