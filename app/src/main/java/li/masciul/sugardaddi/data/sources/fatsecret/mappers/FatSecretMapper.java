@@ -30,14 +30,18 @@ import li.masciul.sugardaddi.data.sources.fatsecret.api.dto.RecipeSearchResponse
  *
  * FOUR MAPPING PATHS
  * ===================
- * 1. mapFoodSearchResponse() - lightweight, from foods/search/v1. No
- *    structured nutrition (foods.search only returns a formatted summary
- *    string, e.g. "Per 100g - Calories: 22kcal | ..."); nutrition stays
- *    null here, matching how a search card looks until getProduct() is
- *    called for the full detail. Deliberate - parsing that summary string
- *    with regex was considered and rejected as too fragile (inconsistent
- *    "Per 100g"/"Per 1 serving"/"Per 157g" prefixes, locale-dependent
- *    number formats) for a foundation to build on.
+ * 1. mapFoodSearchResponse() - from foods/search, either v1 or v5
+ *    depending on which glucogate's self-learned fallback served (see
+ *    FoodSearchResponse's own Javadoc for both shapes). v1 has no
+ *    structured nutrition - only a formatted summary string
+ *    (food_description), turned into a best-effort ESTIMATED-tier value
+ *    by parseFoodDescriptionNutrition() below. v5 carries a real,
+ *    structured servings array identical to food/v5's detail response -
+ *    normalized via the same mapFoodServings() used for food.get, DECLARED
+ *    tier, no regex involved. Either way the app never needs to know or
+ *    care which version actually answered - both paths produce a
+ *    FoodProduct with whatever nutrition confidence the source actually
+ *    supports.
  * 2. mapFoodDetail() - comprehensive, from food/v5. Real structured
  *    nutrition, normalized to per-100g.
  * 3. mapRecipeSearchResponse() - lightweight, from recipes/search/v3.
@@ -74,16 +78,18 @@ public final class FatSecretMapper {
             @NonNull String language) {
 
         List<FoodProduct> results = new ArrayList<>();
-        if (response == null || response.foods == null || response.foods.food == null) {
+        List<FoodSearchResponse.FoodSearchResult> foodList =
+                response != null ? response.getFoodList() : null;
+        if (foodList == null) {
             return results;
         }
 
-        for (FoodSearchResponse.FoodSearchResult food : response.foods.food) {
+        for (FoodSearchResponse.FoodSearchResult food : foodList) {
             FoodProduct product = mapFoodSearchResult(food, language);
             if (product != null) results.add(product);
         }
 
-        Log.d(TAG, "Mapped " + results.size() + "/" + response.foods.food.size()
+        Log.d(TAG, "Mapped " + results.size() + "/" + foodList.size()
                 + " food search results");
 
         return results;
@@ -115,13 +121,26 @@ public final class FatSecretMapper {
             product.setBrand(food.brandName.trim(), language);
         }
 
-        // Best-effort estimate for the search card - see
-        // parseFoodDescriptionNutrition()'s Javadoc for exactly when this
-        // does and doesn't produce a value.
-        product.setNutrition(parseFoodDescriptionNutrition(food.foodDescription));
+        // categoriesText/imageUrl/thumbnailUrl are the exact same fields
+        // OFF already populates and DefaultProductDetailRenderer/
+        // SearchDelegate already display - no new UI needed for either.
+        String subCategories = mapSubCategoriesText(food.foodSubCategories);
+        if (subCategories != null) {
+            product.setCategoriesText(subCategories, language);
+        }
+        applyImages(product, food.foodImages);
 
-        // No structured nutrition from search results - see class Javadoc.
-        // A getProduct() call (mapFoodDetail below) is required for real values.
+        // v5 shape: real, structured servings, same normalization as
+        // food/v5's own detail response - DECLARED tier, no parsing
+        // involved. v1 shape: no servings at all, fall back to the
+        // best-effort ESTIMATED-tier parse of food_description. Exactly
+        // one of these two ever has data, matching which shape actually
+        // arrived - see FoodSearchResponse's Javadoc.
+        if (food.servings != null && food.servings.serving != null) {
+            product.setNutrition(mapFoodServings(food.servings.serving));
+        } else {
+            product.setNutrition(parseFoodDescriptionNutrition(food.foodDescription));
+        }
 
         // Without this, dataCompleteness stays at its default and every
         // FatSecret search result fails ResultPipeline's minimum-completeness
@@ -212,6 +231,13 @@ public final class FatSecretMapper {
         if (detail.brandName != null && !detail.brandName.trim().isEmpty()) {
             product.setBrand(detail.brandName.trim(), language);
         }
+
+        // See mapFoodSearchResult() for the rationale.
+        String subCategories = mapSubCategoriesText(detail.foodSubCategories);
+        if (subCategories != null) {
+            product.setCategoriesText(subCategories, language);
+        }
+        applyImages(product, detail.foodImages);
 
         Nutrition nutrition = mapFoodServings(
                 detail.servings != null ? detail.servings.serving : null);
@@ -316,6 +342,51 @@ public final class FatSecretMapper {
         n.setDataSource(DataSourceType.FATSECRET.getId());
 
         return n;
+    }
+
+    /**
+     * FatSecret's food_sub_categories is a flat list, specific-first (e.g.
+     * ["Chicken Breast", "Chicken"]) - the reverse of categoriesText's own
+     * expected storage order (general > specific, consumed by
+     * formatBreadcrumb() in the product renderers, which takes the last
+     * two segments split on " > "). Reversed here so it feeds that
+     * existing display logic correctly rather than needing a second
+     * FatSecret-specific formatting path.
+     */
+    @Nullable
+    private static String mapSubCategoriesText(
+            @Nullable FoodGetResponse.FoodSubCategoriesWrapper wrapper) {
+        if (wrapper == null || wrapper.foodSubCategory == null || wrapper.foodSubCategory.isEmpty()) {
+            return null;
+        }
+        List<String> reversed = new ArrayList<>(wrapper.foodSubCategory);
+        java.util.Collections.reverse(reversed);
+        return String.join(" > ", reversed);
+    }
+
+    /**
+     * Picks the largest (1024x1024) image as the full-size imageUrl and
+     * the smallest (72x72) as thumbnailUrl, matching every other source's
+     * convention of a small card thumbnail distinct from the full hero
+     * image. Falls back to whatever's available if the expected sizes
+     * aren't all present, rather than requiring an exact match.
+     */
+    private static void applyImages(@NonNull FoodProduct product,
+                                    @Nullable FoodGetResponse.FoodImagesWrapper wrapper) {
+        if (wrapper == null || wrapper.foodImage == null || wrapper.foodImage.isEmpty()) return;
+
+        String largest = null;
+        String smallest = null;
+        for (FoodGetResponse.FoodImage img : wrapper.foodImage) {
+            if (img.imageUrl == null) continue;
+            if (img.imageUrl.contains("_1024x1024")) largest = img.imageUrl;
+            if (img.imageUrl.contains("_72x72")) smallest = img.imageUrl;
+        }
+        if (largest == null) largest = wrapper.foodImage.get(0).imageUrl;
+        if (smallest == null) smallest = largest;
+
+        product.setImageUrl(largest);
+        product.setThumbnailUrl(smallest);
     }
 
     // ========================================================================

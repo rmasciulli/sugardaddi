@@ -32,6 +32,42 @@ public class FoodGetResponse {
 
         @SerializedName("servings")
         public ServingsWrapper servings;
+
+        /**
+         * Requires the separate images/attributes/sub-categories access
+         * FatSecret grants beyond Premier Free - null on accounts without
+         * it, same as foodSubCategories below.
+         */
+        @SerializedName("food_images")
+        public FoodImagesWrapper foodImages;
+
+        /** See foodImages' Javadoc - same access requirement. */
+        @SerializedName("food_sub_categories")
+        public FoodSubCategoriesWrapper foodSubCategories;
+    }
+
+    public static class FoodImagesWrapper {
+        @SerializedName("food_image")
+        @JsonAdapter(SingleOrArrayDeserializer.class)
+        public List<FoodImage> foodImage;
+    }
+
+    public static class FoodImage {
+        @SerializedName("image_url") public String imageUrl;
+        /**
+         * Observed as both "0" and "1" for the same food across different
+         * captured responses (FatSecret's own docs example uses "1"; a
+         * live search response for the same food used "0") - meaning is
+         * unconfirmed and not relied on for anything. Captured verbatim
+         * in case it turns out to matter later, not interpreted now.
+         */
+        @SerializedName("image_type") public String imageType;
+    }
+
+    public static class FoodSubCategoriesWrapper {
+        @SerializedName("food_sub_category")
+        @JsonAdapter(SingleOrArrayDeserializer.class)
+        public List<String> foodSubCategory;
     }
 
     public static class ServingsWrapper {
