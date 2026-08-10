@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    thumbnail_72dp.xml - Shared search-card thumbnail. Included by every
+    product and recipe search card (item_search_product_*.xml,
+    item_search_recipe_*.xml), regardless of source - the 72dp image
+    container, its collapse-when-absent behavior, and the expand-on-tap
+    affordance are identical across all eight cards; only the data feeding
+    it (and everything in each card's own detailsColumn) differs.
+
+    Root is the container itself (a single-root requirement for <include>).
+    GONE by default - CardThumbnailHelper's bind*Thumbnail() methods make it
+    VISIBLE only when a real thumbnail source resolves (user-set image,
+    auto-cached path, or remote URL/thumbnail from the source). Nothing
+    ever shows a placeholder icon when there's no image - an empty slot
+    collapses to zero space instead.
+
+    layout_marginEnd="12dp" is the default spacing to whatever sits beside
+    it (a card's detailsColumn) - callers can override via the <include>
+    tag's own attributes if a particular card ever needs different spacing,
+    but none currently do.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/thumbnailContainer"
+    android:layout_width="72dp"
+    android:layout_height="72dp"
+    android:layout_marginEnd="12dp"
+    android:visibility="gone"
+    tools:visibility="visible"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant">
+
+    <ImageView
+        android:id="@+id/thumbnailImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/product_image_description"
+        tools:src="@drawable/ic_food_placeholder" />
+
+    <ImageView
+        android:id="@+id/thumbnailExpandIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="3dp"
+        android:background="@drawable/bg_expand_icon_scrim_sm"
+        android:padding="3dp"
+        android:src="@drawable/ic_fullscreen"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        android:importantForAccessibility="no" />
+
+</com.google.android.material.card.MaterialCardView>
