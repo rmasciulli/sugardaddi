@@ -9,9 +9,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
-
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -19,10 +16,12 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.TheCocktailDbConstants;
+import li.masciul.sugardaddi.ui.adapters.TagChipAdapter;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -92,7 +91,9 @@ public class CocktailDbRecipeSearchDelegate
         bindSourceBadge(holder);
         bindProductType(holder, recipe);
         bindDescription(holder, recipe, language);
-        bindImage(holder, recipe);
+        CardThumbnailHelper.bindRecipeThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                recipe);
         bindIngredientCount(holder, recipe);
         bindTags(holder, recipe);
     }
@@ -136,21 +137,6 @@ public class CocktailDbRecipeSearchDelegate
         }
     }
 
-    private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
-        if (source != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.recipeImage);
-            holder.imageContainer.setVisibility(View.VISIBLE);
-        } else {
-            holder.imageContainer.setVisibility(View.GONE);
-        }
-        // Expand affordance on the thumbnail; opens the FULL original, icon shows
-        // only when openable.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveRecipeImageSource(recipe));
-    }
-
     /**
      * Ingredient count from the recipe's FoodPortion list.
      */
@@ -172,11 +158,9 @@ public class CocktailDbRecipeSearchDelegate
      * via other fields and would be noisy if repeated here.
      */
     private void bindTags(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        holder.tagChips.removeAllViews();
-
         Set<String> tags = recipe.getTags();
         if (tags == null || tags.isEmpty()) {
-            holder.tagChips.setVisibility(View.GONE);
+            holder.tagsChipGroup.setVisibility(View.GONE);
             return;
         }
 
@@ -192,7 +176,7 @@ public class CocktailDbRecipeSearchDelegate
             }
         }
 
-        boolean hasDisplayableTags = false;
+        List<String> displayable = new ArrayList<>();
         for (String tag : tags) {
             // Skip structural tags
             if (excluded.contains(tag.toLowerCase())) continue;
@@ -202,19 +186,11 @@ public class CocktailDbRecipeSearchDelegate
             if (tag.equals(TheCocktailDbConstants.TAG_NON_ALCOHOLIC)) continue;
             if (tag.equals(TheCocktailDbConstants.TAG_OPTIONAL_ALCOHOL)) continue;
 
-            // Inflate chip_tag_compact - same as MealDbRecipeSearchDelegate
-            Chip chip = (Chip) LayoutInflater.from(context)
-                    .inflate(R.layout.chip_tag_compact, holder.tagChips, false);
-            chip.setEnsureMinTouchTargetSize(false);
-            chip.setClickable(false);
-            chip.setCheckable(false);
-            chip.setFocusable(false);
-            chip.setText(capitalize(tag));
-            holder.tagChips.addView(chip);
-            hasDisplayableTags = true;
+            displayable.add(capitalize(tag));
         }
 
-        holder.tagChips.setVisibility(hasDisplayableTags ? View.VISIBLE : View.GONE);
+        holder.tagChipAdapter.submitTags(displayable);
+        holder.tagsChipGroup.setVisibility(displayable.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private String capitalize(@NonNull String tag) {
@@ -230,23 +206,27 @@ public class CocktailDbRecipeSearchDelegate
         final TextView   sourceBadge;
         final TextView   productType;
         final TextView   recipeDescription;
-        final View       imageContainer;
-        final ImageView  recipeImage;
-        final ImageView  cardExpandIcon;
-        final TextView   ingredientCount;
-        final ChipGroup  tagChips;
+        final View       thumbnailContainer;
+        final ImageView  thumbnailImage;
+        final ImageView  thumbnailExpandIcon;
+        final TextView       ingredientCount;
+        final RecyclerView   tagsChipGroup;
+        final TagChipAdapter tagChipAdapter;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            recipeName        = itemView.findViewById(R.id.recipeName);
-            sourceBadge       = itemView.findViewById(R.id.sourceBadge);
-            productType       = itemView.findViewById(R.id.productType);
-            recipeDescription = itemView.findViewById(R.id.recipeDescription);
-            imageContainer    = itemView.findViewById(R.id.imageContainer);
-            recipeImage       = itemView.findViewById(R.id.recipeImage);
-            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
-            ingredientCount   = itemView.findViewById(R.id.ingredientCount);
-            tagChips          = itemView.findViewById(R.id.tagChips);
+            recipeName          = itemView.findViewById(R.id.recipeName);
+            sourceBadge         = itemView.findViewById(R.id.sourceBadge);
+            productType         = itemView.findViewById(R.id.productType);
+            recipeDescription   = itemView.findViewById(R.id.recipeDescription);
+            thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
+            ingredientCount     = itemView.findViewById(R.id.ingredientCount);
+            tagsChipGroup       = itemView.findViewById(R.id.tagsChipGroup);
+
+            tagChipAdapter = new TagChipAdapter();
+            tagsChipGroup.setAdapter(tagChipAdapter);
         }
     }
 }

@@ -92,48 +92,21 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Thumbnail: 72x72dp - identical to MealDB card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/imageContainer"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_marginEnd="10dp"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
+            <include layout="@layout/thumbnail_72dp" />
 
-                <ImageView
-                    android:id="@+id/recipeImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="?attr/colorSurfaceVariant"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="@string/product_image_description"
-                    tools:src="@drawable/ic_food_placeholder" />
-
-                <ImageView
-                    android:id="@+id/cardExpandIcon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="3dp"
-                    android:background="@drawable/bg_expand_icon_scrim_sm"
-                    android:padding="3dp"
-                    android:src="@drawable/ic_fullscreen"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Metadata column: description, ingredient count, tags -->
+            <!-- Metadata column: description, ingredient count, tags.
+                 match_parent + the Space before the chip row let it align to
+                 the thumbnail's bottom edge when content is short - see
+                 item_search_product_default.xml for the full rationale.
+                 gravity="center_vertical" removed: it would center the whole
+                 block instead of anchoring top content to the top. -->
             <LinearLayout
+                android:id="@+id/detailsColumn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_vertical">
+                android:orientation="vertical">
 
                 <!-- Category · Alcoholic status e.g. "Cocktail · Alcoholic" -->
                 <TextView
@@ -160,20 +133,25 @@
                     tools:visibility="visible"
                     tools:text="5 ingredients" />
 
-                <!-- Tag chips - compact, IBA / category tags from strTags -->
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/tagChips"
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <!-- Tag chips - horizontal RecyclerView, real native
+                     scrolling. See TagChipAdapter's Javadoc for why this
+                     replaced ChipGroup + HorizontalScrollView. -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/tagsChipGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="0dp"
-                    app:chipSpacingHorizontal="4dp"
-                    app:singleLine="true"
+                    android:orientation="horizontal"
+                    android:clipToPadding="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     android:visibility="gone"
-                    tools:visibility="visible" />
+                    tools:visibility="visible"
+                    tools:listitem="@layout/chip_tag_compact" />
 
             </LinearLayout>
 

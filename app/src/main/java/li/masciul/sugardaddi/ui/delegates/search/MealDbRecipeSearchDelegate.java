@@ -8,8 +8,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -17,10 +17,12 @@ import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.ui.adapters.TagChipAdapter;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -101,7 +103,9 @@ public class MealDbRecipeSearchDelegate
         bindName(holder, recipe, language);
         bindProductType(holder, recipe);
         bindDescription(holder, recipe, language);
-        bindImage(holder, recipe);
+        CardThumbnailHelper.bindRecipeThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                recipe);
         bindIngredientCount(holder, recipe);
         bindTags(holder, recipe);
     }
@@ -143,27 +147,6 @@ public class MealDbRecipeSearchDelegate
     }
 
     /**
-     * Load the recipe thumbnail via Glide, and make it tappable to open the full
-     * original full-screen. TheMealDB always provides strMealThumb for published
-     * recipes - this should almost never be null, but we hide the container
-     * gracefully if it is.
-     */
-    private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
-        if (source != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.recipeImage);
-            holder.imageContainer.setVisibility(View.VISIBLE);
-        } else {
-            holder.imageContainer.setVisibility(View.GONE);
-        }
-        // Expand affordance on the thumbnail; opens the FULL original, icon shows
-        // only when openable.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveRecipeImageSource(recipe));
-    }
-
-    /**
      * Bind the ingredient count derived from the recipe's FoodPortion list.
      *
      * TheMealDB ingredients are stored as FoodPortion stubs (unresolved).
@@ -189,8 +172,6 @@ public class MealDbRecipeSearchDelegate
      * The ChipGroup is hidden entirely if no displayable tags exist.
      */
     private void bindTags(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        holder.tagsChipGroup.removeAllViews();
-
         java.util.Set<String> tags = recipe.getTags();
         if (tags == null || tags.isEmpty()) {
             holder.tagsChipGroup.setVisibility(View.GONE);
@@ -209,24 +190,14 @@ public class MealDbRecipeSearchDelegate
             }
         }
 
-        boolean hasDisplayableTags = false;
+        List<String> displayable = new ArrayList<>();
         for (String tag : tags) {
             if (excluded.contains(tag.toLowerCase())) continue;
-
-            // Inflate from layout to guarantee correct theme-aware styling.
-            // This avoids any programmatic style/color resolution issues.
-            Chip chip = (Chip) android.view.LayoutInflater.from(context)
-                    .inflate(R.layout.chip_tag_compact, holder.tagsChipGroup, false);
-            chip.setEnsureMinTouchTargetSize(false);
-            chip.setClickable(false);
-            chip.setCheckable(false);
-            chip.setFocusable(false);
-            chip.setText(capitalize(tag));
-            holder.tagsChipGroup.addView(chip);
-            hasDisplayableTags = true;
+            displayable.add(capitalize(tag));
         }
 
-        holder.tagsChipGroup.setVisibility(hasDisplayableTags ? View.VISIBLE : View.GONE);
+        holder.tagChipAdapter.submitTags(displayable);
+        holder.tagsChipGroup.setVisibility(displayable.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     /** Capitalize the first letter of a tag string. */
@@ -241,24 +212,33 @@ public class MealDbRecipeSearchDelegate
         final TextView   recipeName;
         final TextView   sourceBadge;
         final TextView   productType;
-        final View       imageContainer;
-        final ImageView  recipeImage;
-        final ImageView  cardExpandIcon;
+        final View       thumbnailContainer;
+        final ImageView  thumbnailImage;
+        final ImageView  thumbnailExpandIcon;
         final TextView   recipeDescription;
-        final TextView   ingredientCount;
-        final ChipGroup  tagsChipGroup;
+        final TextView       ingredientCount;
+        final RecyclerView   tagsChipGroup;
+        final TagChipAdapter tagChipAdapter;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            recipeName        = itemView.findViewById(R.id.recipeName);
-            sourceBadge       = itemView.findViewById(R.id.sourceBadge);
-            productType       = itemView.findViewById(R.id.productType);
-            imageContainer    = itemView.findViewById(R.id.imageContainer);
-            recipeImage       = itemView.findViewById(R.id.recipeImage);
-            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
-            recipeDescription = itemView.findViewById(R.id.recipeDescription);
-            ingredientCount   = itemView.findViewById(R.id.ingredientCount);
-            tagsChipGroup     = itemView.findViewById(R.id.tagsChipGroup);
+            recipeName          = itemView.findViewById(R.id.recipeName);
+            sourceBadge         = itemView.findViewById(R.id.sourceBadge);
+            productType         = itemView.findViewById(R.id.productType);
+            thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
+            recipeDescription   = itemView.findViewById(R.id.recipeDescription);
+            ingredientCount     = itemView.findViewById(R.id.ingredientCount);
+            tagsChipGroup       = itemView.findViewById(R.id.tagsChipGroup);
+
+            // LayoutManager/Adapter created once per ViewHolder, reused
+            // across every bind() via RecyclerView's normal view recycling -
+            // not recreated per bind, only its data is (submitTags()).
+            tagChipAdapter = new TagChipAdapter();
+            tagsChipGroup.setLayoutManager(
+                    new LinearLayoutManager(itemView.getContext(), LinearLayoutManager.HORIZONTAL, false));
+            tagsChipGroup.setAdapter(tagChipAdapter);
         }
     }
 }

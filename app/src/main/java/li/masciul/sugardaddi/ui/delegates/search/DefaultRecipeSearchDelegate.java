@@ -15,7 +15,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
 /**
  * DefaultRecipeSearchDelegate - generic (fallback) search result card for recipes.
@@ -78,7 +78,9 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
 
         bindName(holder, recipe, language);
         bindSourceBadge(holder, recipe);
-        bindImage(holder, recipe);
+        CardThumbnailHelper.bindRecipeThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                recipe);
         bindDescription(holder, recipe, language);
         bindTime(holder, recipe);
         bindServings(holder, recipe);
@@ -107,21 +109,6 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
     private void bindName(ViewHolder holder, Recipe recipe, String language) {
         String name = recipe.getDisplayName(language);
         holder.recipeName.setText(name != null && !name.trim().isEmpty() ? name : "-");
-    }
-
-    private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
-        if (source != null && holder.recipeImage != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.recipeImage);
-            if (holder.imageContainer != null) holder.imageContainer.setVisibility(View.VISIBLE);
-        } else {
-            if (holder.imageContainer != null) holder.imageContainer.setVisibility(View.GONE);
-        }
-        // Expand affordance on the thumbnail; opens the FULL original, icon shows
-        // only when openable.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveRecipeImageSource(recipe));
     }
 
     private void bindDescription(ViewHolder holder, Recipe recipe, String language) {
@@ -192,9 +179,9 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
     // ========== VIEW HOLDER ==========
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        final View      imageContainer;
-        final ImageView recipeImage;
-        final ImageView cardExpandIcon;
+        final View      thumbnailContainer;
+        final ImageView thumbnailImage;
+        final ImageView thumbnailExpandIcon;
         final TextView  recipeName;
         final TextView  sourceBadge;
         final TextView  recipeDescription;
@@ -206,17 +193,17 @@ public class DefaultRecipeSearchDelegate implements ItemViewDelegate<DefaultReci
 
         ViewHolder(View itemView) {
             super(itemView);
-            imageContainer    = itemView.findViewById(R.id.imageContainer);
-            recipeImage       = itemView.findViewById(R.id.recipeImage);
-            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
-            recipeName        = itemView.findViewById(R.id.recipeName);
-            sourceBadge       = itemView.findViewById(R.id.sourceBadge);
-            recipeDescription = itemView.findViewById(R.id.recipeDescription);
-            recipeTime        = itemView.findViewById(R.id.recipeTime);
-            recipeServings    = itemView.findViewById(R.id.recipeServings);
-            recipeDifficulty  = itemView.findViewById(R.id.recipeDifficulty);
-            separator1        = itemView.findViewById(R.id.separator1);
-            separator2        = itemView.findViewById(R.id.separator2);
+            thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
+            recipeName          = itemView.findViewById(R.id.recipeName);
+            sourceBadge         = itemView.findViewById(R.id.sourceBadge);
+            recipeDescription   = itemView.findViewById(R.id.recipeDescription);
+            recipeTime          = itemView.findViewById(R.id.recipeTime);
+            recipeServings      = itemView.findViewById(R.id.recipeServings);
+            recipeDifficulty    = itemView.findViewById(R.id.recipeDifficulty);
+            separator1          = itemView.findViewById(R.id.separator1);
+            separator2          = itemView.findViewById(R.id.separator2);
         }
     }
 }

@@ -89,97 +89,29 @@
             tools:visibility="visible"
             tools:text="Food product" />
 
-        <!-- ROW 3: image | details | scores -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <!-- ROW 3: image | details | scores. Plain LinearLayout, matching
+             the other three product cards exactly - the ConstraintLayout
+             version of this row went through two failed attempts for
+             reasons never fully explained; this mechanism is proven
+             working elsewhere in this exact refactor. -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-            <!-- Product image: 72x72dp, top-start -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/imageContainer"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:strokeColor="?attr/colorOutlineVariant"
-                app:strokeWidth="1dp">
+            <include layout="@layout/thumbnail_72dp" />
 
-                <ImageView
-                    android:id="@+id/productImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="?attr/colorSurface"
-                    android:contentDescription="@string/product_image_description"
-                    android:scaleType="centerCrop"
-                    tools:src="@drawable/ic_food_placeholder" />
-
-                <ImageView
-                    android:id="@+id/cardExpandIcon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="3dp"
-                    android:background="@drawable/bg_expand_icon_scrim_sm"
-                    android:padding="3dp"
-                    android:src="@drawable/ic_fullscreen"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SCORE STACK: vertical, top-end, gravity=center_horizontal.
-                 LinearLayout stacks leaf then nutriscore vertically.
-                 gravity=center_horizontal centers both children on the same axis.
-                 ScoreOverlayHelper must have imageParams.gravity=CENTER_HORIZONTAL
-                 so the sticker image centers within nutriScoreContainer. -->
-            <LinearLayout
-                android:id="@+id/scoreContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:visibility="visible">
-
-                <!-- Leaf badge: fixed 32dp square, no adjustViewBounds.
-                     LinearLayout gravity=center_horizontal centers it. -->
-                <ImageView
-                    android:id="@+id/greenScoreLeaf"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_marginBottom="10dp"
-                    android:contentDescription="@string/content_description_green_score"
-                    android:scaleType="fitCenter"
-                    tools:src="@drawable/greenscore_leaf_a_plus" />
-
-                <!-- NutriScore container: sticker added programmatically by delegate.
-                     wrap_content - sized by the sticker child.
-                     No minWidth, no margins: let the sticker dictate its own size. -->
-                <FrameLayout
-                    android:id="@+id/nutriScoreContainer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-            </LinearLayout>
-
-            <!-- Details column: fills space between image and score stack -->
+            <!-- Details column: fills remaining width AND stretches to match
+                 the thumbnail's height (match_parent) - the Space below needs
+                 real height to absorb. See item_search_product_default.xml
+                 for the full rationale. -->
             <LinearLayout
                 android:id="@+id/detailsColumn"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginStart="12dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                app:layout_constraintStart_toEndOf="@id/imageContainer"
-                app:layout_constraintEnd_toStartOf="@id/scoreContainer"
-                app:layout_constraintTop_toTopOf="parent">
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/brandName"
@@ -211,6 +143,11 @@
                     tools:visibility="visible"
                     tools:text="Dark chocolate bar with more than 70 cocoa" />
 
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
                 <TextView
                     android:id="@+id/servingInfo"
                     android:layout_width="match_parent"
@@ -227,8 +164,38 @@
 
             </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- SCORE STACK: now a plain LinearLayout sibling, vertically
+                 centered in the row via layout_gravity instead of
+                 ConstraintLayout's dual top+bottom pin. Internal
+                 gravity=center_horizontal (leaf+nutriscore on the same
+                 axis) is unchanged. -->
+            <LinearLayout
+                android:id="@+id/scoreContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
 
+                <ImageView
+                    android:id="@+id/greenScoreLeaf"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginBottom="10dp"
+                    android:contentDescription="@string/content_description_green_score"
+                    android:scaleType="fitCenter"
+                    tools:src="@drawable/greenscore_leaf_a_plus" />
+
+                <FrameLayout
+                    android:id="@+id/nutriScoreContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+        </LinearLayout>
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

@@ -9,19 +9,18 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
-
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.ui.adapters.TagChipAdapter;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -87,7 +86,9 @@ public class FatSecretRecipeSearchDelegate
         Recipe recipe = (Recipe) item;
         bindName(holder, recipe, language);
         bindDescription(holder, recipe, language);
-        bindImage(holder, recipe);
+        CardThumbnailHelper.bindRecipeThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                recipe);
         bindIngredientCount(holder, recipe);
         bindTags(holder, recipe);
     }
@@ -113,25 +114,6 @@ public class FatSecretRecipeSearchDelegate
     }
 
     /**
-     * Load the recipe thumbnail via Glide, and make it tappable to open the
-     * full original full-screen. recipe_image is not guaranteed for every
-     * FatSecret recipe, so the container collapses entirely rather than
-     * showing a placeholder icon - same pattern as the product cards.
-     */
-    private void bindImage(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        Object source = ImageDisplayUtils.resolveRecipeThumbnailSource(recipe);
-        if (source != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.recipeImage);
-            holder.imageContainer.setVisibility(View.VISIBLE);
-        } else {
-            holder.imageContainer.setVisibility(View.GONE);
-        }
-        ImageDisplayUtils.bindFullScreenTap(context, holder.recipeImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveRecipeImageSource(recipe));
-    }
-
-    /**
      * Ingredient count derived from the recipe's FoodPortion list.
      * recipes/search/v3 gives ingredient names only (mapIngredientNames),
      * same shape as TheMealDB's stub portions.
@@ -153,8 +135,6 @@ public class FatSecretRecipeSearchDelegate
      * description, mirroring MealDbRecipeSearchDelegate's exclusion logic.
      */
     private void bindTags(@NonNull ViewHolder holder, @NonNull Recipe recipe) {
-        holder.tagsChipGroup.removeAllViews();
-
         Set<String> tags = recipe.getTags();
         if (tags == null || tags.isEmpty()) {
             holder.tagsChipGroup.setVisibility(View.GONE);
@@ -171,22 +151,14 @@ public class FatSecretRecipeSearchDelegate
             }
         }
 
-        boolean hasDisplayableTags = false;
+        List<String> displayable = new ArrayList<>();
         for (String tag : tags) {
             if (excluded.contains(tag.toLowerCase())) continue;
-
-            Chip chip = (Chip) LayoutInflater.from(context)
-                    .inflate(R.layout.chip_tag_compact, holder.tagsChipGroup, false);
-            chip.setEnsureMinTouchTargetSize(false);
-            chip.setClickable(false);
-            chip.setCheckable(false);
-            chip.setFocusable(false);
-            chip.setText(capitalize(tag));
-            holder.tagsChipGroup.addView(chip);
-            hasDisplayableTags = true;
+            displayable.add(capitalize(tag));
         }
 
-        holder.tagsChipGroup.setVisibility(hasDisplayableTags ? View.VISIBLE : View.GONE);
+        holder.tagChipAdapter.submitTags(displayable);
+        holder.tagsChipGroup.setVisibility(displayable.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     /** Capitalize the first letter of a tag string. */
@@ -201,24 +173,28 @@ public class FatSecretRecipeSearchDelegate
         final TextView   recipeName;
         final TextView   sourceBadge;
         final TextView   productType;
-        final View       imageContainer;
-        final ImageView  recipeImage;
-        final ImageView  cardExpandIcon;
+        final View       thumbnailContainer;
+        final ImageView  thumbnailImage;
+        final ImageView  thumbnailExpandIcon;
         final TextView   recipeDescription;
-        final TextView   ingredientCount;
-        final ChipGroup  tagsChipGroup;
+        final TextView       ingredientCount;
+        final RecyclerView   tagsChipGroup;
+        final TagChipAdapter tagChipAdapter;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            recipeName        = itemView.findViewById(R.id.recipeName);
-            sourceBadge       = itemView.findViewById(R.id.sourceBadge);
-            productType       = itemView.findViewById(R.id.productType);
-            imageContainer    = itemView.findViewById(R.id.imageContainer);
-            recipeImage       = itemView.findViewById(R.id.recipeImage);
-            cardExpandIcon    = itemView.findViewById(R.id.cardExpandIcon);
-            recipeDescription = itemView.findViewById(R.id.recipeDescription);
-            ingredientCount   = itemView.findViewById(R.id.ingredientCount);
-            tagsChipGroup     = itemView.findViewById(R.id.tagsChipGroup);
+            recipeName          = itemView.findViewById(R.id.recipeName);
+            sourceBadge         = itemView.findViewById(R.id.sourceBadge);
+            productType         = itemView.findViewById(R.id.productType);
+            thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
+            recipeDescription   = itemView.findViewById(R.id.recipeDescription);
+            ingredientCount     = itemView.findViewById(R.id.ingredientCount);
+            tagsChipGroup       = itemView.findViewById(R.id.tagsChipGroup);
+
+            tagChipAdapter = new TagChipAdapter();
+            tagsChipGroup.setAdapter(tagChipAdapter);
         }
     }
 }

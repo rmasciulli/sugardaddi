@@ -18,7 +18,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 import li.masciul.sugardaddi.utils.category.CategoryCleaner;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
@@ -84,7 +84,9 @@ public class OffProductSearchDelegate
         bindBrand(holder, product, language);
         bindCategory(holder, product, language);
         bindServingInfo(holder, product);
-        bindImage(holder, product);
+        CardThumbnailHelper.bindProductThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                product);
         bindGreenScore(holder, product);
         bindNutriScore(holder, product);
     }
@@ -181,20 +183,6 @@ public class OffProductSearchDelegate
         holder.servingInfo.setVisibility(View.VISIBLE);
     }
 
-    private void bindImage(ViewHolder holder, FoodProduct product) {
-        Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
-        if (source != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
-        } else {
-            holder.productImage.setImageResource(R.drawable.ic_food_placeholder);
-        }
-        // TEST: expand affordance on the thumbnail. Opens the FULL original (image
-        // source, not the thumbnail shown); icon shows only when openable.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveProductImageSource(product));
-    }
-
     // Compact score dimensions for search result cards.
     // ScoreOverlayHelper defaults are 32dp (leaf) and 48dp (nutriscore) -- too large for a list card.
     // We override after creation: the ViewTreeObserver inside fires on next layout pass
@@ -268,25 +256,27 @@ public class OffProductSearchDelegate
         final TextView    brandName;
         final TextView    categories;
         final TextView    servingInfo;
-        final ImageView   productImage;
-        final ImageView   cardExpandIcon;
+        final View        thumbnailContainer;
+        final ImageView   thumbnailImage;
+        final ImageView   thumbnailExpandIcon;
         final ImageView   greenScoreLeaf;
         final FrameLayout nutriScoreContainer;
         final android.view.ViewGroup scoreContainer;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            productName         = itemView.findViewById(R.id.productName);
-            sourceBadge         = itemView.findViewById(R.id.sourceBadge);
-            productType         = itemView.findViewById(R.id.productType);
-            brandName           = itemView.findViewById(R.id.brandName);
-            categories          = itemView.findViewById(R.id.categories);
-            servingInfo         = itemView.findViewById(R.id.servingInfo);
-            productImage        = itemView.findViewById(R.id.productImage);
-            cardExpandIcon      = itemView.findViewById(R.id.cardExpandIcon);
-            greenScoreLeaf      = itemView.findViewById(R.id.greenScoreLeaf);
-            nutriScoreContainer = itemView.findViewById(R.id.nutriScoreContainer);
-            scoreContainer      = itemView.findViewById(R.id.scoreContainer);
+            productName          = itemView.findViewById(R.id.productName);
+            sourceBadge          = itemView.findViewById(R.id.sourceBadge);
+            productType          = itemView.findViewById(R.id.productType);
+            brandName            = itemView.findViewById(R.id.brandName);
+            categories           = itemView.findViewById(R.id.categories);
+            servingInfo          = itemView.findViewById(R.id.servingInfo);
+            thumbnailContainer   = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage       = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon  = itemView.findViewById(R.id.thumbnailExpandIcon);
+            greenScoreLeaf       = itemView.findViewById(R.id.greenScoreLeaf);
+            nutriScoreContainer  = itemView.findViewById(R.id.nutriScoreContainer);
+            scoreContainer       = itemView.findViewById(R.id.scoreContainer);
         }
     }
 }

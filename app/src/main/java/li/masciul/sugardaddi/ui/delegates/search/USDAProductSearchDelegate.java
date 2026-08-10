@@ -6,10 +6,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.card.MaterialCardView;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -19,7 +16,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
 import java.util.Locale;
 
@@ -89,7 +86,9 @@ public class USDAProductSearchDelegate
         bindCategory(holder, product, language);
         bindNutritionSummary(holder, product, language);
         bindKcalBadge(holder, product);
-        bindImage(holder, product);
+        CardThumbnailHelper.bindProductThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                product);
     }
 
     // ========== BINDING HELPERS ==========
@@ -131,27 +130,6 @@ public class USDAProductSearchDelegate
         } else {
             holder.category.setVisibility(View.GONE);
         }
-    }
-
-    private void bindImage(@NonNull ViewHolder holder, @NonNull FoodProduct product) {
-        if (holder.productImage == null) return;
-
-        Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
-        if (source != null) {
-            if (holder.imageContainer != null) {
-                holder.imageContainer.setVisibility(View.VISIBLE);
-            }
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
-        } else {
-            if (holder.imageContainer != null) {
-                holder.imageContainer.setVisibility(View.GONE);
-            }
-        }
-        // Expand affordance; this source has no remote image, so the icon appears
-        // only on user-set images. Cleared otherwise.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveProductImageSource(product));
     }
 
     /**
@@ -203,12 +181,9 @@ public class USDAProductSearchDelegate
         final TextView category;
         final TextView nutritionSummary;
         final TextView kcalBadge;
-        @Nullable
-        final MaterialCardView imageContainer;
-        @Nullable
-        final ImageView productImage;
-        @Nullable
-        final ImageView cardExpandIcon;
+        final View      thumbnailContainer;
+        final ImageView thumbnailImage;
+        final ImageView thumbnailExpandIcon;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -218,9 +193,9 @@ public class USDAProductSearchDelegate
             category         = itemView.findViewById(R.id.category);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
-            imageContainer   = itemView.findViewById(R.id.imageContainer);
-            productImage     = itemView.findViewById(R.id.productImage);
-            cardExpandIcon   = itemView.findViewById(R.id.cardExpandIcon);
+            thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
         }
     }
 }

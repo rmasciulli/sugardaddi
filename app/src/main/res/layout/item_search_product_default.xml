@@ -95,50 +95,21 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- Product image: 72x72dp, optional - GONE by default, matches
-                 item_search_product_ciqual/usda's pattern. bindImage() shows it
-                 only when a real thumbnail source resolves; no placeholder icon. -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/imageContainer"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_marginEnd="12dp"
-                android:visibility="gone"
-                tools:visibility="visible"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
+            <include layout="@layout/thumbnail_72dp" />
 
-                <ImageView
-                    android:id="@+id/productImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="?attr/colorSurface"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="@string/product_image_description"
-                    tools:src="@drawable/ic_food_placeholder" />
-
-                <ImageView
-                    android:id="@+id/cardExpandIcon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="3dp"
-                    android:background="@drawable/bg_expand_icon_scrim_sm"
-                    android:padding="3dp"
-                    android:src="@drawable/ic_fullscreen"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Details column: fills remaining width -->
+            <!-- Details column: fills remaining width AND stretches to match
+                 the thumbnail's height (match_parent) - the Space below needs
+                 real height to absorb. Top content (brand/category) stays
+                 naturally top-anchored; the flexible Space pushes only the
+                 nutrition row down to the thumbnail's bottom edge. Collapses
+                 to zero when there's no thumbnail, or when content is taller
+                 than 72dp anyway - nothing here forces a fixed height that
+                 could clip longer content. -->
             <LinearLayout
                 android:id="@+id/detailsColumn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -173,6 +144,11 @@
                     android:visibility="gone"
                     tools:visibility="visible"
                     tools:text="Cereals and cereal products" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
 
                 <!-- Nutrition row: carbs left, kcal badge right - same convention
                      as item_search_product_ciqual/usda.xml. Carbs lead because

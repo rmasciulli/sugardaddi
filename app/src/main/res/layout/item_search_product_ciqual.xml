@@ -10,7 +10,8 @@
     Chocolate and chocolate products
     58.0g carbohydrates per 100g           492 kcal
 
-    No image (scientific reference data, no product photos).
+    No remote image (scientific reference data, no product photos) - but
+    can still show a user-set custom thumbnail, same as every other card.
     No NutriScore / EcoScore (Ciqual has no scoring system).
 
     Used by: CiqualProductSearchDelegate
@@ -94,53 +95,23 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!--
-                User-defined image - shown only when the user has explicitly set
-                one via ImagePickerHelper. GONE by default; bindImage() makes it
-                VISIBLE when userThumbnailPath or userImagePath is non-null.
-                Ciqual has no remote image URL and no auto-downloaded thumbnail.
-            -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/imageContainer"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_marginEnd="12dp"
-                android:visibility="gone"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
+            <include layout="@layout/thumbnail_72dp" />
 
-                <ImageView
-                    android:id="@+id/productImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/product_image_description"
-                    android:scaleType="centerCrop"
-                    tools:src="@drawable/ic_food_placeholder" />
-
-                <ImageView
-                    android:id="@+id/cardExpandIcon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="3dp"
-                    android:background="@drawable/bg_expand_icon_scrim_sm"
-                    android:padding="3dp"
-                    android:src="@drawable/ic_fullscreen"
-                    android:scaleType="fitCenter"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Content column: category + nutrition row -->
+            <!-- Content column: category + nutrition row. match_parent height
+                 + the Space below the category line let the nutrition row
+                 align to the thumbnail's bottom edge when content is short,
+                 without forcing anything when it's not - see
+                 item_search_product_default.xml for the full rationale.
+                 gravity="center_vertical" is deliberately removed here: it
+                 would fight this top+bottom anchoring by centering the whole
+                 content block as a group instead. -->
             <LinearLayout
+                android:id="@+id/detailsColumn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:minHeight="72dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_vertical">
+                android:orientation="vertical">
 
                 <!-- Category (primary metadata for Ciqual entries) -->
                 <TextView
@@ -157,6 +128,11 @@
                     android:visibility="gone"
                     tools:visibility="visible"
                     tools:text="Dairy products › dairy desserts" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
 
                 <!-- Nutrition row: carbs left, kcal badge right -->
                 <LinearLayout

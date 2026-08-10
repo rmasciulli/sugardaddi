@@ -14,10 +14,9 @@ import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
-import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 
 import java.util.Locale;
 
@@ -77,7 +76,9 @@ public class DefaultProductSearchDelegate
         bindCategory(holder, product, language);
         bindNutritionSummary(holder, product, language);
         bindKcalBadge(holder, product);
-        bindImage(holder, product);
+        CardThumbnailHelper.bindProductThumbnail(context,
+                holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
+                product);
     }
 
     // ========== BINDING HELPERS ==========
@@ -179,24 +180,6 @@ public class DefaultProductSearchDelegate
         }
     }
 
-    private void bindImage(ViewHolder holder, FoodProduct product) {
-        Object source = ImageDisplayUtils.resolveProductThumbnailSource(product);
-        if (source != null && holder.imageContainer != null) {
-            ImageDisplayUtils.loadCardThumbnail(context, source, holder.productImage);
-            holder.imageContainer.setVisibility(View.VISIBLE);
-        } else if (holder.imageContainer != null) {
-            // No real thumbnail - collapse the slot entirely rather than
-            // showing a generic placeholder icon, matching how Ciqual/USDA
-            // cards (sources with no images at all) already behave.
-            holder.imageContainer.setVisibility(View.GONE);
-        }
-        // Expand affordance on the thumbnail; opens the FULL original (image source,
-        // not the thumbnail); icon shows only when openable.
-        ImageDisplayUtils.bindFullScreenTap(context, holder.productImage,
-                holder.cardExpandIcon,
-                ImageDisplayUtils.resolveProductImageSource(product));
-    }
-
     // ========== VIEW HOLDER ==========
 
     static class ViewHolder extends RecyclerView.ViewHolder {
@@ -207,9 +190,9 @@ public class DefaultProductSearchDelegate
         final TextView  categories;
         final TextView  nutritionSummary;
         final TextView  kcalBadge;
-        final View      imageContainer;
-        final ImageView productImage;
-        final ImageView cardExpandIcon;
+        final View      thumbnailContainer;
+        final ImageView thumbnailImage;
+        final ImageView thumbnailExpandIcon;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -220,9 +203,9 @@ public class DefaultProductSearchDelegate
             categories     = itemView.findViewById(R.id.categories);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
-            imageContainer = itemView.findViewById(R.id.imageContainer);
-            productImage   = itemView.findViewById(R.id.productImage);
-            cardExpandIcon = itemView.findViewById(R.id.cardExpandIcon);
+            thumbnailContainer = itemView.findViewById(R.id.thumbnailContainer);
+            thumbnailImage      = itemView.findViewById(R.id.thumbnailImage);
+            thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
         }
     }
 }
