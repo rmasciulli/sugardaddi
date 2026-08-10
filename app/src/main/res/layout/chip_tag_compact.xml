@@ -21,9 +21,9 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:textAppearance="?attr/textAppearanceLabelSmall"
-    app:chipMinHeight="24dp"
-    app:chipStartPadding="6dp"
-    app:chipEndPadding="6dp"
+    app:chipMinHeight="22dp"
+    app:chipStartPadding="4dp"
+    app:chipEndPadding="4dp"
     app:textStartPadding="0dp"
     app:textEndPadding="0dp"
     app:chipIconVisible="false"
@@ -31,4 +31,4 @@
     app:ensureMinTouchTargetSize="false"
     android:clickable="false"
     android:focusable="false"
-    tools:text="Chocolate" />
+    tools:text="Chocolate" />

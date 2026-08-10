@@ -81,7 +81,7 @@
             android:id="@+id/productType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
@@ -118,7 +118,7 @@
                     android:id="@+id/brandName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="3dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/inter"
                     android:fontWeight="600"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -134,20 +134,21 @@
                     android:id="@+id/categories"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="3dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/roboto_condensed"
                     android:fontWeight="300"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:maxLines="2"
                     android:ellipsize="end"
                     android:visibility="gone"
                     tools:visibility="visible"
-                    tools:text="Cereals and cereal products" />
+                    tools:text="Dairy products › dairy desserts" />
 
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:layout_marginBottom="2dp"
                     android:layout_weight="1" />
 
                 <!-- Nutrition row: carbs left, kcal badge right - same convention
@@ -200,4 +201,4 @@
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>

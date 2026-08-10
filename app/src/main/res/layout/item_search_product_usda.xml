@@ -84,7 +84,7 @@
             android:id="@+id/productType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
@@ -118,10 +118,10 @@
 
                 <!-- Category (primary metadata for Ciqual entries) -->
                 <TextView
-                    android:id="@+id/category"
+                    android:id="@+id/categories"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/roboto_condensed"
                     android:fontWeight="300"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -135,6 +135,7 @@
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:layout_marginBottom="2dp"
                     android:layout_weight="1" />
 
                 <!-- Nutrition row: carbs left, kcal badge right -->
@@ -182,4 +183,4 @@
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>

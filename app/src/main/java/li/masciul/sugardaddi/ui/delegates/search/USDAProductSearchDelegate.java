@@ -125,10 +125,10 @@ public class USDAProductSearchDelegate
         // USDA categories are flat strings (no breadcrumb separator), so no
         // breadcrumb formatting is needed - just display directly.
         if (rawCategory != null && !rawCategory.trim().isEmpty()) {
-            holder.category.setText(rawCategory.trim());
-            holder.category.setVisibility(View.VISIBLE);
+            holder.categories.setText(rawCategory.trim());
+            holder.categories.setVisibility(View.VISIBLE);
         } else {
-            holder.category.setVisibility(View.GONE);
+            holder.categories.setVisibility(View.GONE);
         }
     }
 
@@ -178,7 +178,7 @@ public class USDAProductSearchDelegate
         final TextView productName;
         final TextView sourceBadge;
         final TextView productType;
-        final TextView category;
+        final TextView categories;
         final TextView nutritionSummary;
         final TextView kcalBadge;
         final View      thumbnailContainer;
@@ -190,7 +190,7 @@ public class USDAProductSearchDelegate
             productName      = itemView.findViewById(R.id.productName);
             sourceBadge      = itemView.findViewById(R.id.sourceBadge);
             productType      = itemView.findViewById(R.id.productType);
-            category         = itemView.findViewById(R.id.category);
+            categories       = itemView.findViewById(R.id.categories);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
             thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
@@ -198,4 +198,4 @@ public class USDAProductSearchDelegate
             thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
         }
     }
-}
+}

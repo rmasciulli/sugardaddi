@@ -81,7 +81,7 @@
             android:id="@+id/productType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="8dp"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textStyle="bold"
             android:textColor="?attr/colorPrimary"
@@ -115,10 +115,10 @@
 
                 <!-- Category (primary metadata for Ciqual entries) -->
                 <TextView
-                    android:id="@+id/category"
+                    android:id="@+id/categories"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp"
+                    android:layout_marginBottom="2dp"
                     android:fontFamily="@font/roboto_condensed"
                     android:fontWeight="300"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -132,44 +132,45 @@
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
+                    android:layout_marginBottom="2dp"
                     android:layout_weight="1" />
 
                 <!-- Nutrition row: carbs left, kcal badge right -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/nutritionSummary"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:ellipsize="end"
                         android:fontFamily="@font/roboto_condensed"
+                        android:maxLines="1"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
-                        android:maxLines="1"
-                        android:ellipsize="end"
                         android:visibility="gone"
-                        tools:visibility="visible"
-                        tools:text="20.3g carbohydrates per 100g" />
+                        tools:text="20.3g carbohydrates per 100g"
+                        tools:visibility="visible" />
 
                     <TextView
                         android:id="@+id/kcalBadge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
+                        android:background="@drawable/rounded_corner_8dp"
+                        android:backgroundTint="?attr/colorTertiaryContainer"
                         android:paddingHorizontal="7dp"
                         android:paddingVertical="2dp"
                         android:textAppearance="?attr/textAppearanceLabelSmall"
-                        android:textStyle="bold"
                         android:textColor="?attr/colorPrimary"
-                        android:background="@drawable/rounded_corner_8dp"
-                        android:backgroundTint="?attr/colorTertiaryContainer"
+                        android:textStyle="bold"
                         android:visibility="gone"
-                        tools:visibility="visible"
-                        tools:text="155 kcal" />
+                        tools:text="155 kcal"
+                        tools:visibility="visible" />
 
                 </LinearLayout>
 
@@ -179,4 +180,4 @@
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>

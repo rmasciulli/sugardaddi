@@ -130,10 +130,10 @@ public class CiqualProductSearchDelegate
         }
         String category = formatBreadcrumb(rawCategory);
         if (category != null && !category.isEmpty()) {
-            holder.category.setText(category);
-            holder.category.setVisibility(View.VISIBLE);
+            holder.categories.setText(category);
+            holder.categories.setVisibility(View.VISIBLE);
         } else {
-            holder.category.setVisibility(View.GONE);
+            holder.categories.setVisibility(View.GONE);
         }
     }
 
@@ -211,7 +211,7 @@ public class CiqualProductSearchDelegate
         final TextView productName;
         final TextView sourceBadge;
         final TextView productType;
-        final TextView category;
+        final TextView categories;
         final TextView nutritionSummary;
         final TextView kcalBadge;
         final View      thumbnailContainer;
@@ -223,7 +223,7 @@ public class CiqualProductSearchDelegate
             productName      = itemView.findViewById(R.id.productName);
             sourceBadge      = itemView.findViewById(R.id.sourceBadge);
             productType      = itemView.findViewById(R.id.productType);
-            category         = itemView.findViewById(R.id.category);
+            categories       = itemView.findViewById(R.id.categories);
             nutritionSummary = itemView.findViewById(R.id.nutritionSummary);
             kcalBadge        = itemView.findViewById(R.id.kcalBadge);
             thumbnailContainer  = itemView.findViewById(R.id.thumbnailContainer);
@@ -231,4 +231,4 @@ public class CiqualProductSearchDelegate
             thumbnailExpandIcon = itemView.findViewById(R.id.thumbnailExpandIcon);
         }
     }
-}
+}
