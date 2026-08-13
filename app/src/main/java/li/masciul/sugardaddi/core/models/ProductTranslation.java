@@ -23,6 +23,9 @@ public class ProductTranslation {
     private String description;         // Product description
     private String ingredients;         // Ingredients list text
     private String categories;          // Category text ("Fruits" / "Fruits")
+    private String sourceUrl;           // Link to this item's page on the source's own
+                                        // website, in this language, when the source
+                                        // provides one (e.g. Ciqual's urlFr vs urlEng).
 
     // ========== PRODUCT-SPECIFIC FIELDS ==========
     private String packaging;           // Packaging info ("Plastic bottle" / "Bouteille plastique")
@@ -115,6 +118,15 @@ public class ProductTranslation {
         touch();
     }
 
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+        touch();
+    }
+
     public String getPackaging() {
         return packaging;
     }
@@ -181,7 +193,8 @@ public class ProductTranslation {
     public boolean hasContent() {
         return hasText(name) || hasText(genericName) || hasText(brand) ||
                 hasText(description) || hasText(ingredients) || hasText(categories) ||
-                hasText(packaging) || hasText(origins) || hasText(stores);
+                hasText(packaging) || hasText(origins) || hasText(stores) ||
+                hasText(sourceUrl);
     }
 
     /**
@@ -229,6 +242,7 @@ public class ProductTranslation {
         copy.description = this.description;
         copy.ingredients = this.ingredients;
         copy.categories = this.categories;
+        copy.sourceUrl = this.sourceUrl;
         copy.packaging = this.packaging;
         copy.origins = this.origins;
         copy.stores = this.stores;
@@ -250,6 +264,7 @@ public class ProductTranslation {
         if (other.description != null) this.description = other.description;
         if (other.ingredients != null) this.ingredients = other.ingredients;
         if (other.categories != null) this.categories = other.categories;
+        if (other.sourceUrl != null) this.sourceUrl = other.sourceUrl;
         if (other.packaging != null) this.packaging = other.packaging;
         if (other.origins != null) this.origins = other.origins;
         if (other.stores != null) this.stores = other.stores;

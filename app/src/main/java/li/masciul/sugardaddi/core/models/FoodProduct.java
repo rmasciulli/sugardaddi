@@ -154,7 +154,15 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private ServingSize servingSize;
 
     // ========== MEDIA ==========
-    
+
+    /** Link to the item's own page on the source's website, when the source provides one
+     *  (e.g. FatSecret's food_url). Null for sources with no per-item page (Ciqual, USDA).
+     *  Pairs with DataSourceType.getWebsiteUrl() - that gives the source's general
+     *  homepage, this gives this specific item's page on it. Used by the detail screen's
+     *  attribution panel to deep-link instead of falling back to the homepage - see
+     *  DetailRendererUtils.populateAttribution(). */
+    private String sourceUrl;
+
     // Remote URLs - provided by the data source.
     private String thumbnailUrl;
     private String imageUrl;
@@ -1076,6 +1084,49 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
     public void setServingSize(ServingSize servingSize) {
         this.servingSize = servingSize;
+    }
+
+    public String getSourceUrl(String language) {
+        if (language == null || language.equals(currentLanguage)) {
+            return sourceUrl;
+        }
+
+        ProductTranslation translation = translations.get(language);
+        if (translation != null && translation.getSourceUrl() != null) {
+            return translation.getSourceUrl();
+        }
+
+        return sourceUrl;
+    }
+
+    public String getSourceUrl() {
+        return getSourceUrl(DEFAULT_LANGUAGE);
+    }
+
+    public void setSourceUrl(String sourceUrl, String language) {
+        if (sourceUrl == null || language == null) return;
+
+        if (language.equals(DEFAULT_LANGUAGE)) {
+            if (!currentLanguage.equals(DEFAULT_LANGUAGE) && this.sourceUrl != null) {
+                getOrCreateTranslation(currentLanguage).setSourceUrl(this.sourceUrl);
+            }
+            this.sourceUrl = sourceUrl;
+            this.currentLanguage = DEFAULT_LANGUAGE;
+            this.needsDefaultLanguageUpdate = false;
+
+        } else if (language.equals(currentLanguage)) {
+            this.sourceUrl = sourceUrl;
+            if (!currentLanguage.equals(DEFAULT_LANGUAGE)) {
+                getOrCreateTranslation(currentLanguage).setSourceUrl(sourceUrl);
+            }
+
+        } else {
+            getOrCreateTranslation(language).setSourceUrl(sourceUrl);
+        }
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        setSourceUrl(sourceUrl, DEFAULT_LANGUAGE);
     }
 
     // Media - remote URLs

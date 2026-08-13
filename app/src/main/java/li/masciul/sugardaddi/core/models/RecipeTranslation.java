@@ -21,6 +21,7 @@ public class RecipeTranslation {
     private String instructions;                    // Full instructions as single text (optional)
     private List<RecipeStepTranslation> stepTranslations;
     private String recipeSource;
+    private String sourceUrl;                       // See ProductTranslation.sourceUrl's Javadoc - same purpose.
 
     // ========== RECIPE-SPECIFIC FIELDS ==========
     private String cuisine;
@@ -100,6 +101,15 @@ public class RecipeTranslation {
 
     public void setRecipeSource(String recipeSource) {
         this.recipeSource = recipeSource;
+        touch();
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
         touch();
     }
 

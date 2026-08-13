@@ -99,18 +99,29 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private boolean isFavorite = false;
     private boolean isTemplate = false;
 
-    // True when this Recipe was built from a lightweight search result that
-    // structurally lacks full detail (e.g. FatSecret's recipes/search/v3,
-    // which returns ingredient names but no directions - only its per-ID
-    // recipe/v2 call does). Defaults false: every source until FatSecret
-    // has always returned complete recipes even from search (TheMealDB's
-    // search.php returns the full recipe in one call), so nothing existing
-    // needs to opt out - only a mapper building a genuinely partial object
-    // needs to opt in. See ResultPipeline.meetsQualityRequirements(Recipe)
-    // for the one place this is read.
+    /** True when this Recipe was built from a lightweight search result that
+     * structurally lacks full detail (e.g. FatSecret's recipes/search/v3,
+     * which returns ingredient names but no directions - only its per-ID
+     * recipe/v2 call does). Defaults false: every source until FatSecret
+     * has always returned complete recipes even from search (TheMealDB's
+     * search.php returns the full recipe in one call), so nothing existing
+     * needs to opt out - only a mapper building a genuinely partial object
+     * needs to opt in. See ResultPipeline.meetsQualityRequirements(Recipe)
+     * for the one place this is read.
+     */
     private boolean isPreview = false;
 
     // ========== MEDIA ==========
+
+    /**
+     * Link to the item's own page on the source's website, when the source provides one
+     * (e.g. FatSecret's food_url). Null for sources with no per-item page (Ciqual, USDA).
+     * Pairs with DataSourceType.getWebsiteUrl() - that gives the source's general
+     * homepage, this gives this specific item's page on it. Used by the detail screen's
+     * attribution panel to deep-link instead of falling back to the homepage - see
+     * DetailRendererUtils.populateAttribution().
+     */
+    private String sourceUrl;
 
     // Remote URLs - provided by the data source.
     private String thumbnailUrl;
@@ -1025,6 +1036,51 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
 
     // ========== MEDIA ==========
+
+    public String getSourceUrl(String language) {
+        if (language == null || language.equals(currentLanguage)) {
+            return sourceUrl;
+        }
+
+        RecipeTranslation translation = translations.get(language);
+        if (translation != null && translation.getSourceUrl() != null) {
+            return translation.getSourceUrl();
+        }
+
+        return sourceUrl;
+    }
+
+    public String getSourceUrl() {
+        return getSourceUrl(DEFAULT_LANGUAGE);
+    }
+
+    public void setSourceUrl(String sourceUrl, String language) {
+        if (sourceUrl == null || language == null) return;
+
+        if (language.equals(DEFAULT_LANGUAGE)) {
+            if (!currentLanguage.equals(DEFAULT_LANGUAGE) && this.sourceUrl != null) {
+                getOrCreateTranslation(currentLanguage).setSourceUrl(this.sourceUrl);
+            }
+            this.sourceUrl = sourceUrl;
+            this.currentLanguage = DEFAULT_LANGUAGE;
+            this.needsDefaultLanguageUpdate = false;
+
+        } else if (language.equals(currentLanguage)) {
+            this.sourceUrl = sourceUrl;
+            if (!currentLanguage.equals(DEFAULT_LANGUAGE)) {
+                getOrCreateTranslation(currentLanguage).setSourceUrl(sourceUrl);
+            }
+
+        } else {
+            getOrCreateTranslation(language).setSourceUrl(sourceUrl);
+        }
+
+        touch();
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        setSourceUrl(sourceUrl, DEFAULT_LANGUAGE);
+    }
 
     // Media - remote URLs
     public String getThumbnailUrl() { return thumbnailUrl; }
