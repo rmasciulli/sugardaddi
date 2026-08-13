@@ -5,6 +5,7 @@ import android.util.Log;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsProduct;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsNutriments;
@@ -154,6 +155,11 @@ public class OpenFoodFactsMapper {
         // Map brand (language-independent)
         if (offProduct.getBrands() != null && !offProduct.getBrands().trim().isEmpty()) {
             product.setBrand(offProduct.getBrands(), language);
+        }
+
+        String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), offProduct.getUrl());
+        if (sourceUrl != null) {
+            product.setSourceUrl(sourceUrl, language);
         }
 
         // Map quantity (language-independent)

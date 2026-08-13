@@ -11,6 +11,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ProductTranslation;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualConstants;
 import li.masciul.sugardaddi.data.sources.ciqual.xml.CiqualCategoryLookup;
 import li.masciul.sugardaddi.data.sources.ciqual.api.dto.CiqualElasticsearchComposition;
@@ -359,6 +360,15 @@ public class CiqualElasticsearchMapper {
 
         // Set source identifier
         product.setSourceIdentifier(new SourceIdentifier(CiqualConstants.SOURCE_ID, food.getCode()));
+
+        String sourceUrlEn = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), food.getUrlEng());
+        if (sourceUrlEn != null) {
+            product.setSourceUrl(sourceUrlEn, "en");
+        }
+        String sourceUrlFr = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), food.getUrlFr());
+        if (sourceUrlFr != null) {
+            product.setSourceUrl(sourceUrlFr, "fr");
+        }
 
         // Ciqual doesn't support barcodes
         product.setBarcode(null);

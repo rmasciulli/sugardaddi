@@ -13,6 +13,7 @@ import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.usda.USDAConstants;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCFoodDetail;
 import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchFood;
@@ -130,6 +131,16 @@ public final class USDAMapper {
         // USDA has no product images or Nutri-Score
         // No barcode - FDC uses fdcId, not EAN/UPC
 
+        // Computed, not API-provided - USDA has no url field of its own.
+        // ProductUrlBuilder already builds this correctly (English-only,
+        // FDC-id-based, no language variance to account for); relocated
+        // here from ProductDetailsActivity's on-the-fly click-time call so
+        // every source populates sourceUrl the same way, at mapper time.
+        String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), null);
+        if (sourceUrl != null) {
+            product.setSourceUrl(sourceUrl, language);
+        }
+
         return product;
     }
 
@@ -174,6 +185,12 @@ public final class USDAMapper {
         // ── Full nutrition ────────────────────────────────────────────────────
         Nutrition nutrition = mapDetailNutrition(detail);
         product.setNutrition(nutrition);
+
+        // See mapSearchFood() for the rationale - same computed, relocated call.
+        String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), null);
+        if (sourceUrl != null) {
+            product.setSourceUrl(sourceUrl, language);
+        }
 
         return product;
     }

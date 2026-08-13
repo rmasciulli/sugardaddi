@@ -10,6 +10,7 @@ import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.TheCocktailDbConstants;
 import li.masciul.sugardaddi.data.sources.thecocktaildb.api.dto.CocktailDbDrink;
@@ -146,6 +147,13 @@ public class TheCocktailDbMapper {
 
         // ── Completeness ─────────────────────────────────────────────────────
         recipe.calculateCompleteness();
+
+        // See TheMealDbMapper.mapToDomainModel() for the rationale - same
+        // computed, relocated call.
+        String sourceUrl = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        if (sourceUrl != null) {
+            recipe.setSourceUrl(sourceUrl);
+        }
 
         return recipe;
     }

@@ -20,6 +20,8 @@ import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
+import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.sources.fatsecret.api.dto.FoodGetResponse;
 import li.masciul.sugardaddi.data.sources.fatsecret.api.dto.FoodSearchResponse;
 import li.masciul.sugardaddi.data.sources.fatsecret.api.dto.RecipeGetResponse;
@@ -110,6 +112,10 @@ public final class FatSecretMapper {
         product.setOriginalId(foodIdStr);
         product.setSourceIdentifier(new SourceIdentifier(DataSourceType.FATSECRET.getId(), foodIdStr));
         product.setDataSource(DataSourceType.FATSECRET);
+        String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), food.foodUrl);
+        if (sourceUrl != null) {
+            product.setSourceUrl(sourceUrl, language);
+        }
 
         product.setName(food.foodName.trim(), language);
 
@@ -224,6 +230,10 @@ public final class FatSecretMapper {
         product.setOriginalId(foodIdStr);
         product.setSourceIdentifier(new SourceIdentifier(DataSourceType.FATSECRET.getId(), foodIdStr));
         product.setDataSource(DataSourceType.FATSECRET);
+        String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), detail.foodUrl);
+        if (sourceUrl != null) {
+            product.setSourceUrl(sourceUrl, language);
+        }
 
         product.setName(detail.foodName.trim(), language);
 
@@ -541,6 +551,10 @@ public final class FatSecretMapper {
         recipe.setOriginalId(recipeIdStr);
         recipe.setSourceIdentifier(new SourceIdentifier(DataSourceType.FATSECRET.getId(), recipeIdStr));
         recipe.setDataSource(DataSourceType.FATSECRET);
+        String sourceUrl = RecipeUrlBuilder.resolveUrl(recipe.getSourceIdentifier(), detail.recipeUrl);
+        if (sourceUrl != null) {
+            recipe.setSourceUrl(sourceUrl, language);
+        }
 
         recipe.setName(detail.recipeName.trim(), language);
         if (detail.recipeDescription != null) {

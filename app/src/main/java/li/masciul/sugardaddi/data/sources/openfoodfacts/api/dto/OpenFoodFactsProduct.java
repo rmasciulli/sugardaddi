@@ -29,6 +29,16 @@ public class OpenFoodFactsProduct {
     @SerializedName("_id")
     private String id;
 
+    @SerializedName("url")
+    private String url;  // Link to this product's own page on Open Food Facts -
+    // confirmed real per OFF's own field documentation, feeds
+    // FoodProduct.sourceUrl. Whether this value is genuinely
+    // language-specific per request or always the same
+    // world.openfoodfacts.org link is unverified - stored under
+    // whatever language it was actually fetched in, same
+    // conservative approach as every other language-aware field
+    // this mapper populates.
+
     // ========== BASIC INFO - MULTILINGUAL ==========
     @SerializedName("product_name")
     private String productName;  // Generic name, language-independent fallback
@@ -338,6 +348,7 @@ public class OpenFoodFactsProduct {
     // ========== GETTERS - IDENTIFICATION ==========
     public String getCode() { return code; }
     public String getId() { return id; }
+    public String getUrl() { return url; }
 
     // ========== GETTERS - BASIC INFO ==========
     public String getProductName() { return productName; }

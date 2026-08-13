@@ -10,6 +10,7 @@ import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
+import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.themealdb.TheMealDbConstants;
 import li.masciul.sugardaddi.data.sources.themealdb.api.dto.MealDbIngredient;
@@ -155,6 +156,17 @@ public class TheMealDbMapper {
         // no difficulty, no structured steps) but will get credit for
         // having a name, description, instructions, image, and ingredients.
         recipe.calculateCompleteness();
+
+        // Computed, not API-provided - TheMealDB has no url field of its
+        // own. RecipeUrlBuilder already builds this correctly (English-
+        // only, id-based, no language parameter here to account for);
+        // relocated from RecipeDetailsActivity's on-the-fly click-time
+        // call so every source populates sourceUrl the same way, at
+        // mapper time.
+        String sourceUrl = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        if (sourceUrl != null) {
+            recipe.setSourceUrl(sourceUrl);
+        }
 
         return recipe;
     }
