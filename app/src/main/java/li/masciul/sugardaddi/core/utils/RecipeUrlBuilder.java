@@ -66,11 +66,36 @@ public final class RecipeUrlBuilder {
     // =========================================================================
 
     /**
-     * Returns the external website URL for a recipe.
+     * Resolves the best available URL for a recipe - the one method every
+     * mapper should call. Prefers a real, API-provided URL when the mapper
+     * has one (FatSecret's recipe_url - the one source with no computed
+     * pattern below, since its URLs are server-generated slugs no id-based
+     * template could reproduce). Falls back to a computed pattern for
+     * TheMealDB/TheCocktailDB, which have no API-provided URL at all.
+     *
+     * @param sourceIdentifier Recipe's source identifier - used for the
+     *                         computed fallback.
+     * @param apiProvidedUrl   The real URL from the source's own API
+     *                         response, if the mapper has one; null or
+     *                         blank if not.
+     */
+    @Nullable
+    public static String resolveUrl(@Nullable SourceIdentifier sourceIdentifier,
+                                    @Nullable String apiProvidedUrl) {
+        if (apiProvidedUrl != null && !apiProvidedUrl.trim().isEmpty()) {
+            return apiProvidedUrl.trim();
+        }
+        return getWebsiteUrl(sourceIdentifier);
+    }
+
+    /**
+     * Computes the website URL for a recipe from a fixed pattern - the
+     * fallback path used by resolveUrl(). Prefer resolveUrl() from mapper
+     * code.
      *
      * @param sourceIdentifier The recipe's source identifier.
      * @return Website URL, or null if the source has no public recipe page
-     *         (e.g. user-created recipes).
+     *         (e.g. user-created recipes, or FatSecret with no API value).
      */
     @Nullable
     public static String getWebsiteUrl(@Nullable SourceIdentifier sourceIdentifier) {
