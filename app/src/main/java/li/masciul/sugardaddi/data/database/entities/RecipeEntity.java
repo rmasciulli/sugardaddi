@@ -93,6 +93,7 @@ public class RecipeEntity {
     private String notes;
     private String yieldDescription;
     private String recipeSource;
+    private String sourceUrl;
 
     @TypeConverters(GeneralConverters.class)
     private List<String> equipmentNeeded;
@@ -243,6 +244,7 @@ public class RecipeEntity {
         recipe.setNotes(this.notes);
         recipe.setYieldDescription(this.yieldDescription);
         recipe.setRecipeSource(this.recipeSource);
+        recipe.setSourceUrl(this.sourceUrl);
         recipe.setEquipmentNeeded(this.equipmentNeeded);
         recipe.setCookingTips(this.cookingTips);
 
@@ -368,6 +370,7 @@ public class RecipeEntity {
         entity.setNotes(recipe.getNotes(recipe.getCurrentLanguage()));
         entity.setYieldDescription(recipe.getYieldDescription(recipe.getCurrentLanguage()));
         entity.setRecipeSource(recipe.getRecipeSource(recipe.getCurrentLanguage()));
+        entity.setSourceUrl(recipe.getSourceUrl(recipe.getCurrentLanguage()));
         entity.setEquipmentNeeded(recipe.getEquipmentNeeded(recipe.getCurrentLanguage()));
         entity.setCookingTips(recipe.getCookingTips(recipe.getCurrentLanguage()));
 
@@ -511,6 +514,9 @@ public class RecipeEntity {
 
     public String getRecipeSource() { return recipeSource; }
     public void setRecipeSource(String recipeSource) { this.recipeSource = recipeSource; }
+
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
 
     public List<String> getEquipmentNeeded() { return equipmentNeeded; }
     public void setEquipmentNeeded(List<String> equipmentNeeded) { this.equipmentNeeded = equipmentNeeded; }

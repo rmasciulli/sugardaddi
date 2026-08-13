@@ -90,6 +90,7 @@ public class FoodProductEntity {
     private String name;
     private String genericName;
     private String brand;
+    private String sourceUrl;
     private String description;
     private String ingredients;
     private String categoriesText;
@@ -232,6 +233,7 @@ public class FoodProductEntity {
         product.setName(this.name);
         product.setGenericName(this.genericName);
         product.setBrand(this.brand);
+        product.setSourceUrl(this.sourceUrl);
         product.setDescription(this.description);
         product.setIngredients(this.ingredients);
         product.setCategoriesText(this.categoriesText);
@@ -337,6 +339,7 @@ public class FoodProductEntity {
         entity.setName(product.getName(product.getCurrentLanguage()));
         entity.setGenericName(product.getGenericName(product.getCurrentLanguage()));
         entity.setBrand(product.getBrand(product.getCurrentLanguage()));
+        entity.setSourceUrl(product.getSourceUrl(product.getCurrentLanguage()));
         entity.setDescription(product.getDescription(product.getCurrentLanguage()));
         entity.setIngredients(product.getIngredients(product.getCurrentLanguage()));
         entity.setCategoriesText(product.getCategoriesText(product.getCurrentLanguage()));
@@ -477,6 +480,9 @@ public class FoodProductEntity {
 
     public String getBrand() { return brand; }
     public void setBrand(String brand) { this.brand = brand; }
+
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
