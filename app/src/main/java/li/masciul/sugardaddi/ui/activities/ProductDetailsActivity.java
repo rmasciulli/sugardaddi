@@ -528,17 +528,16 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                     : getSafeString(R.string.add_to_favorites));
         }
 
-        // Web button: show only if the product's data source has a website
+        // Web button: show only if this product has a source URL - computed
+        // or API-provided, at mapper time, for every source now (see
+        // FoodProduct.sourceUrl's Javadoc). No longer calls ProductUrlBuilder
+        // directly here - that per-source logic now lives entirely in the
+        // mappers, this just reads the already-resolved result.
         MenuItem webItem = menu.findItem(R.id.action_open_web);
         if (webItem != null) {
             FoodProduct product = productManager.getCurrentProduct();
-            if (product != null) {
-                boolean hasWebsite = ProductUrlBuilder.hasWebsiteSupport(
-                        product.getSourceIdentifier());
-                webItem.setVisible(hasWebsite);
-            } else {
-                webItem.setVisible(false);
-            }
+            webItem.setVisible(product != null
+                    && product.getSourceUrl(getCurrentLanguage().getCode()) != null);
         }
 
         // Remove image - shown only when user has set a custom full-size image.
@@ -773,7 +772,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         FoodProduct product = productManager.getCurrentProduct();
         if (product == null) return;
 
-        String url = ProductUrlBuilder.getWebsiteUrl(product.getSourceIdentifier());
+        String url = product.getSourceUrl(getCurrentLanguage().getCode());
         if (url == null) {
             Toast.makeText(this, getSafeString(R.string.website_not_available),
                     Toast.LENGTH_SHORT).show();

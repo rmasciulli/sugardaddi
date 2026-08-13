@@ -418,16 +418,14 @@ public class RecipeDetailsActivity extends BaseActivity
             videoItem.setVisible(hasVideo);
         }
 
-        // Web button - shown only for sources with a public recipe page
+        // Web button: see ProductDetailsActivity's equivalent for the
+        // rationale - reads the already-resolved sourceUrl, no longer
+        // calls RecipeUrlBuilder directly here.
         MenuItem webItem = menu.findItem(R.id.action_open_web);
         if (webItem != null) {
             Recipe recipe = recipeManager.getCurrentRecipe();
-            if (recipe != null) {
-                webItem.setVisible(
-                    RecipeUrlBuilder.hasWebsiteSupport(recipe.getSourceIdentifier()));
-            } else {
-                webItem.setVisible(false);
-            }
+            webItem.setVisible(recipe != null
+                    && recipe.getSourceUrl(getCurrentLanguage().getCode()) != null);
         }
 
         // Remove image - shown only when user has set a custom full-size image.
@@ -642,7 +640,7 @@ public class RecipeDetailsActivity extends BaseActivity
         }
 
         // Recipe page URL - primary shareable link
-        String recipeUrl = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        String recipeUrl = recipe.getSourceUrl(getCurrentLanguage().getCode());
         if (recipeUrl != null) {
             shareText.append("\n").append(recipeUrl);
         }
@@ -699,7 +697,7 @@ public class RecipeDetailsActivity extends BaseActivity
         Recipe recipe = recipeManager.getCurrentRecipe();
         if (recipe == null) return;
 
-        String url = RecipeUrlBuilder.getWebsiteUrl(recipe.getSourceIdentifier());
+        String url = recipe.getSourceUrl(getCurrentLanguage().getCode());
         if (url == null) {
             Toast.makeText(this,
                     getSafeString(R.string.website_not_available),
