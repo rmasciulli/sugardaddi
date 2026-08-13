@@ -281,6 +281,18 @@ public class MainActivity extends BaseActivity implements
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
 
+        // Diagnostic/fix for the pagination footer rendering behind newly-
+        // inserted cards: two prior fixes (remove+insert ordering in
+        // addMoreItems(), NO_ID instead of a fixed stable ID for the
+        // footer) were each grounded in a real, verified issue, but
+        // neither resolved it on-device. Disabling the item animator
+        // removes animation from the equation entirely - if this resolves
+        // it, the root cause was animation-related regardless of which
+        // exact mechanism; if it doesn't, the cause is something else
+        // entirely (most likely a genuine layout bug) and worth looking
+        // at directly instead of theorizing about animations further.
+        recyclerView.setItemAnimator(null);
+
         updateFilterPillLabels();
     }
 

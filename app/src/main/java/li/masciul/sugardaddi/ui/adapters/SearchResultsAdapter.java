@@ -137,11 +137,21 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
             return;
         }
         int oldSize = items.size();
+        // Remove the footer from its old position BEFORE inserting new
+        // items, rather than letting notifyItemRangeInserted implicitly
+        // "shift" it forward. RecyclerView's default item animator has no
+        // clean way to represent "this same footer view moved because
+        // unrelated items were inserted before its old spot" - that
+        // ambiguity is exactly what produced the loading indicator
+        // rendering behind/between newly-inserted cards mid-animation.
+        // Explicit remove-then-insert-as-one-block removes the ambiguity:
+        // the footer is unambiguously a fresh item at its new index, not
+        // something being animated as "moved."
+        notifyItemRemoved(oldSize);
         items.addAll(newItems);
         isLoadingMore = false;
         hasMoreItems = hasMore;
-        notifyItemRangeInserted(oldSize, newItems.size());
-        notifyItemChanged(items.size());
+        notifyItemRangeInserted(oldSize, newItems.size() + 1);
     }
 
     /** Disable pagination footer (e.g. in FavoritesActivity). */
@@ -172,7 +182,20 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
             String id = items.get(position).getSearchableId();
             return id != null ? id.hashCode() : position;
         }
-        return Long.MIN_VALUE;
+        // NO_ID, not a fixed constant like Long.MIN_VALUE. With
+        // setHasStableIds(true), RecyclerView uses getItemId() to decide
+        // whether two notify calls refer to the same logical item - a
+        // hardcoded constant meant every footer instance, across every
+        // pagination append, shared one identity. Removing the old footer
+        // and inserting a new one (addMoreItems()) was being collapsed
+        // into "this one item moved" instead of "old one gone, new one
+        // arrived," triggering a move animation instead of a clean
+        // remove+insert - exactly what produced the footer lingering
+        // visually behind newly-inserted cards. NO_ID tells RecyclerView
+        // this position has no identity to track across notify calls,
+        // which is the correct semantics for a transient loading
+        // placeholder.
+        return RecyclerView.NO_ID;
     }
 
     @Override
