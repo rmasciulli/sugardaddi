@@ -21,6 +21,7 @@ import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientCategory;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientInfo;
@@ -204,6 +205,21 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
      * Priority: serving size > 20g fallback
      */
     private double getDefaultCustomAmount(T item) {
+        // Meal.getNutrition() is already an absolute total (summed across
+        // every portion), not a per-100g figure like FoodProduct/Recipe -
+        // buildNutrientsUnified()'s scaling formula (valuePer100 *
+        // (amount / 100.0)) only makes sense for the latter. customAmount
+        // must be exactly 100.0 for a Meal to make that formula a true
+        // no-op; otherwise the meal's real total gets silently rescaled
+        // by whatever this method falls through to. Confirmed as the
+        // actual cause of the Nutritional information table showing
+        // every value at precisely 20% of the correct Summary banner
+        // totals - the 20.0 fallback below, applied to an item type it
+        // was never designed to handle.
+        if (item instanceof Meal) {
+            return 100.0;
+        }
+
         ServingSize serving = item.getServingSize();
         if (serving != null && serving.isValid()) {
             Double servingGrams = serving.getAsGrams();
