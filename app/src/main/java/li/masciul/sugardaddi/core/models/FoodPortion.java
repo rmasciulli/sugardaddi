@@ -72,6 +72,22 @@ public class FoodPortion {
     }
 
     /**
+     * Create a portion for a recipe, by weight - mirrors the FoodProduct
+     * constructor above exactly. Recipe.getNutrition() is per-100g (see
+     * FatSecretMapper.mapRecipeServing()), the same basis as
+     * FoodProduct.getNutrition(), so the same grams-based scaling in
+     * calculateNutrition() applies unchanged.
+     */
+    public FoodPortion(Recipe recipe, double quantity, Unit unit) {
+        this();
+        this.itemType = "RECIPE";
+        this.itemId = recipe.getSearchableId();
+        this.recipe = recipe;
+        this.serving = new ServingSize(quantity, unit);
+        calculateGramsEquivalent();
+    }
+
+    /**
      * Create portion with ServingSize
      */
     public FoodPortion(String itemType, String itemId, ServingSize serving) {
@@ -120,12 +136,22 @@ public class FoodPortion {
 
             baseNutrition = recipe.getNutrition();
 
-            // Recipe nutrition is per 100g, but we need per serving
-            // First get total recipe weight, then calculate our portion
-            Double servingCount = serving.getQuantity();
-            if (servingCount != null && recipe.getServings() > 0) {
-                // Our portion is X servings out of total recipe servings
-                multiplier = servingCount / recipe.getServings();
+            // Recipe nutrition is genuinely per-100g - confirmed at its
+            // source, FatSecretMapper.mapRecipeServing() explicitly
+            // normalizes by gramsPerPortion and sets
+            // NutritionBasis.PER_100G. Scale by grams, exactly like the
+            // FOOD_PRODUCT branch above - not by a fraction of total
+            // recipe servings, which doesn't compose with a per-100g
+            // value at all. The previous servings-based multiplier here
+            // was a real bug, just never triggered: this branch had zero
+            // callers anywhere in the app until now.
+            Double grams = serving.getAsGrams();
+            if (grams == null && gramsEquivalent != null) {
+                grams = gramsEquivalent;
+            }
+
+            if (grams != null) {
+                multiplier = grams / 100.0;
             }
         }
 
