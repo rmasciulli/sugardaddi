@@ -560,6 +560,9 @@ public class MainActivity extends BaseActivity implements
         } else if (item instanceof Recipe) {
             Intent intent = new Intent(this, RecipeDetailsActivity.class);
             intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, item.getSearchableId());
+            if (returnToMealId != null) {
+                intent.putExtra("RETURN_TO_MEAL", returnToMealId);
+            }
             startActivity(intent);
             logDebug("Opening recipe: " + item.getDisplayName(language));
 

@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,10 +23,14 @@ import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.SugarDaddiApplication;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.Error;
+import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
+import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
 import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
@@ -120,6 +125,14 @@ public class RecipeDetailsActivity extends BaseActivity
     private RecipeManager recipeManager;
     private ImagePickerHelper imagePicker;
 
+    // ========== ADD TO MEAL ==========
+    // Mirrors ProductDetailsActivity's exact pattern - see addToMeal()
+    // below for the one real difference (recipes have no servings-input
+    // UI yet, unlike products' customAmountEditText, so this always adds
+    // exactly 1 serving for now).
+    private LinearLayout addToMealContainer;
+    private String returnToMealId = null;
+
     // ========== LIFECYCLE ==========
 
     @Override
@@ -186,8 +199,15 @@ public class RecipeDetailsActivity extends BaseActivity
 
         // "Add to Meal" container (present in layout) - hide it:
         // recipe-to-meal composition is a future feature, not implemented yet.
-        View addToMealContainer = findViewById(R.id.addToMealContainer);
-        if (addToMealContainer != null) {
+        addToMealContainer = findViewById(R.id.addToMealContainer);
+        returnToMealId = getIntent().getStringExtra("RETURN_TO_MEAL");
+        if (returnToMealId != null && addToMealContainer != null) {
+            addToMealContainer.setVisibility(View.VISIBLE);
+            View btnAddToMeal = addToMealContainer.findViewById(R.id.btnAddToMeal);
+            if (btnAddToMeal != null) {
+                btnAddToMeal.setOnClickListener(v -> addToMeal());
+            }
+        } else if (addToMealContainer != null) {
             addToMealContainer.setVisibility(View.GONE);
         }
 
@@ -231,6 +251,123 @@ public class RecipeDetailsActivity extends BaseActivity
         }
 
         logDebug("RecipeDetailsActivity destroyed");
+    }
+
+    /**
+     * Add the current recipe to the meal identified by returnToMealId.
+     * Mirrors ProductDetailsActivity.addToMeal() exactly, with one real
+     * difference: recipes have no servings-input UI yet (products read
+     * customAmountEditText via getQuantityFromRenderer()), so this always
+     * adds exactly 1 serving. FoodPortion(recipe, servings) and
+     * Recipe.getNutrition()/hasNutritionData() already handle everything
+     * else correctly - MealDB/CocktailDB recipes (unresolved ingredient
+     * stubs, no direct nutrition set) naturally produce null nutrition
+     * for this portion rather than a wrong or crashing value; FatSecret
+     * recipes (real nutrition set directly by FatSecretMapper) get their
+     * actual data, scaled by servings.
+     */
+    private void addToMeal() {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null) {
+            Toast.makeText(this, "Recipe not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double quantity = getQuantityFromRenderer(recipe);
+
+        FoodPortion portion = new FoodPortion(recipe, quantity, Unit.G);
+        portion.setParentType("MEAL");
+        portion.setParentId(returnToMealId);
+
+        View btnAddToMeal = addToMealContainer.findViewById(R.id.btnAddToMeal);
+        if (btnAddToMeal instanceof android.widget.Button) {
+            ((android.widget.Button) btnAddToMeal).setEnabled(false);
+            ((android.widget.Button) btnAddToMeal).setText(R.string.adding_to_meal);
+        }
+
+        MealRepository mealRepository = new MealRepository(this);
+        mealRepository.getMeal(returnToMealId, new MealRepository.MealCallback() {
+            @Override
+            public void onSuccess(li.masciul.sugardaddi.core.models.Meal meal) {
+                meal.addPortion(portion);
+                mealRepository.updateMeal(meal, new MealRepository.MealCallback() {
+                    @Override
+                    public void onSuccess(li.masciul.sugardaddi.core.models.Meal savedMeal) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(RecipeDetailsActivity.this,
+                                    R.string.added_to_meal, Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(RecipeDetailsActivity.this,
+                                    MealDetailsActivity.class);
+                            intent.putExtra("extra_meal_id", returnToMealId);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            startActivity(intent);
+                            finish();
+                        });
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(RecipeDetailsActivity.this,
+                                    "Error saving: " + error, Toast.LENGTH_LONG).show();
+                            resetAddToMealButton();
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(RecipeDetailsActivity.this,
+                            "Error loading meal: " + error, Toast.LENGTH_LONG).show();
+                    resetAddToMealButton();
+                });
+            }
+        });
+    }
+
+    /**
+     * Mirrors ProductDetailsActivity.getQuantityFromRenderer() exactly -
+     * same customAmountEditText field, same shared NutritionLabelManager
+     * component (already generalized across FoodProduct/Recipe/Meal).
+     * Present in detail_fatsecret_recipe.xml/detail_default_recipe.xml;
+     * absent from MealDbRecipeDetailRenderer/CocktailDbRecipeDetailRenderer's
+     * own layouts (no nutrition to show a custom-amount input against),
+     * where findViewById() correctly returns null and this falls through
+     * to the recipe's own serving size, then 100g.
+     */
+    private double getQuantityFromRenderer(Recipe recipe) {
+        if (activeRendererView != null) {
+            com.google.android.material.textfield.TextInputEditText amountInput =
+                    activeRendererView.findViewById(R.id.customAmountEditText);
+            if (amountInput != null) {
+                try {
+                    String text = amountInput.getText().toString().trim();
+                    if (!text.isEmpty()) {
+                        double amount = Double.parseDouble(text);
+                        if (amount > 0) return amount;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        // Fallback: recipe's own serving size, or 100g
+        ServingSize serving = recipe.getServingSize();
+        if (serving != null && serving.isValid()) {
+            Double servingGrams = serving.getAsGrams();
+            if (servingGrams != null && servingGrams > 0) return servingGrams;
+        }
+        return 100.0;
+    }
+
+    private void resetAddToMealButton() {
+        View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
+        if (btn instanceof android.widget.Button) {
+            ((android.widget.Button) btn).setEnabled(true);
+            ((android.widget.Button) btn).setText(R.string.add_to_meal);
+        }
     }
 
     // ========== RecipeManager.RecipeListener IMPLEMENTATION ==========
