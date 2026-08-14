@@ -14,6 +14,7 @@ import li.masciul.sugardaddi.data.database.dao.NutritionDao;
 import li.masciul.sugardaddi.data.database.entities.MealEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.relations.MealWithNutrition;
+import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 
 import java.time.LocalDate;
@@ -289,7 +290,7 @@ public class MealRepository {
                 // Convert to domain model
                 Meal meal = mealWithNutrition.toMeal();
 
-                // CRITICAL: Populate transient foodProduct fields
+                // CRITICAL: Populate transient foodProduct/recipe fields
                 List<FoodPortion> portions = meal.getPortions();
                 if (portions != null && !portions.isEmpty()) {
                     for (FoodPortion portion : portions) {
@@ -309,6 +310,19 @@ public class MealRepository {
                                 }
                             } catch (Exception e) {
                                 Log.e(TAG, "Failed to load product for portion: " + itemId, e);
+                            }
+                        } else if (itemId != null && "RECIPE".equals(portion.getItemType())) {
+                            try {
+                                RecipeWithNutrition recipeWithNutrition =
+                                        database.recipeDao().getByIdWithNutrition(itemId);
+
+                                if (recipeWithNutrition != null) {
+                                    portion.setRecipe(recipeWithNutrition.toRecipe());
+                                } else {
+                                    Log.w(TAG, "Recipe not found in database: " + itemId);
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to load recipe for portion: " + itemId, e);
                             }
                         }
                     }
