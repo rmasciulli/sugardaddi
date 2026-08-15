@@ -5,6 +5,7 @@ import android.util.Log;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsProduct;
@@ -156,6 +157,18 @@ public class OpenFoodFactsMapper {
         if (offProduct.getBrands() != null && !offProduct.getBrands().trim().isEmpty()) {
             product.setBrand(offProduct.getBrands(), language);
         }
+
+        // Never set anywhere in this mapper until now - every other source
+        // (Ciqual, USDA, FatSecret) sets this, OFF never did. Confirmed to
+        // have real consequences beyond just this: the sourceUrl fallback
+        // just below has been silently unable to do anything for OFF
+        // since it was written, since ProductUrlBuilder.resolveUrl()'s
+        // computed-fallback branch needs a real SourceIdentifier to work
+        // from. Likely also affects favoriting/dedup/caching wherever else
+        // this project keys off SourceIdentifier - not audited here, but
+        // this is the actual fix regardless of what else reads it.
+        product.setSourceIdentifier(new SourceIdentifier(
+                OpenFoodFactsConstants.SOURCE_ID, offProduct.getCode()));
 
         String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), offProduct.getUrl());
         if (sourceUrl != null) {
