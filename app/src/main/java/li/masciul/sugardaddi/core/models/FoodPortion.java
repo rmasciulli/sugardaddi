@@ -1,6 +1,8 @@
 package li.masciul.sugardaddi.core.models;
 
 import li.masciul.sugardaddi.core.enums.Unit;
+import li.masciul.sugardaddi.core.interfaces.Nutritional;
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import java.util.UUID;
 
 /**
@@ -14,6 +16,17 @@ import java.util.UUID;
  * - parent_id: recipe_id or meal_id
  * - item_type: FOOD_PRODUCT or RECIPE
  * - item_id: referenced item's ID
+ *
+ * RESOLUTION MODEL: itemType/itemId identify what to look up and which
+ * DAO to query (see MealRepository.getMealWithProducts()) - that's the
+ * one place where a real Searchable object doesn't exist yet to
+ * dispatch against, so a string tag is genuinely needed there.
+ * Everywhere else, use getResolvedItem() and instanceof checks against
+ * it instead of comparing itemType strings directly - mirrors the
+ * dispatch MainActivity.onItemClick() already does for FoodProduct vs
+ * Recipe against Searchable. The one deliberate exception is
+ * isValid(), which stays itemType/itemId-based - see its own Javadoc
+ * for why.
  */
 public class FoodPortion {
 
@@ -61,17 +74,6 @@ public class FoodPortion {
     }
 
     /**
-     * Create portion for a recipe
-     */
-    public FoodPortion(Recipe recipe, double servings) {
-        this();
-        this.itemType = "RECIPE";
-        this.itemId = recipe.getSearchableId();
-        this.recipe = recipe;
-        this.serving = ServingSize.forRecipe((int) servings);
-    }
-
-    /**
      * Create a portion for a recipe, by weight - mirrors the FoodProduct
      * constructor above exactly. Recipe.getNutrition() is per-100g (see
      * FatSecretMapper.mapRecipeServing()), the same basis as
@@ -98,10 +100,36 @@ public class FoodPortion {
         calculateGramsEquivalent();
     }
 
+    // ========== RESOLUTION ==========
+
+    /**
+     * Returns whichever concrete item this portion resolved to - the
+     * FoodProduct if this is a FOOD_PRODUCT portion, the Recipe if
+     * RECIPE - or null if resolution hasn't happened yet (a freshly
+     * built portion, or a database lookup that hasn't run or found no
+     * match).
+     *
+     * This is the read side of resolution. itemType still decides
+     * which DAO to query during the write/load side (see
+     * MealRepository.getMealWithProducts()); nothing about that
+     * changes. Everything downstream of resolution should call this
+     * instead of comparing itemType strings.
+     */
+    public Searchable getResolvedItem() {
+        if (foodProduct != null) return foodProduct;
+        if (recipe != null) return recipe;
+        return null;
+    }
+
     // ========== NUTRITION CALCULATION ==========
 
     /**
-     * Calculate nutrition for this portion
+     * Calculate nutrition for this portion.
+     *
+     * Dispatches on the resolved item's Nutritional capability rather
+     * than itemType - FoodProduct and Recipe both implement
+     * Nutritional, so one branch serves both instead of two
+     * near-identical ones keyed on a string.
      */
     public Nutrition calculateNutrition() {
         // Return cached if available
@@ -109,50 +137,34 @@ public class FoodPortion {
             return calculatedNutrition;
         }
 
-        Nutrition baseNutrition = null;
+        Searchable resolved = getResolvedItem();
+        if (!(resolved instanceof Nutritional)) {
+            return null;
+        }
+
+        Nutritional nutritionalItem = (Nutritional) resolved;
+        if (!nutritionalItem.hasNutritionData()) {
+            return null;
+        }
+
+        Nutrition baseNutrition = nutritionalItem.getNutrition();
+
+        // Both FoodProduct.getNutrition() and Recipe.getNutrition() are
+        // genuinely per-100g - Recipe confirmed at its source,
+        // FatSecretMapper.mapRecipeServing() explicitly normalizes by
+        // gramsPerPortion and sets NutritionBasis.PER_100G - so the same
+        // grams-based scaling applies regardless of which type resolved.
+        // (The RECIPE case used to scale by a fraction of total recipe
+        // servings instead, which doesn't compose with a per-100g value
+        // at all - fixed in b4d1f2d; preserved here now that both cases
+        // share one branch.)
         double multiplier = 1.0;
-
-        if ("FOOD_PRODUCT".equals(itemType) && foodProduct != null) {
-            if (!foodProduct.hasNutritionData()) {
-                return null;
-            }
-
-            baseNutrition = foodProduct.getNutrition();
-
-            // Calculate multiplier based on grams
-            Double grams = serving.getAsGrams();
-            if (grams == null && gramsEquivalent != null) {
-                grams = gramsEquivalent;
-            }
-
-            if (grams != null) {
-                multiplier = grams / 100.0; // Nutrition is per 100g
-            }
-
-        } else if ("RECIPE".equals(itemType) && recipe != null) {
-            if (!recipe.hasNutritionData()) {
-                return null;
-            }
-
-            baseNutrition = recipe.getNutrition();
-
-            // Recipe nutrition is genuinely per-100g - confirmed at its
-            // source, FatSecretMapper.mapRecipeServing() explicitly
-            // normalizes by gramsPerPortion and sets
-            // NutritionBasis.PER_100G. Scale by grams, exactly like the
-            // FOOD_PRODUCT branch above - not by a fraction of total
-            // recipe servings, which doesn't compose with a per-100g
-            // value at all. The previous servings-based multiplier here
-            // was a real bug, just never triggered: this branch had zero
-            // callers anywhere in the app until now.
-            Double grams = serving.getAsGrams();
-            if (grams == null && gramsEquivalent != null) {
-                grams = gramsEquivalent;
-            }
-
-            if (grams != null) {
-                multiplier = grams / 100.0;
-            }
+        Double grams = serving.getAsGrams();
+        if (grams == null && gramsEquivalent != null) {
+            grams = gramsEquivalent;
+        }
+        if (grams != null) {
+            multiplier = grams / 100.0; // Nutrition is per 100g
         }
 
         if (baseNutrition != null && multiplier > 0) {
@@ -175,13 +187,18 @@ public class FoodPortion {
     // ========== DISPLAY METHODS ==========
 
     /**
-     * Get display name for UI
+     * Get display name for UI.
+     *
+     * Delegates straight to the resolved item's own
+     * getDisplayName(language) - Searchable already declares that
+     * method, so no instanceof/branching is needed here at all (unlike
+     * calculateNutrition(), which needs Nutritional specifically for
+     * hasNutritionData()/getNutrition()).
      */
     public String getDisplayName(String language) {
-        if ("FOOD_PRODUCT".equals(itemType) && foodProduct != null) {
-            return foodProduct.getDisplayName(language);
-        } else if ("RECIPE".equals(itemType) && recipe != null) {
-            return recipe.getDisplayName(language);
+        Searchable resolved = getResolvedItem();
+        if (resolved != null) {
+            return resolved.getDisplayName(language);
         }
         return itemId != null ? itemId : "Unknown item";
     }
@@ -232,7 +249,17 @@ public class FoodPortion {
     // ========== VALIDATION ==========
 
     /**
-     * Check if portion is valid
+     * Check if portion is valid.
+     *
+     * Deliberately itemType/itemId-based, NOT getResolvedItem()-based.
+     * This has to stay true for a portion that's legitimately
+     * constructed but not yet resolved - e.g. a TheMealDB ingredient
+     * stub (see TheMealDbMapper), built with a real itemType and a
+     * name-string itemId, whose foodProduct/recipe stay null until
+     * ingredient-mapping resolution lands (open backlog item). If this
+     * checked getResolvedItem() instead, every such stub would read as
+     * invalid today, which it structurally isn't - it's just not
+     * resolved yet.
      */
     public boolean isValid() {
         return itemType != null &&
@@ -241,15 +268,17 @@ public class FoodPortion {
     }
 
     /**
-     * Check if nutrition can be calculated
+     * Check if nutrition can be calculated - i.e. the portion has
+     * resolved to a real item that itself carries nutrition data.
+     * Unlike isValid() above, this is legitimately about resolved
+     * state: an unresolved stub correctly returns false here until
+     * resolution happens, which is the right behavior for this method
+     * specifically.
      */
     public boolean canCalculateNutrition() {
-        if ("FOOD_PRODUCT".equals(itemType)) {
-            return foodProduct != null && foodProduct.hasNutritionData();
-        } else if ("RECIPE".equals(itemType)) {
-            return recipe != null && recipe.hasNutritionData();
-        }
-        return false;
+        Searchable resolved = getResolvedItem();
+        return resolved instanceof Nutritional
+                && ((Nutritional) resolved).hasNutritionData();
     }
 
     // ========== UTILITY METHODS ==========

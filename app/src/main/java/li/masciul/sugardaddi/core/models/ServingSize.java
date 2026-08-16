@@ -305,13 +305,6 @@ public class ServingSize {
         return serving;
     }
 
-    /**
-     * Create serving size for recipes (servings)
-     */
-    public static ServingSize forRecipe(int servings) {
-        return new ServingSize(servings, Unit.SERVING);
-    }
-
     @Override
     public String toString() {
         return getDisplayText();
