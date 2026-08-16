@@ -5,8 +5,11 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 import li.masciul.sugardaddi.core.models.FoodPortion;
+import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.MealDao;
@@ -16,6 +19,7 @@ import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.relations.MealWithNutrition;
 import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
+import li.masciul.sugardaddi.data.network.NetworkManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +27,7 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +50,13 @@ public class MealRepository {
     private final MealDao mealDao;
     private final NutritionDao nutritionDao;
     private final Executor backgroundExecutor;
+
+    // Used only by getMealWithFreshnessCheck()/applyMealRefreshCandidates() -
+    // their checkProductFreshness()/checkRecipeFreshness()/applyCandidate()
+    // methods are what actually check staleness and apply refreshes;
+    // MealRepository just orchestrates calling them per portion.
+    private final ProductRepository productRepository;
+    private final RecipeRepository recipeRepository;
 
     // Caching
     private final Map<String, Meal> mealCache = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -78,6 +90,41 @@ public class MealRepository {
     public interface MealOperationCallback {
         void onSuccess();
         void onError(String error);
+    }
+
+    /**
+     * Callback for getMealWithFreshnessCheck().
+     *
+     * onMealLoaded fires immediately with cached data, exactly like
+     * getMealWithProducts()'s onSuccess - the UI never waits on network
+     * for the initial display. onRefreshAvailable fires exactly once,
+     * after every portion's freshness check has resolved (not once per
+     * portion), with the full batch of whatever candidates were found -
+     * possibly empty, if nothing needed refreshing.
+     */
+    public interface MealFreshnessCallback {
+        void onMealLoaded(Meal meal);
+        void onRefreshAvailable(List<PortionRefreshCandidate> candidates);
+        void onError(String error);
+    }
+
+    /**
+     * One portion whose underlying product/recipe has a genuinely
+     * different version available upstream. Exactly one of
+     * productCandidate/recipeCandidate is non-null, matching the
+     * portion's own itemType. Not yet saved - applyMealRefreshCandidates()
+     * commits it.
+     */
+    public static class PortionRefreshCandidate {
+        public final FoodPortion portion;
+        public final FoodProduct productCandidate;
+        public final Recipe recipeCandidate;
+
+        public PortionRefreshCandidate(FoodPortion portion, FoodProduct productCandidate, Recipe recipeCandidate) {
+            this.portion = portion;
+            this.productCandidate = productCandidate;
+            this.recipeCandidate = recipeCandidate;
+        }
     }
 
     public interface NutritionSummaryCallback {
@@ -138,6 +185,8 @@ public class MealRepository {
         this.mealDao = database.mealDao();
         this.nutritionDao = database.nutritionDao();
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
+        this.productRepository = new ProductRepository(NetworkManager.getInstance(context), context);
+        this.recipeRepository = new RecipeRepository(context);
 
         if (ApiConfig.DEBUG_LOGGING) {
             Log.d(TAG, "MealRepository initialized with dual-table storage");
@@ -266,6 +315,9 @@ public class MealRepository {
      *
      * USE THIS METHOD instead of getMeal() when displaying meals with nutrition!
      *
+     * Pure local-cache read - no staleness check, no network. Use
+     * getMealWithFreshnessCheck() for that.
+     *
      * @param mealId Meal ID
      * @param callback Callback with meal and populated products
      */
@@ -277,63 +329,14 @@ public class MealRepository {
 
         backgroundExecutor.execute(() -> {
             try {
-                // Load meal with nutrition using @Transaction
-                MealWithNutrition mealWithNutrition = mealDao.getByIdWithNutrition(mealId);
+                Meal meal = loadAndResolveMealSync(mealId);
 
-                if (mealWithNutrition == null) {
+                if (meal == null) {
                     runOnMainThread(() -> {
                         if (callback != null) callback.onError("Meal not found");
                     });
                     return;
                 }
-
-                // Convert to domain model
-                Meal meal = mealWithNutrition.toMeal();
-
-                // CRITICAL: Populate transient foodProduct/recipe fields
-                List<FoodPortion> portions = meal.getPortions();
-                if (portions != null && !portions.isEmpty()) {
-                    for (FoodPortion portion : portions) {
-                        String itemId = portion.getItemId();
-                        if (itemId != null && "FOOD_PRODUCT".equals(portion.getItemType())) {
-                            try {
-                                // Load product with nutrition from database
-                                var productWithNutrition =
-                                        database.combinedProductDao()
-                                                .getProductWithNutritionById(itemId);
-
-                                if (productWithNutrition != null) {
-                                    // Convert and set on portion (this clears cache!)
-                                    portion.setFoodProduct(productWithNutrition.toFoodProduct());
-                                } else {
-                                    Log.w(TAG, "Product not found in database: " + itemId);
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "Failed to load product for portion: " + itemId, e);
-                            }
-                        } else if (itemId != null && "RECIPE".equals(portion.getItemType())) {
-                            try {
-                                RecipeWithNutrition recipeWithNutrition =
-                                        database.recipeDao().getByIdWithNutrition(itemId);
-
-                                if (recipeWithNutrition != null) {
-                                    portion.setRecipe(recipeWithNutrition.toRecipe());
-                                } else {
-                                    Log.w(TAG, "Recipe not found in database: " + itemId);
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "Failed to load recipe for portion: " + itemId, e);
-                            }
-                        }
-                    }
-                }
-
-                // CRITICAL: Clear old provided nutrition before recalculating
-                // Otherwise getNutrition() will return the old cached value!
-                meal.setProvidedNutrition(null);
-
-                // Recalculate nutrition after all products are loaded
-                meal.calculateNutrition();
 
                 // Cache and update access count
                 cacheMeal(meal);
@@ -351,6 +354,248 @@ public class MealRepository {
                 });
             }
         });
+    }
+
+    /**
+     * Same immediate load as getMealWithProducts() - onMealLoaded fires
+     * right away with cached data, the UI never waits on network for the
+     * initial display - plus a concurrent freshness sweep across every
+     * portion (see sweepPortionFreshness()). onRefreshAvailable fires
+     * exactly once, after every portion's check has resolved, with
+     * whatever candidates were found (possibly empty).
+     *
+     * Uses ProductRepository.checkProductFreshness()/RecipeRepository.
+     * checkRecipeFreshness() specifically, not resolveProduct()/
+     * resolveExternalRecipe() - reviewing a meal's contents isn't a
+     * deliberate "view" of each product/recipe in it the way opening
+     * its own detail screen is, so this must not bump accessCount for
+     * anything the meal contains. The meal's OWN access count is still
+     * recorded here (mealDao.incrementAccessCount), same as
+     * getMealWithProducts() - opening the meal itself is a real view.
+     *
+     * @param mealId Meal ID
+     * @param callback Receives the immediate load, then the freshness result
+     */
+    public void getMealWithFreshnessCheck(String mealId, MealFreshnessCallback callback) {
+        if (mealId == null || mealId.trim().isEmpty()) {
+            if (callback != null) callback.onError("Invalid meal ID");
+            return;
+        }
+
+        backgroundExecutor.execute(() -> {
+            try {
+                Meal meal = loadAndResolveMealSync(mealId);
+
+                if (meal == null) {
+                    runOnMainThread(() -> {
+                        if (callback != null) callback.onError("Meal not found");
+                    });
+                    return;
+                }
+
+                cacheMeal(meal);
+                mealDao.incrementAccessCount(mealId, System.currentTimeMillis());
+
+                final Meal loadedMeal = meal;
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onMealLoaded(loadedMeal);
+                });
+
+                sweepPortionFreshness(loadedMeal, callback);
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading meal with freshness check", e);
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onError("Failed to load meal: " + e.getMessage());
+                });
+            }
+        });
+    }
+
+    /**
+     * Concurrent freshness sweep across every portion of an already-loaded
+     * meal. Fires checkProductFreshness()/checkRecipeFreshness() for every
+     * portion at once rather than serially - a meal with several stale
+     * items shouldn't wait on N sequential network round-trips - and
+     * coordinates them with a plain pending-count so onRefreshAvailable()
+     * fires exactly once, with the full batch, regardless of how the
+     * individual checks interleave or how long each takes.
+     *
+     * Worth knowing: ProductRepository and RecipeRepository each run
+     * their own checks on their own single-thread executor (existing
+     * pattern in both, not changed here - each repository already
+     * serializes its own writes). So portions of the SAME type still
+     * check one at a time relative to each other; product checks and
+     * recipe checks run in parallel relative to EACH OTHER. Either way,
+     * none of this blocks the initial onMealLoaded(), which has already
+     * fired before this method is even called.
+     */
+    private void sweepPortionFreshness(Meal meal, MealFreshnessCallback callback) {
+        List<FoodPortion> portions = meal.getPortions();
+        if (portions == null || portions.isEmpty()) {
+            runOnMainThread(() -> {
+                if (callback != null) callback.onRefreshAvailable(Collections.emptyList());
+            });
+            return;
+        }
+
+        List<PortionRefreshCandidate> candidates = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger pending = new AtomicInteger(portions.size());
+
+        Runnable checkDone = () -> {
+            if (pending.decrementAndGet() == 0) {
+                runOnMainThread(() -> {
+                    if (callback != null) callback.onRefreshAvailable(new ArrayList<>(candidates));
+                });
+            }
+        };
+
+        for (FoodPortion portion : portions) {
+            String itemId = portion.getItemId();
+            if (itemId == null) {
+                checkDone.run();
+                continue;
+            }
+
+            if ("FOOD_PRODUCT".equals(portion.getItemType())) {
+                productRepository.checkProductFreshness(itemId, new FreshnessCallback<FoodProduct>() {
+                    @Override public void onCandidate(FoodProduct candidate) {
+                        candidates.add(new PortionRefreshCandidate(portion, candidate, null));
+                        checkDone.run();
+                    }
+                    @Override public void onNoCandidate() {
+                        checkDone.run();
+                    }
+                });
+            } else if ("RECIPE".equals(portion.getItemType())) {
+                recipeRepository.checkRecipeFreshness(itemId, new FreshnessCallback<Recipe>() {
+                    @Override public void onCandidate(Recipe candidate) {
+                        candidates.add(new PortionRefreshCandidate(portion, null, candidate));
+                        checkDone.run();
+                    }
+                    @Override public void onNoCandidate() {
+                        checkDone.run();
+                    }
+                });
+            } else {
+                checkDone.run();
+            }
+        }
+    }
+
+    /**
+     * Apply a batch of candidates previously offered via
+     * getMealWithFreshnessCheck()'s onRefreshAvailable(). Each candidate
+     * is saved through the EXISTING per-type applyCandidate()
+     * (ProductRepository's / RecipeRepository's) rather than reimplemented
+     * here, so local-field preservation (favorite status, local image
+     * paths, etc.) stays exactly as correct as it already is for the
+     * single-item refresh FAB. Reloads the meal once at the end, so the
+     * caller gets one clean refresh instead of one per applied item.
+     *
+     * @param mealId     the meal these candidates belong to
+     * @param candidates batch from onRefreshAvailable() - may be empty
+     * @param callback   receives the reloaded meal once every candidate is applied
+     */
+    public void applyMealRefreshCandidates(String mealId, List<PortionRefreshCandidate> candidates,
+                                           MealCallback callback) {
+        if (candidates == null || candidates.isEmpty()) {
+            getMealWithProducts(mealId, callback);
+            return;
+        }
+
+        AtomicInteger pending = new AtomicInteger(candidates.size());
+        Runnable applyDone = () -> {
+            if (pending.decrementAndGet() == 0) {
+                getMealWithProducts(mealId, callback);
+            }
+        };
+
+        for (PortionRefreshCandidate candidate : candidates) {
+            if (candidate.productCandidate != null) {
+                productRepository.applyCandidate(candidate.productCandidate, new ProductRepository.ProductCallback() {
+                    @Override public void onSuccess(FoodProduct product) { applyDone.run(); }
+                    @Override public void onError(Error error) { applyDone.run(); }
+                    @Override public void onLoading() {}
+                });
+            } else if (candidate.recipeCandidate != null) {
+                recipeRepository.applyCandidate(candidate.recipeCandidate, new RecipeRepository.RecipeCallback() {
+                    @Override public void onSuccess(Recipe recipe) { applyDone.run(); }
+                    @Override public void onError(String error) { applyDone.run(); }
+                });
+            } else {
+                applyDone.run();
+            }
+        }
+    }
+
+    /**
+     * Load a meal and resolve every portion's transient foodProduct/recipe
+     * field from the local cache - no network, no staleness check (see
+     * getMealWithFreshnessCheck() for that). Must run on a background
+     * thread. Shared by getMealWithProducts() and
+     * getMealWithFreshnessCheck() so both stay in sync; extracted from
+     * what used to be getMealWithProducts()'s own inline body.
+     *
+     * @return the resolved Meal, or null if mealId doesn't exist
+     */
+    private Meal loadAndResolveMealSync(String mealId) {
+        // Load meal with nutrition using @Transaction
+        MealWithNutrition mealWithNutrition = mealDao.getByIdWithNutrition(mealId);
+
+        if (mealWithNutrition == null) {
+            return null;
+        }
+
+        // Convert to domain model
+        Meal meal = mealWithNutrition.toMeal();
+
+        // CRITICAL: Populate transient foodProduct/recipe fields
+        List<FoodPortion> portions = meal.getPortions();
+        if (portions != null && !portions.isEmpty()) {
+            for (FoodPortion portion : portions) {
+                String itemId = portion.getItemId();
+                if (itemId != null && "FOOD_PRODUCT".equals(portion.getItemType())) {
+                    try {
+                        // Load product with nutrition from database
+                        var productWithNutrition =
+                                database.combinedProductDao()
+                                        .getProductWithNutritionById(itemId);
+
+                        if (productWithNutrition != null) {
+                            // Convert and set on portion (this clears cache!)
+                            portion.setFoodProduct(productWithNutrition.toFoodProduct());
+                        } else {
+                            Log.w(TAG, "Product not found in database: " + itemId);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to load product for portion: " + itemId, e);
+                    }
+                } else if (itemId != null && "RECIPE".equals(portion.getItemType())) {
+                    try {
+                        RecipeWithNutrition recipeWithNutrition =
+                                database.recipeDao().getByIdWithNutrition(itemId);
+
+                        if (recipeWithNutrition != null) {
+                            portion.setRecipe(recipeWithNutrition.toRecipe());
+                        } else {
+                            Log.w(TAG, "Recipe not found in database: " + itemId);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to load recipe for portion: " + itemId, e);
+                    }
+                }
+            }
+        }
+
+        // CRITICAL: Clear old provided nutrition before recalculating
+        // Otherwise getNutrition() will return the old cached value!
+        meal.setProvidedNutrition(null);
+
+        // Recalculate nutrition after all products are loaded
+        meal.calculateNutrition();
+
+        return meal;
     }
 
     /**
