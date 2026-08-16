@@ -101,6 +101,12 @@ public class MealDetailsActivity extends BaseActivity {
     // Nutrition
     private LinearLayout nutritionLabelContainer;
 
+    // Refresh FAB - aggregated across every portion, see
+    // MealRepository.getMealWithFreshnessCheck()/PortionRefreshCandidate
+    private View refreshFabContainer;
+    private FloatingActionButton refreshFab;
+    private List<MealRepository.PortionRefreshCandidate> pendingMealRefreshCandidates;
+
     // ========== DATA ==========
     private String mealId;
     private Meal currentMeal;
@@ -182,6 +188,13 @@ public class MealDetailsActivity extends BaseActivity {
 
         // Nutrition
         nutritionLabelContainer = findViewById(R.id.nutritionLabelContainer);
+
+        // Refresh FAB
+        refreshFabContainer = findViewById(R.id.refreshFabContainer);
+        refreshFab = findViewById(R.id.refreshFab);
+        if (refreshFab != null) {
+            refreshFab.setOnClickListener(v -> applyPendingMealRefresh());
+        }
     }
 
     private void setupToolbar() {
@@ -353,20 +366,36 @@ public class MealDetailsActivity extends BaseActivity {
     /**
      * Load meal from database
      *
-     * Uses getMealWithProducts to ensure nutrition calculation works correctly
+     * Uses getMealWithFreshnessCheck: onMealLoaded fires immediately with
+     * cached data (same as the old getMealWithProducts() call - the UI
+     * never waits on network), then a concurrent freshness sweep runs
+     * across every portion. If any portion has a genuinely different
+     * version available upstream, onRefreshAvailable() surfaces the
+     * aggregated refresh FAB - one banner for the whole meal, not one
+     * per stale item. See MealRepository.getMealWithFreshnessCheck().
      */
     private void loadMeal() {
         // Clear cache before loading to get fresh data
         // This ensures we get updated portions when items are added/removed
         mealRepository.clearMealCache(mealId);
 
-        // Use getMealWithProducts to populate transient foodProduct fields
-        mealRepository.getMealWithProducts(mealId, new MealRepository.MealCallback() {
+        // A fresh load invalidates whatever refresh candidates were
+        // pending from a previous one.
+        pendingMealRefreshCandidates = null;
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
+
+        mealRepository.getMealWithFreshnessCheck(mealId, new MealRepository.MealFreshnessCallback() {
             @Override
-            public void onSuccess(Meal meal) {
+            public void onMealLoaded(Meal meal) {
+                runOnUiThread(() -> onMealDataLoaded(meal));
+            }
+
+            @Override
+            public void onRefreshAvailable(List<MealRepository.PortionRefreshCandidate> candidates) {
+                if (candidates == null || candidates.isEmpty()) return;
                 runOnUiThread(() -> {
-                    currentMeal = meal;
-                    displayMeal();
+                    pendingMealRefreshCandidates = candidates;
+                    if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.VISIBLE);
                 });
             }
 
@@ -378,6 +407,42 @@ public class MealDetailsActivity extends BaseActivity {
                             Toast.LENGTH_LONG).show();
                     finish();
                 });
+            }
+        });
+    }
+
+    /** Shared by loadMeal()'s onMealLoaded and applyPendingMealRefresh()'s
+     *  onSuccess - both end up in the same "meal data is ready, render it"
+     *  state. */
+    private void onMealDataLoaded(Meal meal) {
+        currentMeal = meal;
+        displayMeal();
+    }
+
+    /**
+     * Apply every pending refresh candidate at once (refresh FAB tap) -
+     * see MealRepository.applyMealRefreshCandidates(). Clears the pending
+     * batch and hides the FAB immediately, before the apply completes, so
+     * a slow save doesn't leave a now-inert FAB sitting on screen.
+     */
+    private void applyPendingMealRefresh() {
+        if (pendingMealRefreshCandidates == null || pendingMealRefreshCandidates.isEmpty()) return;
+
+        List<MealRepository.PortionRefreshCandidate> candidates = pendingMealRefreshCandidates;
+        pendingMealRefreshCandidates = null;
+        if (refreshFabContainer != null) refreshFabContainer.setVisibility(View.GONE);
+
+        mealRepository.applyMealRefreshCandidates(mealId, candidates, new MealRepository.MealCallback() {
+            @Override
+            public void onSuccess(Meal meal) {
+                runOnUiThread(() -> onMealDataLoaded(meal));
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> Toast.makeText(MealDetailsActivity.this,
+                        getString(R.string.error_loading_meal) + ": " + error,
+                        Toast.LENGTH_LONG).show());
             }
         });
     }
