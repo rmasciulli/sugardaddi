@@ -21,13 +21,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.core.enums.NutrientBannerStyle;
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodPortion;
+import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.database.AppDatabase;
@@ -202,10 +206,20 @@ public class MealDetailsActivity extends BaseActivity {
         portionsAdapter = new MealPortionsAdapter(this, new MealPortionsAdapter.PortionInteractionListener() {
             @Override
             public void onPortionClicked(FoodPortion portion) {
-                String itemId = portion.getItemId();  // Get the persisted searchable ID
-                if (itemId != null && !itemId.isEmpty()) {
+                // Dispatch on the resolved item's real type, mirroring
+                // MainActivity.onItemClick()'s FoodProduct/Recipe split
+                // against Searchable. Previously this always opened
+                // ProductDetailsActivity regardless of what the portion
+                // resolved to, which sent a recipe ID into a product
+                // lookup for any RECIPE portion.
+                Searchable resolved = portion.getResolvedItem();
+                if (resolved instanceof FoodProduct) {
                     Intent intent = new Intent(MealDetailsActivity.this, ProductDetailsActivity.class);
-                    intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, itemId);
+                    intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, resolved.getSearchableId());
+                    startActivity(intent);
+                } else if (resolved instanceof Recipe) {
+                    Intent intent = new Intent(MealDetailsActivity.this, RecipeDetailsActivity.class);
+                    intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, resolved.getSearchableId());
                     startActivity(intent);
                 } else {
                     Toast.makeText(MealDetailsActivity.this,
@@ -535,14 +549,6 @@ public class MealDetailsActivity extends BaseActivity {
 
         // Get nutrition (calculated from portions)
         Nutrition nutrition = currentMeal.getNutrition();
-        // TO REMOVE
-        Log.d(TAG, "updateNutritionSummary - nutrition: " + nutrition);
-        if (nutrition != null) {
-            Log.d(TAG, "  hasData: " + nutrition.hasData());
-            Log.d(TAG, "  kcal: " + nutrition.getEnergyKcal());
-            Log.d(TAG, "  portions: " + currentMeal.getPortions().size());
-        }
-        // END TO REMOVE
 
         if (nutrition == null || !nutrition.hasData()) {
             // No nutrition data - hide summary card

@@ -23,10 +23,12 @@ import java.util.Locale;
 import java.util.Set;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Category;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 
 /**
@@ -36,9 +38,24 @@ import li.masciul.sugardaddi.core.models.ServingSize;
  * - nutrition.getProteins() not getProtein()
  * - nutrition.getCarbohydrates() not getCarbohydrate()
  * - portion.getServing() not getServingSize()
- * - product.getCategoryList() for category display
+ * - FoodProduct.getCategoryList() for category display; Recipe has no
+ *   equivalent convenience getter, so category display branches on the
+ *   resolved item's real type (see bind() below)
+ *
+ * RECIPE SUPPORT: bind() dispatches on FoodPortion.getResolvedItem()
+ * rather than reading getFoodProduct() alone. Previously a RECIPE
+ * portion's foodProduct was always null, so every recipe added to a
+ * meal fell into the "not loaded" fallback branch below regardless of
+ * whether it had actually resolved with valid nutrition.
  */
 public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapter.PortionViewHolder> {
+
+    // Name/category display language. Mirrors the previous behavior
+    // (product.getName() with no argument, which defaults internally
+    // to FoodProduct.DEFAULT_LANGUAGE) - this adapter doesn't plumb the
+    // live UI language through yet, so this stays a fixed default
+    // rather than silently changing existing display behavior.
+    private static final String LANGUAGE = "en";
 
     private final Context context;
     private List<FoodPortion> portions = new ArrayList<>();
@@ -134,10 +151,13 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
         }
 
         void bind(FoodPortion portion, int position) {
-            FoodProduct product = portion.getFoodProduct();
+            Searchable resolved = portion.getResolvedItem();
 
-            if (product == null) {
-                // Fallback if product not loaded
+            if (resolved == null) {
+                // Fallback - portion hasn't resolved to a real item yet
+                // (not loaded, lookup failed, or a legitimately
+                // unresolved stub - see FoodPortion.isValid()'s Javadoc
+                // for that last case).
                 String fallbackName = portion.getItemId();
                 productName.setText(fallbackName);
                 portionSize.setText(formatPortion(portion));
@@ -147,15 +167,28 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
                 return;
             }
 
-            // Product name
-            String productNameText = product.getName();
-            productName.setText(productNameText);
+            // Name - Searchable declares getDisplayName(language)
+            // directly, so this line is identical for FoodProduct and
+            // Recipe, unlike category/image below.
+            productName.setText(resolved.getDisplayName(LANGUAGE));
 
-            // Category - use first from category list
-            List<Category> categories = product.getCategoryList();
+            // Category - FoodProduct exposes a plain field getter;
+            // Recipe only has the Categorizable interface method
+            // (language-aware, no no-arg convenience) - genuinely
+            // needs instanceof, unlike name/nutrition which unify
+            // through Searchable/Nutritional.
+            List<Category> categories;
+            if (resolved instanceof FoodProduct) {
+                categories = ((FoodProduct) resolved).getCategoryList();
+            } else if (resolved instanceof Recipe) {
+                categories = ((Recipe) resolved).getCategories(LANGUAGE);
+            } else {
+                categories = null;
+            }
+
             if (categories != null && !categories.isEmpty()) {
                 Category firstCategory = categories.get(0);
-                String categoryName = firstCategory.getName();  // Corrected: getName() not getLocalizedName()
+                String categoryName = firstCategory.getName();
                 if (categoryName != null && !categoryName.isEmpty()) {
                     productCategory.setVisibility(View.VISIBLE);
                     productCategory.setText(categoryName);
@@ -169,8 +202,17 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
             // Portion size
             portionSize.setText(formatPortion(portion));
 
-            // Load product image
-            String imageUrl = product.getImageUrl();
+            // Load thumbnail image - getImageUrl() exists on both
+            // FoodProduct and Recipe but isn't part of a shared
+            // interface, so this needs the same instanceof split as
+            // category above.
+            String imageUrl = null;
+            if (resolved instanceof FoodProduct) {
+                imageUrl = ((FoodProduct) resolved).getImageUrl();
+            } else if (resolved instanceof Recipe) {
+                imageUrl = ((Recipe) resolved).getImageUrl();
+            }
+
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 Glide.with(context)
                         .load(imageUrl)
@@ -182,7 +224,9 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
                 productImage.setImageResource(R.drawable.ic_food_placeholder);
             }
 
-            // Nutrition preview (compact)
+            // Nutrition preview (compact) - unchanged: calculateNutrition()
+            // already dispatches polymorphically as of the FoodPortion
+            // resolution-model change, so no branching is needed here.
             Nutrition nutrition = portion.calculateNutrition();
             if (nutrition != null && nutrition.hasData()) {
                 nutritionPreview.setText(formatNutritionPreview(nutrition));
@@ -203,7 +247,9 @@ public class MealPortionsAdapter extends RecyclerView.Adapter<MealPortionsAdapte
                 toggleExpansion(position);
             });
 
-            // Image click - Open ProductDetailsActivity
+            // Image click - Open ProductDetailsActivity or
+            // RecipeDetailsActivity depending on what this portion
+            // resolved to - see MealDetailsActivity.onPortionClicked().
             productImage.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onPortionClicked(portion);
