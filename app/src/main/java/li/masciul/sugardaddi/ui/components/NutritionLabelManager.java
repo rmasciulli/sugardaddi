@@ -750,16 +750,29 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             return "-";
         }
 
+        // Energy is conventionally displayed as a whole number - the one
+        // legitimate case for zero decimals. Everything else (g/mg/µg)
+        // must never drop below 1 decimal once it crosses 10, unlike the
+        // old magnitude-tiered logic below - that's what silently
+        // rounded a real 46.5g protein value to "47 g" on the nutrition
+        // label, while the Summary banners and Components card (both
+        // using a flat %.1f, no magnitude tiering) kept showing 46.5g
+        // correctly. This matters most for carbohydrates specifically,
+        // since precise carb tracking is this app's whole purpose, and
+        // any carb value above 10g was silently losing its decimal.
+        boolean isEnergyUnit = "kcal".equals(unit) || "kJ".equals(unit);
+        if (isEnergyUnit) {
+            return String.format("%.0f %s", value, unit);
+        }
+
         if (value < 0.01) {
             return "< 0.01 " + unit;
         }
 
         if (value < 1.0) {
             return String.format("%.2f %s", value, unit);
-        } else if (value < 10.0) {
-            return String.format("%.1f %s", value, unit);
         } else {
-            return String.format("%.0f %s", value, unit);
+            return String.format("%.1f %s", value, unit);
         }
     }
 
