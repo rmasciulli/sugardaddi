@@ -330,7 +330,7 @@ public class RecipeRepository {
         if (strategy.isNeverStale()) return false;
         return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();
     }
-    
+
     /** Network fetch → synchronous save → re-read merged row → push to caller. */
     private void fetchSaveAndPushRecipe(@NonNull DataSource source, @NonNull String originalId,
                                         @NonNull String language, @NonNull RecipeCallback callback) {
@@ -379,6 +379,87 @@ public class RecipeRepository {
                 }
             }
             @Override public void onLoading() {}
+        });
+    }
+
+    /**
+     * Cache-first freshness check for a recipe, without recording it as a
+     * view. Used by MealRepository's aggregate freshness sweep when a meal
+     * opens - see ProductRepository.checkProductFreshness() for the full
+     * rationale; this mirrors it exactly for recipes:
+     *  - Not stale, source unavailable, nothing cached, or fetch failed ->
+     *    onNoCandidate().
+     *  - Stale but fetched-and-unchanged -> re-stamp freshness silently,
+     *    then onNoCandidate().
+     *  - Stale and genuinely different -> onCandidate(fetched), NOT saved -
+     *    the caller applies it explicitly, same as the refresh FAB.
+     *
+     * @param searchableId a combined "SOURCE:originalId" id, i.e. what
+     *                     Recipe.getSearchableId() returns and what
+     *                     FoodPortion.itemId stores for RECIPE portions.
+     */
+    public void checkRecipeFreshness(@NonNull String searchableId,
+                                     @NonNull FreshnessCallback<Recipe> callback) {
+        SourceIdentifier identifier = SourceIdentifier.fromCombinedId(searchableId);
+        if (identifier == null || !identifier.isValid()) {
+            callback.onNoCandidate();
+            return;
+        }
+
+        String sourceId = identifier.getSourceId();
+        String originalId = identifier.getOriginalId();
+
+        DataSource source = dataSourceManager.getDataSource(sourceId);
+        if (source == null || !source.isAvailable()) {
+            callback.onNoCandidate();
+            return;
+        }
+
+        String language = li.masciul.sugardaddi.managers.LanguageManager
+                .getCurrentLanguage(context).getCode();
+
+        backgroundExecutor.execute(() -> {
+            try {
+                RecipeEntity cached = recipeDao.getBySourceAndOriginalId(sourceId, originalId);
+                if (cached == null) {
+                    callback.onNoCandidate();
+                    return;
+                }
+
+                RecipeWithNutrition cachedWithNutrition = recipeDao.getByIdWithNutrition(cached.getId());
+                Recipe baseline = (cachedWithNutrition != null)
+                        ? cachedWithNutrition.toRecipe() : cached.toRecipe();
+
+                CacheStrategy strategy = source.getCacheStrategy();
+                boolean nutritionStale = (cachedWithNutrition == null || cachedWithNutrition.nutrition == null)
+                        || isStale(cachedWithNutrition.nutrition.getLastUpdated(), strategy);
+                boolean stale = isStale(cached.getLastUpdated(), strategy) || nutritionStale;
+
+                if (!stale) {
+                    callback.onNoCandidate();
+                    return;
+                }
+
+                source.getRecipe(originalId, language, new DataSourceCallback<Recipe>() {
+                    @Override public void onSuccess(Recipe fetched) {
+                        backgroundExecutor.execute(() -> {
+                            if (baseline.contentEquals(fetched)) {
+                                saveExternalRecipeSync(fetched); // re-stamp only
+                                callback.onNoCandidate();
+                            } else {
+                                callback.onCandidate(fetched);
+                            }
+                        });
+                    }
+                    @Override public void onError(Error error) {
+                        callback.onNoCandidate();
+                    }
+                    @Override public void onLoading() {}
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "checkRecipeFreshness error for " + searchableId, e);
+                callback.onNoCandidate();
+            }
         });
     }
 
@@ -528,9 +609,9 @@ public class RecipeRepository {
      * @param imagePath     Current cached hero path, or null if not yet cached.
      */
     private void cacheFavoriteImages(@NonNull Recipe recipe,
-                                      @NonNull String recipeId,
-                                      @Nullable String thumbnailPath,
-                                      @Nullable String imagePath) {
+                                     @NonNull String recipeId,
+                                     @Nullable String thumbnailPath,
+                                     @Nullable String imagePath) {
         ImageDownloader downloader = getImageDownloader();
         ImageStorageManager storage = getImageStorageManager();
         if (downloader == null || storage == null) return;

@@ -102,7 +102,7 @@ public class ProductRepository {
     private interface NetworkFetch {
         void fetch(FetchCallback cb);
     }
-    
+
     private interface FetchCallback {
         void onSuccess(FoodProduct product);
         void onError(Error error);
@@ -349,9 +349,9 @@ public class ProductRepository {
      * @param imagePath     Current cached hero path, or null if not yet cached.
      */
     private void cacheFavoriteImages(@NonNull FoodProduct product,
-                                      @NonNull String productId,
-                                      @Nullable String thumbnailPath,
-                                      @Nullable String imagePath) {
+                                     @NonNull String productId,
+                                     @Nullable String thumbnailPath,
+                                     @Nullable String imagePath) {
         ImageDownloader downloader = getImageDownloader();
         ImageStorageManager storage = getImageStorageManager();
         if (downloader == null || storage == null) return;
@@ -697,6 +697,98 @@ public class ProductRepository {
     private boolean isStale(long lastUpdatedMs, CacheStrategy strategy) {
         if (strategy.isNeverStale()) return false;
         return (System.currentTimeMillis() - lastUpdatedMs) > strategy.getStaleAfterMs();
+    }
+
+    /**
+     * Cache-first freshness check for a product, without recording it as a
+     * view. Used by MealRepository's aggregate freshness sweep when a meal
+     * opens - reviewing a meal's contents shouldn't bump accessCount for
+     * every product in it, unlike loadProduct()/loadProductFromSource(),
+     * which are genuine views and keep recordAccess().
+     *
+     * Mirrors resolveProduct()/backgroundRefresh() exactly, minus the
+     * view-recording and minus returning the cached value (the caller
+     * already has it from its own read) - this only reports whether a
+     * genuinely different version exists:
+     *  - Not stale, source unavailable, nothing cached, or fetch failed ->
+     *    onNoCandidate().
+     *  - Stale but fetched-and-unchanged (contentEquals) -> re-stamp
+     *    freshness silently (so the next sweep doesn't refetch), then
+     *    onNoCandidate().
+     *  - Stale and genuinely different -> onCandidate(fetched), NOT saved.
+     *    The caller applies it explicitly via applyCandidate(), same rule
+     *    the single-item refresh FAB already follows.
+     *
+     * @param searchableId a combined "SOURCE:originalId" id, i.e. what
+     *                     FoodProduct.getSearchableId() returns and what
+     *                     FoodPortion.itemId stores for FOOD_PRODUCT portions.
+     */
+    public void checkProductFreshness(@NonNull String searchableId,
+                                      @NonNull FreshnessCallback<FoodProduct> callback) {
+        SourceIdentifier identifier = SourceIdentifier.fromCombinedId(searchableId);
+        if (identifier == null || !identifier.isValid()) {
+            callback.onNoCandidate();
+            return;
+        }
+
+        String sourceId = identifier.getSourceId();
+        String originalId = identifier.getOriginalId();
+
+        DataSource source = dataSourceManager.getDataSource(sourceId);
+        if (source == null || !source.isAvailable()) {
+            // Can't check right now - skip this item for this sweep rather
+            // than surfacing an error on the meal's refresh banner.
+            callback.onNoCandidate();
+            return;
+        }
+
+        String language = LanguageManager.getCurrentLanguage(context).getCode();
+
+        backgroundExecutor.execute(() -> {
+            try {
+                FoodProductWithNutrition cached = database.combinedProductDao()
+                        .getProductWithNutrition(searchableId);
+
+                if (cached == null || cached.product == null) {
+                    callback.onNoCandidate();
+                    return;
+                }
+
+                CacheStrategy strategy = source.getCacheStrategy();
+                boolean nutritionStale = (cached.nutrition == null)
+                        || isStale(cached.nutrition.getLastUpdated(), strategy);
+                boolean stale = isStale(cached.product.getLastUpdated(), strategy) || nutritionStale;
+
+                if (!stale) {
+                    callback.onNoCandidate();
+                    return;
+                }
+
+                FoodProduct baseline = cached.toFoodProduct();
+
+                source.getProduct(originalId, language, new DataSourceCallback<FoodProduct>() {
+                    @Override public void onSuccess(FoodProduct fetched) {
+                        backgroundExecutor.execute(() -> {
+                            if (baseline.contentEquals(fetched)) {
+                                saveProductToDatabaseSync(fetched, false); // re-stamp only
+                                callback.onNoCandidate();
+                            } else {
+                                callback.onCandidate(fetched);
+                            }
+                        });
+                    }
+                    @Override public void onError(Error error) {
+                        // Still-valid cached version stands - silent, matches
+                        // backgroundRefresh()'s existing behavior.
+                        callback.onNoCandidate();
+                    }
+                    @Override public void onLoading() {}
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "checkProductFreshness error for " + searchableId, e);
+                callback.onNoCandidate();
+            }
+        });
     }
 
     /** Network fetch → synchronous save → re-read merged row → push to caller. */
