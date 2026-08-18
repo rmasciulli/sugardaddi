@@ -48,6 +48,17 @@
             android:layout_marginBottom="2dp">
 
             <TextView
+                android:id="@+id/mealQuantityBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSecondaryContainer"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="231g - " />
+
+            <TextView
                 android:id="@+id/recipeName"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -71,6 +82,19 @@
                 android:background="@drawable/rounded_corner_8dp"
                 android:backgroundTint="?attr/colorPrimaryContainer"
                 android:text="@string/source_name_thecocktaildb" />
+
+            <ImageView
+                android:id="@+id/navigateChevron"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_chevron_right"
+                android:contentDescription="@string/view_details"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="?attr/colorOnSurfaceVariant" />
 
         </LinearLayout>
 
@@ -147,17 +171,19 @@
                     android:id="@+id/tagsChipGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:clipToPadding="false"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:orientation="horizontal"
                     android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:listitem="@layout/chip_tag_compact" />
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/chip_tag_compact"
+                    tools:visibility="visible" />
 
             </LinearLayout>
 
         </LinearLayout>
 
+        <include layout="@layout/expandable_nutrition_detail" />
+
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>

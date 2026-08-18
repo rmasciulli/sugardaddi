@@ -52,14 +52,24 @@
             android:layout_marginBottom="8dp">
 
             <TextView
-                android:id="@+id/recipeName"
+                android:id="@+id/mealQuantityBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSecondaryContainer"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="231g - " />
+
+            <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textStyle="bold"
                 android:textColor="?attr/colorOnSurface"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:ellipsize="end"
                 tools:text="Grilled Salmon with Lemon Butter" />
 
@@ -77,6 +87,19 @@
                 android:visibility="gone"
                 tools:visibility="visible"
                 tools:text="FatSecret" />
+
+            <ImageView
+                android:id="@+id/navigateChevron"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:padding="2dp"
+                android:src="@drawable/ic_chevron_right"
+                android:contentDescription="@string/view_details"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="?attr/colorOnSurfaceVariant" />
 
         </LinearLayout>
 
@@ -186,6 +209,8 @@
 
         </LinearLayout>
 
+        <include layout="@layout/expandable_nutrition_detail" />
+
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView>
