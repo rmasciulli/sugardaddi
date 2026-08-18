@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import li.masciul.sugardaddi.R;
@@ -32,6 +31,7 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.database.AppDatabase;
@@ -40,7 +40,7 @@ import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.managers.LanguageManager;
-import li.masciul.sugardaddi.ui.adapters.MealPortionsAdapter;
+import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
 import li.masciul.sugardaddi.ui.components.NutrientBannerHelper;
 import li.masciul.sugardaddi.ui.components.NutrientBannerView;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
@@ -49,8 +49,11 @@ import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -90,11 +93,17 @@ public class MealDetailsActivity extends BaseActivity {
 
     // Summary
     private LinearLayout nutrientBannersContainer;
-    private MaterialCardView summaryCard;
+    private View summaryCard;
 
-    // Portions
+    // Portions - rendered as search cards (same delegates/layouts as
+    // MainActivity's search results), not a bespoke adapter/layout - see
+    // setupPortionsList()'s Javadoc for why.
     private RecyclerView portionsRecyclerView;
-    private MealPortionsAdapter portionsAdapter;
+    private SearchResultsAdapter componentsAdapter;
+    /** Backs componentsAdapter's NutritionResolver/QuantityResolver and
+     *  swipe-to-delete's position->portion lookup. Rebuilt every time
+     *  updatePortionsList() runs. */
+    private final Map<String, FoodPortion> portionByItemId = new HashMap<>();
     private LinearLayout emptyPortionsView;
     private MaterialButton addItemButton;
 
@@ -215,24 +224,29 @@ public class MealDetailsActivity extends BaseActivity {
         });
     }
 
+    /**
+     * Components list uses SearchResultsAdapter - the same delegates and
+     * layouts search results already use - fed each portion's resolved
+     * item, instead of a bespoke MealPortionsAdapter/item_meal_portion.xml.
+     * expansionEnabled is always on here, the one place it belongs;
+     * nutritionResolver supplies portion-scaled values (231g -> 271kcal)
+     * instead of the item's raw per-100g figure; quantityResolver
+     * populates the mealQuantityBadge every search card now carries,
+     * hidden everywhere else (search, favorites).
+     */
     private void setupPortionsList() {
-        portionsAdapter = new MealPortionsAdapter(this, new MealPortionsAdapter.PortionInteractionListener() {
+        componentsAdapter = new SearchResultsAdapter(this, new SearchResultsAdapter.OnItemClickListener() {
             @Override
-            public void onPortionClicked(FoodPortion portion) {
+            public void onItemClick(@NonNull Searchable item) {
                 // Dispatch on the resolved item's real type, mirroring
-                // MainActivity.onItemClick()'s FoodProduct/Recipe split
-                // against Searchable. Previously this always opened
-                // ProductDetailsActivity regardless of what the portion
-                // resolved to, which sent a recipe ID into a product
-                // lookup for any RECIPE portion.
-                Searchable resolved = portion.getResolvedItem();
-                if (resolved instanceof FoodProduct) {
+                // MainActivity.onItemClick().
+                if (item instanceof FoodProduct) {
                     Intent intent = new Intent(MealDetailsActivity.this, ProductDetailsActivity.class);
-                    intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, resolved.getSearchableId());
+                    intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
                     startActivity(intent);
-                } else if (resolved instanceof Recipe) {
+                } else if (item instanceof Recipe) {
                     Intent intent = new Intent(MealDetailsActivity.this, RecipeDetailsActivity.class);
-                    intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, resolved.getSearchableId());
+                    intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, item.getSearchableId());
                     startActivity(intent);
                 } else {
                     Toast.makeText(MealDetailsActivity.this,
@@ -242,24 +256,37 @@ public class MealDetailsActivity extends BaseActivity {
             }
 
             @Override
-            public void onPortionQuantityChanged(FoodPortion portion, double newQuantity) {
-                // Update portion quantity
-                updatePortionQuantity(portion, newQuantity);
+            public void onItemLongClick(@NonNull Searchable item, int position) {
+                // No long-press behavior here - the previous Components
+                // card never had one either. Deletion is swipe-only,
+                // gated by isEditMode below.
             }
+        });
+        componentsAdapter.setExpansionEnabled(true);
+        componentsAdapter.setPaginationEnabled(false);
 
-            @Override
-            public void onPortionDeleted(FoodPortion portion) {
-                // Delete portion (only in edit mode)
-                if (isEditMode) {
-                    deletePortion(portion);
-                }
-            }
+        componentsAdapter.setNutritionResolver(item -> {
+            FoodPortion portion = portionByItemId.get(item.getSearchableId());
+            return portion != null ? portion.calculateNutrition() : null;
+        });
+
+        componentsAdapter.setQuantityResolver(item -> {
+            FoodPortion portion = portionByItemId.get(item.getSearchableId());
+            if (portion == null) return null;
+            ServingSize serving = portion.getServing();
+            if (serving == null) return null;
+            Double grams = serving.getAsGrams();
+            return grams != null
+                    ? String.format(Locale.getDefault(), "%.0f g - ", grams)
+                    : serving.getDisplayText() + " - ";
         });
 
         portionsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        portionsRecyclerView.setAdapter(portionsAdapter);
+        portionsRecyclerView.setAdapter(componentsAdapter);
 
-        // Setup swipe to delete (only in edit mode)
+        // Setup swipe to delete (only in edit mode) - unchanged mechanism,
+        // just resolves the swiped position back to a FoodPortion via
+        // portionByItemId instead of MealPortionsAdapter.getPortionAt().
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
@@ -274,13 +301,16 @@ public class MealDetailsActivity extends BaseActivity {
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 if (isEditMode) {
                     int position = viewHolder.getAdapterPosition();
-                    FoodPortion portion = portionsAdapter.getPortionAt(position);
+                    List<Searchable> items = componentsAdapter.getItems();
+                    FoodPortion portion = (position >= 0 && position < items.size())
+                            ? portionByItemId.get(items.get(position).getSearchableId())
+                            : null;
                     if (portion != null) {
                         deletePortion(portion);
                     }
                 } else {
                     // Not in edit mode - restore item
-                    portionsAdapter.notifyItemChanged(viewHolder.getAdapterPosition());
+                    componentsAdapter.notifyItemChanged(viewHolder.getAdapterPosition());
                 }
             }
 
@@ -667,7 +697,24 @@ public class MealDetailsActivity extends BaseActivity {
             // Show portions list
             portionsRecyclerView.setVisibility(View.VISIBLE);
             emptyPortionsView.setVisibility(View.GONE);
-            portionsAdapter.setPortions(currentMeal.getPortions());
+
+            // Rebuild the lookup map and the resolved-item list together -
+            // unresolved portions (getResolvedItem() == null) are skipped
+            // from display entirely, matching what the old fallback
+            // branch in MealPortionsAdapter used to render instead
+            // (raw itemId as name) - simply omitting them is cleaner
+            // than dragging that fallback state through search cards
+            // that have no matching "unresolved" rendering of their own.
+            portionByItemId.clear();
+            List<Searchable> resolvedItems = new ArrayList<>();
+            for (FoodPortion portion : currentMeal.getPortions()) {
+                Searchable resolved = portion.getResolvedItem();
+                if (resolved != null) {
+                    portionByItemId.put(resolved.getSearchableId(), portion);
+                    resolvedItems.add(resolved);
+                }
+            }
+            componentsAdapter.updateItems(resolvedItems, false);
         } else {
             // Show empty state
             portionsRecyclerView.setVisibility(View.GONE);
@@ -697,8 +744,13 @@ public class MealDetailsActivity extends BaseActivity {
     // ========== ACTIONS ==========
 
     private void addItemToMeal() {
-        // Navigate to search/add item activity
-        Intent intent = new Intent(this, MainActivity.class);  // TODO: Create AddItemToMealActivity
+        // Launches MainActivity in add-to-meal mode (mode=add_to_meal +
+        // extra_meal_id) rather than a dedicated picker Activity - that's
+        // a real, complete flow: MainActivity reads these into
+        // returnToMealId, changes its toolbar/title, locks the nav
+        // drawer, and forwards it onward as RETURN_TO_MEAL to whichever
+        // detail screen gets opened. Not a stub.
+        Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("mode", "add_to_meal");
         intent.putExtra(EXTRA_MEAL_ID, mealId);
         startActivityForResult(intent, REQUEST_ADD_ITEM);
@@ -715,8 +767,8 @@ public class MealDetailsActivity extends BaseActivity {
             saveMeal();
         }
 
-        // Update adapter (enables/disables swipe-to-delete)
-        portionsAdapter.setEditMode(isEditMode);
+        // No adapter call needed here - swipe-to-delete's getSwipeDirs()
+        // reads isEditMode directly on every swipe attempt already.
     }
 
     private void editMealProperties() {
@@ -771,7 +823,7 @@ public class MealDetailsActivity extends BaseActivity {
         // Update UI
         updateNutritionSummary();
         updateNutritionLabel();
-        portionsAdapter.notifyDataSetChanged();
+        componentsAdapter.notifyDataSetChanged();
 
         Log.d(TAG, "Updated portion quantity: " + portion.getDisplayName(getCurrentLanguageCode()) +
                 " to " + newQuantity + "g");

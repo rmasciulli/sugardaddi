@@ -34,13 +34,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingTop="16dp">
 
             <!-- Header: Photo, Meal Type & Date/Time -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:layout_marginHorizontal="16dp"
                 android:layout_marginBottom="16dp"
                 android:gravity="center_vertical">
 
@@ -157,151 +158,148 @@
 
             </LinearLayout>
 
-            <!-- Summary Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Summary -->
+            <LinearLayout
                 android:id="@+id/summaryCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:contentPadding="16dp">
+                android:orientation="vertical"
+                android:layout_marginHorizontal="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/summary"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:layout_marginBottom="12dp" />
 
                 <LinearLayout
+                    android:id="@+id/nutrientBannersContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:weightSum="5"
+                    android:layout_marginBottom="16dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/summary"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:layout_marginBottom="12dp" />
+            </LinearLayout>
 
-                    <!-- Nutrient Banners Container -->
-                    <LinearLayout
-                        android:id="@+id/nutrientBannersContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:weightSum="5" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Components Section -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Components -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:contentPadding="16dp">
+                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
 
-                <LinearLayout
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:text="@string/components"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Portions RecyclerView - deliberately NOT horizontally
+                     margined/padded, unlike everything else in this
+                     screen - matches activity_main.xml's own search
+                     results RecyclerView exactly (match_parent width, no
+                     horizontal inset), so cards get the full width minus
+                     only their own layout_marginHorizontal="8dp", same as
+                     every other screen showing these same cards. -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/portionsRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_search_product_off"
+                    tools:itemCount="3" />
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/emptyPortionsView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="20dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:src="@drawable/ic_food_placeholder"
+                        android:alpha="0.3"
+                        android:contentDescription="@string/no_items" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/components"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:layout_marginBottom="12dp" />
+                        android:text="@string/no_items_in_meal"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:layout_marginTop="8dp" />
 
-                    <!-- Portions RecyclerView -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/portionsRecyclerView"
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        tools:listitem="@layout/item_meal_portion"
-                        tools:itemCount="3" />
-
-                    <!-- Empty State -->
-                    <LinearLayout
-                        android:id="@+id/emptyPortionsView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:padding="32dp"
-                        android:visibility="gone"
-                        tools:visibility="visible">
-
-                        <ImageView
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:src="@drawable/ic_food_placeholder"
-                            android:alpha="0.3"
-                            android:contentDescription="@string/no_items" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/no_items_in_meal"
-                            android:textAppearance="?attr/textAppearanceBodyLarge"
-                            android:layout_marginTop="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/tap_add_item_to_start"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:layout_marginTop="4dp" />
-
-                    </LinearLayout>
-
-                    <!-- Add Item Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/addItemButton"
-                        style="@style/Widget.Material3.Button.TextButton.Icon"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/add_item_to_meal"
-                        android:textColor="?attr/colorPrimary"
-                        android:paddingTop="14dp"
-                        android:paddingBottom="14dp"
-                        app:icon="@drawable/ic_add"
-                        app:iconTint="?attr/colorPrimary"
-                        app:iconGravity="start"
-                        app:iconSize="20dp"
-                        app:cornerRadius="8dp"
-                        app:strokeColor="?attr/colorPrimary"
-                        app:strokeWidth="1dp"
-                        app:backgroundTint="@android:color/transparent"
-                        app:rippleColor="?attr/colorPrimary" />
+                        android:text="@string/tap_add_item_to_start"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:layout_marginTop="4dp" />
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Add Item Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addItemButton"
+                    style="@style/Widget.Material3.Button.TextButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/add_item_to_meal"
+                    android:textColor="?attr/colorPrimary"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="14dp"
+                    app:icon="@drawable/ic_add"
+                    app:iconTint="?attr/colorPrimary"
+                    app:iconGravity="start"
+                    app:iconSize="20dp"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="?attr/colorPrimary"
+                    app:strokeWidth="1dp"
+                    app:backgroundTint="@android:color/transparent"
+                    app:rippleColor="?attr/colorPrimary" />
+
+            </LinearLayout>
 
             <!-- Nutrition Information Section -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:contentPadding="16dp">
+                android:orientation="vertical"
+                android:layout_marginHorizontal="16dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nutritional_information"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Nutrition table with visible border - same
+                     bg_nutrition_block treatment used in every product/
+                     recipe detail renderer's own nutrition table
+                     (detail_off_product.xml etc.), not a MaterialCardView.
+                     1dp padding ensures the border is never covered by
+                     the white content inside it, matching that precedent
+                     exactly. -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_nutrition_block"
+                    android:padding="1dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/nutritional_information"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:layout_marginBottom="12dp" />
-
-                    <!-- Nutrition Label Container -->
                     <LinearLayout
                         android:id="@+id/nutritionLabelContainer"
                         android:background="?attr/colorSurface"
@@ -311,7 +309,7 @@
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <!-- Bottom spacing to account for removed edit button -->
             <View
