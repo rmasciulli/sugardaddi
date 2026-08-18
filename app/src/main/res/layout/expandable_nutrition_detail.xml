@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    expandable_nutrition_detail.xml - Shared nutrition-grid include.
+
+    Extracted from item_meal_portion.xml's original expandedLayout block
+    (identical rows, ids, styling - content unchanged) so search cards can
+    reuse the exact same expanded-detail presentation instead of each
+    reinventing it. Bound generically via NutritionGridHelper.bind() -
+    works against any Searchable, no per-source/per-type customization
+    needed, since FoodProduct and Recipe both implement Nutritional
+    identically.
+
+    GONE by default. Not every item has data to show it: TheMealDB/
+    TheCocktailDB recipes never carry nutrition at all (their mappers
+    document this explicitly), and FatSecret recipes deliberately don't
+    at search time (see FatSecretMapper.mapRecipeSearchResult()'s comment
+    on why - the search response's per-serving numbers can't be honestly
+    normalized to per-100g without grams_per_portion). NutritionGridHelper
+    hides this section AND the card's expand indicator entirely for such
+    items, rather than expanding to an empty grid.
+
+    Usage: <include layout="@layout/expandable_nutrition_detail" /> below
+    a card's collapsed row. No attribute overrides needed - width/height/
+    visibility are already set here. The including card also needs its
+    own expandIndicator (rotating chevron, non-interactive - the whole
+    card handles the tap) and navigateChevron (ic_chevron_right, its own
+    click listener) in its collapsed row; those aren't part of this
+    include since every card's collapsed-row layout differs too much to
+    force a one-size-fits-all trailing-icons block.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/expandableDetailSection"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginTop="12dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="8dp"
+    android:background="?attr/colorSurfaceVariant"
+    android:visibility="gone"
+    tools:visibility="visible">
+
+    <!-- Nutrition Details Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Energy -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_energy_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/detailEnergy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="213 kcal" />
+        </LinearLayout>
+
+        <!-- Carbohydrates -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_carbohydrates_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/detailCarbs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="24.2 g" />
+        </LinearLayout>
+
+        <!-- Sugars (indented) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="0dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_sugars_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:alpha="0.8" />
+
+            <TextView
+                android:id="@+id/detailSugars"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:alpha="0.8"
+                tools:text="5.9 g" />
+        </LinearLayout>
+
+        <!-- Proteins -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_proteins_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/detailProteins"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="2.3 g" />
+        </LinearLayout>
+
+        <!-- Fats -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_fats_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/detailFats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="11.6 g" />
+        </LinearLayout>
+
+        <!-- Fibers -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nutrient_fibers_short"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/detailFibers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="0.4 g" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Tap to collapse hint -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tap_to_collapse"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="italic"
+        android:layout_marginTop="8dp"
+        android:layout_gravity="center_horizontal" />
+
+</LinearLayout>
