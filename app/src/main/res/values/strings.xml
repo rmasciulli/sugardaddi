@@ -519,7 +519,7 @@
          sits directly under a "Nutrition Facts"/"Nutritional information"
          title, so restating it would be redundant. -->
     <string name="confidence_scientific_detail">Highly accurate information: lab-measured.</string>
-    <string name="confidence_declared_detail">Accurate information: reported by the manufacturer.</string>
+    <string name="confidence_declared_detail">Accurate information: declared by manufacturer.</string>
     <string name="confidence_computed_detail">Calculated information: from this recipe\'s ingredients.</string>
     <string name="confidence_estimated_detail">Approximate information: exact values unavailable.</string>
     <string name="confidence_user_detail">Unverified information: entered manually.</string>
