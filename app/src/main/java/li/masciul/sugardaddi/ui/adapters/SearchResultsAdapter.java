@@ -365,13 +365,11 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         // rather than through ItemViewDelegate, mirroring how
         // CardThumbnailHelper already handles thumbnails outside the
         // delegate contract. Gated on expansionEnabled: when off (the
-        // current default for both real callers), the section, the
-        // expand indicator, navigateChevron, AND mealQuantityBadge are
-        // all explicitly hidden - they're visible by default in the
-        // layout XML, so simply not binding them isn't enough to keep
-        // them off screen.
+        // current default for both real callers), the section,
+        // navigateChevron, AND mealQuantityBadge are all explicitly
+        // hidden - they're visible by default in the layout XML, so
+        // simply not binding them isn't enough to keep them off screen.
         View expandableSection = holder.itemView.findViewById(R.id.expandableDetailSection);
-        View expandIndicator = holder.itemView.findViewById(R.id.expandIndicator);
         View navigateChevron = holder.itemView.findViewById(R.id.navigateChevron);
         View quantityBadge = holder.itemView.findViewById(R.id.mealQuantityBadge);
         if (expandableSection != null) {
@@ -379,7 +377,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 boolean isExpanded = expandedPositions.contains(position);
                 Nutrition nutritionOverride = nutritionResolver != null
                         ? nutritionResolver.resolveNutrition(item) : null;
-                NutritionGridHelper.bind(expandableSection, expandIndicator, isExpanded, item, nutritionOverride);
+                NutritionGridHelper.bind(expandableSection, isExpanded, item, nutritionOverride);
                 if (navigateChevron != null) navigateChevron.setVisibility(View.VISIBLE);
 
                 if (quantityBadge instanceof TextView) {
@@ -394,7 +392,6 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
                 }
             } else {
                 expandableSection.setVisibility(View.GONE);
-                if (expandIndicator != null) expandIndicator.setVisibility(View.GONE);
                 if (navigateChevron != null) navigateChevron.setVisibility(View.GONE);
                 if (quantityBadge != null) quantityBadge.setVisibility(View.GONE);
             }

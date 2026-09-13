@@ -26,8 +26,8 @@ import li.masciul.sugardaddi.core.models.Nutrition;
  *
  * Not every item has data - see expandable_nutrition_detail.xml's
  * Javadoc for exactly which sources don't and why. When there's nothing
- * to show, hides the whole section AND the expand indicator - no dead
- * affordance that expands to an empty grid.
+ * to show, hides the section entirely - no dead affordance that expands
+ * to an empty grid.
  */
 public final class NutritionGridHelper {
 
@@ -36,22 +36,18 @@ public final class NutritionGridHelper {
     /**
      * @param expandableSection expandable_nutrition_detail.xml's root view
      *                          (R.id.expandableDetailSection)
-     * @param expandIndicator   the card's rotating chevron signaling expand
-     *                          state - nullable; hidden along with the
-     *                          section when there's nothing to show
      * @param isExpanded        current expand state for this position
      * @param item              the resolved Searchable this card represents;
      *                          null if not yet resolved
      */
     public static void bind(@NonNull View expandableSection,
-                            @Nullable View expandIndicator,
                             boolean isExpanded,
                             @Nullable Searchable item) {
-        bind(expandableSection, expandIndicator, isExpanded, item, null);
+        bind(expandableSection, isExpanded, item, null);
     }
 
     /**
-     * Same as the four-arg bind(), plus an optional pre-computed
+     * Same as the three-arg bind(), plus an optional pre-computed
      * Nutrition that takes priority over the item's own raw
      * Nutritional.getNutrition() when present. Used by MealDetailsActivity
      * to show portion-scaled values (231g -> 271 kcal) instead of the
@@ -63,10 +59,9 @@ public final class NutritionGridHelper {
      *                          FoodPortion.calculateNutrition()) to show
      *                          instead of item.getNutrition(); null uses
      *                          the item's own raw value, same as the
-     *                          four-arg overload
+     *                          three-arg overload
      */
     public static void bind(@NonNull View expandableSection,
-                            @Nullable View expandIndicator,
                             boolean isExpanded,
                             @Nullable Searchable item,
                             @Nullable Nutrition nutritionOverride) {
@@ -83,13 +78,7 @@ public final class NutritionGridHelper {
 
         if (!hasData) {
             expandableSection.setVisibility(View.GONE);
-            if (expandIndicator != null) expandIndicator.setVisibility(View.GONE);
             return;
-        }
-
-        if (expandIndicator != null) {
-            expandIndicator.setVisibility(View.VISIBLE);
-            expandIndicator.setRotation(isExpanded ? 180f : 0f);
         }
 
         if (!isExpanded) {
