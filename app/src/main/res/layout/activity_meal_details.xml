@@ -286,28 +286,18 @@
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="12dp" />
 
-                <!-- Nutrition table with visible border - same
-                     bg_nutrition_block treatment used in every product/
-                     recipe detail renderer's own nutrition table
-                     (detail_off_product.xml etc.), not a MaterialCardView.
-                     1dp padding ensures the border is never covered by
-                     the white content inside it, matching that precedent
-                     exactly. -->
+                <!-- Plain, unstyled container - NutritionLabelManager now
+                     builds its own bordered "table" box internally
+                     (subContainer, bg_nutrition_block) and adds the
+                     confidence badge as a sibling above it, directly into
+                     this container. Do not add background/border/padding
+                     here - that would double the border and trap the
+                     badge inside it. -->
                 <LinearLayout
+                    android:id="@+id/nutritionLabelContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_nutrition_block"
-                    android:padding="1dp">
-
-                    <LinearLayout
-                        android:id="@+id/nutritionLabelContainer"
-                        android:background="?attr/colorSurface"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-
-                </LinearLayout>
+                    android:orientation="vertical" />
 
             </LinearLayout>
 

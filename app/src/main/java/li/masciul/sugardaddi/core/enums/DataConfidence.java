@@ -123,6 +123,24 @@ public enum DataConfidence {
     }
 
     /**
+     * Longer, user-facing explanation of why this confidence level applies -
+     * used by the standalone confidence badge above the nutrition table
+     * (see NutritionLabelManager), not the short getDisplayName() label.
+     * Mirrors this enum's own per-constant Javadoc, translated into plain
+     * language for someone who isn't reading the source code.
+     */
+    public String getConfidenceExplanation(Context context) {
+        switch (this) {
+            case SCIENTIFIC: return context.getString(R.string.confidence_scientific_detail);
+            case DECLARED: return context.getString(R.string.confidence_declared_detail);
+            case COMPUTED: return context.getString(R.string.confidence_computed_detail);
+            case ESTIMATED: return context.getString(R.string.confidence_estimated_detail);
+            case USER: return context.getString(R.string.confidence_user_detail);
+            default: return context.getString(R.string.confidence_estimated_detail);
+        }
+    }
+
+    /**
      * Emoji indicator for this confidence level. Not localized - the symbols
      * (🔬 🏷️ 🧮 ~ ✏️) carry the same meaning in every language, so unlike
      * DataSourceType's emoji this is a plain constant, not a string resource.
@@ -159,11 +177,16 @@ public enum DataConfidence {
     }
 
     /**
-     * True if this value should display a caveat in the UI.
-     * ESTIMATED and USER values are shown with a warning indicator.
+     * True if this value should show a caution indicator in the UI.
+     * Only ESTIMATED - deliberately NOT user-entered data: the intent is
+     * that a user who manually enters a value trusted their own source,
+     * so second-guessing it here would be wrong. Not currently wired
+     * into any screen - reserved for when manual food/recipe entry
+     * ships, at which point some UI will likely want to distinguish
+     * "this app is unsure" (ESTIMATED) from "you told us yourself" (USER).
      */
     public boolean requiresCaveat() {
-        return this == ESTIMATED || this == USER;
+        return this == ESTIMATED;
     }
 
     /**

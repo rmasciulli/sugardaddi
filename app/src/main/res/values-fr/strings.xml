@@ -513,6 +513,14 @@
     <string name="confidence_estimated">Valeur estimée</string>
     <string name="confidence_user">Valeur saisie par l\'utilisateur</string>
 
+    <!-- Confidence badge - longer explanation shown in the standalone
+         badge above the nutrition table (see NutritionLabelManager). -->
+    <string name="confidence_scientific_detail">Information très précise : mesurée en laboratoire.</string>
+    <string name="confidence_declared_detail">Information précise : déclarée par le fabricant.</string>
+    <string name="confidence_computed_detail">Information calculée : à partir des ingrédients de la recette.</string>
+    <string name="confidence_estimated_detail">Information approximative : valeurs exactes indisponibles.</string>
+    <string name="confidence_user_detail">Information non vérifiée : saisie manuellement.</string>
+
     <!-- Secondary (nutrition-specific) attribution -->
     <string name="nutrition_secondary_attribution">Données nutritionnelles via %1$s</string>
 

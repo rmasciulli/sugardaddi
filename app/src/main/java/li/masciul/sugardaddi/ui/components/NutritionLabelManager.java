@@ -1,6 +1,7 @@
 package li.masciul.sugardaddi.ui.components;
 
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -87,6 +88,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     private double currentCustomAmount = DEFAULT_CUSTOM_AMOUNT;
 
     private View headerView;
+    private LinearLayout subContainer;
     private LinearLayout nutrientSection;
     private Button toggleButton;
     private final List<View> optionalRows = new ArrayList<>();
@@ -245,21 +247,28 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
     private void buildNutritionLabel(T item, Nutrition nutrition, double customAmount) {
         isFirstCategoryHeader = true;  // Reset for each new label
-        addHeader(item, customAmount);  // Column headers + dynamic 3rd column
-        addSourceInfoRow(item, nutrition);  // Confidence badge + optional secondary attribution
 
-        LinearLayout subContainer = new LinearLayout(context);
+        // Confidence badge goes directly into container, BEFORE subContainer
+        // exists - this is what keeps it visually outside/above the bordered
+        // table rather than sandwiched inside it as a table row.
+        addSourceInfoRow(item, nutrition);
+
+        subContainer = new LinearLayout(context);
         subContainer.setOrientation(LinearLayout.VERTICAL);
 
-        int categoryBgColor = MaterialColors.getColor(context,
-                com.google.android.material.R.attr.colorSurface,
-                ContextCompat.getColor(context, R.color.md_theme_surface));
-        subContainer.setBackgroundColor(categoryBgColor);
+        // Bordered "table" look - same bg_nutrition_block treatment used by
+        // every caller's own XML previously (activity_meal_details.xml,
+        // detail_off_product.xml, etc.) - now owned here instead, so every
+        // caller can go back to a plain, unstyled container and this always
+        // renders consistently regardless of which screen it's on.
+        subContainer.setBackgroundResource(R.drawable.bg_nutrition_block);
 
         int paddingPx = (int) (6 * context.getResources().getDisplayMetrics().density);
         subContainer.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
 
         container.addView(subContainer);
+
+        addHeader(item, customAmount);  // Column headers + dynamic 3rd column
 
         nutrientSection = new LinearLayout(context);
         nutrientSection.setOrientation(LinearLayout.VERTICAL);
@@ -492,11 +501,11 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 ? R.layout.nutrition_label_header_summary
                 : R.layout.nutrition_label_header;
 
-        headerView = inflater.inflate(headerLayout, container, false);
+        headerView = inflater.inflate(headerLayout, subContainer, false);
 
         if (mode == NutritionLabelMode.SUMMARY) {
             // Summary header (already set up in XML)
-            container.addView(headerView);
+            subContainer.addView(headerView);
         } else {
             // Detailed header (existing logic)
             TextView col1 = headerView.findViewById(R.id.headerNutrient);
@@ -516,45 +525,84 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             String customHeader = formatAmount(customAmount) + unit;
             col3.setText(context.getString(R.string.nutrition_per_custom, customHeader));
 
-            container.addView(headerView);
+            subContainer.addView(headerView);
         }
     }
 
     /**
-     * Add the source-transparency row directly under the header: a
-     * {@link DataConfidence} badge for the displayed nutrition, and - only
-     * when the nutrition's own origin differs from the displayed item's own
-     * origin (e.g. a TheMealDB recipe whose nutrition was estimated by
-     * FatSecret) - a small secondary attribution line naming that origin.
+     * Add the source-transparency badge directly above the bordered
+     * nutrition table (added to container, BEFORE subContainer exists -
+     * see buildNutritionLabel()): a {@link DataConfidence} indicator for
+     * the displayed nutrition, and - only when the nutrition's own origin
+     * differs from the displayed item's own origin (e.g. a TheMealDB
+     * recipe whose nutrition was estimated by FatSecret) - a small
+     * secondary attribution line naming that origin.
      *
-     * The item's PRIMARY attribution (who provided the product/recipe itself)
-     * is handled elsewhere by {@code DetailRendererUtils.populateAttribution}
-     * and is not touched here - this row is nutrition-specific.
+     * Reuses the same amber attribution-card colors already used by
+     * DetailRendererUtils.populateAttribution()'s panel (?attr/
+     * colorAttributionCardAmber/Container) for DataConfidence.
+     * requiresCaveat() tiers specifically (today: only ESTIMATED) - both
+     * are "here's a caveat about this data" signals, so sharing the same
+     * visual language is intentional rather than introducing a second,
+     * competing warm color. Every other tier gets a calm, neutral
+     * colorSurfaceVariant tint instead - escalating visual weight only
+     * where DataConfidence itself says the data genuinely warrants a
+     * second look.
+     *
+     * The item's PRIMARY attribution (who provided the product/recipe
+     * itself) is handled elsewhere by
+     * {@code DetailRendererUtils.populateAttribution} and is not touched
+     * here - this badge is nutrition-specific.
      */
     private void addSourceInfoRow(T item, Nutrition nutrition) {
-        LinearLayout row = new LinearLayout(context);
-        row.setOrientation(LinearLayout.VERTICAL);
+        float density = context.getResources().getDisplayMetrics().density;
 
-        int paddingPx = (int) (6 * context.getResources().getDisplayMetrics().density);
-        int bottomPaddingPx = (int) (8 * context.getResources().getDisplayMetrics().density);
-        row.setPadding(paddingPx, 0, paddingPx, bottomPaddingPx);
-
-        int mutedColor = MaterialColors.getColor(context,
-                com.google.android.material.R.attr.colorOnSurfaceVariant,
-                ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant));
-
-        // Confidence badge - always shown; null-safe fallback to ESTIMATED
+        // Confidence - always shown; null-safe fallback to ESTIMATED
         // mirrors how the value is treated on read from Room (see
         // DataConfidence Javadoc) without mutating the Nutrition object here.
         DataConfidence confidence = nutrition.getDataConfidence() != null
                 ? nutrition.getDataConfidence()
                 : DataConfidence.ESTIMATED;
 
+        boolean caution = confidence.requiresCaveat();
+
+        int bgColor;
+        int textColor;
+        if (caution) {
+            bgColor = MaterialColors.getColor(context, R.attr.colorAttributionCardAmberContainer,
+                    ContextCompat.getColor(context, R.color.colorAttributionCardAmberContainer));
+            textColor = MaterialColors.getColor(context, R.attr.colorAttributionCardAmber,
+                    ContextCompat.getColor(context, R.color.colorAttributionCardAmber));
+        } else {
+            bgColor = MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorSurfaceVariant,
+                    ContextCompat.getColor(context, R.color.md_theme_surfaceVariant));
+            textColor = MaterialColors.getColor(context,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant));
+        }
+
+        LinearLayout badge = new LinearLayout(context);
+        badge.setOrientation(LinearLayout.VERTICAL);
+
+        GradientDrawable badgeBackground = new GradientDrawable();
+        badgeBackground.setColor(bgColor);
+        badgeBackground.setCornerRadius(8 * density);
+        badge.setBackground(badgeBackground);
+
+        int paddingPx = (int) (10 * density);
+        badge.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
+
+        LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        badgeParams.bottomMargin = (int) (10 * density);
+        badge.setLayoutParams(badgeParams);
+
         TextView confidenceView = new TextView(context);
-        confidenceView.setText(confidence.getDisplayWithEmoji(context));
-        confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
-        confidenceView.setTextColor(mutedColor);
-        row.addView(confidenceView);
+        confidenceView.setText(confidence.getEmoji() + " " + confidence.getConfidenceExplanation(context));
+        confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+        confidenceView.setTextColor(textColor);
+        badge.addView(confidenceView);
 
         // Secondary attribution - only when the nutrition's actual source
         // resolves to a real DataSourceType and differs from the item's own.
@@ -567,11 +615,15 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                     nutritionSource.getDisplayWithEmoji(context)));
             attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
             attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
-            attributionView.setTextColor(mutedColor);
-            row.addView(attributionView);
+            attributionView.setTextColor(textColor);
+            LinearLayout.LayoutParams attrParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            attrParams.topMargin = (int) (2 * density);
+            attributionView.setLayoutParams(attrParams);
+            badge.addView(attributionView);
         }
 
-        container.addView(row);
+        container.addView(badge);
     }
 
     /**
@@ -696,7 +748,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         shape.setCornerRadius(8f);
         toggleButton.setBackground(shape);
 
-        container.addView(toggleButton);
+        subContainer.addView(toggleButton);
     }
 
     // ========================================================================

@@ -230,21 +230,15 @@
                         android:layout_width="match_parent"
                         android:layout_height="12dp" />
 
+                    <!-- Plain, unstyled container - NutritionLabelManager
+                         now builds its own bordered "table" box internally
+                         and adds the confidence badge as a sibling above
+                         it, directly into this container. -->
                     <LinearLayout
+                        android:id="@+id/nutritionContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@drawable/bg_nutrition_block"
-                        android:padding="1dp">
-
-                        <LinearLayout
-                            android:id="@+id/nutritionContainer"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:background="?attr/colorSurface" />
-
-                    </LinearLayout>
+                        android:orientation="vertical" />
 
                 </LinearLayout>
 
