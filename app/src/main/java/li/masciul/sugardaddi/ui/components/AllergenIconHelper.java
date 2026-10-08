@@ -1,7 +1,6 @@
 package li.masciul.sugardaddi.ui.components;
 
 import android.content.Context;
-import android.graphics.Rect;
 import android.graphics.Typeface;
 
 import android.util.TypedValue;
@@ -16,8 +15,6 @@ import android.widget.TextView;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.color.MaterialColors;
 
@@ -49,9 +46,9 @@ import li.masciul.sugardaddi.core.utils.AllergenUtils;
  * View freeIcon = AllergenIconHelper.createFreeIcon(context, AllergenUtils.GLUTEN, 80);
  * layout.addView(freeIcon);
  *
- * // Multiple allergens in a row
+ * // Multiple allergens, compact wrapping layout
  * int allergens = product.getAllergenFlags();
- * ViewGroup icons = AllergenIconHelper.createMultipleIcons(context, allergens, 64, true);
+ * View icons = AllergenIconHelper.createMultipleIconsGrid(context, allergens, 60, true);
  * layout.addView(icons);
  * </pre>
  */
@@ -60,6 +57,12 @@ public class AllergenIconHelper {
     // ========== ICON SIZE CONSTANTS ==========
     private static final float TEXT_SIZE_RATIO = 0.12f;  // Text size relative to icon size
     private static final float LABEL_PADDING_RATIO = 0.08f;  // Padding around labels
+
+    // Fixed spacing between icons in createMultipleIconsGrid()'s wrapping
+    // layout - always this value regardless of how many icons a given
+    // product has, unlike the previous stretch-to-fill grid which spread
+    // whatever few icons existed across the full row width.
+    private static final int ICON_SPACING_DP = 12;
 
     /**
      * Allergen metadata for icon selection
@@ -260,20 +263,28 @@ public class AllergenIconHelper {
     }
 
     /**
-     * Create allergen icons in a proper grid layout
-     * Uses RecyclerView with GridLayoutManager for consistent column alignment
+     * Create allergen icons in a compact, left-aligned wrapping layout.
+     *
+     * Fixed spacing (ICON_SPACING_DP) between icons, wrapping to a new row
+     * only once the current row is genuinely full - unlike the previous
+     * RecyclerView/GridLayoutManager implementation, which stretched
+     * whatever few icons a product had across the entire row width,
+     * producing oversized gaps for products with fewer allergens than a
+     * full row's worth. A product with 2 allergens now shows 2 icons
+     * packed together at the same density as one with 8.
      *
      * @param context Android context
      * @param allergenFlags Combined allergen flags
      * @param sizeDp Size of each icon in dp
      * @param showContains true for "contains" versions
-     * @return RecyclerView configured as a grid
+     * @return LinearLayout (vertical) of one or more wrapped horizontal
+     *         rows, suitable for adding to any ViewGroup
      */
     @NonNull
-    public static RecyclerView createMultipleIconsGrid(@NonNull Context context,
-                                                       int allergenFlags,
-                                                       int sizeDp,
-                                                       boolean showContains) {
+    public static View createMultipleIconsGrid(@NonNull Context context,
+                                               int allergenFlags,
+                                               int sizeDp,
+                                               boolean showContains) {
 
         // Collect all icons
         List<View> icons = new ArrayList<>();
@@ -297,131 +308,43 @@ public class AllergenIconHelper {
         int availableWidth = screenWidth - totalPaddingPx;
 
         int sizePx = dpToPx(context, sizeDp);
-        int minSpacingPx = dpToPx(context, 8);
+        int spacingPx = dpToPx(context, ICON_SPACING_DP);
 
-        // Calculate span count (how many columns fit)
-        int spanCount = Math.max(1, (availableWidth + minSpacingPx) / (sizePx + minSpacingPx));
+        // How many icons fit per row at this fixed spacing - unlike the
+        // previous implementation, spacingPx is never stretched to fill
+        // leftover row width, only used to compute how many icons fit.
+        int perRow = Math.max(1, (availableWidth + spacingPx) / (sizePx + spacingPx));
 
-        // Calculate EXACT spacing to fill width perfectly
-        int exactSpacingPx;
-        if (spanCount == 1) {
-            exactSpacingPx = 0;
-        } else {
-            int totalIconWidth = spanCount * sizePx;
-            int remainingSpace = availableWidth - totalIconWidth;
-            exactSpacingPx = Math.max(0, remainingSpace / (spanCount - 1));
-        }
+        LinearLayout container = new LinearLayout(context);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // Create RecyclerView
-        RecyclerView recyclerView = new RecyclerView(context);
-        recyclerView.setLayoutParams(new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout currentRow = null;
+        for (int i = 0; i < icons.size(); i++) {
+            int column = i % perRow;
 
-        // Set GridLayoutManager
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(context, spanCount);
-        recyclerView.setLayoutManager(gridLayoutManager);
-
-        // Add spacing decoration WITHOUT edge spacing
-        recyclerView.addItemDecoration(new GridSpacingItemDecoration(spanCount, exactSpacingPx, false));
-
-        // Set adapter
-        recyclerView.setAdapter(new AllergenGridAdapter(icons, sizePx));
-
-        // Disable nested scrolling
-        recyclerView.setNestedScrollingEnabled(false);
-
-        return recyclerView;
-    }
-
-    /**
-     * Simple adapter for allergen icon grid
-     */
-    private static class AllergenGridAdapter extends RecyclerView.Adapter<AllergenGridAdapter.ViewHolder> {
-        private final List<View> icons;
-        private final int iconSizePx;
-
-        AllergenGridAdapter(List<View> icons, int iconSizePx) {
-            this.icons = icons;
-            this.iconSizePx = iconSizePx;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            FrameLayout container = new FrameLayout(parent.getContext());
-            container.setLayoutParams(new RecyclerView.LayoutParams(
-                    iconSizePx,                      // Width: fixed icon size
-                    ViewGroup.LayoutParams.WRAP_CONTENT));  // Height: wrap content!
-            return new ViewHolder(container);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.container.removeAllViews();
-            holder.container.addView(icons.get(position));
-        }
-
-        @Override
-        public int getItemCount() {
-            return icons.size();
-        }
-
-        static class ViewHolder extends RecyclerView.ViewHolder {
-            final FrameLayout container;
-
-            ViewHolder(FrameLayout container) {
-                super(container);
-                this.container = container;
+            if (column == 0) {
+                currentRow = new LinearLayout(context);
+                currentRow.setOrientation(LinearLayout.HORIZONTAL);
+                LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                if (i > 0) rowParams.topMargin = spacingPx;
+                currentRow.setLayoutParams(rowParams);
+                container.addView(currentRow);
             }
-        }
-    }
 
-    /**
-     * ItemDecoration for centered grid spacing
-     * Adds equal spacing between items AND on the edges for centered appearance
-     */
-    private static class GridSpacingItemDecoration extends RecyclerView.ItemDecoration {
-        private final int spanCount;
-        private final int spacing;
-        private final boolean includeEdge;
-
-        GridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge) {
-            this.spanCount = spanCount;
-            this.spacing = spacing;
-            this.includeEdge = includeEdge;
-        }
-
-        @Override
-        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
-                                   @NonNull RecyclerView parent,
-                                   @NonNull RecyclerView.State state) {
-            int position = parent.getChildAdapterPosition(view);
-            int column = position % spanCount;
-
-            // Vertical spacing between rows is fixed at 5dp regardless of horizontal spacing.
-            // The horizontal spacing fills the row width evenly - using that same value
-            // vertically caused excessively large gaps between rows when icons are large.
-            float density = view.getContext().getResources().getDisplayMetrics().density;
-            int verticalSpacing = (int) (5 * density);
-
-            if (includeEdge) {
-                outRect.left = spacing - column * spacing / spanCount;
-                outRect.right = (column + 1) * spacing / spanCount;
-
-                if (position < spanCount) {
-                    outRect.top = verticalSpacing;
-                }
-                outRect.bottom = verticalSpacing;
-            } else {
-                outRect.left = column * spacing / spanCount;
-                outRect.right = spacing - (column + 1) * spacing / spanCount;
-
-                if (position >= spanCount) {
-                    outRect.top = verticalSpacing;
-                }
+            View icon = icons.get(i);
+            LinearLayout.LayoutParams iconParams =
+                    new LinearLayout.LayoutParams(sizePx, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (column > 0) {
+                iconParams.leftMargin = spacingPx;
             }
+            icon.setLayoutParams(iconParams);
+            currentRow.addView(icon);
         }
+
+        return container;
     }
 
     // ========== PRIVATE HELPERS ==========

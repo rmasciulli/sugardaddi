@@ -352,7 +352,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
         }
 
         iconsContainer.removeAllViews();
-        View icons = AllergenIconHelper.createMultipleIconsGrid(context, allergenFlags, 60, true);
+        View icons = AllergenIconHelper.createMultipleIconsGrid(context, allergenFlags, 50, true);
         iconsContainer.addView(icons);
 
         if (allergenDivider != null) allergenDivider.setVisibility(View.VISIBLE);
