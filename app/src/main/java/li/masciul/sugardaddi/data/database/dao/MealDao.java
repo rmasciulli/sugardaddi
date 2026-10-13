@@ -406,7 +406,8 @@ public interface MealDao {
 
     /**
      * Average nutrients per meal in a date range - answers "average nutrient
-     * values per meal". mealType is optional (null = all types); pass a
+     * values per meal". Only consumed meals count: templates and planned
+     * (not yet eaten) meals are excluded, here and in the two queries below. mealType is optional (null = all types); pass a
      * MealType.name() to answer "average per type of meal". Plain SELECT with
      * an explicit JOIN, not a @Relation traversal, so no @Transaction needed.
      */
@@ -415,6 +416,7 @@ public interface MealDao {
             "AVG(n.sugars) as avgSugar, AVG(n.sodium) as avgSodium, COUNT(*) as mealCount " +
             "FROM meals m JOIN nutrition n ON n.sourceId = m.id AND n.sourceType = 'meal' " +
             "WHERE m.mealDateTime >= :startTime AND m.mealDateTime <= :endTime " +
+            "AND m.isTemplate = 0 AND m.isPlanned = 0 " +
             "AND (:mealType IS NULL OR m.mealType = :mealType)")
     NutritionDao.MealNutritionAverages getAverageNutritionInRange(
             long startTime, long endTime, String mealType);
@@ -438,6 +440,7 @@ public interface MealDao {
             "SUM(n.sodium) as totalSodium, COUNT(*) as mealCount " +
             "FROM meals m JOIN nutrition n ON n.sourceId = m.id AND n.sourceType = 'meal' " +
             "WHERE m.mealDateTime >= :startTime AND m.mealDateTime <= :endTime " +
+            "AND m.isTemplate = 0 AND m.isPlanned = 0 " +
             "GROUP BY day ORDER BY day")
     List<NutritionDao.DailyNutritionTotal> getDailyNutritionTotals(long startTime, long endTime);
 
@@ -449,6 +452,7 @@ public interface MealDao {
      * getMealCountInRange/getAverageSatisfactionInRange above).
      */
     @Query("SELECT COUNT(*) FROM meals WHERE mealDateTime >= :startTime AND mealDateTime <= :endTime " +
+            "AND isTemplate = 0 AND isPlanned = 0 " +
             "AND (:mealType IS NULL OR mealType = :mealType)")
     int getMealCountInRangeByType(long startTime, long endTime, String mealType);
 

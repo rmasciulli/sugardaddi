@@ -153,10 +153,9 @@ public class MealRepository {
     }
 
     /**
-     * Rolling statistics window, always measured back from "now" - not
-     * calendar-day-aligned. LAST_24_HOURS needs no special case: it's just
-     * days=1 in the same uniform (now - days*24h) formula every other
-     * window uses.
+     * Statistics window of N calendar days ending now: it starts at
+     * midnight N-1 days ago, so today counts as one of the N days.
+     * LAST_24_HOURS needs no special case: it is days=1, i.e. "today".
      */
     public enum StatsWindow {
         LAST_24_HOURS(1),
@@ -1156,10 +1155,19 @@ public class MealRepository {
         });
     }
 
-    /** (now - window.getDays()*24h) to now, in epoch millis. */
+    /**
+     * Midnight (user's zone) of the day window.getDays() - 1 days ago, to
+     * now: N calendar days including today. Midnight-aligned so every
+     * bucket of getDailyNutritionTotals() is a whole day, except today
+     * which is partial by nature (a rolling "now - N x 24h" start would
+     * also cut the FIRST day in half and drag per-day averages down).
+     */
     private long[] computeWindowBoundaries(StatsWindow window) {
         long endTime = System.currentTimeMillis();
-        long startTime = endTime - (window.getDays() * 24L * 60 * 60 * 1000);
+        long startTime = LocalDate.now()
+                .minusDays(window.getDays() - 1L)
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant().toEpochMilli();
         return new long[]{startTime, endTime};
     }
 
