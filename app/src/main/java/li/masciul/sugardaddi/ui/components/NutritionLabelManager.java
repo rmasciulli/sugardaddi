@@ -598,32 +598,74 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         badgeParams.bottomMargin = (int) (10 * density);
         badge.setLayoutParams(badgeParams);
 
+        // A meal is an aggregate of many items, so the item-level wording
+        // ("from this recipe's ingredients") does not fit it - it gets its
+        // own variants.
+        boolean isMeal = item instanceof Meal;
+
         TextView confidenceView = new TextView(context);
-        confidenceView.setText(confidence.getEmoji() + " " + confidence.getConfidenceExplanation(context));
+        confidenceView.setText(confidence.getEmoji() + " "
+                + (isMeal
+                        ? getMealConfidenceExplanation((Meal) item, confidence)
+                        : confidence.getConfidenceExplanation(context)));
         confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
         confidenceView.setTextColor(textColor);
         badge.addView(confidenceView);
 
-        // Secondary attribution - only when the nutrition's actual source
-        // resolves to a real DataSourceType and differs from the item's own.
-        DataSourceType nutritionSource = DataSourceType.fromString(nutrition.getDataSource());
-        DataSourceType itemSource = item.getDataSource();
+        // No "Nutrition data via ..." line for a meal, on purpose. A meal
+        // total mixes several items, so one source line either claims the
+        // whole meal comes from one source (e.g. "Open Food Facts" when a
+        // TheMealDB recipe in the same meal contributes nothing) or has to
+        // list sources that supplied no numbers. Each component card
+        // already shows its own source badge, and the confidence sentence
+        // above already says what is missing.
+        if (!isMeal) {
+            // Secondary attribution - only when the nutrition's actual source
+            // resolves to a real DataSourceType and differs from the item's own.
+            DataSourceType nutritionSource = DataSourceType.fromString(nutrition.getDataSource());
+            DataSourceType itemSource = item.getDataSource();
 
-        if (nutritionSource != null && nutritionSource != itemSource) {
-            TextView attributionView = new TextView(context);
-            attributionView.setText(context.getString(R.string.nutrition_secondary_attribution,
-                    nutritionSource.getDisplayWithEmoji(context)));
-            attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
-            attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
-            attributionView.setTextColor(textColor);
-            LinearLayout.LayoutParams attrParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            attrParams.topMargin = (int) (2 * density);
-            attributionView.setLayoutParams(attrParams);
-            badge.addView(attributionView);
+            if (nutritionSource != null && nutritionSource != itemSource) {
+                addAttributionLine(badge, nutritionSource.getDisplayWithEmoji(context),
+                        textColor, density);
+            }
         }
 
         container.addView(badge);
+    }
+
+    /** Small italic "Nutrition data via ..." line under the confidence text. */
+    private void addAttributionLine(LinearLayout badge, String sources, int textColor, float density) {
+        TextView attributionView = new TextView(context);
+        attributionView.setText(context.getString(R.string.nutrition_secondary_attribution, sources));
+        attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
+        attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
+        attributionView.setTextColor(textColor);
+        LinearLayout.LayoutParams attrParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        attrParams.topMargin = (int) (2 * density);
+        attributionView.setLayoutParams(attrParams);
+        badge.addView(attributionView);
+    }
+
+    /**
+     * Confidence sentence for a meal. If some items contribute no
+     * nutrition the meal total is only a lower bound, and the sentence
+     * says so with the count (Meal downgrades the confidence to ESTIMATED
+     * in that case, so the badge is amber too). Otherwise the item-level
+     * wording applies, except COMPUTED, whose generic text talks about
+     * "this recipe's ingredients".
+     */
+    private String getMealConfidenceExplanation(Meal meal, DataConfidence confidence) {
+        int missing = meal.getPortionsWithoutNutritionCount();
+        if (missing > 0) {
+            return context.getResources().getQuantityString(
+                    R.plurals.meal_nutrition_incomplete, missing, missing);
+        }
+        if (confidence == DataConfidence.COMPUTED) {
+            return context.getString(R.string.confidence_computed_meal_detail);
+        }
+        return confidence.getConfidenceExplanation(context);
     }
 
     /**

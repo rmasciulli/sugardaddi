@@ -524,6 +524,15 @@
     <string name="confidence_estimated_detail">Approximate information: exact values unavailable.</string>
     <string name="confidence_user_detail">Unverified information: entered manually.</string>
 
+    <!-- Confidence badge - meal variants (a meal aggregates many items).
+         The plural is shown instead of the item-level sentence when some
+         items contribute no nutrition, so the total is only a lower bound. -->
+    <string name="confidence_computed_meal_detail">Calculated information: some values come from recipe ingredients.</string>
+    <plurals name="meal_nutrition_incomplete">
+        <item quantity="one">Approximate information: %1$d item has no nutrition data.</item>
+        <item quantity="other">Approximate information: %1$d items have no nutrition data.</item>
+    </plurals>
+
     <!-- Secondary (nutrition-specific) attribution -->
     <string name="nutrition_secondary_attribution">Nutrition data via %1$s</string>
 

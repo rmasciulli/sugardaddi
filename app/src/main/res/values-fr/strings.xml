@@ -521,6 +521,16 @@
     <string name="confidence_estimated_detail">Information approximative : valeurs exactes indisponibles.</string>
     <string name="confidence_user_detail">Information non vérifiée : saisie manuellement.</string>
 
+    <!-- Badge de confiance - variantes pour un repas (agrégat de plusieurs
+         éléments). Le pluriel remplace la phrase de l'élément quand certains
+         éléments n'ont aucune donnée nutritionnelle : le total n'est alors
+         qu'un minimum. -->
+    <string name="confidence_computed_meal_detail">Information calculée : certaines valeurs proviennent des ingrédients d\'une recette.</string>
+    <plurals name="meal_nutrition_incomplete">
+        <item quantity="one">Information approximative : %1$d élément sans données nutritionnelles.</item>
+        <item quantity="other">Information approximative : %1$d éléments sans données nutritionnelles.</item>
+    </plurals>
+
     <!-- Secondary (nutrition-specific) attribution -->
     <string name="nutrition_secondary_attribution">Données nutritionnelles via %1$s</string>
 

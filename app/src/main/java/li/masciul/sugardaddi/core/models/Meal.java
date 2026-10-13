@@ -1,5 +1,6 @@
 package li.masciul.sugardaddi.core.models;
 
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.core.enums.ProductType;
@@ -518,35 +519,64 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
             return;
         }
 
-        Nutrition totalNutrition = new Nutrition();
-        boolean hasAnyNutrition = false;
+        // Nutrition.sum() aggregates the portions that have data. It
+        // deliberately avoids an empty starting Nutrition: its null
+        // confidence used to downgrade every meal to ESTIMATED.
+        List<Nutrition> portionNutritions = contributingNutritions();
+        Nutrition totalNutrition = Nutrition.sum(portionNutritions);
 
-        for (FoodPortion portion : portions) {
-            Log.d(TAG, "calculateNutrition - portion: " + portion.getItemId());
-            Log.d(TAG, "  foodProduct: " + portion.getFoodProduct());
-            Nutrition portionNutrition = portion.calculateNutrition();
-            Log.d(TAG, "  portionNutrition: " + portionNutrition);
-            if (portionNutrition != null && portionNutrition.hasData()) {
-                totalNutrition = totalNutrition.add(portionNutrition);
-                hasAnyNutrition = true;
+        if (totalNutrition != null) {
+            // A portion without usable nutrition (unresolved, or a source
+            // that has none - e.g. a TheMealDB recipe) contributes nothing
+            // to the total, so the total is only a lower bound: the sum
+            // of what we know. That is no longer "declared" or
+            // "calculated" data about the meal, it is an approximation -
+            // so the confidence drops to ESTIMATED, unless it was already
+            // weaker (USER). DataConfidence is declared strongest-first,
+            // so a higher ordinal means weaker.
+            if (portionNutritions.size() < portions.size()) {
+                DataConfidence current = totalNutrition.getDataConfidence();
+                if (current == null
+                        || current.ordinal() < DataConfidence.ESTIMATED.ordinal()) {
+                    totalNutrition.setDataConfidence(DataConfidence.ESTIMATED);
+                }
             }
-        }
-
-        Log.d(TAG, "calculateNutrition - COMPLETE: hasAnyNutrition=" + hasAnyNutrition);
-        Log.d(TAG, "  calculatedNutrition before assignment: " + calculatedNutrition);
-        Log.d(TAG, "  totalNutrition: " + totalNutrition);
-
-        if (hasAnyNutrition) {
             calculatedNutrition = totalNutrition;
             calculatedNutrition.calculateCompleteness();
         } else {
             calculatedNutrition = null;
         }
 
-        Log.d(TAG, "calculateNutrition - FINAL calculatedNutrition: " + calculatedNutrition);
-
         nutritionNeedsRecalculation = false;
         touch();
+    }
+
+    /**
+     * Each portion's already-scaled nutrition, for the portions that
+     * actually have usable data, in portion order. The single place that
+     * decides "does this portion contribute?", shared by the total, the
+     * incomplete-meal check and the source list below so they can never
+     * disagree.
+     */
+    private List<Nutrition> contributingNutritions() {
+        List<Nutrition> result = new ArrayList<>();
+        for (FoodPortion portion : portions) {
+            Nutrition portionNutrition = portion.calculateNutrition();
+            if (portionNutrition != null && portionNutrition.hasData()) {
+                result.add(portionNutrition);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * How many portions contribute nothing to this meal's nutrition
+     * (unresolved, or from a source with no nutrition data). Computed
+     * from the portions every time - not read from the cached total - so
+     * it stays right even when providedNutrition is in use.
+     */
+    public int getPortionsWithoutNutritionCount() {
+        return portions.size() - contributingNutritions().size();
     }
 
     private void markNutritionForRecalculation() {

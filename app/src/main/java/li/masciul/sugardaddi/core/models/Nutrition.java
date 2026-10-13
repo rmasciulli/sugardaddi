@@ -901,14 +901,50 @@ public class Nutrition {
         sum.dataSource = (this.dataSource != null && this.dataSource.equals(other.dataSource))
                 ? this.dataSource
                 : "calculated";
-        // An aggregate is never more trustworthy than its weakest input,
-        // and never better than COMPUTED - it is by definition a value the
-        // app calculated, not one a lab measured or a label declared, even
-        // when both inputs are SCIENTIFIC. This implements the propagation
-        // the COMPUTED tier's own Javadoc describes ("each ingredient's
-        // confidence level propagates upward").
+        // An aggregate is never more trustworthy than its weakest input -
+        // and no less trustworthy either: a plain sum of DECLARED values is
+        // DECLARED. (This used to be floored at COMPUTED, which made every
+        // meal read "calculated" even when each item was manufacturer-
+        // declared. Anything that genuinely derives nutrition - e.g. a
+        // recipe computed from resolved ingredients - is expected to mark
+        // itself COMPUTED explicitly instead.)
         sum.dataConfidence = weakestConfidence(this.dataConfidence, other.dataConfidence);
         return sum;
+    }
+
+    /**
+     * Sum a collection of Nutrition objects into one aggregate (e.g. a
+     * meal's total from its portions' already-scaled nutrition).
+     *
+     * Deliberately does NOT start from an empty {@code new Nutrition()}:
+     * an empty object has a null dataConfidence, which add() has to treat
+     * as "unknown" (= ESTIMATED), so using it as the starting value
+     * silently downgraded every aggregate to ESTIMATED whatever the real
+     * inputs were. The first real element is the starting value instead,
+     * so the result only ever reflects the confidence of actual inputs.
+     *
+     * A single element goes through the same normalization add() applies
+     * to a pair (gram basis), so a one-item aggregate looks like a
+     * many-item one - the source and confidence of a single input are
+     * kept as they are, exactly as add() keeps them for two identical ones.
+     *
+     * @param parts Nutrition objects to sum; null entries and entries
+     *              without data are skipped.
+     * @return The aggregate, or null if there was nothing to sum.
+     */
+    public static Nutrition sum(Iterable<Nutrition> parts) {
+        Nutrition total = null;
+        if (parts == null) return null;
+        for (Nutrition part : parts) {
+            if (part == null || !part.hasData()) continue;
+            if (total == null) {
+                total = new Nutrition(part);
+                total.basis = NutritionBasis.PER_100G; // same as add()
+            } else {
+                total = total.add(part);
+            }
+        }
+        return total;
     }
 
     private Double addNullable(Double a, Double b) {
@@ -919,12 +955,14 @@ public class Nutrition {
     }
 
     /**
-     * Confidence tier for an aggregate of two Nutrition objects: the
-     * weaker of the two inputs, floored at COMPUTED (see the comment at
-     * the call site in add()).
+     * Confidence tier for an aggregate of two Nutrition objects: simply
+     * the weaker of the two inputs (see the comment at the call site in
+     * add()).
      *
      * Null inputs count as ESTIMATED, matching the display-time fallback
-     * in NutritionLabelManager.
+     * in NutritionLabelManager. That is right for a genuinely unknown
+     * value (e.g. a legacy row) - which is exactly why callers must not
+     * use an empty Nutrition as a starting value; see sum().
      *
      * RELIES ON DECLARATION ORDER: DataConfidence declares its constants
      * strongest-first (SCIENTIFIC..USER, documented as load-bearing in
@@ -937,10 +975,7 @@ public class Nutrition {
     private static DataConfidence weakestConfidence(DataConfidence a, DataConfidence b) {
         DataConfidence ca = a != null ? a : DataConfidence.ESTIMATED;
         DataConfidence cb = b != null ? b : DataConfidence.ESTIMATED;
-        DataConfidence weaker = ca.ordinal() >= cb.ordinal() ? ca : cb;
-        return weaker.ordinal() >= DataConfidence.COMPUTED.ordinal()
-                ? weaker
-                : DataConfidence.COMPUTED;
+        return ca.ordinal() >= cb.ordinal() ? ca : cb;
     }
 
     /**
