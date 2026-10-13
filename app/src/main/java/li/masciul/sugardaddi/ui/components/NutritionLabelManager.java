@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.color.MaterialColors;
@@ -15,6 +16,7 @@ import com.google.android.material.color.MaterialColors;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
@@ -202,11 +204,30 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     // SMART DEFAULTS
     // ========================================================================
 
+    /** Amount (g or ml) used when an item has no usable serving size. */
+    public static final double FALLBACK_AMOUNT = 20.0;
+
     /**
      * Get default custom amount for column 3
      * Priority: serving size > 20g fallback
      */
     private double getDefaultCustomAmount(T item) {
+        return defaultAmountFor(item);
+    }
+
+    /**
+     * THE default amount (g or ml) for an item, used everywhere an amount
+     * is needed before the user has chosen one: the label's custom
+     * column, the pre-filled amount field in every detail renderer, and
+     * what "Add to meal" adds. Having a single rule means the three can
+     * no longer drift apart (they used to: recipes showed 150 g in the
+     * renderer but added 100 g).
+     *
+     * Rule: the item's own serving size when it has a usable one, else
+     * {@link #FALLBACK_AMOUNT}. The unit follows the item's nutrition
+     * basis (g or ml) - this returns only the number.
+     */
+    public static double defaultAmountFor(@NonNull Nutritional item) {
         // Meal.getNutrition() is already an absolute total (summed across
         // every portion), not a per-100g figure like FoodProduct/Recipe -
         // buildNutrientsUnified()'s scaling formula (valuePer100 *
@@ -229,7 +250,19 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 return servingGrams;
             }
         }
-        return 20.0;
+        return FALLBACK_AMOUNT;
+    }
+
+    /**
+     * Text to pre-fill an amount field with: "20" or "12.5". Always uses
+     * a '.' decimal separator (Locale.ROOT) on purpose - the field is
+     * later read back with Double.parseDouble(), which does not accept
+     * the ',' a French locale would produce.
+     */
+    public static String formatAmountForInput(double amount) {
+        return (amount == Math.floor(amount))
+                ? String.format(Locale.ROOT, "%.0f", amount)
+                : String.format(Locale.ROOT, "%.1f", amount);
     }
 
     // ========================================================================
@@ -606,8 +639,8 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         TextView confidenceView = new TextView(context);
         confidenceView.setText(confidence.getEmoji() + " "
                 + (isMeal
-                        ? getMealConfidenceExplanation((Meal) item, confidence)
-                        : confidence.getConfidenceExplanation(context)));
+                ? getMealConfidenceExplanation((Meal) item, confidence)
+                : confidence.getConfidenceExplanation(context)));
         confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
         confidenceView.setTextColor(textColor);
         badge.addView(confidenceView);

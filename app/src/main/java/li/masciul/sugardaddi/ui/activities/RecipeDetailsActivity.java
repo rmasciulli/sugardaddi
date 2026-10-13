@@ -27,7 +27,6 @@ import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.repository.MealRepository;
@@ -336,7 +335,9 @@ public class RecipeDetailsActivity extends BaseActivity
      * absent from MealDbRecipeDetailRenderer/CocktailDbRecipeDetailRenderer's
      * own layouts (no nutrition to show a custom-amount input against),
      * where findViewById() correctly returns null and this falls through
-     * to the recipe's own serving size, then 100g.
+     * to the shared default: the recipe's own serving size, else 20 g/ml.
+     * (It used to fall through to 100 g while the renderer showed 150 g -
+     * three different "defaults" for one screen.)
      */
     private double getQuantityFromRenderer(Recipe recipe) {
         if (activeRendererView != null) {
@@ -353,13 +354,8 @@ public class RecipeDetailsActivity extends BaseActivity
             }
         }
 
-        // Fallback: recipe's own serving size, or 100g
-        ServingSize serving = recipe.getServingSize();
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) return servingGrams;
-        }
-        return 100.0;
+        // Fallback: the one shared default (serving size, else 20 g/ml)
+        return li.masciul.sugardaddi.ui.components.NutritionLabelManager.defaultAmountFor(recipe);
     }
 
     private void resetAddToMealButton() {

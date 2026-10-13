@@ -298,7 +298,7 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         nutritionLabelManager = new NutritionLabelManager<>(
                 context, nutritionContainer, NutritionLabelMode.DETAILED);
 
-        double defaultAmount = getSmartDefaultAmount(product);
+        double defaultAmount = NutritionLabelManager.defaultAmountFor(product);
         nutritionLabelManager.display(product, defaultAmount);
 
         TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
@@ -323,6 +323,13 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
                     } catch (NumberFormatException ignored) {}
                 }
             };
+            // Pre-fill the field with the amount the label is already
+            // showing (serving size, else 20), so what the user sees in the
+            // field is exactly what "Add to meal" will add. Set BEFORE the
+            // watcher is attached: the label was displayed at this amount
+            // just above, so no recalculation is needed.
+            amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
+            amountInput.setSelectAllOnFocus(true);
             amountInput.addTextChangedListener(customAmountWatcher);
         }
     }
@@ -343,15 +350,6 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
             }
         }
         layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    private double getSmartDefaultAmount(@NonNull FoodProduct product) {
-        ServingSize serving = product.getServingSize();
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) return servingGrams;
-        }
-        return 20.0;
     }
 
     private String formatAmount(double amount) {

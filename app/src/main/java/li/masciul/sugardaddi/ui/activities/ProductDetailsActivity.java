@@ -37,7 +37,6 @@ import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.OffProductDetailRenderer;
 import li.masciul.sugardaddi.core.models.FoodPortion;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
 import li.masciul.sugardaddi.ui.scan.ProductBarcodeScanner;
@@ -864,9 +863,12 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     /**
      * Read the quantity value from the renderer's custom amount input.
      *
-     * The renderer inflated a view with @id/customAmountEditText inside it.
-     * We look it up via the active renderer view. If not found (e.g. layout has
-     * no input), fall back to serving size or 20g.
+     * The renderer inflated a view with @id/customAmountEditText inside it
+     * and pre-filled it with the default amount, so in practice the field
+     * always holds what the label is showing. We look it up via the active
+     * renderer view. If it is missing or invalid (e.g. layout has no input,
+     * or the user cleared it), fall back to the same shared default the
+     * renderer used: serving size, else 20 g/ml.
      */
     private double getQuantityFromRenderer() {
         if (activeRendererView != null) {
@@ -883,16 +885,11 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
             }
         }
 
-        // Fallback: serving size or 20g
+        // Fallback: the one shared default (serving size, else 20 g/ml)
         FoodProduct product = productManager.getCurrentProduct();
-        if (product != null) {
-            ServingSize serving = product.getServingSize();
-            if (serving != null && serving.isValid()) {
-                Double servingGrams = serving.getAsGrams();
-                if (servingGrams != null && servingGrams > 0) return servingGrams;
-            }
-        }
-        return 20.0;
+        return product != null
+                ? li.masciul.sugardaddi.ui.components.NutritionLabelManager.defaultAmountFor(product)
+                : li.masciul.sugardaddi.ui.components.NutritionLabelManager.FALLBACK_AMOUNT;
     }
 
     /**

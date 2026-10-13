@@ -375,7 +375,7 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
             nutritionLabelManager = new NutritionLabelManager<>(
                     context, nutritionContainer, NutritionLabelMode.DETAILED);
 
-            double defaultAmount = getSmartDefaultAmount(recipe);
+            double defaultAmount = NutritionLabelManager.defaultAmountFor(recipe);
             nutritionLabelManager.display(recipe, defaultAmount);
 
             TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
@@ -400,6 +400,10 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
                         } catch (NumberFormatException ignored) {}
                     }
                 };
+                // Pre-fill with the amount the label already shows (see the
+                // note in DefaultProductDetailRenderer); BEFORE the watcher.
+                amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
+                amountInput.setSelectAllOnFocus(true);
                 amountInput.addTextChangedListener(customAmountWatcher);
             }
         } else {
@@ -434,22 +438,6 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
             }
         }
         layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    /**
-     * Default amount for the nutrition label's third column: the recipe's
-     * own portion weight when known (e.g. FatSecret's grams_per_portion,
-     * see RecipeEntity.servingSize), 150g otherwise - a plated-portion
-     * default, distinct from FoodProduct's 20g fallback (a spoonful of a
-     * product vs. a serving of a dish are different scales).
-     */
-    private double getSmartDefaultAmount(@NonNull Recipe recipe) {
-        ServingSize serving = recipe.getServingSize();
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) return servingGrams;
-        }
-        return 150.0;
     }
 
     private String formatAmount(double amount) {

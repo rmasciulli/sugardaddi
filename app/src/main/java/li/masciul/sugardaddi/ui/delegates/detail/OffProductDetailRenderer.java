@@ -377,8 +377,9 @@ public class OffProductDetailRenderer implements DetailRenderer {
         nutritionLabelManager = new NutritionLabelManager<>(
                 context, nutritionContainer, NutritionLabelMode.DETAILED);
 
-        // Calculate smart default amount: serving size if available, otherwise 20g
-        double defaultAmount = getSmartDefaultAmount(product);
+        // Default amount: serving size if available, otherwise 20 g/ml
+        // (one shared rule - see NutritionLabelManager.defaultAmountFor)
+        double defaultAmount = NutritionLabelManager.defaultAmountFor(product);
         nutritionLabelManager.display(product, defaultAmount);
 
         // Wire custom amount input
@@ -410,6 +411,12 @@ public class OffProductDetailRenderer implements DetailRenderer {
                     }
                 }
             };
+            // Pre-fill the field with the amount the label is already
+            // showing, so what the user sees in the field is exactly what
+            // "Add to meal" will add. Set BEFORE the watcher is attached:
+            // the label was displayed at this amount just above.
+            amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
+            amountInput.setSelectAllOnFocus(true);
             amountInput.addTextChangedListener(customAmountWatcher);
         }
     }
@@ -435,20 +442,6 @@ public class OffProductDetailRenderer implements DetailRenderer {
             }
         }
         layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    /**
-     * Smart default amount: serving size if valid, else 20g.
-     */
-    private double getSmartDefaultAmount(@NonNull FoodProduct product) {
-        ServingSize serving = product.getServingSize();
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                return servingGrams;
-            }
-        }
-        return 20.0;
     }
 
     /**
