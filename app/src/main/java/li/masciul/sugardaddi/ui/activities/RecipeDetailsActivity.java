@@ -196,8 +196,8 @@ public class RecipeDetailsActivity extends BaseActivity
             });
         }
 
-        // "Add to Meal" container (present in layout) - hide it:
-        // recipe-to-meal composition is a future feature, not implemented yet.
+        // "Add to Meal" container: only shown when this screen was opened
+        // from a meal (RETURN_TO_MEAL extra), hidden otherwise.
         addToMealContainer = findViewById(R.id.addToMealContainer);
         returnToMealId = getIntent().getStringExtra("RETURN_TO_MEAL");
         if (returnToMealId != null && addToMealContainer != null) {

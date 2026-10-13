@@ -627,8 +627,6 @@ public class MealRepository {
                 // for free.
                 MealEntity entity = MealEntity.fromMeal(meal);
                 Nutrition nutrition = meal.getNutrition();
-                Log.d(TAG, "updateMeal - saving nutrition: " + nutrition
-                        + " hasData: " + (nutrition != null ? nutrition.hasData() : "null"));
 
                 database.runInTransaction(() -> {
                     mealDao.update(entity);

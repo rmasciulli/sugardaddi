@@ -11,7 +11,6 @@ import li.masciul.sugardaddi.core.interfaces.Categorizable;
 import li.masciul.sugardaddi.core.interfaces.AllergenAware;
 import li.masciul.sugardaddi.core.utils.AllergenUtils;
 import android.content.Context;
-import android.util.Log;
 
 import java.util.*;
 import java.time.LocalDateTime;
@@ -29,8 +28,6 @@ import java.time.format.DateTimeFormatter;
  * - Smart getters/setters with automatic language switching
  */
 public class Meal implements Nutritional, Searchable, Categorizable, AllergenAware {
-
-    private static final String TAG = "Meal";
 
     // ========== LANGUAGE CONFIGURATION ==========
     public static final String DEFAULT_LANGUAGE = "en";
@@ -699,10 +696,6 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         if (nutritionNeedsRecalculation) {
             calculateNutrition();
         }
-
-        Log.d(TAG, "getNutrition - returning calculatedNutrition: " + calculatedNutrition);
-        Log.d(TAG, "  providedNutrition: " + providedNutrition);
-        Log.d(TAG, "  nutritionNeedsRecalculation: " + nutritionNeedsRecalculation);
 
         return calculatedNutrition;
     }

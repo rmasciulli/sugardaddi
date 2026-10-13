@@ -83,34 +83,6 @@
                         tools:visibility="visible"
                         tools:src="@drawable/ic_food_placeholder" />
 
-                    <ImageView
-                        android:id="@+id/mealImageCameraBadge2"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="bottom|end"
-                        android:layout_margin="3dp"
-                        android:background="@drawable/bg_expand_icon_scrim_sm"
-                        android:contentDescription="@string/menu_replace_image"
-                        android:padding="3dp"
-                        android:scaleType="fitCenter"
-                        android:visibility="gone"
-                        app:srcCompat="@drawable/ic_camera_add"
-                        tools:visibility="visible" />
-
-                    <ImageView
-                        android:id="@+id/mealImageCameraBadge3"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="bottom|end"
-                        android:layout_margin="3dp"
-                        android:background="@drawable/bg_expand_icon_scrim_sm"
-                        android:contentDescription="@string/menu_replace_image"
-                        android:padding="3dp"
-                        android:scaleType="fitCenter"
-                        android:visibility="gone"
-                        app:srcCompat="@drawable/ic_camera_add"
-                        tools:visibility="visible" />
-
                     <!-- Standard expand-icon hint, same as every other thumbnail
                          in the app (search cards, hero images) - shown and
                          driven entirely by ImageDisplayUtils.bindFullScreenTap().

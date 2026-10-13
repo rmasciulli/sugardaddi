@@ -819,22 +819,6 @@ public class MealDetailsActivity extends BaseActivity {
 
     // ========== PORTION MANAGEMENT ==========
 
-    private void updatePortionQuantity(FoodPortion portion, double newQuantity) {
-        // Update quantity in portion
-        portion.getServing().setQuantity(newQuantity);
-
-        // Recalculate nutrition
-        currentMeal.calculateNutrition();
-
-        // Update UI
-        updateNutritionSummary();
-        updateNutritionLabel();
-        componentsAdapter.notifyDataSetChanged();
-
-        Log.d(TAG, "Updated portion quantity: " + portion.getDisplayName(getCurrentLanguageCode()) +
-                " to " + newQuantity + "g");
-    }
-
     private void deletePortion(FoodPortion portion) {
         if (currentMeal == null || portion == null) return;
 
