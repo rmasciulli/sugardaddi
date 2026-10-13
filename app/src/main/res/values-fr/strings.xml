@@ -643,6 +643,7 @@
     <string name="summary">Résumé</string>
     <string name="components">Composants</string>
     <string name="nutritional_information">Informations nutritionnelles</string>
+    <string name="meal_no_nutrition_data">Aucun élément de ce repas n\'a de données nutritionnelles.</string>
     <string name="edit_meal">Modifier le repas</string>
     <string name="done">Terminé</string>
 

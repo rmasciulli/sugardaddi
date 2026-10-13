@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import li.masciul.sugardaddi.R;
@@ -736,6 +737,15 @@ public class MealDetailsActivity extends BaseActivity {
         Nutrition nutrition = currentMeal.getNutrition();
 
         if (nutrition == null || !nutrition.hasData()) {
+            // No item contributes any data: say so instead of leaving the
+            // section header floating above an empty area.
+            TextView noData = new TextView(this);
+            noData.setText(R.string.meal_no_nutrition_data);
+            noData.setTextAppearance(
+                    com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+            noData.setTextColor(MaterialColors.getColor(noData,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant));
+            nutritionLabelContainer.addView(noData);
             return;
         }
 

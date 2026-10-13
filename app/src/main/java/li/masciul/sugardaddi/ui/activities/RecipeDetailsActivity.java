@@ -254,16 +254,15 @@ public class RecipeDetailsActivity extends BaseActivity
 
     /**
      * Add the current recipe to the meal identified by returnToMealId.
-     * Mirrors ProductDetailsActivity.addToMeal() exactly, with one real
-     * difference: recipes have no servings-input UI yet (products read
-     * customAmountEditText via getQuantityFromRenderer()), so this always
-     * adds exactly 1 serving. FoodPortion(recipe, servings) and
-     * Recipe.getNutrition()/hasNutritionData() already handle everything
-     * else correctly - MealDB/CocktailDB recipes (unresolved ingredient
-     * stubs, no direct nutrition set) naturally produce null nutrition
-     * for this portion rather than a wrong or crashing value; FatSecret
-     * recipes (real nutrition set directly by FatSecretMapper) get their
-     * actual data, scaled by servings.
+     * Mirrors ProductDetailsActivity.addToMeal().
+     *
+     * A recipe WITH nutrition is added by weight, read from the renderer's
+     * amount input (getQuantityFromRenderer()). A recipe WITHOUT nutrition
+     * (MealDB/CocktailDB: unresolved ingredient stubs) is added as exactly
+     * 1 serving: there is nothing to scale, so a weight would be an
+     * invented number (it used to show up as "20 g"). The meal still
+     * accepts it - it simply counts as an item with no nutrition data,
+     * which makes the meal's confidence "approximate".
      */
     private void addToMeal() {
         Recipe recipe = recipeManager.getCurrentRecipe();
@@ -272,9 +271,9 @@ public class RecipeDetailsActivity extends BaseActivity
             return;
         }
 
-        double quantity = getQuantityFromRenderer(recipe);
-
-        FoodPortion portion = new FoodPortion(recipe, quantity, Unit.G);
+        FoodPortion portion = recipe.hasNutritionData()
+                ? new FoodPortion(recipe, getQuantityFromRenderer(recipe), Unit.G)
+                : new FoodPortion(recipe, 1, Unit.SERVING);
         portion.setParentType("MEAL");
         portion.setParentId(returnToMealId);
 

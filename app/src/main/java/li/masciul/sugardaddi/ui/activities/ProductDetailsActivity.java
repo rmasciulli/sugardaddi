@@ -794,7 +794,11 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
      *
      * Uses the quantity currently visible in the renderer's custom amount input.
      * The renderer must be an OffProductDetailRenderer or DefaultProductDetailRenderer
-     * for the input to be present; in all cases we fall back to a smart default.
+     * for the input to be present; in all cases we fall back to the shared default.
+     *
+     * A product WITHOUT nutrition data is added as 1 serving instead: there
+     * is nothing to scale, so a weight would be an invented number. The
+     * meal counts it as an item with no data (confidence "approximate").
      */
     private void addToMeal() {
         FoodProduct product = productManager.getCurrentProduct();
@@ -804,9 +808,9 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         }
 
         // Read quantity from the renderer's amount input (if accessible)
-        double quantity = getQuantityFromRenderer();
-
-        FoodPortion portion = new FoodPortion(product, quantity, Unit.G);
+        FoodPortion portion = product.hasNutritionData()
+                ? new FoodPortion(product, getQuantityFromRenderer(), Unit.G)
+                : new FoodPortion(product, 1, Unit.SERVING);
         portion.setParentType("MEAL");
         portion.setParentId(returnToMealId);
 

@@ -645,6 +645,7 @@
     <string name="summary">Summary</string>
     <string name="components">Components</string>
     <string name="nutritional_information">Nutritional information</string>
+    <string name="meal_no_nutrition_data">None of the items in this meal has nutrition data.</string>
     <string name="edit_meal">Edit meal</string>
     <string name="done">Done</string>
 
