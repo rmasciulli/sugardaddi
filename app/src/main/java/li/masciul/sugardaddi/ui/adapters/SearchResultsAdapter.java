@@ -31,8 +31,10 @@ import li.masciul.sugardaddi.ui.delegates.search.USDAProductSearchDelegate;
 import li.masciul.sugardaddi.ui.utils.NutritionGridHelper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -67,6 +69,17 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
     private final String currentLanguage;
 
     private List<Searchable> items = new ArrayList<>();
+
+    /**
+     * Stable RecyclerView ids, parallel to {@link #items} (same index).
+     * Rebuilt by rebuildItemIds() whenever items changes. Kept as its own
+     * array rather than derived on the fly in getItemId() because the
+     * same Searchable id can legitimately appear more than once in a list
+     * (e.g. the same product added to a meal twice, as two separate
+     * portions) - the id must then be disambiguated by occurrence, which
+     * needs one O(n) pass, not an O(n) scan per bind.
+     */
+    private long[] itemIds = new long[0];
 
     // Positions currently showing their expandable_nutrition_detail
     // section - mirrors MealPortionsAdapter's own expandedPositions Set.
@@ -167,14 +180,19 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.quantityResolver = resolver;
     }
 
-    /** See setNutritionResolver(). */
+    /**
+     * See setNutritionResolver(). The position is passed alongside the
+     * item because an item alone is not a unique key: the same product
+     * can appear at several positions (one per portion), each with its
+     * own quantity and scaled nutrition.
+     */
     public interface NutritionResolver {
-        @Nullable Nutrition resolveNutrition(@NonNull Searchable item);
+        @Nullable Nutrition resolveNutrition(@NonNull Searchable item, int position);
     }
 
-    /** See setQuantityResolver(). */
+    /** See setQuantityResolver() and NutritionResolver for why position is passed. */
     public interface QuantityResolver {
-        @Nullable String resolveQuantityLabel(@NonNull Searchable item);
+        @Nullable String resolveQuantityLabel(@NonNull Searchable item, int position);
     }
 
     /** Replace all items and reset pagination. */
@@ -188,7 +206,29 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         expandedPositions.clear();
         items.clear();
         if (newItems != null) items.addAll(newItems);
+        rebuildItemIds();
         notifyDataSetChanged();
+    }
+
+    /**
+     * Recomputes itemIds so every position has a distinct stable id.
+     * The first occurrence of a Searchable id keeps the plain hash of that
+     * id (same value as before this change, for any list without
+     * duplicates); each later occurrence mixes its occurrence count into
+     * the upper 32 bits. A null id falls back to the position, as before.
+     */
+    private void rebuildItemIds() {
+        itemIds = new long[items.size()];
+        Map<String, Integer> seen = new HashMap<>();
+        for (int i = 0; i < items.size(); i++) {
+            String id = items.get(i).getSearchableId();
+            if (id == null) {
+                itemIds[i] = i;
+                continue;
+            }
+            int occurrence = seen.merge(id, 1, Integer::sum) - 1;
+            itemIds[i] = ((long) occurrence << 32) | (id.hashCode() & 0xFFFFFFFFL);
+        }
     }
 
     /**
@@ -222,6 +262,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
         // something being animated as "moved."
         notifyItemRemoved(oldSize);
         items.addAll(newItems);
+        rebuildItemIds();
         isLoadingMore = false;
         hasMoreItems = hasMore;
         notifyItemRangeInserted(oldSize, newItems.size() + 1);
@@ -264,8 +305,7 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
     @Override
     public long getItemId(int position) {
         if (position < items.size()) {
-            String id = items.get(position).getSearchableId();
-            return id != null ? id.hashCode() : position;
+            return itemIds[position];
         }
         // NO_ID, not a fixed constant like Long.MIN_VALUE. With
         // setHasStableIds(true), RecyclerView uses getItemId() to decide
@@ -376,13 +416,13 @@ public class SearchResultsAdapter extends RecyclerView.Adapter<RecyclerView.View
             if (expansionEnabled) {
                 boolean isExpanded = expandedPositions.contains(position);
                 Nutrition nutritionOverride = nutritionResolver != null
-                        ? nutritionResolver.resolveNutrition(item) : null;
+                        ? nutritionResolver.resolveNutrition(item, position) : null;
                 NutritionGridHelper.bind(expandableSection, isExpanded, item, nutritionOverride);
                 if (navigateChevron != null) navigateChevron.setVisibility(View.VISIBLE);
 
                 if (quantityBadge instanceof TextView) {
                     String label = quantityResolver != null
-                            ? quantityResolver.resolveQuantityLabel(item) : null;
+                            ? quantityResolver.resolveQuantityLabel(item, position) : null;
                     if (label != null) {
                         ((TextView) quantityBadge).setText(label);
                         quantityBadge.setVisibility(View.VISIBLE);

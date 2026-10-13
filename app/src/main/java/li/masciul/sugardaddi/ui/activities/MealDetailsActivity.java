@@ -52,8 +52,6 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -101,9 +99,15 @@ public class MealDetailsActivity extends BaseActivity {
     private RecyclerView portionsRecyclerView;
     private SearchResultsAdapter componentsAdapter;
     /** Backs componentsAdapter's NutritionResolver/QuantityResolver and
-     *  swipe-to-delete's position->portion lookup. Rebuilt every time
-     *  updatePortionsList() runs. */
-    private final Map<String, FoodPortion> portionByItemId = new HashMap<>();
+     *  swipe-to-delete's position->portion lookup. Index i is the portion
+     *  shown by the adapter's item i - the two lists are always built
+     *  together in updatePortionsList().
+     *
+     *  Position-based on purpose: the same product can be in a meal more
+     *  than once (separate portions, separate quantities), so the item's
+     *  own id is NOT a unique key - a map keyed by it would make the
+     *  later portion silently overwrite the earlier one. */
+    private final List<FoodPortion> displayedPortions = new ArrayList<>();
     private LinearLayout emptyPortionsView;
     private MaterialButton addItemButton;
 
@@ -265,13 +269,13 @@ public class MealDetailsActivity extends BaseActivity {
         componentsAdapter.setExpansionEnabled(true);
         componentsAdapter.setPaginationEnabled(false);
 
-        componentsAdapter.setNutritionResolver(item -> {
-            FoodPortion portion = portionByItemId.get(item.getSearchableId());
+        componentsAdapter.setNutritionResolver((item, position) -> {
+            FoodPortion portion = portionAt(position);
             return portion != null ? portion.calculateNutrition() : null;
         });
 
-        componentsAdapter.setQuantityResolver(item -> {
-            FoodPortion portion = portionByItemId.get(item.getSearchableId());
+        componentsAdapter.setQuantityResolver((item, position) -> {
+            FoodPortion portion = portionAt(position);
             if (portion == null) return null;
             ServingSize serving = portion.getServing();
             if (serving == null) return null;
@@ -286,7 +290,7 @@ public class MealDetailsActivity extends BaseActivity {
 
         // Setup swipe to delete (only in edit mode) - unchanged mechanism,
         // just resolves the swiped position back to a FoodPortion via
-        // portionByItemId instead of MealPortionsAdapter.getPortionAt().
+        // displayedPortions instead of MealPortionsAdapter.getPortionAt().
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
@@ -300,11 +304,7 @@ public class MealDetailsActivity extends BaseActivity {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 if (isEditMode) {
-                    int position = viewHolder.getAdapterPosition();
-                    List<Searchable> items = componentsAdapter.getItems();
-                    FoodPortion portion = (position >= 0 && position < items.size())
-                            ? portionByItemId.get(items.get(position).getSearchableId())
-                            : null;
+                    FoodPortion portion = portionAt(viewHolder.getAdapterPosition());
                     if (portion != null) {
                         deletePortion(portion);
                     }
@@ -692,25 +692,31 @@ public class MealDetailsActivity extends BaseActivity {
         }
     }
 
+    /** The portion shown at an adapter position, or null if out of range
+     *  (e.g. NO_POSITION during a swipe-settle animation). */
+    @Nullable
+    private FoodPortion portionAt(int position) {
+        return (position >= 0 && position < displayedPortions.size())
+                ? displayedPortions.get(position)
+                : null;
+    }
+
     private void updatePortionsList() {
         if (currentMeal.hasPortions()) {
             // Show portions list
             portionsRecyclerView.setVisibility(View.VISIBLE);
             emptyPortionsView.setVisibility(View.GONE);
 
-            // Rebuild the lookup map and the resolved-item list together -
+            // Rebuild displayedPortions and the resolved-item list together
+            // so index i of one is always index i of the other -
             // unresolved portions (getResolvedItem() == null) are skipped
-            // from display entirely, matching what the old fallback
-            // branch in MealPortionsAdapter used to render instead
-            // (raw itemId as name) - simply omitting them is cleaner
-            // than dragging that fallback state through search cards
-            // that have no matching "unresolved" rendering of their own.
-            portionByItemId.clear();
+            // from both (see the unresolved-portion follow-up).
+            displayedPortions.clear();
             List<Searchable> resolvedItems = new ArrayList<>();
             for (FoodPortion portion : currentMeal.getPortions()) {
                 Searchable resolved = portion.getResolvedItem();
                 if (resolved != null) {
-                    portionByItemId.put(resolved.getSearchableId(), portion);
+                    displayedPortions.add(portion);
                     resolvedItems.add(resolved);
                 }
             }
