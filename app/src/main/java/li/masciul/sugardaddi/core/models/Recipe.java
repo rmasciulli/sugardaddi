@@ -511,9 +511,17 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         if (!ContentCompare.listsEqual(cookingTips, other.cookingTips)) return false;
 
         // Times / servings / difficulty (boxed - null-aware equals)
-        if (!ContentCompare.objectsEqual(servings, other.servings)) return false;
-        if (!ContentCompare.objectsEqual(prepTimeMinutes, other.prepTimeMinutes)) return false;
-        if (!ContentCompare.objectsEqual(cookTimeMinutes, other.cookTimeMinutes)) return false;
+        // servings/prep/cook are compared with the defaults RecipeEntity applies
+        // when it saves them (null -> 1 / 0, it stores primitive ints). The cached
+        // copy therefore never holds null, so a source that provides none of these
+        // (TheMealDB, TheCocktailDB) would otherwise always differ from its own
+        // cached copy and trigger a refresh offer on every visit.
+        if (!ContentCompare.objectsEqual(servings != null ? servings : 1,
+                other.servings != null ? other.servings : 1)) return false;
+        if (!ContentCompare.objectsEqual(prepTimeMinutes != null ? prepTimeMinutes : 0,
+                other.prepTimeMinutes != null ? other.prepTimeMinutes : 0)) return false;
+        if (!ContentCompare.objectsEqual(cookTimeMinutes != null ? cookTimeMinutes : 0,
+                other.cookTimeMinutes != null ? other.cookTimeMinutes : 0)) return false;
         if (!ContentCompare.objectsEqual(totalTimeMinutes, other.totalTimeMinutes)) return false;
         if (!ContentCompare.objectsEqual(difficulty, other.difficulty)) return false;
 
