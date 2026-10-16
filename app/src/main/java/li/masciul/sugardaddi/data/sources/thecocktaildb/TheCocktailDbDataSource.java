@@ -159,6 +159,12 @@ public class TheCocktailDbDataSource extends BaseDataSource {
     }
 
     @Override
+    public boolean providesNutrition() {
+        // TheCocktailDB recipes are ingredient lists only - no nutrition values
+        return false;
+    }
+
+    @Override
     public boolean supportsBarcodeLookup() {
         // TheCocktailDB has no barcode concept
         return false;

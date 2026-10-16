@@ -166,6 +166,20 @@ public interface DataSource {
     }
 
     /**
+     * Whether this source supplies nutrition data at all. True for every
+     * source except those that only describe recipes (TheMealDB,
+     * TheCocktailDB), which override it to false.
+     *
+     * Used by the freshness checks: for a source that provides nutrition, a
+     * cached item with no nutrition row means "not fully fetched yet" and
+     * counts as stale; for one that never provides it, a missing row is the
+     * normal state and must not force a network fetch on every visit.
+     */
+    default boolean providesNutrition() {
+        return true;
+    }
+
+    /**
      * Search for food products or recipes matching the query.
      *
      * @param query          Search string (minimum 3 characters recommended)

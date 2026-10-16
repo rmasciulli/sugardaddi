@@ -431,8 +431,14 @@ public class RecipeRepository {
                         ? cachedWithNutrition.toRecipe() : cached.toRecipe();
 
                 CacheStrategy strategy = source.getCacheStrategy();
-                boolean nutritionStale = (cachedWithNutrition == null || cachedWithNutrition.nutrition == null)
-                        || isStale(cachedWithNutrition.nutrition.getLastUpdated(), strategy);
+                // A missing nutrition row only means "not fully fetched" for a
+                // source that actually provides nutrition; for TheMealDB and
+                // TheCocktailDB it is the normal state and must not force a
+                // network fetch on every visit.
+                boolean hasNutritionRow = cachedWithNutrition != null && cachedWithNutrition.nutrition != null;
+                boolean nutritionStale = hasNutritionRow
+                        ? isStale(cachedWithNutrition.nutrition.getLastUpdated(), strategy)
+                        : source.providesNutrition();
                 boolean stale = isStale(cached.getLastUpdated(), strategy) || nutritionStale;
 
                 if (!stale) {

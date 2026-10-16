@@ -174,6 +174,12 @@ public class TheMealDbDataSource extends BaseDataSource {
     }
 
     @Override
+    public boolean providesNutrition() {
+        // TheMealDB recipes are ingredient lists only - no nutrition values
+        return false;
+    }
+
+    @Override
     public boolean supportsBarcodeLookup() {
         // TheMealDB has no barcode concept - recipes are identified by meal ID
         return false;
