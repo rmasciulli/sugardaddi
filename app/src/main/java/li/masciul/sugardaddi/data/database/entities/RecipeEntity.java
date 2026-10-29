@@ -21,6 +21,7 @@ import li.masciul.sugardaddi.data.database.converters.RecipeTranslationMapConver
 import li.masciul.sugardaddi.data.database.converters.RecipeStepMetadataListConverter;
 import li.masciul.sugardaddi.data.database.converters.RecipeStepTranslationListConverter;
 import li.masciul.sugardaddi.data.database.converters.ServingSizeConverter;
+import li.masciul.sugardaddi.data.database.converters.ServingSizeListConverter;
 
 import java.util.*;
 
@@ -130,6 +131,10 @@ public class RecipeEntity {
      */
     @TypeConverters(ServingSizeConverter.class)
     private ServingSize servingSize;
+
+    /** See Recipe.servingOptions. JSON array via ServingSizeListConverter. */
+    @TypeConverters(ServingSizeListConverter.class)
+    private List<ServingSize> servingOptions;
 
     /**
      * The difficulty of the recipe. Stored as a String (ID).
@@ -263,6 +268,7 @@ public class RecipeEntity {
         recipe.setPrepTimeMinutes(this.prepTimeMinutes);
         recipe.setCookTimeMinutes(this.cookTimeMinutes);
         recipe.setServingSize(this.servingSize);
+        recipe.setServingOptions(this.servingOptions);
 
         // Convert difficulty
         if (this.difficulty != null) {
@@ -389,6 +395,7 @@ public class RecipeEntity {
         entity.setPrepTimeMinutes(recipe.getPrepTimeMinutes() != null ? recipe.getPrepTimeMinutes() : 0);
         entity.setCookTimeMinutes(recipe.getCookTimeMinutes() != null ? recipe.getCookTimeMinutes() : 0);
         entity.setServingSize(recipe.getServingSize());
+        entity.setServingOptions(recipe.getServingOptions());
 
         // Convert difficulty
         if (recipe.getDifficulty() != null) {
@@ -567,6 +574,9 @@ public class RecipeEntity {
 
     public ServingSize getServingSize() { return servingSize; }
     public void setServingSize(ServingSize servingSize) { this.servingSize = servingSize; }
+
+    public List<ServingSize> getServingOptions() { return servingOptions; }
+    public void setServingOptions(List<ServingSize> servingOptions) { this.servingOptions = servingOptions; }
 
     public String getPortionsJson() { return portionsJson; }
     public void setPortionsJson(String portionsJson) { this.portionsJson = portionsJson; }

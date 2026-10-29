@@ -9,6 +9,7 @@ import androidx.room.TypeConverters;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +22,7 @@ import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.converters.GeneralConverters;
 import li.masciul.sugardaddi.data.database.converters.ProductTranslationMapConverter;
 import li.masciul.sugardaddi.data.database.converters.ServingSizeConverter;
+import li.masciul.sugardaddi.data.database.converters.ServingSizeListConverter;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import android.util.Log;
 
@@ -155,6 +157,10 @@ public class FoodProductEntity {
     @TypeConverters(ServingSizeConverter.class)
     private ServingSize servingSize;
 
+    /** See FoodProduct.servingOptions. JSON array via ServingSizeListConverter. */
+    @TypeConverters(ServingSizeListConverter.class)
+    private List<ServingSize> servingOptions;
+
     @TypeConverters(GeneralConverters.class)
     private Set<String> tags;
 
@@ -274,6 +280,7 @@ public class FoodProductEntity {
 
         // Set complex objects
         product.setServingSize(this.servingSize);
+        product.setServingOptions(this.servingOptions);
         product.setTags(this.tags != null ? new HashSet<>(this.tags) : new HashSet<>());
 
         // Set quality metrics
@@ -380,6 +387,7 @@ public class FoodProductEntity {
 
         // Set complex objects
         entity.setServingSize(product.getServingSize());
+        entity.setServingOptions(product.getServingOptions());
         entity.setTags(product.getTags());
 
         // Set quality metrics
@@ -578,6 +586,9 @@ public class FoodProductEntity {
     // Complex objects
     public ServingSize getServingSize() { return servingSize; }
     public void setServingSize(ServingSize servingSize) { this.servingSize = servingSize; }
+
+    public List<ServingSize> getServingOptions() { return servingOptions; }
+    public void setServingOptions(List<ServingSize> servingOptions) { this.servingOptions = servingOptions; }
 
     public Set<String> getTags() { return tags; }
     public void setTags(Set<String> tags) { this.tags = tags; }

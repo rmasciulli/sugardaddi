@@ -81,6 +81,9 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private List<FoodPortion> portions;
     private Nutrition nutrition;
     private ServingSize servingSize;
+    /** Same contract as FoodProduct.servingOptions. FatSecret recipes hold
+     *  their single portion here; other recipe sources leave it empty. */
+    private List<ServingSize> servingOptions = new ArrayList<>();
     private Integer servings;
     private Integer prepTimeMinutes;
     private Integer cookTimeMinutes;
@@ -537,6 +540,7 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         // Nutrition + serving (null-aware delegation)
         if (!ContentCompare.nutritionEqual(nutrition, other.nutrition)) return false;
         if (!ContentCompare.servingEqual(servingSize, other.servingSize)) return false;
+        if (!ContentCompare.servingListsEqual(servingOptions, other.servingOptions)) return false;
 
         // Ingredients
         if (!portionsEqual(portions, other.portions)) return false;
@@ -1453,6 +1457,16 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         this.servingSize = servingSize; touch();
     }
 
+    /** Never null - see the servingOptions field for what the list may contain. */
+    public List<ServingSize> getServingOptions() {
+        return servingOptions != null ? servingOptions : new ArrayList<>();
+    }
+
+    public void setServingOptions(List<ServingSize> servingOptions) {
+        this.servingOptions = servingOptions != null ? new ArrayList<>(servingOptions) : new ArrayList<>();
+        touch();
+    }
+
     // Helper method
     public Nutrition calculateNutrition() {
         Nutrition total = new Nutrition();
@@ -1536,6 +1550,8 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         copy.searchableText = this.searchableText;
 
         // Copy recipe properties
+        copy.servingSize = this.servingSize;
+        copy.servingOptions = new ArrayList<>(this.getServingOptions());
         copy.servings = this.servings;
         copy.prepTimeMinutes = this.prepTimeMinutes;
         copy.cookTimeMinutes = this.cookTimeMinutes;

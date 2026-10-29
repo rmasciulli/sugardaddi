@@ -144,6 +144,7 @@ public final class FatSecretMapper {
         // arrived - see FoodSearchResponse's Javadoc.
         if (food.servings != null && food.servings.serving != null) {
             product.setNutrition(mapFoodServings(food.servings.serving));
+            applyServings(product, food.servings.serving);
         } else {
             product.setNutrition(parseFoodDescriptionNutrition(food.foodDescription));
         }
@@ -249,11 +250,13 @@ public final class FatSecretMapper {
         }
         applyImages(product, detail.foodImages);
 
-        Nutrition nutrition = mapFoodServings(
-                detail.servings != null ? detail.servings.serving : null);
+        List<FoodGetResponse.FoodServing> servings =
+                detail.servings != null ? detail.servings.serving : null;
+        Nutrition nutrition = mapFoodServings(servings);
         if (nutrition != null) {
             product.setNutrition(nutrition);
         }
+        applyServings(product, servings);
 
         return product;
     }
@@ -352,6 +355,97 @@ public final class FatSecretMapper {
         n.setDataSource(DataSourceType.FATSECRET.getId());
 
         return n;
+    }
+
+    /**
+     * Set the serving list and the typical serving, both decided against the
+     * basis of the nutrition just built from the same servings. Must run
+     * after setNutrition(): no nutrition means no basis to check units
+     * against, so nothing is set (the item then simply has no servings, as
+     * before this list existed).
+     */
+    private static void applyServings(@NonNull FoodProduct product,
+                                      @Nullable List<FoodGetResponse.FoodServing> servings) {
+        Nutrition nutrition = product.getNutrition();
+        if (nutrition == null || servings == null || servings.isEmpty()) return;
+
+        NutritionBasis basis = nutrition.getBasis();
+        product.setServingOptions(mapServingOptions(servings, basis));
+        product.setServingSize(pickTypicalServing(servings, basis));
+    }
+
+    /**
+     * Every serving usable for quantity in the given basis, in source order.
+     *
+     * Kept: a metric amount above 0 whose unit IS the basis unit (g for
+     * per-100g values, ml for per-100ml). Dropped:
+     * - servings in the OTHER unit. Unit.ML converts 1:1 to grams, so a
+     *   "1 cup (240 ml)" entry next to per-100g values would be read as
+     *   240 g by any getAsGrams() caller. They become usable once a
+     *   source-derived density exists (planned as a separate change).
+     * - "oz" servings: FatSecret doesn't say whether that is a mass ounce
+     *   (28.35 g) or a fluid ounce (29.57 ml).
+     * - servings with no metric amount at all (e.g. a brand's "1 bar").
+     */
+    @NonNull
+    private static List<ServingSize> mapServingOptions(
+            @NonNull List<FoodGetResponse.FoodServing> servings,
+            @NonNull NutritionBasis basis) {
+
+        List<ServingSize> options = new ArrayList<>();
+        for (FoodGetResponse.FoodServing s : servings) {
+            if (isUsableServing(s, basis)) {
+                options.add(toServingSize(s, basis));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * The serving shown as "typical": FatSecret's own is_default serving when
+     * it is usable, otherwise the first usable one. The exact 100 g / 100 ml
+     * serving never qualifies - it would only repeat the label's per-100
+     * column. Null when nothing qualifies, which leaves the shared fallback
+     * amount in place (see NutritionLabelManager.defaultAmountFor()).
+     */
+    @Nullable
+    private static ServingSize pickTypicalServing(
+            @NonNull List<FoodGetResponse.FoodServing> servings,
+            @NonNull NutritionBasis basis) {
+
+        FoodGetResponse.FoodServing firstUsable = null;
+        for (FoodGetResponse.FoodServing s : servings) {
+            if (!isUsableServing(s, basis) || s.metricServingAmount == 100.0) continue;
+            if (s.isDefault != null && s.isDefault == 1) {
+                return toServingSize(s, basis);
+            }
+            if (firstUsable == null) firstUsable = s;
+        }
+        return firstUsable != null ? toServingSize(firstUsable, basis) : null;
+    }
+
+    /** Metric amount above 0, expressed in the basis unit ("g" or "ml"). */
+    private static boolean isUsableServing(@NonNull FoodGetResponse.FoodServing s,
+                                           @NonNull NutritionBasis basis) {
+        return s.metricServingAmount != null && s.metricServingAmount > 0
+                && basis.getUnitLabel().equalsIgnoreCase(s.metricServingUnit);
+    }
+
+    /**
+     * The metric amount drives every calculation; FatSecret's own wording
+     * ("1 cup", "1 bar") is kept as the display text. setDescription() only
+     * re-parses when quantity or unit is missing, and both are set by the
+     * constructor here, so the metric values are never overwritten by it.
+     */
+    @NonNull
+    private static ServingSize toServingSize(@NonNull FoodGetResponse.FoodServing s,
+                                             @NonNull NutritionBasis basis) {
+        Unit unit = basis == NutritionBasis.PER_100ML ? Unit.ML : Unit.G;
+        ServingSize serving = new ServingSize(s.metricServingAmount, unit);
+        if (s.servingDescription != null && !s.servingDescription.trim().isEmpty()) {
+            serving.setDescription(s.servingDescription.trim());
+        }
+        return serving;
     }
 
     /**
@@ -636,7 +730,12 @@ public final class FatSecretMapper {
         // is valid on its own even when servingSizes is missing and per-100g
         // normalization is impossible.
         if (detail.gramsPerPortion != null && detail.gramsPerPortion > 0) {
-            recipe.setServingSize(new ServingSize(detail.gramsPerPortion, Unit.G));
+            ServingSize portion = new ServingSize(detail.gramsPerPortion, Unit.G);
+            recipe.setServingSize(portion);
+            // recipe.get has one portion, not a list. Exposed as a one-entry
+            // serving list anyway, so products and recipes read servings the
+            // same way.
+            recipe.setServingOptions(java.util.Collections.singletonList(portion));
         }
 
         // ── Nutrition, normalized via gramsPerPortion ───────────────────────

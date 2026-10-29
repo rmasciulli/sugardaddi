@@ -63,4 +63,31 @@ public final class ContentCompare {
         if (a == null || b == null) return false;
         return a.contentEquals(b);
     }
+
+    /**
+     * Order-insensitive serving-list compare (null = empty). Each serving of
+     * one list must match a distinct serving of the other. Order is ignored on
+     * purpose: a source reshuffling the same servings is not a content change,
+     * and must not offer the user a refresh.
+     */
+    public static boolean servingListsEqual(List<ServingSize> a, List<ServingSize> b) {
+        int na = (a == null) ? 0 : a.size();
+        int nb = (b == null) ? 0 : b.size();
+        if (na != nb) return false;
+        if (na == 0) return true;
+
+        List<ServingSize> unmatched = new java.util.ArrayList<>(b);
+        for (ServingSize sa : a) {
+            boolean found = false;
+            for (int i = 0; i < unmatched.size(); i++) {
+                if (servingEqual(sa, unmatched.get(i))) {
+                    unmatched.remove(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
+    }
 }

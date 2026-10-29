@@ -153,6 +153,15 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private Nutrition nutrition;
     private ServingSize servingSize;
 
+    /**
+     * Every serving the source offers in the nutrition basis unit (g for
+     * per-100g values, ml for per-100ml), in source order. servingSize is the
+     * typical one; this is the full set. It never holds a serving in the
+     * other unit: Unit.ML converts 1:1 to grams, so a "240 ml" entry next to
+     * per-100g values would be read as 240 g by any getAsGrams() caller.
+     */
+    private List<ServingSize> servingOptions = new ArrayList<>();
+
     // ========== MEDIA ==========
 
     /** Link to the item's own page on the source's website, when the source provides one
@@ -894,6 +903,11 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         return servingSize;
     }
 
+    /** Never null - see the servingOptions field for what the list may contain. */
+    public List<ServingSize> getServingOptions() {
+        return servingOptions != null ? servingOptions : new ArrayList<>();
+    }
+
     /**
      * True if the source-provided content matches another product within tolerance.
      * Compares what the user would care about changing - names, ingredients,
@@ -946,6 +960,7 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         // Nutrition + serving (null-aware delegation)
         if (!ContentCompare.nutritionEqual(nutrition, other.nutrition)) return false;
         if (!ContentCompare.servingEqual(servingSize, other.servingSize)) return false;
+        if (!ContentCompare.servingListsEqual(servingOptions, other.servingOptions)) return false;
 
         return true;
     }
@@ -1084,6 +1099,10 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
     public void setServingSize(ServingSize servingSize) {
         this.servingSize = servingSize;
+    }
+
+    public void setServingOptions(List<ServingSize> servingOptions) {
+        this.servingOptions = servingOptions != null ? new ArrayList<>(servingOptions) : new ArrayList<>();
     }
 
     public String getSourceUrl(String language) {
@@ -1372,6 +1391,9 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         // --- Serving size ---
         if (this.servingSize == null && richer.servingSize != null) {
             this.servingSize = richer.servingSize;
+        }
+        if (this.getServingOptions().isEmpty() && !richer.getServingOptions().isEmpty()) {
+            this.servingOptions = new ArrayList<>(richer.getServingOptions());
         }
 
         // --- Allergen flags ---
