@@ -262,15 +262,22 @@ public final class FatSecretMapper {
     }
 
     /**
-     * Select the best available serving and normalize it to per-100g.
+     * Select the serving that defines the stored per-100 values, normalize
+     * it, and attach a density when the source makes one derivable.
+     *
+     * STORAGE RULE: always per-100g when the source gives ANY gram-based
+     * serving. Scaling a gram serving to 100 g is a plain proportion of the
+     * source's own declared values - no density involved - so stored values
+     * are never converted between units. Preferring ml for drinks is a
+     * display decision, made in the UI from the density stored here.
      *
      * Preference order:
-     * 1. A serving already at exactly 100 g or 100 ml - no scaling needed.
-     *    FatSecret often provides this as a synthetic serving_id=0 for
-     *    "Brand" foods specifically.
-     * 2. Any gram-based serving, scaled by 100/metricServingAmount.
-     * 3. None found (e.g. only oz-based or unmeasured servings) - returns
-     *    null rather than guess at a conversion.
+     * 1. Exactly 100 g - no scaling. FatSecret often provides this as a
+     *    synthetic serving_id=0 for "Brand" foods.
+     * 2. Any other gram-based serving, scaled by 100/metricServingAmount.
+     * 3. Exactly 100 ml - only when there is no gram data at all, stored
+     *    as honest per-100ml values.
+     * 4. None (only oz or unmeasured servings) - null rather than guess.
      */
     @Nullable
     private static Nutrition mapFoodServings(@Nullable List<FoodGetResponse.FoodServing> servings) {
@@ -278,19 +285,8 @@ public final class FatSecretMapper {
             return null;
         }
 
-        FoodGetResponse.FoodServing chosen = null;
+        FoodGetResponse.FoodServing chosen = findExactServing(servings, "g");
         double scale = 1.0;
-
-        for (FoodGetResponse.FoodServing s : servings) {
-            if (s.metricServingAmount == null || s.metricServingUnit == null) continue;
-            boolean isGramOrMl = "g".equalsIgnoreCase(s.metricServingUnit)
-                    || "ml".equalsIgnoreCase(s.metricServingUnit);
-            if (isGramOrMl && s.metricServingAmount == 100.0) {
-                chosen = s;
-                scale = 1.0;
-                break; // exact match - stop looking
-            }
-        }
 
         if (chosen == null) {
             for (FoodGetResponse.FoodServing s : servings) {
@@ -304,15 +300,18 @@ public final class FatSecretMapper {
         }
 
         if (chosen == null) {
+            chosen = findExactServing(servings, "ml");
+        }
+
+        if (chosen == null) {
             Log.w(TAG, "No gram/ml-based serving found - cannot normalize to per-100g");
             return null;
         }
 
         Nutrition n = new Nutrition();
-        // Basis follows the unit the chosen serving was expressed in: an
-        // exact-100ml serving (preference 1) yields honest per-100ml
-        // values; everything else reaching here is gram-based, since
-        // preference 2 only accepts "g" servings.
+        // Basis follows the unit the chosen serving was expressed in: only
+        // preference 3 (exact 100 ml, no gram data anywhere) yields
+        // per-100ml values; every other path is gram-based.
         n.setBasis("ml".equalsIgnoreCase(chosen.metricServingUnit)
                 ? NutritionBasis.PER_100ML
                 : NutritionBasis.PER_100G);
@@ -354,7 +353,128 @@ public final class FatSecretMapper {
         n.setDataConfidence(DataConfidence.DECLARED);
         n.setDataSource(DataSourceType.FATSECRET.getId());
 
+        // Density needs a gram serving to compare against, which every
+        // per-100g path above has. Same tier as the values it comes from:
+        // a cross-checked ratio of two declarations by the same source.
+        if (n.getBasis() == NutritionBasis.PER_100G) {
+            n.setDensity(deriveDensity(chosen, servings), DataConfidence.DECLARED);
+        }
+
         return n;
+    }
+
+    /** The serving of exactly 100 of the given unit ("g" or "ml"), or null. */
+    @Nullable
+    private static FoodGetResponse.FoodServing findExactServing(
+            @NonNull List<FoodGetResponse.FoodServing> servings, @NonNull String unit) {
+        for (FoodGetResponse.FoodServing s : servings) {
+            if (s.metricServingAmount != null && s.metricServingAmount == 100.0
+                    && unit.equalsIgnoreCase(s.metricServingUnit)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    // ---- Density derivation ------------------------------------------------
+    // Values below these are dominated by the source's rounding (calories
+    // come as whole numbers: 60 vs 62 kcal can each be off by 0.5), so they
+    // are left out of the ratio.
+    private static final double DENSITY_MIN_ENERGY_KCAL = 20.0;
+    private static final double DENSITY_MIN_MACRO_G = 2.0;
+    /** Every usable nutrient must give a ratio within 5% of the others. */
+    private static final double DENSITY_MAX_SPREAD = 0.05;
+    /** Plausible foods: whipped toppings (~0.2) to honey/syrups (~1.4). */
+    private static final double DENSITY_MIN = 0.2;
+    private static final double DENSITY_MAX = 2.0;
+
+    /**
+     * Grams per ml, from the gram serving that defined the stored values and
+     * one ml serving of the same food. For each nutrient present in both:
+     *
+     *   density = (value per ml) / (value per g)
+     *           = (N_ml / A_ml) / (N_g / A_g)
+     *
+     * e.g. whole milk: 100 g = 60 kcal, 100 ml = 62 kcal -> 1.033 g/ml.
+     *
+     * Accepted only if at least two nutrients clear the rounding thresholds,
+     * all their ratios agree within DENSITY_MAX_SPREAD, and the result is
+     * physically plausible. Agreement is what separates a real density from
+     * an ml serving describing a different state of the food (a "1 cup,
+     * prepared" serving next to the dry powder's 100 g would be rejected by
+     * the plausibility range). Returns the median ratio, or null.
+     */
+    @Nullable
+    private static Double deriveDensity(@NonNull FoodGetResponse.FoodServing gram,
+                                        @NonNull List<FoodGetResponse.FoodServing> servings) {
+        FoodGetResponse.FoodServing ml = pickMlServing(servings);
+        if (ml == null) return null;
+
+        List<Double> ratios = new ArrayList<>();
+        addDensityRatio(ratios, gram, ml, gram.calories, ml.calories, DENSITY_MIN_ENERGY_KCAL);
+        addDensityRatio(ratios, gram, ml, gram.carbohydrate, ml.carbohydrate, DENSITY_MIN_MACRO_G);
+        addDensityRatio(ratios, gram, ml, gram.protein, ml.protein, DENSITY_MIN_MACRO_G);
+        addDensityRatio(ratios, gram, ml, gram.fat, ml.fat, DENSITY_MIN_MACRO_G);
+        addDensityRatio(ratios, gram, ml, gram.sugar, ml.sugar, DENSITY_MIN_MACRO_G);
+        if (ratios.size() < 2) return null;
+
+        java.util.Collections.sort(ratios);
+        double lowest = ratios.get(0);
+        double highest = ratios.get(ratios.size() - 1);
+        if (highest - lowest > DENSITY_MAX_SPREAD * lowest) {
+            Log.d(TAG, "Density rejected - nutrients disagree: " + ratios);
+            return null;
+        }
+
+        int mid = ratios.size() / 2;
+        double median = (ratios.size() % 2 == 1)
+                ? ratios.get(mid)
+                : (ratios.get(mid - 1) + ratios.get(mid)) / 2.0;
+        if (median < DENSITY_MIN || median > DENSITY_MAX) {
+            Log.d(TAG, "Density rejected - implausible: " + median + " g/ml");
+            return null;
+        }
+
+        Log.d(TAG, "Density derived: " + median + " g/ml from " + ratios.size() + " nutrients");
+        return median;
+    }
+
+    /**
+     * The ml serving to pair with the gram one: exactly 100 ml when present,
+     * otherwise the largest ml serving (bigger values, smaller relative
+     * rounding error). Null when the source gives no measured ml serving.
+     */
+    @Nullable
+    private static FoodGetResponse.FoodServing pickMlServing(
+            @NonNull List<FoodGetResponse.FoodServing> servings) {
+        FoodGetResponse.FoodServing exact = findExactServing(servings, "ml");
+        if (exact != null) return exact;
+
+        FoodGetResponse.FoodServing largest = null;
+        for (FoodGetResponse.FoodServing s : servings) {
+            if (s.metricServingAmount != null && s.metricServingAmount > 0
+                    && "ml".equalsIgnoreCase(s.metricServingUnit)
+                    && (largest == null || s.metricServingAmount > largest.metricServingAmount)) {
+                largest = s;
+            }
+        }
+        return largest;
+    }
+
+    /** Adds one nutrient's g/ml ratio when both values clear the threshold. */
+    private static void addDensityRatio(@NonNull List<Double> ratios,
+                                        @NonNull FoodGetResponse.FoodServing gram,
+                                        @NonNull FoodGetResponse.FoodServing ml,
+                                        @Nullable Double gramValue,
+                                        @Nullable Double mlValue,
+                                        double minimum) {
+        if (gramValue == null || mlValue == null
+                || gramValue < minimum || mlValue < minimum) {
+            return;
+        }
+        double perGram = gramValue / gram.metricServingAmount;
+        double perMl = mlValue / ml.metricServingAmount;
+        ratios.add(perMl / perGram);
     }
 
     /**

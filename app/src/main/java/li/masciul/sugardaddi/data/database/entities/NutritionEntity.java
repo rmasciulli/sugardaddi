@@ -56,6 +56,13 @@ public class NutritionEntity {
     // ========== MEASUREMENT BASIS ==========
     private String measurementBasis = "per_100g";  // NutritionBasis ids: "per_100g" or "per_100ml"
 
+    // ========== DENSITY ==========
+    // See Nutrition.density. Grams per ml, source-derived only; null when
+    // unknown. densityConfidence goes through the database-level
+    // DataConfidenceConverter, same as dataConfidence below.
+    private Double density;
+    private DataConfidence densityConfidence;
+
     // ========== ENERGY ==========
     private Double energyKj;        // Kilojoules per 100g/ml
     private Double energyKcal;      // Kilocalories per 100g/ml
@@ -252,6 +259,12 @@ public class NutritionEntity {
     // Measurement
     public String getMeasurementBasis() { return measurementBasis; }
     public void setMeasurementBasis(String measurementBasis) { this.measurementBasis = measurementBasis; }
+
+    public Double getDensity() { return density; }
+    public void setDensity(Double density) { this.density = density; }
+
+    public DataConfidence getDensityConfidence() { return densityConfidence; }
+    public void setDensityConfidence(DataConfidence densityConfidence) { this.densityConfidence = densityConfidence; }
 
     // Energy
     public Double getEnergyKj() { return energyKj; }
@@ -615,6 +628,9 @@ public class NutritionEntity {
         // Measurement basis
         nutrition.setBasis(NutritionBasis.fromId(this.measurementBasis));
 
+        // Density (both or neither - see Nutrition.setDensity)
+        nutrition.setDensity(this.density, this.densityConfidence);
+
         // Energy
         nutrition.setEnergyKj(this.energyKj);
         nutrition.setEnergyKcal(this.energyKcal);
@@ -772,6 +788,10 @@ public class NutritionEntity {
         if (nutrition != null) {
             // Measurement basis
             entity.setMeasurementBasis(nutrition.getBasis().getId());
+
+            // Density
+            entity.setDensity(nutrition.getDensity());
+            entity.setDensityConfidence(nutrition.getDensityConfidence());
 
             // Energy
             entity.setEnergyKj(nutrition.getEnergyKj());

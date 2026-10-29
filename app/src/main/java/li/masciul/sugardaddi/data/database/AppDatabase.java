@@ -46,8 +46,8 @@ import java.util.concurrent.Executors;
                 MealEntity.class,          // Meal journal entries
                 RecipeEntity.class         // Recipes (user-created + external)
         },
-        version = 18,        // keep getDatabaseVersion() in sync - bumped for
-                             // FoodProductEntity/RecipeEntity.servingOptions
+        version = 19,        // keep getDatabaseVersion() in sync - bumped for
+                             // NutritionEntity.density/densityConfidence
         exportSchema = true
 )
 @TypeConverters({
@@ -145,7 +145,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     /** Current schema version. Keep in sync with the @Database version above. */
     public static int getDatabaseVersion() {
-        return 18;
+        return 19;
     }
 
     /** Database file name. */

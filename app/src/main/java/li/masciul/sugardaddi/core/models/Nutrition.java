@@ -194,6 +194,27 @@ public class Nutrition {
     // ========== DATA QUALITY ==========
     private DataConfidence dataConfidence;
 
+    // ========== DENSITY ==========
+    /**
+     * Grams per milliliter of this food, when the SOURCE makes it derivable
+     * (e.g. FatSecret listing the same food per 100 g and per 100 ml). Never
+     * user-entered, never guessed. Null when unknown - which is the normal
+     * case, and means no g/ml conversion is offered.
+     *
+     * Stored values are never converted with it: the per-100 values above
+     * are always the source's own numbers in the source's own basis. Density
+     * is a separate factor, applied only where something is displayed or
+     * output in the other unit (planned with the quantity input).
+     *
+     * A property of the substance, so scale() and copy() keep it; an
+     * aggregate (add()/sum()) has no single density, so they drop it.
+     */
+    private Double density;
+
+    /** How far density can be trusted - fed to weakestConfidence() by any
+     *  value converted through it. Null exactly when density is null. */
+    private DataConfidence densityConfidence;
+
     // ========== METADATA ==========
     private String dataSource;              // "OFF", "ciqual", "usda", etc.
     private float completeness = -1;        // % of basic fields with data
@@ -356,6 +377,8 @@ public class Nutrition {
             this.dataSource = source.dataSource;
             this.dataCompleteness = source.dataCompleteness;
             this.dataConfidence = source.dataConfidence;
+            this.density = source.density;
+            this.densityConfidence = source.densityConfidence;
             // A copy is the same data - it keeps the source's age. Only
             // the default constructor stamps "now" (fresh objects being
             // filled by a mapper).
@@ -492,6 +515,8 @@ public class Nutrition {
         copy.dataSource = this.dataSource;
         copy.dataCompleteness = this.dataCompleteness;
         copy.dataConfidence = this.dataConfidence;
+        copy.density = this.density;
+        copy.densityConfidence = this.densityConfidence;
         copy.lastUpdated = this.lastUpdated;
 
         // Copy source-specific data if needed
@@ -940,6 +965,10 @@ public class Nutrition {
             if (total == null) {
                 total = new Nutrition(part);
                 total.basis = NutritionBasis.PER_100G; // same as add()
+                // An aggregate has no single density - add() never sets one,
+                // and a one-part total must look the same as a many-part one.
+                total.density = null;
+                total.densityConfidence = null;
             } else {
                 total = total.add(part);
             }
@@ -2306,7 +2335,9 @@ public class Nutrition {
                 return false;
             }
         }
-        return true;
+        // Derived from the source's own declared servings, so it is source
+        // content: a genuinely changed density is worth a refresh offer.
+        return ContentCompare.numbersEqual(this.density, other.density);
     }
 
     /**
@@ -2342,5 +2373,23 @@ public class Nutrition {
     public DataConfidence getDataConfidence() { return dataConfidence; }
     public void setDataConfidence(DataConfidence dataConfidence) {
         this.dataConfidence = dataConfidence;
+    }
+
+    /** Grams per milliliter, or null if the source doesn't make it derivable. */
+    public Double getDensity() { return density; }
+    public DataConfidence getDensityConfidence() { return densityConfidence; }
+
+    /**
+     * Set density and its confidence together, so one is never stored
+     * without the other. A null or non-positive density clears both.
+     */
+    public void setDensity(Double density, DataConfidence confidence) {
+        if (density == null || density <= 0) {
+            this.density = null;
+            this.densityConfidence = null;
+        } else {
+            this.density = density;
+            this.densityConfidence = confidence;
+        }
     }
 }
