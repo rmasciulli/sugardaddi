@@ -967,10 +967,14 @@ public class MealRepository {
                 newMeal.setOccasion(template.getOccasion(lang));
                 newMeal.setLocation(template.getLocation(lang));
 
-                // Copy portions (deep copy to avoid reference issues)
+                // Copy portions - deep copy, as the comment always promised:
+                // getPortions() copies the LIST, not the portions, so adding
+                // them as-is shared each FoodPortion between the template and
+                // the new meal. Harmless while portions were never edited;
+                // a bug now that FoodPortion.setQuantity() edits in place.
                 List<FoodPortion> templatePortions = template.getPortions();
                 for (FoodPortion portion : templatePortions) {
-                    newMeal.addPortion(portion);
+                    newMeal.addPortion(portion.copy());
                 }
 
                 // Copy tags

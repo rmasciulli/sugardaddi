@@ -710,6 +710,7 @@
     <string name="save_meal">Enregistrer le repas</string>
     <string name="add_to_meal">Ajouter au repas</string>
     <string name="added_to_meal">Ajouté au repas</string>
+    <string name="already_in_meal">Déjà dans ce repas</string>
     <string name="remove_item">Retirer l\'aliment</string>
     <string name="nutrition_details">Détails nutritionnels</string>
     <string name="tap_to_collapse">Appuyez pour réduire</string>

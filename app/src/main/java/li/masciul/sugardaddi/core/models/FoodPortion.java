@@ -149,30 +149,68 @@ public class FoodPortion {
 
         Nutrition baseNutrition = nutritionalItem.getNutrition();
 
-        // Both FoodProduct.getNutrition() and Recipe.getNutrition() are
-        // genuinely per-100g - Recipe confirmed at its source,
-        // FatSecretMapper.mapRecipeServing() explicitly normalizes by
-        // gramsPerPortion and sets NutritionBasis.PER_100G - so the same
-        // grams-based scaling applies regardless of which type resolved.
-        // (The RECIPE case used to scale by a fraction of total recipe
-        // servings instead, which doesn't compose with a per-100g value
-        // at all - fixed in b4d1f2d; preserved here now that both cases
-        // share one branch.)
-        double multiplier = 1.0;
-        Double grams = serving.getAsGrams();
-        if (grams == null && gramsEquivalent != null) {
-            grams = gramsEquivalent;
-        }
-        if (grams != null) {
-            multiplier = grams / 100.0; // Nutrition is per 100g
+        // FoodProduct and Recipe nutrition are both per 100 basis units
+        // (Recipe confirmed at its source: FatSecretMapper.mapRecipeServing()
+        // normalizes by gramsPerPortion), so one scaling serves both. (The
+        // RECIPE case used to scale by a fraction of total recipe servings
+        // instead, which doesn't compose with a per-100 value at all - fixed
+        // in b4d1f2d; preserved here now that both cases share one branch.)
+        //
+        // An unknown amount means NO data. This used to fall through with a
+        // multiplier of 1.0 - silently counting the portion as 100 g - which
+        // any "2 servings" of an item without a serving weight would have hit.
+        Double amount = getAmountInBasisUnits();
+        if (baseNutrition == null || amount == null || amount <= 0) {
+            return null;
         }
 
-        if (baseNutrition != null && multiplier > 0) {
-            calculatedNutrition = baseNutrition.scale(multiplier);
-            return calculatedNutrition;
+        calculatedNutrition = baseNutrition.scale(amount / 100.0);
+        return calculatedNutrition;
+    }
+
+    /**
+     * This portion's amount in the item's nutrition basis units - grams for a
+     * per-100g item, ml for a per-100ml one - or null when it can't be known.
+     *
+     * - Weight or volume units (G, ML, KG...): the serving's own conversion.
+     *   Unit.ML counts 1:1, which is the app's existing convention: the
+     *   amount field and the label already work in the item's basis unit.
+     *   Strict g/ml handling (through density) comes with the quantity input,
+     *   where the saved unit stops being hardcoded (roadmap change 6).
+     * - SERVING / PORTION: quantity x the item's own serving weight, read
+     *   from the resolved item at calculation time - "2 servings" of a bar
+     *   whose serving is 40 g is 80 g, and stays right if the source later
+     *   corrects its serving size. No serving weight (TheMealDB,
+     *   TheCocktailDB, most Ciqual foods) means no amount.
+     * - Any other unit without a weight (PIECE, OTHER...): no amount.
+     */
+    public Double getAmountInBasisUnits() {
+        if (serving == null) return null;
+
+        // An explicit gram equivalent or a weight/volume unit always wins.
+        Double direct = serving.getAsGrams();
+        if (direct != null) return direct;
+
+        Unit unit = serving.getUnit();
+        Double quantity = serving.getQuantity();
+        if ((unit == Unit.SERVING || unit == Unit.PORTION) && quantity != null) {
+            Double servingWeight = resolvedServingWeight();
+            return servingWeight != null ? quantity * servingWeight : null;
         }
 
-        return null;
+        // Persisted with the portion's JSON; only ever differs from the
+        // serving's own conversion if someone set it explicitly.
+        return gramsEquivalent;
+    }
+
+    /** Weight of ONE serving of the resolved item, in its basis units, or null. */
+    private Double resolvedServingWeight() {
+        Searchable resolved = getResolvedItem();
+        if (!(resolved instanceof Nutritional)) return null;
+        ServingSize itemServing = ((Nutritional) resolved).getServingSize();
+        if (itemServing == null) return null;
+        Double weight = itemServing.getAsGrams();
+        return (weight != null && weight > 0) ? weight : null;
     }
 
     /**
@@ -340,6 +378,28 @@ public class FoodPortion {
     public void setServing(ServingSize serving) {
         this.serving = serving;
         clearCache();
+    }
+
+    /**
+     * Change this portion's amount and unit (e.g. 1.5 SERVING, or 120 G).
+     *
+     * Replaces the serving with a fresh one instead of mutating it:
+     * ServingSize.setQuantity() alone would leave its description ("20 g")
+     * and any gram equivalent describing the OLD amount. Resets the cached
+     * nutrition. When the portion belongs to a meal, go through
+     * Meal.updatePortionQuantity() so the meal's total is recalculated too.
+     *
+     * @throws IllegalArgumentException if quantity isn't a positive finite
+     *         number or unit is null - callers validate input first.
+     */
+    public void setQuantity(double quantity, Unit unit) {
+        if (!(quantity > 0) || Double.isInfinite(quantity)) {
+            throw new IllegalArgumentException("Quantity must be positive: " + quantity);
+        }
+        if (unit == null) {
+            throw new IllegalArgumentException("Unit is required");
+        }
+        setServing(new ServingSize(quantity, unit));
     }
 
     public Double getGramsEquivalent() { return gramsEquivalent; }

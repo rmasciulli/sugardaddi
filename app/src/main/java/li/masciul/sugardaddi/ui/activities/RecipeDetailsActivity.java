@@ -287,7 +287,17 @@ public class RecipeDetailsActivity extends BaseActivity
         mealRepository.getMeal(returnToMealId, new MealRepository.MealCallback() {
             @Override
             public void onSuccess(li.masciul.sugardaddi.core.models.Meal meal) {
-                meal.addPortion(portion);
+                // One portion per item (Meal.addPortion()). Until the
+                // Add/Update screen lands, adding an item that is already in
+                // the meal is refused rather than duplicated.
+                if (!meal.addPortion(portion)) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(RecipeDetailsActivity.this,
+                                R.string.already_in_meal, Toast.LENGTH_SHORT).show();
+                        resetAddToMealButton();
+                    });
+                    return;
+                }
                 mealRepository.updateMeal(meal, new MealRepository.MealCallback() {
                     @Override
                     public void onSuccess(li.masciul.sugardaddi.core.models.Meal savedMeal) {

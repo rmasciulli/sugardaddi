@@ -712,6 +712,7 @@
     <string name="save_meal">Save Meal</string>
     <string name="add_to_meal">Add to Meal</string>
     <string name="added_to_meal">Added to meal</string>
+    <string name="already_in_meal">Already in this meal</string>
     <string name="remove_item">Remove item</string>
     <string name="nutrition_details">Nutrition Details</string>
     <string name="tap_to_collapse">Tap to collapse</string>

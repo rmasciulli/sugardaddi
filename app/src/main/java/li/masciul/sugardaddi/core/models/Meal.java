@@ -465,11 +465,57 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
         markNutritionForRecalculation();
     }
 
-    public void addPortion(FoodPortion portion) {
-        if (portion != null) {
-            portions.add(portion);
-            markNutritionForRecalculation();
+    /**
+     * Add a portion, unless this meal already holds the same item.
+     *
+     * MEAL RULE: one portion per item. Changing an amount updates the
+     * existing portion (updatePortionQuantity()) instead of adding a second
+     * one. Enforced here rather than only in the UI, so templates, copies
+     * and any future screen can't slip a duplicate in.
+     *
+     * Loading a stored meal goes through setPortions(), not here, so a meal
+     * saved before this rule still loads exactly as stored.
+     *
+     * @return true if added; false if null or the item is already present.
+     */
+    public boolean addPortion(FoodPortion portion) {
+        if (portion == null) return false;
+        if (findPortion(portion.getItemType(), portion.getItemId()) != null) return false;
+        portions.add(portion);
+        markNutritionForRecalculation();
+        return true;
+    }
+
+    /**
+     * The portion of this exact item (same itemType and itemId), or null.
+     * A meal holds each item at most once (see addPortion()), so there is
+     * never more than one to choose from.
+     */
+    public FoodPortion findPortion(String itemType, String itemId) {
+        if (itemType == null || itemId == null) return null;
+        for (FoodPortion portion : portions) {
+            if (itemType.equals(portion.getItemType()) && itemId.equals(portion.getItemId())) {
+                return portion;
+            }
         }
+        return null;
+    }
+
+    /**
+     * Change the amount of the item already in this meal, and mark the
+     * meal's total for recalculation (a portion changed from outside can't
+     * do that itself).
+     *
+     * @return true if the item was found and updated, false if it isn't in
+     *         this meal.
+     * @throws IllegalArgumentException as FoodPortion.setQuantity().
+     */
+    public boolean updatePortionQuantity(String itemType, String itemId, double quantity, Unit unit) {
+        FoodPortion portion = findPortion(itemType, itemId);
+        if (portion == null) return false;
+        portion.setQuantity(quantity, unit);
+        markNutritionForRecalculation();
+        return true;
     }
 
     public void removePortion(int index) {
