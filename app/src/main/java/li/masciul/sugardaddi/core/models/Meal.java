@@ -508,12 +508,12 @@ public class Meal implements Nutritional, Searchable, Categorizable, AllergenAwa
      *
      * @return true if the item was found and updated, false if it isn't in
      *         this meal.
-     * @throws IllegalArgumentException as FoodPortion.setQuantity().
+     * @throws IllegalArgumentException if quantity is null.
      */
-    public boolean updatePortionQuantity(String itemType, String itemId, double quantity, Unit unit) {
+    public boolean updatePortionQuantity(String itemType, String itemId, PortionQuantity quantity) {
         FoodPortion portion = findPortion(itemType, itemId);
         if (portion == null) return false;
-        portion.setQuantity(quantity, unit);
+        portion.setQuantity(quantity);
         markNutritionForRecalculation();
         return true;
     }

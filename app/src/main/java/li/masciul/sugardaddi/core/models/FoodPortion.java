@@ -1,5 +1,6 @@
 package li.masciul.sugardaddi.core.models;
 
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -41,6 +42,14 @@ public class FoodPortion {
     private ServingSize serving;    // Contains quantity, unit, and description
     private Double gramsEquivalent; // Cached gram equivalent for quick calculations
 
+    /**
+     * What was logged, frozen at logging time - set for meal entries, null for
+     * recipe ingredients (which keep their free-text ServingSize). When set it is
+     * the source of truth: serving is derived from it for display, and its total
+     * drives nutrition. See PortionQuantity.
+     */
+    private PortionQuantity quantity;
+
     // ========== METADATA ==========
     private int orderIndex;          // Order in recipe/meal
     private String preparationNote;  // "diced", "cooked", "raw", etc.
@@ -69,8 +78,7 @@ public class FoodPortion {
         this.itemType = "FOOD_PRODUCT";
         this.itemId = product.getSearchableId();
         this.foodProduct = product;
-        this.serving = new ServingSize(quantity, unit);
-        calculateGramsEquivalent();
+        applyQuantity(snapshotFor(product, quantity, unit));
     }
 
     /**
@@ -85,8 +93,7 @@ public class FoodPortion {
         this.itemType = "RECIPE";
         this.itemId = recipe.getSearchableId();
         this.recipe = recipe;
-        this.serving = new ServingSize(quantity, unit);
-        calculateGramsEquivalent();
+        applyQuantity(snapshotFor(recipe, quantity, unit));
     }
 
     /**
@@ -185,6 +192,13 @@ public class FoodPortion {
      * - Any other unit without a weight (PIECE, OTHER...): no amount.
      */
     public Double getAmountInBasisUnits() {
+        // A logged entry is a record: its frozen total is the amount, never
+        // recomputed from the item's current serving size. Null total = the
+        // entry has no known amount (servings of an item without a serving size).
+        if (quantity != null) return quantity.getTotalQuantity();
+
+        // Below: portions without a snapshot (recipe ingredients, and any entry
+        // built through the generic ServingSize constructor).
         if (serving == null) return null;
 
         // An explicit gram equivalent or a weight/volume unit always wins.
@@ -343,8 +357,14 @@ public class FoodPortion {
         copy.parentId = this.parentId;
         copy.itemType = this.itemType;
         copy.itemId = this.itemId;
-        copy.serving = this.serving != null ?
-                new ServingSize(serving.getQuantity(), serving.getUnit()) : null;
+        if (this.quantity != null) {
+            // Immutable: safe to share; the display serving is rebuilt from it.
+            copy.quantity = this.quantity;
+            copy.serving = this.quantity.toServingSize();
+        } else {
+            copy.serving = this.serving != null ?
+                    new ServingSize(serving.getQuantity(), serving.getUnit()) : null;
+        }
         copy.gramsEquivalent = this.gramsEquivalent;
         copy.orderIndex = this.orderIndex;
         copy.preparationNote = this.preparationNote;
@@ -375,31 +395,82 @@ public class FoodPortion {
     public void setItemId(String itemId) { this.itemId = itemId; }
 
     public ServingSize getServing() { return serving; }
+
+    /**
+     * Set a free-form serving. Drops any logged snapshot: from here on the
+     * serving is the only description of the amount, so the two can't disagree.
+     */
     public void setServing(ServingSize serving) {
         this.serving = serving;
+        this.quantity = null;
+        clearCache();
+    }
+
+    /** The logged snapshot, or null for recipe ingredients. */
+    public PortionQuantity getQuantity() { return quantity; }
+
+    /**
+     * Replace what was logged (e.g. the user changed 2 servings to 120 g).
+     * Rebuilds the display serving from it and resets the cached nutrition. When
+     * the portion belongs to a meal, go through Meal.updatePortionQuantity() so
+     * the meal's total is recalculated too.
+     *
+     * @throws IllegalArgumentException if quantity is null - build it with
+     *         PortionQuantity.ofServings()/ofQuantity(), which validate the figures.
+     */
+    public void setQuantity(PortionQuantity quantity) {
+        if (quantity == null) {
+            throw new IllegalArgumentException("Quantity is required");
+        }
+        applyQuantity(quantity);
+    }
+
+    /** Snapshot becomes the source of truth; serving is derived from it for display. */
+    private void applyQuantity(PortionQuantity quantity) {
+        this.quantity = quantity;
+        this.serving = quantity.toServingSize();
         clearCache();
     }
 
     /**
-     * Change this portion's amount and unit (e.g. 1.5 SERVING, or 120 G).
+     * Snapshot for a meal entry built from an item and an amount. Freezes the
+     * item's typical serving size as it is right now.
      *
-     * Replaces the serving with a fresh one instead of mutating it:
-     * ServingSize.setQuantity() alone would leave its description ("20 g")
-     * and any gram equivalent describing the OLD amount. Resets the cached
-     * nutrition. When the portion belongs to a meal, go through
-     * Meal.updatePortionQuantity() so the meal's total is recalculated too.
-     *
-     * @throws IllegalArgumentException if quantity isn't a positive finite
-     *         number or unit is null - callers validate input first.
+     * Until the quantity input lands (roadmap change 6), the add-to-meal screens
+     * pass Unit.G meaning "the item's basis unit": their amount field and the
+     * label already work in g for per-100g items and ml for per-100ml ones. So
+     * the stored unit follows the item's nutrition basis rather than the unit
+     * passed. An item without nutrition has no basis: the unit of its own serving
+     * size is used, else the passed unit when it is g or ml, else grams.
      */
-    public void setQuantity(double quantity, Unit unit) {
-        if (!(quantity > 0) || Double.isInfinite(quantity)) {
-            throw new IllegalArgumentException("Quantity must be positive: " + quantity);
+    private static PortionQuantity snapshotFor(Nutritional item, double amount, Unit unit) {
+        ServingSize itemServing = item != null ? item.getServingSize() : null;
+        Double servingQuantity = null;
+        if (itemServing != null) {
+            Double size = itemServing.getAsGrams();
+            if (size != null && size > 0) servingQuantity = size;
         }
-        if (unit == null) {
-            throw new IllegalArgumentException("Unit is required");
+
+        Unit entryUnit;
+        if (item != null && item.hasNutritionData()) {
+            entryUnit = item.getNutrition().getBasis() == NutritionBasis.PER_100ML ? Unit.ML : Unit.G;
+        } else if (itemServing != null && itemServing.getUnit() == Unit.ML) {
+            entryUnit = Unit.ML;
+        } else if (unit == Unit.ML) {
+            entryUnit = Unit.ML;
+        } else {
+            entryUnit = Unit.G;
         }
-        setServing(new ServingSize(quantity, unit));
+
+        if (unit == Unit.SERVING || unit == Unit.PORTION) {
+            return PortionQuantity.ofServings(amount, servingQuantity, entryUnit);
+        }
+        Double total = new ServingSize(amount, unit).getAsGrams();
+        if (total == null || total <= 0) {
+            // A unit with no weight (PIECE, OTHER...): keep what we were given.
+            return PortionQuantity.fromServingSize(new ServingSize(amount, unit));
+        }
+        return PortionQuantity.ofQuantity(total, entryUnit, servingQuantity);
     }
 
     public Double getGramsEquivalent() { return gramsEquivalent; }

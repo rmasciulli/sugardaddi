@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.MealTranslation;
-import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.data.database.converters.GeneralConverters;
 import li.masciul.sugardaddi.data.database.converters.MealTranslationMapConverter;
@@ -90,8 +89,8 @@ public class MealEntity {
      */
     private String userImagePath;
 
-    // ========== INGREDIENTS ==========
-    private String portionsJson;        // List<FoodPortion> as JSON
+    // Portions live in their own table (meal_portions, see MealPortionEntity),
+    // loaded through MealWithNutrition's relation - no longer JSON in this row.
 
     // ========== TAGS ==========
     private String tagsJson;            // Set<String> as JSON
@@ -164,20 +163,8 @@ public class MealEntity {
         meal.setSatisfaction(this.satisfaction);
         meal.setUserImagePath(this.userImagePath);
 
-        // Convert portions from JSON
-        if (portionsJson != null) {
-            try {
-                List<FoodPortion> portions = GeneralConverters.getGson().fromJson(
-                        portionsJson,
-                        new com.google.gson.reflect.TypeToken<List<FoodPortion>>(){}.getType()
-                );
-                if (portions != null) {
-                    meal.setPortions(portions);
-                }
-            } catch (Exception e) {
-                // Log error but continue
-            }
-        }
+        // Portions are NOT set here - they come from meal_portions through
+        // MealWithNutrition.toMeal(), like nutrition.
 
         // Convert tags from JSON
         if (tagsJson != null) {
@@ -250,11 +237,8 @@ public class MealEntity {
         entity.setSatisfaction(meal.getSatisfaction());
         entity.setUserImagePath(meal.getUserImagePath());
 
-        // Convert portions to JSON
-        List<FoodPortion> portions = meal.getPortions();
-        if (portions != null && !portions.isEmpty()) {
-            entity.setPortionsJson(GeneralConverters.getGson().toJson(portions));
-        }
+        // Portions are written separately (MealPortionEntity.fromMeal), in the
+        // same transaction as this row - see MealRepository.
 
         // Convert tags to JSON
         Set<String> tags = meal.getTags();
@@ -345,10 +329,6 @@ public class MealEntity {
     // Media - user defined local path
     public String getUserImagePath() { return userImagePath; }
     public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
-
-    // Ingredients
-    public String getPortionsJson() { return portionsJson; }
-    public void setPortionsJson(String portionsJson) { this.portionsJson = portionsJson; }
 
     // Tags
     public String getTagsJson() { return tagsJson; }

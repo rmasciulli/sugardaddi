@@ -3,8 +3,14 @@ package li.masciul.sugardaddi.data.database.relations;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.data.database.entities.MealEntity;
+import li.masciul.sugardaddi.data.database.entities.MealPortionEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 
 /**
@@ -26,7 +32,19 @@ public class MealWithNutrition {
     public NutritionEntity nutrition;
 
     /**
-     * Convert to domain model with nutrition
+     * The meal's logged entries. Every query returning MealWithNutrition (journal,
+     * templates, planned meals, search, stats) loads them with no extra call -
+     * Room runs the relation inside the query's @Transaction.
+     */
+    @Relation(
+            parentColumn = "id",
+            entityColumn = "mealId",
+            entity = MealPortionEntity.class
+    )
+    public List<MealPortionEntity> portions;
+
+    /**
+     * Convert to domain model with portions and nutrition
      */
     public Meal toMeal() {
         if (meal == null) {
@@ -35,6 +53,18 @@ public class MealWithNutrition {
 
         // Convert meal entity to domain model
         Meal mealModel = meal.toMeal();
+
+        // Portions in display order (Room doesn't order relation rows). Still
+        // unresolved: MealRepository attaches each product/recipe afterwards.
+        if (portions != null && !portions.isEmpty()) {
+            List<MealPortionEntity> ordered = new ArrayList<>(portions);
+            ordered.sort(Comparator.comparingInt(MealPortionEntity::getOrderIndex));
+            List<FoodPortion> modelPortions = new ArrayList<>(ordered.size());
+            for (MealPortionEntity row : ordered) {
+                modelPortions.add(row.toPortion());
+            }
+            mealModel.setPortions(modelPortions);
+        }
 
         // Add nutrition if available
         if (nutrition != null) {

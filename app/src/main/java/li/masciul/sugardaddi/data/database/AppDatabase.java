@@ -44,10 +44,11 @@ import java.util.concurrent.Executors;
                 FoodProductEntity.class,   // Product metadata (nutrition stored separately)
                 NutritionEntity.class,     // Shared nutrition storage
                 MealEntity.class,          // Meal journal entries
+                MealPortionEntity.class,   // One row per logged item per meal
                 RecipeEntity.class         // Recipes (user-created + external)
         },
-        version = 19,        // keep getDatabaseVersion() in sync - bumped for
-                             // NutritionEntity.density/densityConfidence
+        version = 20,        // keep getDatabaseVersion() in sync - bumped for
+                             // meal_portions (MealPortionEntity), meals.portionsJson dropped
         exportSchema = true
 )
 @TypeConverters({
@@ -75,6 +76,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract NutritionDao nutritionDao();
     public abstract CombinedProductDao combinedProductDao();
     public abstract MealDao mealDao();
+    public abstract MealPortionDao mealPortionDao();
     public abstract RecipeDao recipeDao();
 
     // ========== SINGLETON PATTERN ==========
@@ -145,7 +147,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     /** Current schema version. Keep in sync with the @Database version above. */
     public static int getDatabaseVersion() {
-        return 19;
+        return 20;
     }
 
     /** Database file name. */

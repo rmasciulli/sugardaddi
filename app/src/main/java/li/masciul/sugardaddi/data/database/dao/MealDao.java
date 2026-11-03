@@ -14,13 +14,16 @@ import java.util.List;
  * - REMOVED: localizedContentJson queries (obsolete)
  * - NEW: Direct field queries for primary language content
  * - NEW: searchableText for efficient multi-language search
- * - KEPT: portionsJson, tagsJson, notes (still valid columns)
+ * - KEPT: tagsJson, notes (still valid columns)
+ * - MOVED: portions now live in meal_portions (MealPortionEntity / MealPortionDao)
  * - Hybrid translation: primary fields + translation map
  *
  * SEARCH STRATEGY:
  * - Primary content: name, description, notes, occasion, location
  * - All languages: searchableText (pre-computed from translations)
- * - Ingredients: portionsJson (contains food product names)
+ * - Ingredients: not searched. The old portionsJson LIKE matched item ids and
+ *   JSON field names, never food names; a name search would join meal_portions
+ *   with food_products/recipes once meal search is wired to the UI.
  * - Tags: tagsJson (user-defined tags)
  * - Notes: Direct field search (personal notes about meal)
  *
@@ -170,7 +173,6 @@ public interface MealDao {
      * - Searches in primary language fields (name, description, occasion, location)
      * - Searches in notes (personal comments about the meal)
      * - Searches in pre-computed searchableText (all translations)
-     * - Searches in portionsJson (food product names in meal)
      * - Searches in tagsJson (user tags like "quick", "healthy")
      * - Orders by date: mealDateTime DESC (most recent first)
      *
@@ -197,7 +199,6 @@ public interface MealDao {
             "occasion LIKE '%' || :query || '%' OR " +
             "location LIKE '%' || :query || '%' OR " +
             "searchableText LIKE '%' || :query || '%' OR " +
-            "portionsJson LIKE '%' || :query || '%' OR " +
             "tagsJson LIKE '%' || :query || '%') " +
             "ORDER BY mealDateTime DESC " +
             "LIMIT :limit")
@@ -215,7 +216,6 @@ public interface MealDao {
             "occasion LIKE '%' || :query || '%' OR " +
             "location LIKE '%' || :query || '%' OR " +
             "searchableText LIKE '%' || :query || '%' OR " +
-            "portionsJson LIKE '%' || :query || '%' OR " +
             "tagsJson LIKE '%' || :query || '%') " +
             "ORDER BY mealDateTime DESC " +
             "LIMIT :limit")

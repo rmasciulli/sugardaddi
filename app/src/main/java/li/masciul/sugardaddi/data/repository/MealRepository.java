@@ -13,8 +13,10 @@ import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.enums.MealType;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.MealDao;
+import li.masciul.sugardaddi.data.database.dao.MealPortionDao;
 import li.masciul.sugardaddi.data.database.dao.NutritionDao;
 import li.masciul.sugardaddi.data.database.entities.MealEntity;
+import li.masciul.sugardaddi.data.database.entities.MealPortionEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.relations.MealWithNutrition;
 import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
@@ -48,6 +50,7 @@ public class MealRepository {
     private final Context context;
     private final AppDatabase database;
     private final MealDao mealDao;
+    private final MealPortionDao mealPortionDao;
     private final NutritionDao nutritionDao;
     private final Executor backgroundExecutor;
 
@@ -182,6 +185,7 @@ public class MealRepository {
         this.context = context.getApplicationContext();
         this.database = AppDatabase.getInstance(context);
         this.mealDao = database.mealDao();
+        this.mealPortionDao = database.mealPortionDao();
         this.nutritionDao = database.nutritionDao();
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
         this.productRepository = new ProductRepository(NetworkManager.getInstance(context), context);
@@ -229,6 +233,7 @@ public class MealRepository {
 
                 database.runInTransaction(() -> {
                     mealDao.insert(entity);
+                    writePortions(meal);
                     if (nutrition != null && nutrition.hasData()) {
                         NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
                                 nutrition, "meal", meal.getId());
@@ -529,6 +534,20 @@ public class MealRepository {
     }
 
     /**
+     * Replace the meal's stored portions with its current list. Must run inside
+     * the meal's transaction, after the meal row exists (the portions reference
+     * it). Delete-then-insert keeps it simple and makes removed portions vanish;
+     * the unique index makes a duplicate item fail the whole transaction.
+     */
+    private void writePortions(Meal meal) {
+        mealPortionDao.deleteByMealId(meal.getId());
+        List<MealPortionEntity> rows = MealPortionEntity.fromMeal(meal);
+        if (!rows.isEmpty()) {
+            mealPortionDao.insertAll(rows);
+        }
+    }
+
+    /**
      * Load a meal and resolve every portion's transient foodProduct/recipe
      * field from the local cache - no network, no staleness check (see
      * getMealWithFreshnessCheck() for that). Must run on a background
@@ -629,6 +648,7 @@ public class MealRepository {
 
                 database.runInTransaction(() -> {
                     mealDao.update(entity);
+                    writePortions(meal);
                     if (nutrition != null && nutrition.hasData()) {
                         NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
                                 nutrition, "meal", meal.getId());
@@ -669,11 +689,14 @@ public class MealRepository {
 
         backgroundExecutor.execute(() -> {
             try {
-                // Delete meal (nutrition deleted via cascade or manually)
-                int deleted = mealDao.deleteById(mealId);
-
-                // Also delete nutrition explicitly to be safe
-                nutritionDao.deleteNutritionBySource("meal", mealId);
+                // Portions, meal and nutrition go together. Portions are
+                // deleted explicitly rather than trusting the foreign-key
+                // cascade, which only works when SQLite enforces foreign keys.
+                database.runInTransaction(() -> {
+                    mealPortionDao.deleteByMealId(mealId);
+                    mealDao.deleteById(mealId);
+                    nutritionDao.deleteNutritionBySource("meal", mealId);
+                });
 
                 mealCache.remove(mealId);
 
