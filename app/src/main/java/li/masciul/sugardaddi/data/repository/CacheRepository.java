@@ -94,6 +94,10 @@ public class CacheRepository {
     // ========== CLEAR OPERATIONS ==========
     // Each runs in one transaction (all-or-nothing) and ends with a single orphaned-
     // nutrition sweep (deleteOrphanedNutrition covers both products and recipes).
+    //
+    // Items logged in a meal are journal data, not cache: no operation deletes them
+    // (see the DAOs' "meal-used" section). Operations that remove a pin take the pin
+    // off meal-used rows instead of deleting them, so meals never lose an entry.
 
     /**
      * Section 1 - clear the browsed search cache: rows with no retention pin
@@ -118,6 +122,8 @@ public class CacheRepository {
     @WorkerThread
     public void clearFavorites() {
         database.runInTransaction(() -> {
+            database.foodProductDao().unmarkFavoriteOnMealItems();
+            database.recipeDao().unmarkFavoriteOnMealItems();
             database.foodProductDao().deleteFavoritesOnly();
             database.foodProductDao().unmarkFavoriteOnDownloads();
             database.recipeDao().deleteFavoritesOnly();
@@ -140,6 +146,8 @@ public class CacheRepository {
     @WorkerThread
     public void removeDownloadedSource(@NonNull String sourceId) {
         database.runInTransaction(() -> {
+            database.foodProductDao().unmarkDownloadOnMealItemsBySource(sourceId);
+            database.recipeDao().unmarkDownloadOnMealItemsBySource(sourceId);
             database.foodProductDao().deleteDownloadsOnlyBySource(sourceId);
             database.foodProductDao().unmarkDownloadOnFavoritesBySource(sourceId);
             database.recipeDao().deleteDownloadsOnlyBySource(sourceId);
@@ -152,6 +160,7 @@ public class CacheRepository {
     /**
      * "Clear all" - wipe every cached product and recipe regardless of pin, then sweep
      * their now-orphaned nutrition. Equivalent to clearing all three sections at once.
+     * Items used by a meal are kept, as plain unpinned rows.
      *
      * Room only - the caller resets every local source's import state and purges all
      * image files.
@@ -159,8 +168,10 @@ public class CacheRepository {
     @WorkerThread
     public void clearAll() {
         database.runInTransaction(() -> {
-            database.foodProductDao().clearAllProducts();
-            database.recipeDao().deleteAll();
+            database.foodProductDao().deleteAllExceptMealItems();
+            database.foodProductDao().unpinMealItems();
+            database.recipeDao().deleteAllExceptMealItems();
+            database.recipeDao().unpinMealItems();
             database.nutritionDao().deleteOrphanedNutrition();
         });
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Cleared all cached products and recipes");

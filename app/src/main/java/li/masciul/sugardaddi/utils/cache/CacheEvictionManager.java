@@ -45,6 +45,9 @@ public class CacheEvictionManager {
     public void evictExpiredSync() {
         try {
             long threshold = System.currentTimeMillis() - RETENTION_MS;
+            // Portions of meals that no longer exist would otherwise keep their
+            // items alive forever (the queries below skip any item a portion uses).
+            database.mealPortionDao().deleteOrphans();
             int products  = database.foodProductDao().deleteExpiredProducts(threshold);
             int recipes   = database.recipeDao().deleteExpiredRecipes(threshold);
             int nutrition = database.nutritionDao().deleteOrphanedNutrition();

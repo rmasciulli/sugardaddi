@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import java.util.List;
 
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
+import li.masciul.sugardaddi.data.database.entities.MealPortionEntity;
 
 /**
  * FoodProductDao - Data Access Object for food products (v3.0 - Hybrid Translation)
@@ -289,7 +290,8 @@ public interface FoodProductDao {
      * Delete cached products not viewed since {@code threshold}, never touching
      * favorites or bulk-imported (localImport) rows. Returns the number deleted.
      */
-    @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0")
+    @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteExpiredProducts(long threshold);
 
     /**
@@ -312,7 +314,8 @@ public interface FoodProductDao {
      * Count of browsed-cache products - opened from search, neither favorited nor
      * part of a downloaded dataset (no retention pin). Drives the section-1 count.
      */
-    @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0 AND isFavorite = 0")
+    @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0 AND isFavorite = 0"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int getBrowsedCacheCount();
 
     /**
@@ -328,8 +331,33 @@ public interface FoodProductDao {
      * Section 1 - delete the browsed cache: flagless rows only. Favorites and
      * downloaded rows are untouched. Returns the number deleted.
      */
-    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 0")
+    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 0"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteBrowsedCache();
+
+    // ========== MEAL-USED PRODUCTS (journal, not cache) ==========
+    // A products logged in a meal is part of the journal, not the cache: every
+    // clear operation keeps it. Where an operation removes a PIN (favorite,
+    // downloaded dataset, clear all), meal-used rows lose the pin instead of the
+    // row, so they stay as plain rows. The counts and deletes above exclude them.
+
+    /** Clear favorites, part 0 - meal-used favorites lose the pin, keep the row. */
+    @Query("UPDATE food_products SET isFavorite = 0 WHERE localImport = 0 AND isFavorite = 1"
+            + " AND id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
+    int unmarkFavoriteOnMealItems();
+
+    /** Remove a dataset, part 0 - meal-used dataset rows lose the pin, keep the row. */
+    @Query("UPDATE food_products SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1"
+            + " AND isFavorite = 0 AND id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
+    int unmarkDownloadOnMealItemsBySource(String sourceId);
+
+    /** Clear all, part A - delete every row a meal doesn't use. */
+    @Query("DELETE FROM food_products WHERE id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
+    int deleteAllExceptMealItems();
+
+    /** Clear all, part B - the meal-used rows that remain lose every pin. */
+    @Query("UPDATE food_products SET isFavorite = 0, localImport = 0 WHERE id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
+    int unpinMealItems();
 
     /**
      * Section 2, part A - delete favorites that exist only because they were
