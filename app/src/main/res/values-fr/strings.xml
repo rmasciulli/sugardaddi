@@ -712,17 +712,18 @@
     <string name="added_to_meal">Ajouté au repas</string>
     <string name="already_in_meal">Déjà dans ce repas</string>
 
-    <!-- Carte de quantité (QuantityInputView) -->
-    <string name="quantity_card_title">Mesures et quantité</string>
+    <!-- Saisie de quantité (QuantityInputView) -->
+    <string name="quantity_page_servings">Nombre de portions</string>
+    <string name="quantity_page_portion">Taille de la portion</string>
     <string name="quantity_typical_serving">Portion habituelle :</string>
     <string name="quantity_servings">Portions :</string>
     <string name="quantity_custom">Quantité personnalisée :</string>
     <string name="quantity_custom_hint">0</string>
     <string name="quantity_not_set">Non renseignée</string>
-    <string name="quantity_previous">Précédent</string>
-    <string name="quantity_next">Suivant</string>
     <string name="quantity_decrease">Moins de portions</string>
     <string name="quantity_increase">Plus de portions</string>
+    <!-- Indicateur de page (PagerDotsView), lu par TalkBack -->
+    <string name="pager_page_indicator">Page %1$d sur %2$d</string>
     <string name="remove_item">Retirer l\'aliment</string>
     <string name="nutrition_details">Détails nutritionnels</string>
     <string name="tap_to_collapse">Appuyez pour réduire</string>

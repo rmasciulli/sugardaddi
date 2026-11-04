@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -89,6 +90,9 @@ public class RecipeDetailsActivity extends BaseActivity
 
     public static final String EXTRA_RECIPE_ID = "extra_recipe_id";
 
+    /** onSaveInstanceState() key: what the user entered in the quantity input. */
+    private static final String STATE_QUANTITY_INPUT = "quantity_input";
+
     private static final String TAG = "RecipeDetailsActivity";
 
     // ========== RENDERER INFRASTRUCTURE ==========
@@ -134,11 +138,19 @@ public class RecipeDetailsActivity extends BaseActivity
     private String returnToMealId = null;
 
     /**
-     * The quantity card of the current renderer, when it is in use: opened from a
-     * meal, recipe without nutrition (TheMealDB, TheCocktailDB). Null otherwise -
+     * The quantity input of the current renderer, when it is in use: opened from
+     * a meal, recipe without nutrition (TheMealDB, TheCocktailDB). Null otherwise -
      * recipes with nutrition keep their amount field until roadmap change 6.
      */
     private QuantityInputView quantityInput;
+
+    /**
+     * Input saved before the activity was re-created (rotation), applied once the
+     * recipe is on screen again: the views do not exist yet when Android restores
+     * its own view state, since the recipe loads asynchronously.
+     */
+    @Nullable
+    private Bundle pendingQuantityState;
 
     // ========== LIFECYCLE ==========
 
@@ -154,6 +166,11 @@ public class RecipeDetailsActivity extends BaseActivity
         initializeRendererRegistry();
         initializeUIComponents();
         initializeBusinessLogic();
+
+        // Before loading: the recipe may be delivered from the cache right away.
+        pendingQuantityState = savedInstanceState != null
+                ? savedInstanceState.getBundle(STATE_QUANTITY_INPUT)
+                : null;
 
         // Load recipe from intent
         String recipeId = getIntent().getStringExtra(EXTRA_RECIPE_ID);
@@ -244,6 +261,13 @@ public class RecipeDetailsActivity extends BaseActivity
     }
 
     @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Bundle quantityState = quantityInput != null ? quantityInput.saveState() : pendingQuantityState;
+        if (quantityState != null) outState.putBundle(STATE_QUANTITY_INPUT, quantityState);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (imagePicker != null) imagePicker.shutdown();
@@ -267,7 +291,7 @@ public class RecipeDetailsActivity extends BaseActivity
      * A recipe WITH nutrition is added by weight, read from the renderer's
      * amount input (getQuantityFromRenderer()). A recipe WITHOUT nutrition
      * (MealDB/CocktailDB: unresolved ingredient stubs) is added with what the
-     * quantity card holds: a number of servings, or a weighed amount in g or
+     * quantity input holds: a number of servings, or a weighed amount in g or
      * ml - logged as is, ready for the day these recipes get estimated
      * nutrition. The meal accepts it either way; it counts as an item with no
      * nutrition data, which makes the meal's confidence "approximate".
@@ -391,7 +415,7 @@ public class RecipeDetailsActivity extends BaseActivity
         updateAddButtonState();
     }
 
-    /** Add is enabled unless the quantity card is in use and holds no valid quantity. */
+    /** Add is enabled unless the quantity input is in use and holds no valid quantity. */
     private void updateAddButtonState() {
         if (addToMealContainer == null) return;
         View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
@@ -401,22 +425,31 @@ public class RecipeDetailsActivity extends BaseActivity
     }
 
     /**
-     * Show the quantity card when this screen adds to a meal and the recipe has no
-     * nutrition: servings, or a weighed amount in the unit chosen below. Runs on
-     * every render, since a reload or a refresh inflates a fresh renderer layout
-     * and with it a fresh card.
+     * Show the Nutrition Facts section, with its quantity input, when this screen
+     * adds to a meal and the recipe has no nutrition: servings, or a weighed
+     * amount in the unit chosen below.
+     *
+     * Runs on every render, since a reload or a refresh inflates a fresh renderer
+     * layout and with it a fresh input. What the user had entered is carried over
+     * to it: from the previous input (refresh) or from the saved instance state
+     * (rotation).
      */
     private void setupQuantityCard(@NonNull Recipe recipe, @NonNull View rendererView) {
-        QuantityInputView card = rendererView.findViewById(R.id.quantityInput);
-        if (card == null || returnToMealId == null || recipe.hasNutritionData()) {
-            if (card != null) card.setVisibility(View.GONE);
+        // Read before quantityInput is replaced: the previous input is still alive.
+        Bundle carried = quantityInput != null ? quantityInput.saveState() : pendingQuantityState;
+
+        View section = rendererView.findViewById(R.id.nutritionSection);
+        QuantityInputView input = rendererView.findViewById(R.id.quantityInput);
+        if (section == null || input == null || returnToMealId == null || recipe.hasNutritionData()) {
+            if (section != null) section.setVisibility(View.GONE);
             quantityInput = null;
+            pendingQuantityState = null;
             updateAddButtonState();
             return;
         }
 
-        // One unit for the whole card. Default: ml for drinks, g for everything
-        // else. Letting the user pick it is for the card's future slide 3.
+        // One unit for the whole input. Default: ml for drinks, g for everything
+        // else. Letting the user pick it is for the input's future page 3.
         Unit unit = recipe.getDataSource() == DataSourceType.THECOCKTAILDB ? Unit.ML : Unit.G;
 
         // Serving size of the recipe itself, when its source gives one; its own
@@ -434,10 +467,12 @@ public class RecipeDetailsActivity extends BaseActivity
             }
         }
 
-        quantityInput = card;
-        card.setOnQuantityChangedListener(quantity -> updateAddButtonState());
-        card.setup(servingQuantity, unit);
-        card.setVisibility(View.VISIBLE);
+        quantityInput = input;
+        input.setOnQuantityChangedListener(quantity -> updateAddButtonState());
+        input.setup(servingQuantity, unit);
+        input.restoreState(carried);
+        pendingQuantityState = null;
+        section.setVisibility(View.VISIBLE);
         updateAddButtonState();
     }
 
@@ -536,7 +571,8 @@ public class RecipeDetailsActivity extends BaseActivity
         // 6. Populate
         renderer.populate(rendererView, recipe, language);
 
-        // 6b. Quantity card (meal context, recipes without nutrition only)
+        // 6b. Nutrition Facts section with the quantity input (meal context,
+        //     recipes without nutrition only)
         setupQuantityCard(recipe, rendererView);
 
         // 7. Cache
