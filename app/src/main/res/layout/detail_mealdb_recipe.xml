@@ -70,6 +70,22 @@
         </FrameLayout>
 
         <!-- ================================================= -->
+        <!-- 1b. QUANTITY CARD - only when adding to a meal    -->
+        <!--     Shown and set up by RecipeDetailsActivity     -->
+        <!--     (servings, or a weighed amount in g / ml).    -->
+        <!-- ================================================= -->
+        <li.masciul.sugardaddi.ui.components.QuantityInputView
+            android:id="@+id/quantityInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp" />
+
+        <!-- ================================================= -->
         <!-- 2. MAIN CONTENT CARD                              -->
         <!--    Single card: header + ingredients + steps      -->
         <!--    Sections separated by 1dp colorOutlineVariant  -->

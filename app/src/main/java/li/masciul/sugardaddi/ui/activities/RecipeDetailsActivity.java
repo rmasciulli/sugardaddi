@@ -23,10 +23,13 @@ import java.util.concurrent.Executors;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.SugarDaddiApplication;
+import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodPortion;
+import li.masciul.sugardaddi.core.models.PortionQuantity;
 import li.masciul.sugardaddi.core.models.Recipe;
+import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.repository.MealRepository;
@@ -38,6 +41,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.FatSecretRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
+import li.masciul.sugardaddi.ui.components.QuantityInputView;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
@@ -125,12 +129,16 @@ public class RecipeDetailsActivity extends BaseActivity
     private ImagePickerHelper imagePicker;
 
     // ========== ADD TO MEAL ==========
-    // Mirrors ProductDetailsActivity's exact pattern - see addToMeal()
-    // below for the one real difference (recipes have no servings-input
-    // UI yet, unlike products' customAmountEditText, so this always adds
-    // exactly 1 serving for now).
+    // Mirrors ProductDetailsActivity's pattern - see addToMeal() below.
     private LinearLayout addToMealContainer;
     private String returnToMealId = null;
+
+    /**
+     * The quantity card of the current renderer, when it is in use: opened from a
+     * meal, recipe without nutrition (TheMealDB, TheCocktailDB). Null otherwise -
+     * recipes with nutrition keep their amount field until roadmap change 6.
+     */
+    private QuantityInputView quantityInput;
 
     // ========== LIFECYCLE ==========
 
@@ -258,11 +266,11 @@ public class RecipeDetailsActivity extends BaseActivity
      *
      * A recipe WITH nutrition is added by weight, read from the renderer's
      * amount input (getQuantityFromRenderer()). A recipe WITHOUT nutrition
-     * (MealDB/CocktailDB: unresolved ingredient stubs) is added as exactly
-     * 1 serving: there is nothing to scale, so a weight would be an
-     * invented number (it used to show up as "20 g"). The meal still
-     * accepts it - it simply counts as an item with no nutrition data,
-     * which makes the meal's confidence "approximate".
+     * (MealDB/CocktailDB: unresolved ingredient stubs) is added with what the
+     * quantity card holds: a number of servings, or a weighed amount in g or
+     * ml - logged as is, ready for the day these recipes get estimated
+     * nutrition. The meal accepts it either way; it counts as an item with no
+     * nutrition data, which makes the meal's confidence "approximate".
      */
     private void addToMeal() {
         Recipe recipe = recipeManager.getCurrentRecipe();
@@ -271,9 +279,17 @@ public class RecipeDetailsActivity extends BaseActivity
             return;
         }
 
-        FoodPortion portion = recipe.hasNutritionData()
-                ? new FoodPortion(recipe, getQuantityFromRenderer(recipe), Unit.G)
-                : new FoodPortion(recipe, 1, Unit.SERVING);
+        FoodPortion portion;
+        if (quantityInput != null) {
+            PortionQuantity logged = quantityInput.getQuantity();
+            if (logged == null) return; // Add is disabled in that state anyway
+            portion = new FoodPortion(recipe, 1, Unit.SERVING);
+            portion.setQuantity(logged);
+        } else if (recipe.hasNutritionData()) {
+            portion = new FoodPortion(recipe, getQuantityFromRenderer(recipe), Unit.G);
+        } else {
+            portion = new FoodPortion(recipe, 1, Unit.SERVING);
+        }
         portion.setParentType("MEAL");
         portion.setParentId(returnToMealId);
 
@@ -370,9 +386,59 @@ public class RecipeDetailsActivity extends BaseActivity
     private void resetAddToMealButton() {
         View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
         if (btn instanceof android.widget.Button) {
-            ((android.widget.Button) btn).setEnabled(true);
             ((android.widget.Button) btn).setText(R.string.add_to_meal);
         }
+        updateAddButtonState();
+    }
+
+    /** Add is enabled unless the quantity card is in use and holds no valid quantity. */
+    private void updateAddButtonState() {
+        if (addToMealContainer == null) return;
+        View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
+        if (btn != null) {
+            btn.setEnabled(quantityInput == null || quantityInput.getQuantity() != null);
+        }
+    }
+
+    /**
+     * Show the quantity card when this screen adds to a meal and the recipe has no
+     * nutrition: servings, or a weighed amount in the unit chosen below. Runs on
+     * every render, since a reload or a refresh inflates a fresh renderer layout
+     * and with it a fresh card.
+     */
+    private void setupQuantityCard(@NonNull Recipe recipe, @NonNull View rendererView) {
+        QuantityInputView card = rendererView.findViewById(R.id.quantityInput);
+        if (card == null || returnToMealId == null || recipe.hasNutritionData()) {
+            if (card != null) card.setVisibility(View.GONE);
+            quantityInput = null;
+            updateAddButtonState();
+            return;
+        }
+
+        // One unit for the whole card. Default: ml for drinks, g for everything
+        // else. Letting the user pick it is for the card's future slide 3.
+        Unit unit = recipe.getDataSource() == DataSourceType.THECOCKTAILDB ? Unit.ML : Unit.G;
+
+        // Serving size of the recipe itself, when its source gives one; its own
+        // kind of unit (mass or volume) then wins over the default. A volume is
+        // read in ml, never through getAsGrams(): "1 cup" is 240 ml, not "240 g".
+        Double servingQuantity = null;
+        ServingSize serving = recipe.getServingSize();
+        if (serving != null) {
+            boolean volume = serving.getUnit() != null
+                    && serving.getUnit().getType() == Unit.UnitType.VOLUME;
+            Double size = volume ? serving.getAsMilliliters() : serving.getAsGrams();
+            if (size != null && size > 0) {
+                servingQuantity = size;
+                unit = volume ? Unit.ML : Unit.G;
+            }
+        }
+
+        quantityInput = card;
+        card.setOnQuantityChangedListener(quantity -> updateAddButtonState());
+        card.setup(servingQuantity, unit);
+        card.setVisibility(View.VISIBLE);
+        updateAddButtonState();
     }
 
     // ========== RecipeManager.RecipeListener IMPLEMENTATION ==========
@@ -469,6 +535,9 @@ public class RecipeDetailsActivity extends BaseActivity
 
         // 6. Populate
         renderer.populate(rendererView, recipe, language);
+
+        // 6b. Quantity card (meal context, recipes without nutrition only)
+        setupQuantityCard(recipe, rendererView);
 
         // 7. Cache
         activeRenderer    = renderer;
