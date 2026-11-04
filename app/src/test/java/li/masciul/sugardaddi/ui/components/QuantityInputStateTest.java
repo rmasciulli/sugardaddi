@@ -201,4 +201,53 @@ public class QuantityInputStateTest {
         state.restoreEdits(PortionQuantity.InputMode.SERVINGS, 0.0, null);
         assertEquals(1.0, state.getServingCount(), EPS);
     }
+
+    // ========== from a logged entry (Update) ==========
+
+    @Test
+    public void from_servings_keepsLoggedServingSize() {
+        // Logged as 2 servings of 30 g; the item's serving is 40 g today.
+        PortionQuantity logged = PortionQuantity.ofServings(2.0, 30.0, Unit.G);
+        QuantityInputState state = QuantityInputState.from(logged, 40.0, Unit.G);
+        assertEquals(30.0, state.getServingQuantity(), EPS);
+        assertEquals(2.0, state.getServingCount(), EPS);
+        assertEquals(60.0, state.getCustomQuantity(), EPS);
+        assertEquals(PortionQuantity.InputMode.SERVINGS, state.getInputMode());
+    }
+
+    @Test
+    public void from_unchanged_savesTheSameAmount() {
+        PortionQuantity logged = PortionQuantity.ofServings(2.0, 30.0, Unit.G);
+        PortionQuantity saved = QuantityInputState.from(logged, 40.0, Unit.G).toPortionQuantity();
+        assertNotNull(saved);
+        assertEquals(60.0, saved.getTotalQuantity(), EPS);
+        assertEquals(30.0, saved.getServingQuantity(), EPS);
+        assertEquals(2.0, saved.getServingCount(), EPS);
+    }
+
+    @Test
+    public void from_quantity_keepsTypedTotal() {
+        PortionQuantity logged = PortionQuantity.ofQuantity(100.0, Unit.G, 30.0);
+        QuantityInputState state = QuantityInputState.from(logged, 40.0, Unit.G);
+        assertEquals(PortionQuantity.InputMode.QUANTITY, state.getInputMode());
+        assertEquals(100.0, state.getCustomQuantity(), EPS);
+        assertEquals(100.0 / 30.0, state.getServingCount(), EPS);
+    }
+
+    @Test
+    public void from_servingsWithoutSize_usesCurrentSize() {
+        PortionQuantity logged = PortionQuantity.ofServings(2.0, null, null);
+        QuantityInputState state = QuantityInputState.from(logged, 40.0, Unit.G);
+        assertEquals(40.0, state.getServingQuantity(), EPS);
+        assertEquals(80.0, state.getCustomQuantity(), EPS);
+    }
+
+    @Test
+    public void from_quantityInMl_ignoresCurrentSizeInGrams() {
+        PortionQuantity logged = PortionQuantity.ofQuantity(250.0, Unit.ML, null);
+        QuantityInputState state = QuantityInputState.from(logged, 40.0, Unit.G);
+        assertEquals(Unit.ML, state.getUnit());
+        assertNull(state.getServingQuantity());
+        assertEquals(250.0, state.getCustomQuantity(), EPS);
+    }
 }

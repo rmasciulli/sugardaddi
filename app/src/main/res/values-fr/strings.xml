@@ -710,7 +710,18 @@
     <string name="save_meal">Enregistrer le repas</string>
     <string name="add_to_meal">Ajouter au repas</string>
     <string name="added_to_meal">Ajouté au repas</string>
-    <string name="already_in_meal">Déjà dans ce repas</string>
+    <!-- Ajouter ou mettre à jour un aliment déjà dans le repas -->
+    <string name="update_in_meal">Mettre à jour dans le repas</string>
+    <string name="updating_meal">Mise à jour...</string>
+    <string name="meal_updated">Repas mis à jour</string>
+    <!-- Quantité enregistrée dans la liste des aliments d'un repas (MealEntryLabel) -->
+    <plurals name="meal_entry_servings">
+        <item quantity="one">%1$s portion</item>
+        <item quantity="many">%1$s portions</item>
+        <item quantity="other">%1$s portions</item>
+    </plurals>
+    <!-- "2 portions (80 g)" : texte des portions, puis la quantité enregistrée -->
+    <string name="meal_entry_servings_amount">%1$s (%2$s)</string>
 
     <!-- Saisie de quantité (QuantityInputView) -->
     <string name="quantity_page_servings">Nombre de portions</string>

@@ -58,6 +58,47 @@ public final class QuantityInputState {
         syncCustomFromServings();
     }
 
+    /**
+     * An input opened on an entry already logged in a meal (Update).
+     *
+     * RULE (Romain, 4b): the LOGGED serving size wins over the item's current
+     * one, so the input shows exactly what is logged and saving without a
+     * change writes the same amount back. A logged amount never changes on its
+     * own; the current serving size only fills in when the entry has none.
+     *
+     * @param logged                 the entry's snapshot
+     * @param currentServingQuantity the item's serving size today, or null
+     * @param currentUnit            the unit the screen would use for this item;
+     *                               used when the snapshot has no unit (servings
+     *                               logged without a serving size)
+     */
+    @NonNull
+    public static QuantityInputState from(@NonNull PortionQuantity logged,
+                                          @Nullable Double currentServingQuantity,
+                                          @NonNull Unit currentUnit) {
+        Double loggedServing = logged.getServingQuantity();
+        Unit loggedUnit = logged.getUnit();
+        boolean hasLoggedUnit = loggedUnit == Unit.G || loggedUnit == Unit.ML;
+
+        Double serving;
+        Unit unit;
+        if (isPositive(loggedServing) && hasLoggedUnit) {
+            serving = loggedServing;
+            unit = loggedUnit;
+        } else {
+            unit = hasLoggedUnit ? loggedUnit : currentUnit;
+            // The current serving size only describes the entry in its own unit:
+            // grams of a serving say nothing about a quantity logged in ml.
+            serving = unit == currentUnit ? currentServingQuantity : null;
+        }
+
+        QuantityInputState state = new QuantityInputState(serving, unit);
+        Double count = logged.getServingCount();
+        state.restoreEdits(logged.getInputMode(),
+                count != null ? count : 0.0, logged.getTotalQuantity());
+        return state;
+    }
+
     // ========== EDITS ==========
 
     /** "+" on the servings slide. */

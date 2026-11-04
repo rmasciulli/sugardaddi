@@ -38,6 +38,7 @@ import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
+import li.masciul.sugardaddi.ui.utils.MealEntryLabel;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.managers.LanguageManager;
@@ -244,14 +245,18 @@ public class MealDetailsActivity extends BaseActivity {
             @Override
             public void onItemClick(@NonNull Searchable item) {
                 // Dispatch on the resolved item's real type, mirroring
-                // MainActivity.onItemClick().
+                // MainActivity.onItemClick(). RETURN_TO_MEAL opens the detail
+                // screen in meal context: it finds the item in this meal and
+                // offers "Update in meal", starting from the logged amount.
                 if (item instanceof FoodProduct) {
                     Intent intent = new Intent(MealDetailsActivity.this, ProductDetailsActivity.class);
                     intent.putExtra(ProductDetailsActivity.EXTRA_FOOD_ITEM, item.getSearchableId());
+                    intent.putExtra("RETURN_TO_MEAL", mealId);
                     startActivity(intent);
                 } else if (item instanceof Recipe) {
                     Intent intent = new Intent(MealDetailsActivity.this, RecipeDetailsActivity.class);
                     intent.putExtra(RecipeDetailsActivity.EXTRA_RECIPE_ID, item.getSearchableId());
+                    intent.putExtra("RETURN_TO_MEAL", mealId);
                     startActivity(intent);
                 } else {
                     Toast.makeText(MealDetailsActivity.this,
@@ -278,6 +283,10 @@ public class MealDetailsActivity extends BaseActivity {
         componentsAdapter.setQuantityResolver((item, position) -> {
             FoodPortion portion = portionAt(position);
             if (portion == null) return null;
+            // The logged amount, as logged: "2 servings (80 g)", "250 ml".
+            String logged = MealEntryLabel.format(MealDetailsActivity.this, portion.getQuantity());
+            if (logged != null) return logged + " - ";
+            // Entries without a usable snapshot: previous rendering.
             ServingSize serving = portion.getServing();
             if (serving == null) return null;
             Double grams = serving.getAsGrams();

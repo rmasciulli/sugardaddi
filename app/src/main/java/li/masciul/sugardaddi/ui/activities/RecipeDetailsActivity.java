@@ -33,7 +33,6 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
-import li.masciul.sugardaddi.data.repository.MealRepository;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
 import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
@@ -42,8 +41,10 @@ import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.FatSecretRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
+import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.components.QuantityInputView;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
+import li.masciul.sugardaddi.ui.utils.MealEntryHelper;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
@@ -152,6 +153,28 @@ public class RecipeDetailsActivity extends BaseActivity
     @Nullable
     private Bundle pendingQuantityState;
 
+    // ========== MEAL ENTRY: ADD OR UPDATE ==========
+
+    /** True once the meal has been checked for this recipe; the button waits for it. */
+    private boolean mealLookupDone;
+    /** True when the recipe is already in the meal: the button updates its entry. */
+    private boolean inMeal;
+    /** The entry's logged amount when inMeal; fills the quantity input or amount field. */
+    @Nullable
+    private PortionQuantity loggedQuantity;
+    /** Recipe the lookup was started for, so a re-render does not start it again. */
+    @Nullable
+    private String lookupItemId;
+    /** True once the quantity input shows the user's figures (logged entry or carried state). */
+    private boolean quantityPrefilled;
+    /** Serving size and unit the quantity input was set up with, for a late prefill. */
+    @Nullable
+    private Double inputServingQuantity;
+    @NonNull
+    private Unit inputUnit = Unit.G;
+    /** True while a save is running: the button stays disabled with its progress text. */
+    private boolean savingToMeal;
+
     // ========== LIFECYCLE ==========
 
     @Override
@@ -231,6 +254,9 @@ public class RecipeDetailsActivity extends BaseActivity
             if (btnAddToMeal != null) {
                 btnAddToMeal.setOnClickListener(v -> addToMeal());
             }
+            // Disabled until the recipe and the meal are both loaded, so the
+            // label never flips from "Add" to "Update" under the finger.
+            updateAddButtonState();
         } else if (addToMealContainer != null) {
             addToMealContainer.setVisibility(View.GONE);
         }
@@ -257,6 +283,8 @@ public class RecipeDetailsActivity extends BaseActivity
         if (recipe != null && activeRenderer != null && activeRendererView != null) {
             String language = getCurrentLanguage().getCode();
             activeRenderer.populate(activeRendererView, recipe, language);
+            // populate() puts the default amount back in the amount field.
+            applyLoggedAmountToField();
         }
     }
 
@@ -285,12 +313,13 @@ public class RecipeDetailsActivity extends BaseActivity
     }
 
     /**
-     * Add the current recipe to the meal identified by returnToMealId.
-     * Mirrors ProductDetailsActivity.addToMeal().
+     * Save the current recipe in the meal identified by returnToMealId: add it,
+     * or update the amount of its entry when it is already there (re-checked at
+     * save time by MealEntryHelper). Mirrors ProductDetailsActivity.addToMeal().
      *
-     * A recipe WITH nutrition is added by weight, read from the renderer's
+     * A recipe WITH nutrition is saved by weight, read from the renderer's
      * amount input (getQuantityFromRenderer()). A recipe WITHOUT nutrition
-     * (MealDB/CocktailDB: unresolved ingredient stubs) is added with what the
+     * (MealDB/CocktailDB: unresolved ingredient stubs) is saved with what the
      * quantity input holds: a number of servings, or a weighed amount in g or
      * ml - logged as is, ready for the day these recipes get estimated
      * nutrition. The meal accepts it either way; it counts as an item with no
@@ -306,7 +335,7 @@ public class RecipeDetailsActivity extends BaseActivity
         FoodPortion portion;
         if (quantityInput != null) {
             PortionQuantity logged = quantityInput.getQuantity();
-            if (logged == null) return; // Add is disabled in that state anyway
+            if (logged == null) return; // the button is disabled in that state anyway
             portion = new FoodPortion(recipe, 1, Unit.SERVING);
             portion.setQuantity(logged);
         } else if (recipe.hasNutritionData()) {
@@ -317,61 +346,28 @@ public class RecipeDetailsActivity extends BaseActivity
         portion.setParentType("MEAL");
         portion.setParentId(returnToMealId);
 
-        View btnAddToMeal = addToMealContainer.findViewById(R.id.btnAddToMeal);
-        if (btnAddToMeal instanceof android.widget.Button) {
-            ((android.widget.Button) btnAddToMeal).setEnabled(false);
-            ((android.widget.Button) btnAddToMeal).setText(R.string.adding_to_meal);
-        }
+        savingToMeal = true;
+        updateAddButtonState();
 
-        MealRepository mealRepository = new MealRepository(this);
-        mealRepository.getMeal(returnToMealId, new MealRepository.MealCallback() {
+        MealEntryHelper.save(this, returnToMealId, portion, new MealEntryHelper.SaveCallback() {
             @Override
-            public void onSuccess(li.masciul.sugardaddi.core.models.Meal meal) {
-                // One portion per item (Meal.addPortion()). Until the
-                // Add/Update screen lands, adding an item that is already in
-                // the meal is refused rather than duplicated.
-                if (!meal.addPortion(portion)) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(RecipeDetailsActivity.this,
-                                R.string.already_in_meal, Toast.LENGTH_SHORT).show();
-                        resetAddToMealButton();
-                    });
-                    return;
-                }
-                mealRepository.updateMeal(meal, new MealRepository.MealCallback() {
-                    @Override
-                    public void onSuccess(li.masciul.sugardaddi.core.models.Meal savedMeal) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(RecipeDetailsActivity.this,
-                                    R.string.added_to_meal, Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(RecipeDetailsActivity.this,
-                                    MealDetailsActivity.class);
-                            intent.putExtra("extra_meal_id", returnToMealId);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                            startActivity(intent);
-                            finish();
-                        });
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(RecipeDetailsActivity.this,
-                                    "Error saving: " + error, Toast.LENGTH_LONG).show();
-                            resetAddToMealButton();
-                        });
-                    }
-                });
+            public void onSaved(boolean updated) {
+                Toast.makeText(RecipeDetailsActivity.this,
+                        updated ? R.string.meal_updated : R.string.added_to_meal,
+                        Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(RecipeDetailsActivity.this, MealDetailsActivity.class);
+                intent.putExtra("extra_meal_id", returnToMealId);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                finish();
             }
 
             @Override
-            public void onError(String error) {
-                runOnUiThread(() -> {
-                    Toast.makeText(RecipeDetailsActivity.this,
-                            "Error loading meal: " + error, Toast.LENGTH_LONG).show();
-                    resetAddToMealButton();
-                });
+            public void onError(@NonNull String message) {
+                Toast.makeText(RecipeDetailsActivity.this,
+                        "Error saving: " + message, Toast.LENGTH_LONG).show();
+                savingToMeal = false;
+                updateAddButtonState();
             }
         });
     }
@@ -407,21 +403,78 @@ public class RecipeDetailsActivity extends BaseActivity
         return li.masciul.sugardaddi.ui.components.NutritionLabelManager.defaultAmountFor(recipe);
     }
 
-    private void resetAddToMealButton() {
-        View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
-        if (btn instanceof android.widget.Button) {
-            ((android.widget.Button) btn).setText(R.string.add_to_meal);
-        }
-        updateAddButtonState();
-    }
-
-    /** Add is enabled unless the quantity input is in use and holds no valid quantity. */
+    /**
+     * Label and state of the meal button:
+     * - "Add to Meal" or "Update in meal", depending on whether the recipe is
+     *   already in the meal; "Adding..." / "Updating..." while saving;
+     * - enabled once the recipe and the meal lookup are both done, unless the
+     *   quantity input is in use and holds no valid quantity.
+     */
     private void updateAddButtonState() {
         if (addToMealContainer == null) return;
-        View btn = addToMealContainer.findViewById(R.id.btnAddToMeal);
-        if (btn != null) {
-            btn.setEnabled(quantityInput == null || quantityInput.getQuantity() != null);
+        View view = addToMealContainer.findViewById(R.id.btnAddToMeal);
+        if (!(view instanceof android.widget.Button)) return;
+        android.widget.Button button = (android.widget.Button) view;
+
+        if (savingToMeal) {
+            button.setText(inMeal ? R.string.updating_meal : R.string.adding_to_meal);
+            button.setEnabled(false);
+            return;
         }
+        button.setText(inMeal ? R.string.update_in_meal : R.string.add_to_meal);
+        // recipeManager is still null when this first runs from initializeUIComponents().
+        boolean ready = mealLookupDone && recipeManager != null
+                && recipeManager.getCurrentRecipe() != null;
+        button.setEnabled(ready && (quantityInput == null || quantityInput.getQuantity() != null));
+    }
+
+    // ========== MEAL ENTRY: LOOKUP AND PREFILL ==========
+
+    /**
+     * Check once per recipe whether it is already in the meal. The answer sets
+     * the button (Add or Update) and fills the quantity input or the amount
+     * field with the logged amount.
+     */
+    private void startMealLookup(@NonNull Recipe recipe) {
+        if (returnToMealId == null) return;
+        String itemId = recipe.getSearchableId();
+        if (itemId == null || itemId.equals(lookupItemId)) return;
+        lookupItemId = itemId;
+        mealLookupDone = false;
+        updateAddButtonState();
+
+        MealEntryHelper.lookup(this, returnToMealId, "RECIPE", itemId, (found, logged) -> {
+            if (!itemId.equals(lookupItemId)) return; // a newer lookup took over
+            mealLookupDone = true;
+            inMeal = found;
+            loggedQuantity = found ? logged : null;
+            applyLoggedQuantityToInput();
+            applyLoggedAmountToField();
+            updateAddButtonState();
+        });
+    }
+
+    /**
+     * Fill the quantity input with the logged entry, if the lookup answered
+     * after the input was set up and the user's figures are not already there.
+     */
+    private void applyLoggedQuantityToInput() {
+        if (quantityInput == null || quantityPrefilled || loggedQuantity == null) return;
+        quantityInput.setup(inputServingQuantity, inputUnit, loggedQuantity);
+        quantityPrefilled = true;
+    }
+
+    /**
+     * Recipes with nutrition keep the old custom amount field until change 6:
+     * put the logged grams in it, so Update starts from what is logged. Runs
+     * after every populate(), which resets the field to the default amount.
+     */
+    private void applyLoggedAmountToField() {
+        if (loggedQuantity == null || activeRendererView == null) return;
+        Double total = loggedQuantity.getTotalQuantity();
+        if (total == null || total <= 0 || loggedQuantity.getUnit() != Unit.G) return;
+        android.widget.EditText field = activeRendererView.findViewById(R.id.customAmountEditText);
+        if (field != null) field.setText(NutritionLabelManager.formatAmountForInput(total));
     }
 
     /**
@@ -468,9 +521,20 @@ public class RecipeDetailsActivity extends BaseActivity
         }
 
         quantityInput = input;
+        inputServingQuantity = servingQuantity;
+        inputUnit = unit;
         input.setOnQuantityChangedListener(quantity -> updateAddButtonState());
-        input.setup(servingQuantity, unit);
-        input.restoreState(carried);
+        if (carried != null) {
+            // What the user was working on wins (refresh, rotation).
+            input.setup(servingQuantity, unit);
+            input.restoreState(carried);
+            quantityPrefilled = true;
+        } else {
+            // The logged entry when the lookup already answered; else 1 serving,
+            // and applyLoggedQuantityToInput() fills it in when it answers.
+            input.setup(servingQuantity, unit, loggedQuantity);
+            quantityPrefilled = loggedQuantity != null;
+        }
         pendingQuantityState = null;
         section.setVisibility(View.VISIBLE);
         updateAddButtonState();
@@ -578,6 +642,11 @@ public class RecipeDetailsActivity extends BaseActivity
         // 7. Cache
         activeRenderer    = renderer;
         activeRendererView = rendererView;
+
+        // 7b. Meal entry: Add or Update, and the logged amount in the amount field
+        applyLoggedAmountToField();
+        startMealLookup(recipe);
+        updateAddButtonState();
 
         // 8. Update toolbar title from renderer
         String rendererTitle = renderer.getToolbarTitle(recipe, language);

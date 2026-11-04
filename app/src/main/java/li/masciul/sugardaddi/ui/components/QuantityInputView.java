@@ -60,6 +60,8 @@ public class QuantityInputView extends LinearLayout {
     private static final String KEY_SERVING_COUNT = "servingCount";
     private static final String KEY_CUSTOM_QUANTITY = "customQuantity";
     private static final String KEY_PAGE = "page";
+    private static final String KEY_SERVING_QUANTITY = "servingQuantity";
+    private static final String KEY_UNIT = "unit";
 
     // ========== VIEWS ==========
 
@@ -165,9 +167,25 @@ public class QuantityInputView extends LinearLayout {
      *                        serving size and of the typed quantity
      */
     public void setup(@Nullable Double servingQuantity, @NonNull Unit unit) {
-        state = new QuantityInputState(servingQuantity, unit);
-        pager.setCurrentPage(PAGE_SERVINGS, false);
+        setup(servingQuantity, unit, null);
+    }
+
+    /**
+     * Configure the input for one item, starting from an entry already logged in
+     * a meal when there is one (Update): its figures, with its logged serving
+     * size (see QuantityInputState.from()), on the page it was logged with.
+     *
+     * @param logged the entry's snapshot, or null for a fresh "1 serving"
+     */
+    public void setup(@Nullable Double servingQuantity, @NonNull Unit unit,
+                      @Nullable PortionQuantity logged) {
+        state = logged != null
+                ? QuantityInputState.from(logged, servingQuantity, unit)
+                : new QuantityInputState(servingQuantity, unit);
+        // Field text first: arriving on the portion size page focuses it only when empty.
         refreshAll();
+        boolean typed = logged != null && logged.getInputMode() == PortionQuantity.InputMode.QUANTITY;
+        pager.setCurrentPage(typed ? PAGE_PORTION : PAGE_SERVINGS, false);
         notifyChanged();
     }
 
@@ -184,10 +202,16 @@ public class QuantityInputView extends LinearLayout {
         this.listener = listener;
     }
 
-    /** What the user entered and the page shown, for restoreState(). */
+    /**
+     * What the user entered, the serving size and unit it was entered against,
+     * and the page shown, for restoreState().
+     */
     @NonNull
     public Bundle saveState() {
         Bundle bundle = new Bundle();
+        Double serving = state.getServingQuantity();
+        if (serving != null) bundle.putDouble(KEY_SERVING_QUANTITY, serving);
+        bundle.putString(KEY_UNIT, state.getUnit().name());
         bundle.putString(KEY_INPUT_MODE, state.getInputMode().name());
         bundle.putDouble(KEY_SERVING_COUNT, state.getServingCount());
         Double custom = state.getCustomQuantity();
@@ -197,12 +221,22 @@ public class QuantityInputView extends LinearLayout {
     }
 
     /**
-     * Put back what saveState() captured. Call after setup(): the value edited
-     * last is kept and the other one is derived again from the current serving
-     * size, which a refresh may have changed.
+     * Put back what saveState() captured. Call after setup().
+     *
+     * The serving size and unit saved with the input win over the ones setup()
+     * received: the user keeps seeing the figures they were working with (the
+     * logged serving size of an entry being updated, rule A of 4b), even if a
+     * refresh brought a new serving size in the meantime.
      */
     public void restoreState(@Nullable Bundle bundle) {
         if (bundle == null) return;
+        if (bundle.containsKey(KEY_UNIT)) {
+            Unit unit = Unit.ML.name().equals(bundle.getString(KEY_UNIT)) ? Unit.ML : Unit.G;
+            Double serving = bundle.containsKey(KEY_SERVING_QUANTITY)
+                    ? bundle.getDouble(KEY_SERVING_QUANTITY)
+                    : null;
+            state = new QuantityInputState(serving, unit);
+        }
         PortionQuantity.InputMode mode = PortionQuantity.InputMode.QUANTITY.name()
                 .equals(bundle.getString(KEY_INPUT_MODE))
                 ? PortionQuantity.InputMode.QUANTITY

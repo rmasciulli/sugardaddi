@@ -712,7 +712,17 @@
     <string name="save_meal">Save Meal</string>
     <string name="add_to_meal">Add to Meal</string>
     <string name="added_to_meal">Added to meal</string>
-    <string name="already_in_meal">Already in this meal</string>
+    <!-- Add or Update an item already in the meal -->
+    <string name="update_in_meal">Update in meal</string>
+    <string name="updating_meal">Updating...</string>
+    <string name="meal_updated">Meal updated</string>
+    <!-- Logged amount in a meal's list of items (MealEntryLabel) -->
+    <plurals name="meal_entry_servings">
+        <item quantity="one">%1$s serving</item>
+        <item quantity="other">%1$s servings</item>
+    </plurals>
+    <!-- "2 servings (80 g)": servings text, then the logged amount -->
+    <string name="meal_entry_servings_amount">%1$s (%2$s)</string>
 
     <!-- Quantity input (QuantityInputView) -->
     <string name="quantity_page_servings">Number of servings</string>
