@@ -28,6 +28,7 @@ import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.network.NetworkManager;
 import li.masciul.sugardaddi.data.repository.ProductRepository;
 import li.masciul.sugardaddi.managers.ProductManager;
@@ -697,9 +698,11 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
             if (isThumbnail) {
-                db.foodProductDao().updateUserThumbnailPath(product.getSearchableId(), localPath);
+                db.userItemDataDao().setThumbnailPath(
+                        UserItemDataEntity.TYPE_PRODUCT, product.getSearchableId(), localPath);
             } else {
-                db.foodProductDao().updateUserImagePath(product.getSearchableId(), localPath);
+                db.userItemDataDao().setImagePath(
+                        UserItemDataEntity.TYPE_PRODUCT, product.getSearchableId(), localPath);
             }
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(isThumbnail
@@ -722,8 +725,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this).foodProductDao()
-                    .updateUserImagePath(product.getSearchableId(), null);
+            AppDatabase.getInstance(this).userItemDataDao()
+                    .setImagePath(UserItemDataEntity.TYPE_PRODUCT, product.getSearchableId(), null);
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(R.string.image_removed),
                         Toast.LENGTH_SHORT).show();
@@ -745,8 +748,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this).foodProductDao()
-                    .updateUserThumbnailPath(product.getSearchableId(), null);
+            AppDatabase.getInstance(this).userItemDataDao()
+                    .setThumbnailPath(UserItemDataEntity.TYPE_PRODUCT, product.getSearchableId(), null);
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(R.string.thumbnail_removed),
                         Toast.LENGTH_SHORT).show();

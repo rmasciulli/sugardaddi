@@ -11,8 +11,9 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 
 /**
  * CacheEvictionManager - deletes cached products and recipes the user hasn't
- * opened within RETENTION_MS, freeing the database. Favorites and bulk-imported
- * (localImport) rows are never evicted.
+ * opened within RETENTION_MS, freeing the database. Never evicted: bulk-imported
+ * (localImport) rows, items with user data (favorite, custom photo, preferred
+ * serving - user_item_data), items used by a meal, and user-created recipes.
  *
  * Row deletion only: image files are reclaimed by ImagePurgeManager's orphan
  * purge, which must run AFTER eviction so the evicted rows' images count as
@@ -51,6 +52,9 @@ public class CacheEvictionManager {
             int products  = database.foodProductDao().deleteExpiredProducts(threshold);
             int recipes   = database.recipeDao().deleteExpiredRecipes(threshold);
             int nutrition = database.nutritionDao().deleteOrphanedNutrition();
+            // User data of items that no longer exist (e.g. a dataset removed with
+            // deleteProductsBySource()).
+            database.userItemDataDao().deleteOrphans();
             if (ApiConfig.DEBUG_LOGGING) {
                 Log.d(TAG, "Eviction: " + products + " product(s), " + recipes
                         + " recipe(s), " + nutrition + " orphaned nutrition row(s) removed");

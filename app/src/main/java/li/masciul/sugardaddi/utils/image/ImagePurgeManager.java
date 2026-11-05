@@ -66,8 +66,9 @@ import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
  *
  * REQUIRED DAO METHODS
  * ====================
- * FoodProductDao.getAllLocalImagePaths()  - unions all four product image columns
- * RecipeDao.getAllLocalImagePaths()       - unions all four recipe image columns
+ * FoodProductDao.getAllLocalImagePaths()  - the product auto-cached image columns
+ * RecipeDao.getAllLocalImagePaths()       - the recipe auto-cached image columns
+ * UserItemDataDao.getAllCustomImagePaths() - custom photos (products and recipes)
  * RecipeDao.getAllWithStepStructure()     - recipes whose stepStructure is non-null
  * MealDao.getAllLocalImagePaths()         - meals.userImagePath
  * (See each DAO for the authoritative SQL - deliberately not duplicated here.)
@@ -203,6 +204,12 @@ public class ImagePurgeManager {
     private int purgeOrphans() {
         // ── 1. Collect all paths currently known to Room ──────────────────────
         Set<String> knownPaths = collectKnownPaths();
+        if (knownPaths == null) {
+            // The user's own photos could not be listed: purging now could delete
+            // them as "orphans". Skip this run; the next one will retry.
+            Log.w(TAG, "Purge skipped: custom photo paths unavailable");
+            return 0;
+        }
         Log.d(TAG, "Known image paths in Room: " + knownPaths.size());
 
         // ── 2. Scan each directory and delete anything not in the known set ───
@@ -219,15 +226,30 @@ public class ImagePurgeManager {
      * Builds the complete set of absolute file paths referenced by any entity in Room.
      *
      * Covered fields:
-     *   food_products: thumbnailPath, imagePath, userThumbnailPath, userImagePath
-     *   recipes:       thumbnailPath, imagePath, userThumbnailPath, userImagePath
+     *   food_products:  thumbnailPath, imagePath
+     *   recipes:        thumbnailPath, imagePath
+     *   user_item_data: imagePath, thumbnailPath (custom photos)
      *   meals:         userImagePath
      *   RecipeStepMetadata: imagePath, userImagePath (steps/, via JSON deserialization)
      */
     @WorkerThread
-    @NonNull
+    @Nullable
     private Set<String> collectKnownPaths() {
         Set<String> knownPaths = new HashSet<>();
+
+        // ── Custom photos set by the user (products and recipes) ──────────────
+        // Unlike the auto-cached files below, these cannot be downloaded again:
+        // if they cannot be listed, return null and the purge is skipped.
+        try {
+            List<String> paths = database.userItemDataDao().getAllCustomImagePaths();
+            if (paths != null) {
+                knownPaths.addAll(paths);
+                Log.d(TAG, "  Custom photo paths: " + paths.size());
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to load custom photo paths - purge skipped", e);
+            return null;
+        }
 
         // ── Food product paths (thumbnail + hero) ─────────────────────────────
         try {

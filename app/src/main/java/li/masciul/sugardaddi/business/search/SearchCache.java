@@ -11,8 +11,8 @@ import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.database.AppDatabase;
-import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
-import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
+import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
+import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.repository.SearchResultCache;
 import li.masciul.sugardaddi.data.sources.base.DataSource;
@@ -286,21 +286,22 @@ public class SearchCache {
             Map<String, FoodProduct> idToRicher      = new HashMap<>();
 
             if (!barcodes.isEmpty()) {
-                List<FoodProductEntity> cached =
-                        database.foodProductDao().getProductsByBarcodes(barcodes);
-                for (FoodProductEntity entity : cached) {
-                    if (entity.getBarcode() != null) {
-                        barcodeToRicher.put(entity.getBarcode(), entity.toFoodProduct());
+                // With the relation: the user's data (custom photos) comes along.
+                List<FoodProductWithNutrition> cached =
+                        database.combinedProductDao().getProductsWithNutritionByBarcodes(barcodes);
+                for (FoodProductWithNutrition row : cached) {
+                    if (row.product != null && row.product.getBarcode() != null) {
+                        barcodeToRicher.put(row.product.getBarcode(), row.toFoodProduct());
                     }
                 }
             }
 
             if (!searchableIds.isEmpty()) {
-                List<FoodProductEntity> cached =
-                        database.foodProductDao().getProductsBySearchableIds(searchableIds);
-                for (FoodProductEntity entity : cached) {
-                    if (entity.getId() != null) {
-                        idToRicher.put(entity.getId(), entity.toFoodProduct());
+                List<FoodProductWithNutrition> cached =
+                        database.combinedProductDao().getProductsWithNutritionByIds(searchableIds);
+                for (FoodProductWithNutrition row : cached) {
+                    if (row.product != null && row.product.getId() != null) {
+                        idToRicher.put(row.product.getId(), row.toFoodProduct());
                     }
                 }
             }
@@ -376,10 +377,10 @@ public class SearchCache {
             // RecipeEntity.id IS the searchableId (see fromRecipe), so the entity's
             // own id is the map key - no reconstruction needed.
             Map<String, Recipe> idToRicher = new HashMap<>();
-            List<RecipeEntity> cached =
-                    database.recipeDao().getRecipesBySearchableIds(searchableIds);
-            for (RecipeEntity entity : cached) {
-                idToRicher.put(entity.getId(), entity.toRecipe());
+            List<RecipeWithNutrition> cached =
+                    database.recipeDao().getRecipesWithNutritionBySearchableIds(searchableIds);
+            for (RecipeWithNutrition row : cached) {
+                if (row.recipe != null) idToRicher.put(row.recipe.getId(), row.toRecipe());
             }
 
             // Overlay the user's local image paths wherever a cached row exists.

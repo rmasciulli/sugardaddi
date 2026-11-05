@@ -18,17 +18,24 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
  * NetworkManager) and half onto RecipeRepository, all of it lives here, depending
  * only on Room.
  *
- * THE MODEL - two orthogonal retention pins on every row:
- *   - isFavorite   (favorite pin)
- *   - localImport  (downloaded-dataset pin)
- * Clearing a "section" clears one pin; a row that still holds the other pin is
- * downgraded (kept), a row left with no pin is deleted:
+ * THE MODEL - what keeps a cached row ("pins"):
+ *   - localImport            downloaded-dataset pin (column on the row)
+ *   - favorite               user_item_data.isFavorite
+ *   - customisation          user_item_data: custom photo or preferred serving
+ *   - used by a meal         meal_portions (journal, not cache)
+ *   - user-created recipe    dataSource = 'USER' (the user's content, not cache)
+ * Clearing a section removes one kind of pin; a row still held by another pin is
+ * kept, a row left with none is deleted:
  *
- *   Section 1  Searched items     no pin                  -> delete
- *   Section 2  Favorites         favorite pin           -> delete if no import pin,
- *                                                            else clear favorite pin
- *   Section 3  Downloaded source  import pin (per source) -> delete if no favorite
- *                                                            pin, else clear import pin
+ *   Section 1  Searched items     held by no pin               -> delete
+ *   Section 2  Favorites          favorite pin                 -> delete if held by
+ *                                                                  nothing else; pin removed
+ *   Section 3  Downloaded source   import pin (per source)      -> delete if held by
+ *                                                                  nothing else; pin removed
+ *   Clear all                      favorite + import pins       -> delete if held by
+ *                                                                  nothing else; pins removed
+ *   Reset customisations           custom photos + servings     -> pins removed; the rows
+ *                                                                  become plain cache
  *
  * Every operation is mirrored across both tables (FoodProductDao + RecipeDao) so that
  * a future importable recipe source is covered automatically. The actual SQL lives in
@@ -79,6 +86,12 @@ public class CacheRepository {
         return database.recipeDao().getFavoriteCount();
     }
 
+    /** Items with a customisation (custom photo or preferred serving), both types. */
+    @WorkerThread
+    public int getCustomisedCount() {
+        return database.userItemDataDao().getCustomisedCount();
+    }
+
     /** Section 3 - downloaded products for one source (localImport rows). */
     @WorkerThread
     public int getDownloadProductCount(@NonNull String sourceId) {
@@ -94,15 +107,12 @@ public class CacheRepository {
     // ========== CLEAR OPERATIONS ==========
     // Each runs in one transaction (all-or-nothing) and ends with a single orphaned-
     // nutrition sweep (deleteOrphanedNutrition covers both products and recipes).
-    //
-    // Items logged in a meal are journal data, not cache: no operation deletes them
-    // (see the DAOs' "meal-used" section). Operations that remove a pin take the pin
-    // off meal-used rows instead of deleting them, so meals never lose an entry.
+    // No operation deletes an item held by another pin (see THE MODEL above).
 
     /**
-     * Section 1 - clear the browsed search cache: rows with no retention pin
-     * (localImport 0, isFavorite 0) in both tables. Favorites and downloaded datasets
-     * are untouched.
+     * Section 1 - clear the browsed search cache: rows held by no pin, in both
+     * tables. Favorites, customised items, datasets, meal items and user-created
+     * recipes are untouched.
      */
     @WorkerThread
     public void clearBrowsedCache() {
@@ -115,28 +125,25 @@ public class CacheRepository {
     }
 
     /**
-     * Section 2 - clear favorites: delete rows favorited with no import pin, and on
-     * rows that are also downloaded, clear only the favorite pin (they stay as plain
-     * dataset rows). Mirrored across both tables.
+     * Section 2 - clear favorites: delete the rows held only by their favorite
+     * pin, then remove every favorite pin. Rows also held by a customisation, a
+     * dataset or a meal stay.
      */
     @WorkerThread
     public void clearFavorites() {
         database.runInTransaction(() -> {
-            database.foodProductDao().unmarkFavoriteOnMealItems();
-            database.recipeDao().unmarkFavoriteOnMealItems();
             database.foodProductDao().deleteFavoritesOnly();
-            database.foodProductDao().unmarkFavoriteOnDownloads();
             database.recipeDao().deleteFavoritesOnly();
-            database.recipeDao().unmarkFavoriteOnDownloads();
+            database.userItemDataDao().clearAllFavorites();
             database.nutritionDao().deleteOrphanedNutrition();
         });
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Cleared favorites (products + recipes)");
     }
 
     /**
-     * Section 3 - remove one source's downloaded dataset: delete its dataset rows that
-     * are not favorited, and on rows that are also favorited, clear only the import
-     * pin (they stay as plain favorites). Mirrored across both tables.
+     * Section 3 - remove one source's downloaded dataset: delete its dataset rows
+     * held by nothing else, and the ones that remain (favorite, customisation,
+     * meal) lose the import pin. Mirrored across both tables.
      *
      * Room only - the caller resets the source's import state
      * (ManagementProvider.resetDatabaseState) and purges orphaned image files.
@@ -146,34 +153,47 @@ public class CacheRepository {
     @WorkerThread
     public void removeDownloadedSource(@NonNull String sourceId) {
         database.runInTransaction(() -> {
-            database.foodProductDao().unmarkDownloadOnMealItemsBySource(sourceId);
-            database.recipeDao().unmarkDownloadOnMealItemsBySource(sourceId);
             database.foodProductDao().deleteDownloadsOnlyBySource(sourceId);
-            database.foodProductDao().unmarkDownloadOnFavoritesBySource(sourceId);
+            database.foodProductDao().unmarkDownloadsBySource(sourceId);
             database.recipeDao().deleteDownloadsOnlyBySource(sourceId);
-            database.recipeDao().unmarkDownloadOnFavoritesBySource(sourceId);
+            database.recipeDao().unmarkDownloadsBySource(sourceId);
             database.nutritionDao().deleteOrphanedNutrition();
         });
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Removed downloaded dataset for source " + sourceId);
     }
 
     /**
-     * "Clear all" - wipe every cached product and recipe regardless of pin, then sweep
-     * their now-orphaned nutrition. Equivalent to clearing all three sections at once.
-     * Items used by a meal are kept, as plain unpinned rows.
+     * "Clear all" - the three sections at once: favorite and import pins removed,
+     * then every row held by nothing else deleted. Kept: customised items (the
+     * user's photos and servings; see resetCustomisations()), meal items and
+     * user-created recipes, as plain rows.
      *
-     * Room only - the caller resets every local source's import state and purges all
-     * image files.
+     * Room only - the caller resets every local source's import state and purges
+     * the image files no row refers to any more.
      */
     @WorkerThread
     public void clearAll() {
         database.runInTransaction(() -> {
-            database.foodProductDao().deleteAllExceptMealItems();
-            database.foodProductDao().unpinMealItems();
-            database.recipeDao().deleteAllExceptMealItems();
-            database.recipeDao().unpinMealItems();
+            database.userItemDataDao().clearAllFavorites();
+            database.foodProductDao().deleteAllExceptKept();
+            database.foodProductDao().unmarkAllDownloads();
+            database.recipeDao().deleteAllExceptKept();
+            database.recipeDao().unmarkAllDownloads();
             database.nutritionDao().deleteOrphanedNutrition();
         });
         if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Cleared all cached products and recipes");
+    }
+
+    /**
+     * "Reset my customisations" - remove every custom photo and preferred serving
+     * (favorites stay). The items become plain cache, subject to the usual rules
+     * from now on; nothing is deleted here.
+     *
+     * Room only - the caller purges the custom photo files, now orphans.
+     */
+    @WorkerThread
+    public void resetCustomisations() {
+        database.userItemDataDao().clearAllCustomisations();
+        if (ApiConfig.DEBUG_LOGGING) Log.d(TAG, "Reset all customisations");
     }
 }

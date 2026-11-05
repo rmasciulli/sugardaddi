@@ -5,6 +5,7 @@ import androidx.room.*;
 import androidx.lifecycle.LiveData;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.database.entities.MealPortionEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 
 import java.util.List;
@@ -46,8 +47,8 @@ public interface RecipeDao {
 
     /**
      * Insert a recipe, ignoring the operation if a row with the same
-     * primary key already exists. Preserves existing user-set fields
-     * (isFavorite, accessCount) on recipes already cached in Room.
+     * primary key already exists. Preserves the existing row's state
+     * (accessCount, lastViewed, image paths) on recipes already cached in Room.
      * Used by saveRecipesToDatabase() for auto-save after search.
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -194,6 +195,11 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id IN (:searchableIds)")
     List<RecipeEntity> getRecipesBySearchableIds(List<String> searchableIds);
 
+    /** Same rows with nutrition and the user's data (favorite, custom photos). */
+    @Transaction
+    @Query("SELECT * FROM recipes WHERE id IN (:searchableIds)")
+    List<RecipeWithNutrition> getRecipesWithNutritionBySearchableIds(List<String> searchableIds);
+
     // ========== AUTHOR/USER QUERIES ==========
 
     @Query("SELECT * FROM recipes WHERE authorId = :authorId ORDER BY lastUpdated DESC")
@@ -309,11 +315,14 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE isPublic = 1 ORDER BY lastUpdated DESC")
     List<RecipeWithNutrition> getPublicRecipesWithNutrition();
 
-    @Query("SELECT * FROM recipes WHERE isFavorite = 1 ORDER BY lastUpdated DESC")
+    // Favorites: the pin lives in user_item_data (UserItemDataDao.setFavorite()).
+    @Query("SELECT * FROM recipes WHERE id IN (" + UserItemDataEntity.FAVORITE_RECIPE_IDS + ")"
+            + " ORDER BY lastUpdated DESC")
     List<RecipeEntity> getFavoriteRecipes();
 
     @Transaction
-    @Query("SELECT * FROM recipes WHERE isFavorite = 1 ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM recipes WHERE id IN (" + UserItemDataEntity.FAVORITE_RECIPE_IDS + ")"
+            + " ORDER BY lastUpdated DESC")
     List<RecipeWithNutrition> getFavoriteRecipesWithNutrition();
 
     @Query("SELECT * FROM recipes WHERE isTemplate = 1 ORDER BY accessCount DESC, lastUpdated DESC")
@@ -323,13 +332,8 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE isTemplate = 1 ORDER BY accessCount DESC, lastUpdated DESC")
     List<RecipeWithNutrition> getTemplateRecipesWithNutrition();
 
-    // ========== FAVORITES & ACCESS TRACKING ==========
-
-    @Query("UPDATE recipes SET isFavorite = 1 WHERE id = :recipeId")
-    int markAsFavorite(String recipeId);
-
-    @Query("UPDATE recipes SET isFavorite = 0 WHERE id = :recipeId")
-    int unmarkAsFavorite(String recipeId);
+    // ========== ACCESS TRACKING ==========
+    // (Favorites: UserItemDataDao.setFavorite().)
 
     @Query("UPDATE recipes SET accessCount = accessCount + 1, lastUpdated = :currentTime WHERE id = :recipeId")
     int incrementAccessCount(String recipeId, long currentTime);
@@ -375,7 +379,7 @@ public interface RecipeDao {
 
     // ========== STATISTICS ==========
 
-    @Query("SELECT COUNT(*) FROM recipes WHERE isFavorite = 1")
+    @Query("SELECT COUNT(*) FROM recipes WHERE id IN (" + UserItemDataEntity.FAVORITE_RECIPE_IDS + ")")
     int getFavoriteCount();
 
     @Query("SELECT COUNT(*) FROM recipes WHERE isPublic = 1")
@@ -397,7 +401,7 @@ public interface RecipeDao {
             "COUNT(*) as totalRecipes, " +
             "AVG(rating) as avgRating, " +
             "AVG(completenessScore) as avgCompleteness, " +
-            "COUNT(CASE WHEN isFavorite = 1 THEN 1 END) as favoriteCount, " +
+            "(SELECT COUNT(*) FROM user_item_data WHERE itemType = 'RECIPE' AND isFavorite = 1) as favoriteCount, " +
             "COUNT(CASE WHEN isPublic = 1 THEN 1 END) as publicCount " +
             "FROM recipes")
     RecipeStats getRecipeStats();
@@ -414,7 +418,8 @@ public interface RecipeDao {
     @Query("SELECT * FROM recipes ORDER BY lastUpdated DESC")
     LiveData<List<RecipeEntity>> getAllLive();
 
-    @Query("SELECT * FROM recipes WHERE isFavorite = 1 ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM recipes WHERE id IN (" + UserItemDataEntity.FAVORITE_RECIPE_IDS + ")"
+            + " ORDER BY lastUpdated DESC")
     LiveData<List<RecipeEntity>> getFavoritesLive();
 
     @Query("SELECT COUNT(*) FROM recipes")
@@ -426,112 +431,88 @@ public interface RecipeDao {
     List<RecipeEntity> getStaleRecipes(long threshold);
 
     /**
-     * Delete cached recipes not viewed since {@code threshold}, never touching
-     * favorites or bulk-imported (localImport) rows. Returns the number deleted.
+     * Recipes the user created are their own content, not cache: no cache
+     * operation deletes them, whatever their pins.
      */
-    @Query("DELETE FROM recipes WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0"
-            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
+    String NOT_USER_CREATED = "dataSource != 'USER'";
+
+    /**
+     * Delete cached recipes not viewed since {@code threshold}, never touching
+     * bulk-imported (localImport) rows, recipes with user data (favorite, custom
+     * photo, preferred serving), recipes used by a meal, or user-created recipes.
+     * Returns the number deleted.
+     */
+    @Query("DELETE FROM recipes WHERE lastViewed < :threshold AND localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int deleteExpiredRecipes(long threshold);
 
-    @Query("DELETE FROM recipes WHERE lastUpdated < :threshold AND isFavorite = 0 AND accessCount < :minAccessCount")
+    @Query("DELETE FROM recipes WHERE lastUpdated < :threshold AND accessCount < :minAccessCount"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int deleteStaleRecipes(long threshold, int minAccessCount);
 
     // ========== CACHE MANAGEMENT (settings) ==========
-    // Exact mirror of FoodProductDao's cache-management set, for the three-section
-    // cache card. The two retention pins (isFavorite, localImport) and the
-    // clear-one-pin / downgrade-or-delete rules are identical across both tables.
-    //
-    // No recipe source is currently downloadable, so recipes are never localImport
-    // = 1 today: the import-pin operations below are inert for now. They exist by
-    // design so that if a recipe source ever becomes importable, it is covered
-    // automatically with no further changes. Section-2 favorite total reuses
-    // getFavoriteCount().
+    // Mirror of FoodProductDao's section (same pins, same rules), plus:
+    // user-created recipes are never deleted. See CacheRepository.
 
-    /**
-     * Count of browsed-cache recipes - opened from search, neither favorited nor
-     * part of a downloaded dataset (no retention pin). Drives the section-1 count.
-     */
-    @Query("SELECT COUNT(*) FROM recipes WHERE localImport = 0 AND isFavorite = 0"
-            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
+    /** Count of browsed-cache recipes - opened from search, held by no pin. */
+    @Query("SELECT COUNT(*) FROM recipes WHERE localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int getBrowsedCacheCount();
 
     /**
-     * Count of recipes belonging to one source's downloaded dataset (localImport = 1,
-     * favorited or not). Inert until a recipe source is importable.
-     *
-     * @param sourceId The data source id
+     * Count of recipes belonging to one source's downloaded dataset. Inert until a
+     * recipe source is importable.
      */
     @Query("SELECT COUNT(*) FROM recipes WHERE sourceId = :sourceId AND localImport = 1")
     int getDownloadCountBySource(String sourceId);
 
-    /**
-     * Section 1 - delete the browsed cache: flagless rows only. Favorites and
-     * downloaded rows are untouched. Returns the number deleted.
-     */
-    @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 0"
-            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
+    /** Section 1 - delete the browsed cache: rows held by no pin. */
+    @Query("DELETE FROM recipes WHERE localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int deleteBrowsedCache();
 
-    // ========== MEAL-USED RECIPES (journal, not cache) ==========
-    // A recipes logged in a meal is part of the journal, not the cache: every
-    // clear operation keeps it. Where an operation removes a PIN (favorite,
-    // downloaded dataset, clear all), meal-used rows lose the pin instead of the
-    // row, so they stay as plain rows. The counts and deletes above exclude them.
-
-    /** Clear favorites, part 0 - meal-used favorites lose the pin, keep the row. */
-    @Query("UPDATE recipes SET isFavorite = 0 WHERE localImport = 0 AND isFavorite = 1"
-            + " AND id IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
-    int unmarkFavoriteOnMealItems();
-
-    /** Remove a dataset, part 0 - meal-used dataset rows lose the pin, keep the row. */
-    @Query("UPDATE recipes SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1"
-            + " AND isFavorite = 0 AND id IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
-    int unmarkDownloadOnMealItemsBySource(String sourceId);
-
-    /** Clear all, part A - delete every row a meal doesn't use. */
-    @Query("DELETE FROM recipes WHERE id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
-    int deleteAllExceptMealItems();
-
-    /** Clear all, part B - the meal-used rows that remain lose every pin. */
-    @Query("UPDATE recipes SET isFavorite = 0, localImport = 0 WHERE id IN (" + MealPortionEntity.USED_RECIPE_IDS + ")")
-    int unpinMealItems();
-
     /**
-     * Section 2, part A - delete favorites that exist only because they were
-     * favorited (no import pin). Rows that are also downloaded survive via
-     * unmarkFavoriteOnDownloads(). Returns the number deleted.
+     * Section 2, part A - delete rows held ONLY by the favorite pin, before the
+     * pins are removed with UserItemDataDao.clearAllFavorites().
      */
-    @Query("DELETE FROM recipes WHERE localImport = 0 AND isFavorite = 1")
+    @Query("DELETE FROM recipes WHERE localImport = 0"
+            + " AND id IN (" + UserItemDataEntity.FAVORITE_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + UserItemDataEntity.CUSTOMISED_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int deleteFavoritesOnly();
 
-    /**
-     * Section 2, part B - clear the favorite pin on rows that are also downloaded
-     * (C -> D): they stay as plain dataset rows. Inert until recipes are importable.
-     * Returns the number updated.
-     */
-    @Query("UPDATE recipes SET isFavorite = 0 WHERE localImport = 1 AND isFavorite = 1")
-    int unmarkFavoriteOnDownloads();
-
-    /**
-     * Section 3, part A - for one source, delete dataset rows that are not also
-     * favorited (D). Favorited dataset rows survive via
-     * unmarkDownloadOnFavoritesBySource(). Inert until recipes are importable.
-     * Returns the number deleted.
-     *
-     * @param sourceId The data source id whose dataset is being removed
-     */
-    @Query("DELETE FROM recipes WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 0")
+    /** Section 3, part A - for one source, delete dataset rows held by nothing else. */
+    @Query("DELETE FROM recipes WHERE sourceId = :sourceId AND localImport = 1"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
     int deleteDownloadsOnlyBySource(String sourceId);
 
+    /** Section 3, part B - for one source, the remaining dataset rows lose the import pin. */
+    @Query("UPDATE recipes SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1")
+    int unmarkDownloadsBySource(String sourceId);
+
     /**
-     * Section 3, part B - for one source, clear the import pin on rows that are also
-     * favorited (C -> B): they stay as plain favorites. Inert until recipes are
-     * importable. Returns the number updated.
-     *
-     * @param sourceId The data source id whose dataset is being removed
+     * Clear all, part B (after the favorite pins are removed) - delete every row
+     * not held by a customisation or a meal, and not user-created.
      */
-    @Query("UPDATE recipes SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 1")
-    int unmarkDownloadOnFavoritesBySource(String sourceId);
+    @Query("DELETE FROM recipes WHERE id NOT IN (" + UserItemDataEntity.KEPT_RECIPE_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_RECIPE_IDS + ")"
+            + " AND " + NOT_USER_CREATED)
+    int deleteAllExceptKept();
+
+    /** Clear all, part C - the rows that remain lose the import pin. */
+    @Query("UPDATE recipes SET localImport = 0 WHERE localImport = 1")
+    int unmarkAllDownloads();
 
     @Query("UPDATE recipes SET lastUpdated = :timestamp WHERE id = :recipeId")
     int updateLastUpdated(String recipeId, long timestamp);
@@ -539,22 +520,18 @@ public interface RecipeDao {
     /**
      * Returns all non-null local image paths for recipes.
      *
-     * Covers all four local path columns:
+     * Covers the auto-cached path columns:
      *   thumbnailPath     - auto-cached thumbnail (downloaded on favorite)
-     *   imagePath         - auto-cached full-size (future use, currently NULL)
-     *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
-     *   userImagePath     - user-defined full-size override
+     *   imagePath         - auto-cached full-size hero
+     * Custom photos set by the user live in user_item_data
+     * (UserItemDataDao.getAllCustomImagePaths()).
      *
      * Does NOT cover step photos - those are extracted from the stepStructure
      * JSON blob separately via getAllWithStepStructure() + extractStepPhotoPaths().
      */
     @Query("SELECT thumbnailPath FROM recipes WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "
-            + "SELECT imagePath FROM recipes WHERE imagePath IS NOT NULL "
-            + "UNION ALL "
-            + "SELECT userThumbnailPath FROM recipes WHERE userThumbnailPath IS NOT NULL "
-            + "UNION ALL "
-            + "SELECT userImagePath FROM recipes WHERE userImagePath IS NOT NULL")
+            + "SELECT imagePath FROM recipes WHERE imagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     /**
@@ -595,21 +572,7 @@ public interface RecipeDao {
     @Query("UPDATE recipes SET imagePath = :path WHERE id = :recipeId")
     int updateImagePath(String recipeId, String path);
 
-    /**
-     * Updates the user-defined thumbnail path for a recipe.
-     * Pass null to clear (restores auto-cached thumbnail display).
-     * Must be called from a background thread.
-     */
-    @Query("UPDATE recipes SET userThumbnailPath = :path WHERE id = :recipeId")
-    int updateUserThumbnailPath(String recipeId, String path);
-
-    /**
-     * Updates the user-defined full-size image path for a recipe.
-     * Pass null to clear (restores remote imageUrl display).
-     * Must be called from a background thread.
-     */
-    @Query("UPDATE recipes SET userImagePath = :path WHERE id = :recipeId")
-    int updateUserImagePath(String recipeId, String path);
+    // Custom photos: UserItemDataDao.setImagePath() / setThumbnailPath().
 
     // ========== INNER CLASS FOR STATISTICS ==========
 

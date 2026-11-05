@@ -405,6 +405,16 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/cache_clear_all_title" />
+
+                            <!-- Separate from "clear all": the user's own photos and
+                                 serving sizes are not cache (user_item_data). -->
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/resetCustomisationsButton"
+                                style="@style/Button.SugarDaddi.Outlined"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/cache_reset_custom_title" />
                         </LinearLayout>
 
                     </LinearLayout>

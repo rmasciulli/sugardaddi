@@ -1,17 +1,25 @@
 package li.masciul.sugardaddi.data.database.relations;
 
+import androidx.annotation.Nullable;
 import androidx.room.Embedded;
 import androidx.room.Relation;
+
+import java.util.List;
 
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 
 /**
  * RecipeWithNutrition - Combines recipe and nutrition data
  *
  * Room automatically handles the JOIN when you query this.
  * Similar to FoodProductWithNutrition but for recipes.
+ *
+ * Also carries the user's data on the recipe (favorite, custom photos,
+ * preferred serving) from user_item_data. Build domain recipes from cached
+ * rows through this class, not RecipeEntity.toRecipe() alone.
  */
 public class RecipeWithNutrition {
 
@@ -26,7 +34,24 @@ public class RecipeWithNutrition {
     public NutritionEntity nutrition;
 
     /**
-     * Convert to domain model with nutrition
+     * Rows of user_item_data with this id. A product and a recipe can share an
+     * id, so the matching row is picked by itemType in userData().
+     */
+    @Relation(
+            parentColumn = "id",
+            entityColumn = "itemId",
+            entity = UserItemDataEntity.class
+    )
+    public List<UserItemDataEntity> userDataRows;
+
+    /** The user's data on this recipe, or null when there is none. */
+    @Nullable
+    public UserItemDataEntity userData() {
+        return UserItemDataEntity.find(userDataRows, UserItemDataEntity.TYPE_RECIPE);
+    }
+
+    /**
+     * Convert to domain model with nutrition and the user's data
      */
     public Recipe toRecipe() {
         if (recipe == null) {
@@ -39,6 +64,17 @@ public class RecipeWithNutrition {
         // Add nutrition if available
         if (nutrition != null) {
             recipeModel.setNutrition(nutrition.toNutrition());
+        }
+
+        // User data. Recipe.setFavorite() stamps lastUpdated (touch()), which
+        // would make a cached recipe look freshly synced: keep the stored value.
+        UserItemDataEntity data = userData();
+        if (data != null) {
+            long lastUpdated = recipeModel.getLastUpdated();
+            recipeModel.setFavorite(data.isFavorite());
+            recipeModel.setUserImagePath(data.getImagePath());
+            recipeModel.setUserThumbnailPath(data.getThumbnailPath());
+            recipeModel.setLastUpdated(lastUpdated);
         }
 
         return recipeModel;
@@ -69,7 +105,8 @@ public class RecipeWithNutrition {
      * Check if recipe is favorite
      */
     public boolean isFavorite() {
-        return recipe != null && recipe.isFavorite();
+        UserItemDataEntity data = userData();
+        return data != null && data.isFavorite();
     }
 
     /**

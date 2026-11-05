@@ -15,6 +15,7 @@ import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.dao.RecipeDao;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.sources.base.CacheStrategy;
@@ -206,23 +207,14 @@ public class RecipeRepository {
         RecipeEntity existingEntity = recipeDao.getById(recipe.getSearchableId());
 
         if (existingEntity != null) {
-            // Local image paths - the API response has no knowledge of local files.
+            // Auto-cached image paths - the API response has no knowledge of local
+            // files. (Favorite and custom photos live in user_item_data, out of
+            // reach of this write.)
             if (existingEntity.getThumbnailPath() != null) {
                 entity.setThumbnailPath(existingEntity.getThumbnailPath());
             }
             if (existingEntity.getImagePath() != null) {
                 entity.setImagePath(existingEntity.getImagePath());
-            }
-            if (existingEntity.getUserThumbnailPath() != null) {
-                entity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
-            }
-            if (existingEntity.getUserImagePath() != null) {
-                entity.setUserImagePath(existingEntity.getUserImagePath());
-            }
-
-            // Favorite: this runs on every detail open, so never unfavorite.
-            if (existingEntity.isFavorite()) {
-                entity.setFavorite(true);
             }
 
             // View-time state - mirror of the product side.
@@ -265,7 +257,9 @@ public class RecipeRepository {
         });
 
         // Heal-on-open: keep a favorite's thumbnail + hero cached for offline use.
-        if (entity.isFavorite()) {
+        UserItemDataEntity userData = database.userItemDataDao()
+                .get(UserItemDataEntity.TYPE_RECIPE, recipe.getSearchableId());
+        if (userData != null && userData.isFavorite()) {
             cacheFavoriteImages(recipe, recipe.getSearchableId(),
                     entity.getThumbnailPath(), entity.getImagePath());
         }
@@ -504,9 +498,10 @@ public class RecipeRepository {
     /**
      * Toggle the favorite flag on a recipe, persisting the change to Room.
      *
-     * If the recipe is not yet cached (first interaction) it is saved in full
-     * via saveExternalRecipe(); if already cached, only the favorite flag and
-     * timestamp are updated, and on unfavorite the cached thumbnail is cleared.
+     * The pin itself lives in user_item_data. If the recipe is not yet cached
+     * (first interaction) it is saved in full via saveExternalRecipe() first, so
+     * the pin points at an existing row; on unfavorite the cached images are
+     * cleared from the recipe row.
      *
      * @param recipe   The recipe to favorite/unfavorite.
      * @param favorite True to favorite, false to unfavorite.
@@ -528,17 +523,16 @@ public class RecipeRepository {
                         : null;
 
                 if (existing != null) {
-                    // Already in Room - update only the favorite flag and timestamp
-                    existing.setFavorite(favorite);
-                    existing.touch();
-                    recipeDao.update(existing);
-
+                    // Already in Room. The row is not touched (lastUpdated is the
+                    // sync clock, not an edit date), except to clear cached images.
                     if (!favorite) {
                         // Clear both cached-image paths before the files are deleted.
                         existing.setThumbnailPath(null);
                         existing.setImagePath(null);
-                        recipeDao.update(existing); // second write to clear the paths
+                        recipeDao.update(existing);
                     }
+                    database.userItemDataDao().setFavorite(
+                            UserItemDataEntity.TYPE_RECIPE, existing.getId(), favorite);
                     handleFavoriteImages(recipe, recipe.getSearchableId(), favorite);
 
                     runOnMainThread(callback::onSuccess);
@@ -547,8 +541,19 @@ public class RecipeRepository {
                     runOnMainThread(() -> saveExternalRecipe(recipe, new RecipeCallback() {
                         @Override
                         public void onSuccess(Recipe saved) {
-                            handleFavoriteImages(recipe, recipe.getSearchableId(), favorite);
-                            callback.onSuccess();
+                            backgroundExecutor.execute(() -> {
+                                try {
+                                    database.userItemDataDao().setFavorite(
+                                            UserItemDataEntity.TYPE_RECIPE,
+                                            recipe.getSearchableId(), favorite);
+                                    handleFavoriteImages(recipe, recipe.getSearchableId(), favorite);
+                                    runOnMainThread(callback::onSuccess);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Error saving favorite for recipe", e);
+                                    runOnMainThread(() -> callback.onError(
+                                            "Failed to update favorite: " + e.getMessage()));
+                                }
+                            });
                         }
                         @Override
                         public void onError(String error) {

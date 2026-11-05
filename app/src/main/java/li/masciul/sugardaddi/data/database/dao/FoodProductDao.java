@@ -11,6 +11,7 @@ import java.util.List;
 
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.MealPortionEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 
 /**
  * FoodProductDao - Data Access Object for food products (v3.0 - Hybrid Translation)
@@ -226,43 +227,29 @@ public interface FoodProductDao {
     List<FoodProductEntity> searchProductsBySource(
             String sourceId, String searchTerm, int limit, int offset);
 
-    // ========== FAVORITES MANAGEMENT ==========
+    // ========== FAVORITES (read side) ==========
+    // The favorite pin lives in user_item_data: set it with
+    // UserItemDataDao.setFavorite(). These read the products it points at.
 
     /**
      * Get all favorite products
      */
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM food_products WHERE id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")"
+            + " ORDER BY lastUpdated DESC")
     List<FoodProductEntity> getFavoriteProducts();
 
     /**
      * Get all favorite products with LiveData
      */
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastUpdated DESC")
+    @Query("SELECT * FROM food_products WHERE id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")"
+            + " ORDER BY lastUpdated DESC")
     LiveData<List<FoodProductEntity>> getFavoriteProductsLive();
 
     /**
-     * Get favorite count
+     * Get favorite count (favorites whose product row exists)
      */
-    @Query("SELECT COUNT(*) FROM food_products WHERE isFavorite = 1")
+    @Query("SELECT COUNT(*) FROM food_products WHERE id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")")
     int getFavoriteCount();
-
-    /**
-     * Mark product as favorite
-     */
-    @Query("UPDATE food_products SET isFavorite = 1 WHERE id = :productId")
-    int markAsFavorite(String productId);
-
-    /**
-     * Unmark product as favorite
-     */
-    @Query("UPDATE food_products SET isFavorite = 0 WHERE id = :productId")
-    int unmarkAsFavorite(String productId);
-
-    /**
-     * Toggle favorite status
-     */
-    @Query("UPDATE food_products SET isFavorite = NOT isFavorite WHERE id = :productId")
-    int toggleFavorite(String productId);
 
     // ========== ACCESS TRACKING ==========
 
@@ -288,9 +275,11 @@ public interface FoodProductDao {
 
     /**
      * Delete cached products not viewed since {@code threshold}, never touching
-     * favorites or bulk-imported (localImport) rows. Returns the number deleted.
+     * bulk-imported (localImport) rows, items with user data (favorite, custom
+     * photo, preferred serving) or items used by a meal. Returns the number deleted.
      */
-    @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND isFavorite = 0 AND localImport = 0"
+    @Query("DELETE FROM food_products WHERE lastViewed < :threshold AND localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_PRODUCT_IDS + ")"
             + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteExpiredProducts(long threshold);
 
@@ -301,26 +290,26 @@ public interface FoodProductDao {
     void clearAllProducts();
 
     // ========== CACHE MANAGEMENT (settings) ==========
-    // Per-"pin" operations backing the three-section cache card in Settings.
-    // Every row carries two orthogonal retention pins: isFavorite and localImport.
-    //   - Browsed cache  = localImport 0, isFavorite 0  (no pin)
-    //   - Favorites     = isFavorite 1                 (favorite pin)
-    //   - Downloaded     = localImport 1                (import pin)
-    // Clearing a section clears one pin: a row that still holds the other pin is
-    // downgraded (kept), a row left with no pin is deleted. Orchestrated in
-    // ProductRepository; section-2 favorite total reuses getFavoriteCount().
+    // Operations backing the cache card in Settings, orchestrated by
+    // CacheRepository. What keeps a row ("pins"):
+    //   - localImport = 1          downloaded dataset (column on this row)
+    //   - a user_item_data row     favorite, custom photo or preferred serving
+    //   - a meal_portions row      used by a meal (journal, not cache)
+    // Clearing a section removes one kind of pin; a row still held by another
+    // pin is kept, a row left with none is deleted.
 
     /**
-     * Count of browsed-cache products - opened from search, neither favorited nor
-     * part of a downloaded dataset (no retention pin). Drives the section-1 count.
+     * Count of browsed-cache products - opened from search, held by no pin.
+     * Drives the section-1 count.
      */
-    @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0 AND isFavorite = 0"
+    @Query("SELECT COUNT(*) FROM food_products WHERE localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_PRODUCT_IDS + ")"
             + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int getBrowsedCacheCount();
 
     /**
      * Count of products belonging to one source's downloaded dataset (localImport = 1,
-     * favorited or not). Drives a section-3 source-row count.
+     * whatever else holds them). Drives a section-3 source-row count.
      *
      * @param sourceId The data source id (e.g. "CIQUAL", "USDA")
      */
@@ -328,70 +317,56 @@ public interface FoodProductDao {
     int getDownloadCountBySource(String sourceId);
 
     /**
-     * Section 1 - delete the browsed cache: flagless rows only. Favorites and
-     * downloaded rows are untouched. Returns the number deleted.
+     * Section 1 - delete the browsed cache: rows held by no pin. Returns the
+     * number deleted.
      */
-    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 0"
+    @Query("DELETE FROM food_products WHERE localImport = 0"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_PRODUCT_IDS + ")"
             + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteBrowsedCache();
 
-    // ========== MEAL-USED PRODUCTS (journal, not cache) ==========
-    // A products logged in a meal is part of the journal, not the cache: every
-    // clear operation keeps it. Where an operation removes a PIN (favorite,
-    // downloaded dataset, clear all), meal-used rows lose the pin instead of the
-    // row, so they stay as plain rows. The counts and deletes above exclude them.
-
-    /** Clear favorites, part 0 - meal-used favorites lose the pin, keep the row. */
-    @Query("UPDATE food_products SET isFavorite = 0 WHERE localImport = 0 AND isFavorite = 1"
-            + " AND id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
-    int unmarkFavoriteOnMealItems();
-
-    /** Remove a dataset, part 0 - meal-used dataset rows lose the pin, keep the row. */
-    @Query("UPDATE food_products SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1"
-            + " AND isFavorite = 0 AND id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
-    int unmarkDownloadOnMealItemsBySource(String sourceId);
-
-    /** Clear all, part A - delete every row a meal doesn't use. */
-    @Query("DELETE FROM food_products WHERE id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
-    int deleteAllExceptMealItems();
-
-    /** Clear all, part B - the meal-used rows that remain lose every pin. */
-    @Query("UPDATE food_products SET isFavorite = 0, localImport = 0 WHERE id IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
-    int unpinMealItems();
-
     /**
-     * Section 2, part A - delete favorites that exist only because they were
-     * favorited (no import pin). Rows that are also downloaded survive via
-     * unmarkFavoriteOnDownloads(). Returns the number deleted.
+     * Section 2, part A - delete rows held ONLY by the favorite pin (not
+     * downloaded, no customisation, not used by a meal), before the pins are
+     * removed with UserItemDataDao.clearAllFavorites(). Returns the number deleted.
      */
-    @Query("DELETE FROM food_products WHERE localImport = 0 AND isFavorite = 1")
+    @Query("DELETE FROM food_products WHERE localImport = 0"
+            + " AND id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")"
+            + " AND id NOT IN (" + UserItemDataEntity.CUSTOMISED_PRODUCT_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteFavoritesOnly();
 
     /**
-     * Section 2, part B - clear the favorite pin on rows that are also downloaded
-     * (C -> D): they stay as plain dataset rows. Returns the number updated.
-     */
-    @Query("UPDATE food_products SET isFavorite = 0 WHERE localImport = 1 AND isFavorite = 1")
-    int unmarkFavoriteOnDownloads();
-
-    /**
-     * Section 3, part A - for one source, delete dataset rows that are not also
-     * favorited (D). Favorited dataset rows survive via
-     * unmarkDownloadOnFavoritesBySource(). Returns the number deleted.
+     * Section 3, part A - for one source, delete dataset rows held by nothing
+     * else (no user data, not used by a meal). Returns the number deleted.
      *
      * @param sourceId The data source id whose dataset is being removed
      */
-    @Query("DELETE FROM food_products WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 0")
+    @Query("DELETE FROM food_products WHERE sourceId = :sourceId AND localImport = 1"
+            + " AND id NOT IN (" + UserItemDataEntity.KEPT_PRODUCT_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteDownloadsOnlyBySource(String sourceId);
 
     /**
-     * Section 3, part B - for one source, clear the import pin on rows that are also
-     * favorited (C -> B): they stay as plain favorites. Returns the number updated.
+     * Section 3, part B - for one source, the dataset rows that remain (held by
+     * user data or a meal) lose the import pin and stay as plain rows.
      *
      * @param sourceId The data source id whose dataset is being removed
      */
-    @Query("UPDATE food_products SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1 AND isFavorite = 1")
-    int unmarkDownloadOnFavoritesBySource(String sourceId);
+    @Query("UPDATE food_products SET localImport = 0 WHERE sourceId = :sourceId AND localImport = 1")
+    int unmarkDownloadsBySource(String sourceId);
+
+    /**
+     * Clear all, part B (after the favorite pins are removed) - delete every row
+     * not held by a customisation or a meal.
+     */
+    @Query("DELETE FROM food_products WHERE id NOT IN (" + UserItemDataEntity.KEPT_PRODUCT_IDS + ")"
+            + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
+    int deleteAllExceptKept();
+
+    /** Clear all, part C - the rows that remain lose the import pin. */
+    @Query("UPDATE food_products SET localImport = 0 WHERE localImport = 1")
+    int unmarkAllDownloads();
 
     /**
      * Delete products by IDs
@@ -408,23 +383,17 @@ public interface FoodProductDao {
     /**
      * Returns all non-null local image paths for food products.
      *
-     * Covers all four local path columns:
+     * Covers the auto-cached path columns:
      *   thumbnailPath     - auto-cached thumbnail (downloaded on favorite)
-     *   imagePath         - auto-cached full-size (future use, currently NULL)
-     *   userThumbnailPath - user-defined thumbnail override ({id}_custom.jpg)
-     *   userImagePath     - user-defined full-size override
+     *   imagePath         - auto-cached full-size hero
+     * Custom photos set by the user live in user_item_data
+     * (UserItemDataDao.getAllCustomImagePaths()).
      *
-     * UNION ALL is correct - the same path cannot appear in multiple columns
-     * by design (_custom suffix distinguishes userThumbnailPath from thumbnailPath).
      * Used by ImagePurgeManager to cross-reference disk files against Room.
      */
     @Query("SELECT thumbnailPath FROM food_products WHERE thumbnailPath IS NOT NULL "
             + "UNION ALL "
-            + "SELECT imagePath FROM food_products WHERE imagePath IS NOT NULL "
-            + "UNION ALL "
-            + "SELECT userThumbnailPath FROM food_products WHERE userThumbnailPath IS NOT NULL "
-            + "UNION ALL "
-            + "SELECT userImagePath FROM food_products WHERE userImagePath IS NOT NULL")
+            + "SELECT imagePath FROM food_products WHERE imagePath IS NOT NULL")
     List<String> getAllLocalImagePaths();
 
     /**
@@ -452,23 +421,7 @@ public interface FoodProductDao {
     @Query("UPDATE food_products SET imagePath = :path WHERE id = :productId")
     void updateImagePath(String productId, String path);
 
-    /**
-     * Updates the user-defined thumbnail path for a product.
-     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path.
-     * Pass null to clear the user thumbnail (restores auto-cached thumbnail display).
-     * Must be called from a background thread.
-     */
-    @Query("UPDATE food_products SET userThumbnailPath = :path WHERE id = :productId")
-    void updateUserThumbnailPath(String productId, String path);
-
-    /**
-     * Updates the user-defined full-size image path for a product.
-     * Called by ProductDetailsActivity after ImagePickerHelper delivers a path.
-     * Pass null to clear the user image (restores remote imageUrl display).
-     * Must be called from a background thread.
-     */
-    @Query("UPDATE food_products SET userImagePath = :path WHERE id = :productId")
-    void updateUserImagePath(String productId, String path);
+    // Custom photos: UserItemDataDao.setImagePath() / setThumbnailPath().
 
     // ========== DATA QUALITY QUERIES ==========
 
@@ -615,7 +568,7 @@ public interface FoodProductDao {
      */
     @Query("SELECT " +
             "COUNT(*) as totalProducts, " +
-            "COUNT(CASE WHEN isFavorite = 1 THEN 1 END) as favoriteCount, " +
+            "(SELECT COUNT(*) FROM user_item_data WHERE itemType = 'FOOD_PRODUCT' AND isFavorite = 1) as favoriteCount, " +
             "AVG(dataCompleteness) as avgCompleteness, " +
             "AVG(dataQualityScore) as avgQuality, " +
             "AVG(accessCount) as avgAccessCount " +

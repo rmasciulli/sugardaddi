@@ -13,6 +13,7 @@ import li.masciul.sugardaddi.SugarDaddiApplication;
 import li.masciul.sugardaddi.core.models.Error;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
 import li.masciul.sugardaddi.data.database.AppDatabase;
@@ -220,10 +221,10 @@ public class ProductRepository {
 
         backgroundExecutor.execute(() -> {
             try {
-                // Use getProductById (same as toggleFavorite) instead of getProductByBarcode
-                FoodProductEntity product = database.foodProductDao()
-                        .getProductById(productId.trim());
-                boolean isFavorite = product != null && product.isFavorite();
+                // The favorite pin lives in user_item_data, keyed like toggleFavorite.
+                UserItemDataEntity data = database.userItemDataDao()
+                        .get(UserItemDataEntity.TYPE_PRODUCT, productId.trim());
+                boolean isFavorite = data != null && data.isFavorite();
                 runOnMainThread(() -> callback.onFavoriteStatus(isFavorite));
             } catch (Exception e) {
                 Log.e(TAG, "Error checking favorite status", e);
@@ -251,25 +252,24 @@ public class ProductRepository {
                 String productId = product.getSearchableId();
                 FoodProductEntity entity = database.foodProductDao()
                         .getProductById(productId);
+                UserItemDataEntity data = database.userItemDataDao()
+                        .get(UserItemDataEntity.TYPE_PRODUCT, productId);
+                boolean newStatus = !(data != null && data.isFavorite());
 
-                boolean newStatus;
-
-                if (entity != null) {
-                    newStatus = !entity.isFavorite();
-                    entity.setFavorite(newStatus);
-
+                if (entity == null) {
+                    // Not yet in Room: save it first (synchronously, we are on the
+                    // background executor), so the pin points at an existing row.
+                    saveProductToDatabaseSync(product, newStatus);
+                } else if (!newStatus) {
                     // Clear both cached-image paths when unfavouriting so Room is
                     // consistent before the files are deleted from disk.
-                    if (!newStatus) {
-                        entity.setThumbnailPath(null);
-                        entity.setImagePath(null);
-                    }
+                    entity.setThumbnailPath(null);
+                    entity.setImagePath(null);
                     database.foodProductDao().updateProduct(entity);
-                } else {
-                    // Not yet in Room - save as favorite
-                    saveProductToDatabase(product, true);
-                    newStatus = true;
                 }
+                // The pin itself lives in user_item_data (kept by every cache rule).
+                database.userItemDataDao().setFavorite(
+                        UserItemDataEntity.TYPE_PRODUCT, productId, newStatus);
 
                 if (ApiConfig.DEBUG_LOGGING) {
                     Log.d(TAG, "Toggled favorite: " + productId + " → " + newStatus);
@@ -535,7 +535,9 @@ public class ProductRepository {
      * entity (with preserved local image paths) rather than the raw network object.
      *
      * Preserved from any existing row (never overwritten by a fresh fetch):
-     *   isFavorite, the four local image paths, localImport, lastViewed, accessCount.
+     *   the two auto-cached image paths, localImport, lastViewed, accessCount.
+     * The user's data (favorite, custom photos, preferred serving) lives in
+     * user_item_data and is never touched by a save.
      */
     @WorkerThread
     private void saveProductToDatabaseSync(FoodProduct product, boolean asFavorite) {
@@ -546,7 +548,9 @@ public class ProductRepository {
             // that was already a favorite.
             FoodProductEntity existingEntity = database.foodProductDao()
                     .getProductById(product.getSearchableId());
-            boolean preserveFavorite = (existingEntity != null && existingEntity.isFavorite());
+            UserItemDataEntity userData = database.userItemDataDao()
+                    .get(UserItemDataEntity.TYPE_PRODUCT, product.getSearchableId());
+            boolean preserveFavorite = userData != null && userData.isFavorite();
 
             FoodProductEntity productEntity = FoodProductEntity.fromFoodProduct(product);
             // Heal-on-open: a favorite should keep its thumbnail + hero cached for
@@ -558,19 +562,14 @@ public class ProductRepository {
             }
 
             if (existingEntity != null) {
-                // Local image paths - user-set or auto-cached. The API response has
-                // no knowledge of local files, so a refresh must never wipe them.
+                // Auto-cached image paths. The API response has no knowledge of
+                // local files, so a refresh must never wipe them. (Custom photos are
+                // in user_item_data, out of reach of this write.)
                 if (existingEntity.getThumbnailPath() != null) {
                     productEntity.setThumbnailPath(existingEntity.getThumbnailPath());
                 }
                 if (existingEntity.getImagePath() != null) {
                     productEntity.setImagePath(existingEntity.getImagePath());
-                }
-                if (existingEntity.getUserThumbnailPath() != null) {
-                    productEntity.setUserThumbnailPath(existingEntity.getUserThumbnailPath());
-                }
-                if (existingEntity.getUserImagePath() != null) {
-                    productEntity.setUserImagePath(existingEntity.getUserImagePath());
                 }
 
                 // View-time state - a background sync must not reset the eviction

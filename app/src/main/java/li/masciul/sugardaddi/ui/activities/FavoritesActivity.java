@@ -27,8 +27,8 @@ import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
-import li.masciul.sugardaddi.data.database.entities.RecipeEntity;
 import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
+import li.masciul.sugardaddi.data.database.relations.RecipeWithNutrition;
 import li.masciul.sugardaddi.ui.adapters.SearchResultsAdapter;
 
 import java.util.ArrayList;
@@ -257,10 +257,11 @@ public class FavoritesActivity extends BaseActivity
                 }
 
                 // ── Recipes ───────────────────────────────────────────────────────
-                List<RecipeEntity> recipeEntities =
-                        database.recipeDao().getFavoriteRecipes();
-                for (RecipeEntity entity : recipeEntities) {
-                    Recipe recipe = entity.toRecipe();
+                // With nutrition and the user's data (favorite flag, custom photos).
+                List<RecipeWithNutrition> recipeEntities =
+                        database.recipeDao().getFavoriteRecipesWithNutrition();
+                for (RecipeWithNutrition withNutrition : recipeEntities) {
+                    Recipe recipe = withNutrition.toRecipe();
                     if (recipe != null) {
                         favorites.add(recipe); // Recipe implements Searchable
                     }

@@ -112,6 +112,8 @@ public class SettingsActivity extends BaseActivity
 
     // Clear all
     private MaterialButton clearAllButton;
+    // Reset my customisations (custom photos, preferred servings)
+    private MaterialButton resetCustomisationsButton;
 
     private CacheRepository cacheRepository;
 
@@ -362,6 +364,7 @@ public class SettingsActivity extends BaseActivity
         downloadedSourcesContainer = findViewById(R.id.downloadedSourcesContainer);
         downloadedSourcesEmpty     = findViewById(R.id.downloadedSourcesEmpty);
         clearAllButton             = findViewById(R.id.clearAllButton);
+        resetCustomisationsButton  = findViewById(R.id.resetCustomisationsButton);
         cacheBrowsedText           = findViewById(R.id.cacheBrowsedText);
         cacheFavoritesText         = findViewById(R.id.cacheFavoritesText);
         cacheDownloadedText        = findViewById(R.id.cacheDownloadedText);
@@ -377,6 +380,10 @@ public class SettingsActivity extends BaseActivity
         if (clearAllButton != null) {
             clearAllButton.setOnClickListener(v ->
                     confirmAndClear(R.string.cache_clear_all_action, this::clearAll));
+        }
+        if (resetCustomisationsButton != null) {
+            resetCustomisationsButton.setOnClickListener(v ->
+                    confirmAndClear(R.string.cache_reset_custom_action, this::resetCustomisations));
         }
 
         // Static section text: description + what deleting it does.
@@ -535,7 +542,10 @@ public class SettingsActivity extends BaseActivity
         }, false);
     }
 
-    /** Clear all - wipe every product and recipe, then reset every local source. */
+    /**
+     * Clear all - favorites, datasets and searched items, then reset every local
+     * source. Items used in a meal and customised items stay.
+     */
     private void clearAll() {
         runCacheOp(() -> {
             cacheRepository.clearAll();
@@ -544,15 +554,23 @@ public class SettingsActivity extends BaseActivity
                 ManagementProvider provider = source.getManagementProvider();
                 if (provider != null) provider.resetDatabaseState(this);
             }
-        }, true);
+        }, false);
+    }
+
+    /** Remove every custom photo and preferred serving; their files become orphans. */
+    private void resetCustomisations() {
+        runCacheOp(() -> cacheRepository.resetCustomisations(), false);
     }
 
     /**
      * Runs a Room cache operation on the background executor, then purges orphaned
-     * image files (or all of them on a full clear), then refreshes the card.
+     * image files (or all of them on a full purge), then refreshes the card.
+     *
+     * Every caller passes false: even "clear all" keeps rows (meal items,
+     * customised items) whose image files must survive, so only orphans go.
      *
      * @param roomOp    The synchronous CacheRepository call(s) to run
-     * @param fullPurge true for "clear all" (purge every image), false otherwise
+     * @param fullPurge true to purge every image file, false for orphans only
      */
     private void runCacheOp(Runnable roomOp, boolean fullPurge) {
         imageSettingsExecutor.execute(() -> {

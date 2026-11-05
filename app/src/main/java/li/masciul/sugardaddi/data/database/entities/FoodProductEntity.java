@@ -43,7 +43,10 @@ import android.util.Log;
  *
  * CACHE MANAGEMENT:
  * - Tracks access patterns via accessCount
- * - Supports favorite marking for offline access
+ * - User data (favorite, custom photos, preferred serving) lives in
+ *   user_item_data, NOT here: this row holds source data only and is rewritten
+ *   by every refresh (see UserItemDataEntity). It is attached on read through
+ *   FoodProductWithNutrition.
  * - Automatic timestamp tracking for cache invalidation
  */
 @Entity(
@@ -51,7 +54,6 @@ import android.util.Log;
         indices = {
                 @Index(value = {"barcode"}, unique = true),
                 @Index(value = {"sourceId", "originalId"}),
-                @Index(value = {"isFavorite"}),
                 @Index(value = {"lastUpdated"}),
                 @Index(value = {"accessCount"}),
                 @Index(value = {"category_code"}),
@@ -124,13 +126,7 @@ public class FoodProductEntity {
     private String thumbnailPath;
     private String imagePath;
 
-    /**
-     * User-defined local paths - set explicitly via ImagePickerHelper.
-     * Co-exist with the auto-cached counterparts; take display priority over them.
-     * Stored in "sugardaddi/thumbnails/({id}_custom.jpg)" and "sugardaddi/products/".
-     */
-    private String userThumbnailPath;
-    private String userImagePath;
+    // Custom photos set by the user live in user_item_data (UserItemDataEntity).
 
     // ========== PRODUCT CHARACTERISTICS ==========
     private String nutriScore;
@@ -169,7 +165,7 @@ public class FoodProductEntity {
     private int dataQualityScore = 0;
 
     // ========== CACHE METADATA ==========
-    private boolean isFavorite = false;
+    // The favorite pin lives in user_item_data (UserItemDataEntity).
     private int accessCount = 0;
 
     // True for rows populated by a downloaded dataset (Ciqual / USDA bulk import).
@@ -258,8 +254,6 @@ public class FoodProductEntity {
         product.setImageUrl(this.imageUrl);
         product.setThumbnailPath(this.thumbnailPath);
         product.setImagePath(this.imagePath);
-        product.setUserThumbnailPath(this.userThumbnailPath);
-        product.setUserImagePath(this.userImagePath);
 
         // Set product characteristics
         product.setNutriScore(this.nutriScore);
@@ -365,8 +359,6 @@ public class FoodProductEntity {
         entity.setImageUrl(product.getImageUrl());
         entity.setThumbnailPath(product.getThumbnailPath());
         entity.setImagePath(product.getImagePath());
-        entity.setUserThumbnailPath(product.getUserThumbnailPath());
-        entity.setUserImagePath(product.getUserImagePath());
 
         // Set product characteristics
         entity.setNutriScore(product.getNutriScore());
@@ -541,13 +533,6 @@ public class FoodProductEntity {
     public String getImagePath() { return imagePath; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
-    // Media - user defined local paths
-    public String getUserThumbnailPath() { return userThumbnailPath; }
-    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
-
-    public String getUserImagePath() { return userImagePath; }
-    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
-
     // Product characteristics
     public String getNutriScore() { return nutriScore; }
     public void setNutriScore(String nutriScore) { this.nutriScore = nutriScore; }
@@ -605,9 +590,6 @@ public class FoodProductEntity {
     }
 
     // Cache metadata
-    public boolean isFavorite() { return isFavorite; }
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
-
     public int getAccessCount() { return accessCount; }
     public void setAccessCount(int accessCount) { this.accessCount = accessCount; }
 

@@ -33,6 +33,7 @@ import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.RecipeUrlBuilder;
 import li.masciul.sugardaddi.data.database.AppDatabase;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.repository.RecipeRepository;
 import li.masciul.sugardaddi.managers.RecipeManager;
 import li.masciul.sugardaddi.ui.delegates.detail.CocktailDbRecipeDetailRenderer;
@@ -872,9 +873,11 @@ public class RecipeDetailsActivity extends BaseActivity
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
             if (isThumbnail) {
-                db.recipeDao().updateUserThumbnailPath(recipe.getSearchableId(), localPath);
+                db.userItemDataDao().setThumbnailPath(
+                        UserItemDataEntity.TYPE_RECIPE, recipe.getSearchableId(), localPath);
             } else {
-                db.recipeDao().updateUserImagePath(recipe.getSearchableId(), localPath);
+                db.userItemDataDao().setImagePath(
+                        UserItemDataEntity.TYPE_RECIPE, recipe.getSearchableId(), localPath);
             }
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(isThumbnail
@@ -896,8 +899,8 @@ public class RecipeDetailsActivity extends BaseActivity
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this).recipeDao()
-                    .updateUserImagePath(recipe.getSearchableId(), null);
+            AppDatabase.getInstance(this).userItemDataDao()
+                    .setImagePath(UserItemDataEntity.TYPE_RECIPE, recipe.getSearchableId(), null);
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(R.string.image_removed),
                         Toast.LENGTH_SHORT).show();
@@ -918,8 +921,8 @@ public class RecipeDetailsActivity extends BaseActivity
                 ((SugarDaddiApplication) getApplication()).getImageStorageManager();
         Executors.newSingleThreadExecutor().execute(() -> {
             storage.deleteFile(pathToDelete);
-            AppDatabase.getInstance(this).recipeDao()
-                    .updateUserThumbnailPath(recipe.getSearchableId(), null);
+            AppDatabase.getInstance(this).userItemDataDao()
+                    .setThumbnailPath(UserItemDataEntity.TYPE_RECIPE, recipe.getSearchableId(), null);
             runOnUiThread(() -> {
                 Toast.makeText(this, getSafeString(R.string.thumbnail_removed),
                         Toast.LENGTH_SHORT).show();

@@ -6,6 +6,7 @@ import java.util.List;
 
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
+import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.data.database.relations.FoodProductWithNutrition;
 
 /**
@@ -88,15 +89,30 @@ public abstract class CombinedProductDao {
      * Get favorite products with nutrition
      */
     @Transaction
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastViewed DESC")
+    @Query("SELECT * FROM food_products WHERE id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")"
+            + " ORDER BY lastViewed DESC")
     public abstract LiveData<List<FoodProductWithNutrition>> getFavoriteProductsWithNutrition();
 
     /**
      * Get favorite products (non-LiveData)
      */
     @Transaction
-    @Query("SELECT * FROM food_products WHERE isFavorite = 1 ORDER BY lastViewed DESC")
+    @Query("SELECT * FROM food_products WHERE id IN (" + UserItemDataEntity.FAVORITE_PRODUCT_IDS + ")"
+            + " ORDER BY lastViewed DESC")
     public abstract List<FoodProductWithNutrition> getFavoriteProductsList();
+
+    /**
+     * Products by id with nutrition and the user's data (favorite, custom
+     * photos) - search-result enrichment (SearchCache).
+     */
+    @Transaction
+    @Query("SELECT * FROM food_products WHERE id IN (:ids)")
+    public abstract List<FoodProductWithNutrition> getProductsWithNutritionByIds(List<String> ids);
+
+    /** Same as above, by barcode. */
+    @Transaction
+    @Query("SELECT * FROM food_products WHERE barcode IN (:barcodes)")
+    public abstract List<FoodProductWithNutrition> getProductsWithNutritionByBarcodes(List<String> barcodes);
 
     /**
      * Search products by data source with hybrid translation support

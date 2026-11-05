@@ -42,7 +42,6 @@ import java.util.*;
         indices = {
                 @Index(value = {"authorId"}),
                 @Index(value = {"dataSource"}),
-                @Index(value = {"isFavorite"}),
                 @Index(value = {"isPublic"}),
                 @Index(value = {"isTemplate"}),
                 @Index(value = {"lastUpdated"})
@@ -184,12 +183,8 @@ public class RecipeEntity {
     private String thumbnailPath;
     private String imagePath;
 
-    /**
-     * User-defined local paths - set explicitly via ImagePickerHelper.
-     * Co-exist with auto-cached counterparts; take display priority over them.
-     */
-    private String userThumbnailPath;
-    private String userImagePath;
+    // Custom photos set by the user live in user_item_data (UserItemDataEntity),
+    // attached on read through RecipeWithNutrition.
 
     // ========== TAGS ==========
     private String tagsJson; // Set<String> as JSON
@@ -198,7 +193,7 @@ public class RecipeEntity {
     private float completenessScore = 0.0f;
 
     // ========== CACHE METADATA ==========
-    private boolean isFavorite = false;
+    // The favorite pin lives in user_item_data (UserItemDataEntity).
     private int accessCount = 0;
 
     /**
@@ -292,7 +287,6 @@ public class RecipeEntity {
 
         // Set status flags
         recipe.setPublic(this.isPublic);
-        recipe.setFavorite(this.isFavorite);
         recipe.setTemplate(this.isTemplate);
 
         // Set ratings
@@ -305,8 +299,6 @@ public class RecipeEntity {
         recipe.setVideoUrl(this.videoUrl);
         recipe.setThumbnailPath(this.thumbnailPath);
         recipe.setImagePath(this.imagePath);
-        recipe.setUserThumbnailPath(this.userThumbnailPath);
-        recipe.setUserImagePath(this.userImagePath);
 
         // Restore source identification
         recipe.setOriginalId(this.originalId);
@@ -415,7 +407,6 @@ public class RecipeEntity {
 
         // Set status flags
         entity.setPublic(recipe.isPublic());
-        entity.setFavorite(recipe.isFavorite());
         entity.setTemplate(recipe.isTemplate());
 
         // Set ratings
@@ -428,8 +419,6 @@ public class RecipeEntity {
         entity.setVideoUrl(recipe.getVideoUrl());
         entity.setThumbnailPath(recipe.getThumbnailPath());
         entity.setImagePath(recipe.getImagePath());
-        entity.setUserThumbnailPath(recipe.getUserThumbnailPath());
-        entity.setUserImagePath(recipe.getUserImagePath());
 
         // Persist source identification
         entity.setOriginalId(recipe.getOriginalId());
@@ -634,13 +623,6 @@ public class RecipeEntity {
     public String getImagePath() { return imagePath; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
 
-    // Media - user defined local paths
-    public String getUserThumbnailPath() { return userThumbnailPath; }
-    public void setUserThumbnailPath(String userThumbnailPath) { this.userThumbnailPath = userThumbnailPath; }
-
-    public String getUserImagePath() { return userImagePath; }
-    public void setUserImagePath(String userImagePath) { this.userImagePath = userImagePath; }
-
     // Tags
     public String getTagsJson() { return tagsJson; }
     public void setTagsJson(String tagsJson) { this.tagsJson = tagsJson; }
@@ -652,9 +634,6 @@ public class RecipeEntity {
     }
 
     // Cache metadata
-    public boolean isFavorite() { return isFavorite; }
-    public void setFavorite(boolean favorite) { isFavorite = favorite; }
-
     public int getAccessCount() { return accessCount; }
     public void setAccessCount(int accessCount) { this.accessCount = accessCount; }
 

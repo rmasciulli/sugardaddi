@@ -399,11 +399,11 @@
 
     <string name="cache_browsed_title">Searched items</string>
     <string name="cache_browsed_desc">Any product or recipe you’ve searched and opened recently.</string>
-    <string name="cache_browsed_action">Clearing this cache removes every item you’ve consulted in the last 30 days. Your favourites and downloaded data sources are kept.</string>
+    <string name="cache_browsed_action">Clearing this cache removes every item you’ve consulted in the last 30 days. Your favourites, customised items, items used in a meal and downloaded data sources are kept.</string>
 
     <string name="cache_favorites_title">Favourites</string>
     <string name="cache_favorites_desc">Products and recipes you’ve marked as favourite.</string>
-    <string name="cache_favorites_action">Clearing this cache deletes all your favourites. Items that originate from a data source you downloaded are kept but are unmarked as favourite.</string>
+    <string name="cache_favorites_action">Clearing this cache deletes all your favourites. Items that are also downloaded, customised or used in a meal are kept but are unmarked as favourite.</string>
 
     <string name="cache_downloaded_title">Downloaded data sources</string>
     <string name="cache_downloaded_desc">Datasets you’ve downloaded to your device for offline use.</string>
@@ -412,7 +412,9 @@
     <string name="cache_downloaded_note">Clearing a source removes its data from the disk. Items you’ve marked as favourite are kept but they’re not categorised as being from a downloaded data source anymore.</string>
 
     <string name="cache_clear_all_title">Clear all cached data</string>
-    <string name="cache_clear_all_action">Removes everything: searched items, favourites, and downloaded data sources.</string>
+    <string name="cache_clear_all_action">Removes searched items, favourites and downloaded data sources. Items used in a meal and items you customised (photos, serving sizes) are kept.</string>
+    <string name="cache_reset_custom_title">Reset my customisations</string>
+    <string name="cache_reset_custom_action">Removes your custom photos and preferred serving sizes from every product and recipe. Favourites are kept.</string>
 
     <string name="cache_products_count">Products: %1$d</string>
     <string name="cache_recipes_count">Recipes: %1$d</string>
