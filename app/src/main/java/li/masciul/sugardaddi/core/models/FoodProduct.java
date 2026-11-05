@@ -2,6 +2,7 @@ package li.masciul.sugardaddi.core.models;
 
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.Categorizable;
@@ -204,6 +205,15 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private int dataQualityScore = 0;
     private boolean isFavorite = false;
     private int accessCount = 0;
+
+    // ========== USER'S PREFERRED SERVING (change 5b) ==========
+    // From user_item_data, attached on read (FoodProductWithNutrition /
+    // RecipeWithNutrition). Never part of the source data: not compared, not
+    // merged, not written to the cached row.
+    /** Typical serving the user set, in userServingUnit; null = use the source's. */
+    private Double userServingQuantity;
+    /** G or ML; set together with userServingQuantity. */
+    private Unit userServingUnit;
 
     // ========== CONSTRUCTORS ==========
 
@@ -1271,6 +1281,17 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
 
     public void setFavorite(boolean favorite) {
         this.isFavorite = favorite;
+    }
+
+    // ========== USER'S PREFERRED SERVING (change 5b) ==========
+
+    public Double getUserServingQuantity() { return userServingQuantity; }
+    public Unit getUserServingUnit() { return userServingUnit; }
+
+    /** Set or clear (null) the user's preferred serving. No touch(): not source data. */
+    public void setUserServing(Double quantity, Unit unit) {
+        this.userServingQuantity = quantity;
+        this.userServingUnit = quantity != null ? unit : null;
     }
 
     public int getAccessCount() {

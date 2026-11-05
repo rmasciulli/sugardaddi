@@ -44,6 +44,7 @@ import li.masciul.sugardaddi.ui.delegates.detail.FatSecretRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.MealDbRecipeDetailRenderer;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.components.QuantityInputView;
+import li.masciul.sugardaddi.ui.components.TypicalServingDialog;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.ui.utils.MealEntryHelper;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
@@ -173,6 +174,11 @@ public class RecipeDetailsActivity extends BaseActivity
     private Double inputServingQuantity;
     @NonNull
     private Unit inputUnit = Unit.G;
+    /** The source's own serving size and unit, shown for reference when editing. */
+    @Nullable
+    private Double sourceServingQuantity;
+    @NonNull
+    private Unit sourceServingUnit = Unit.G;
     /** True while a save is running: the button stays disabled with its progress text. */
     private boolean savingToMeal;
 
@@ -429,6 +435,51 @@ public class RecipeDetailsActivity extends BaseActivity
         button.setEnabled(ready && (quantityInput == null || quantityInput.getQuantity() != null));
     }
 
+    // ========== TYPICAL SERVING (change 5b) ==========
+
+    /**
+     * Open the typical serving editor. Saving stores the user's value
+     * (user_item_data) and applies it to the input at once: what the user
+     * entered is kept and re-read with the new size, including an entry being
+     * updated (decision 5b, question 4).
+     */
+    private void editTypicalServing() {
+        Recipe recipe = recipeManager.getCurrentRecipe();
+        if (recipe == null || quantityInput == null) return;
+        Unit unit = inputUnit;
+        Double source = sourceServingUnit == unit ? sourceServingQuantity : null;
+        boolean hasUserValue = recipe.getUserServingQuantity() != null;
+
+        TypicalServingDialog.show(this, unit, quantityInput.getTypicalServing(), source,
+                hasUserValue, new TypicalServingDialog.Listener() {
+                    @Override public void onSave(double quantity) {
+                        saveTypicalServing(recipe, quantity, unit);
+                    }
+                    @Override public void onReset() {
+                        saveTypicalServing(recipe, null, unit);
+                    }
+                });
+    }
+
+    /** Store (or clear, with null) the user's typical serving, then apply it. */
+    private void saveTypicalServing(@NonNull Recipe recipe, @Nullable Double quantity,
+                                    @NonNull Unit unit) {
+        String itemId = recipe.getSearchableId();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase.getInstance(this).userItemDataDao().setServing(
+                    UserItemDataEntity.TYPE_RECIPE, itemId, quantity,
+                    UserItemDataEntity.unitToColumn(unit));
+            runOnUiThread(() -> {
+                recipe.setUserServing(quantity, unit);
+                Double effective = quantity != null
+                        ? quantity
+                        : (sourceServingUnit == unit ? sourceServingQuantity : null);
+                inputServingQuantity = effective;
+                if (quantityInput != null) quantityInput.setTypicalServing(effective);
+            });
+        });
+    }
+
     // ========== MEAL ENTRY: LOOKUP AND PREFILL ==========
 
     /**
@@ -521,10 +572,20 @@ public class RecipeDetailsActivity extends BaseActivity
             }
         }
 
+        // The user's preferred serving wins over the source's (change 5b).
+        sourceServingQuantity = servingQuantity;
+        sourceServingUnit = unit;
+        Double userServing = recipe.getUserServingQuantity();
+        if (userServing != null && userServing > 0) {
+            servingQuantity = userServing;
+            unit = recipe.getUserServingUnit() == Unit.ML ? Unit.ML : Unit.G;
+        }
+
         quantityInput = input;
         inputServingQuantity = servingQuantity;
         inputUnit = unit;
         input.setOnQuantityChangedListener(quantity -> updateAddButtonState());
+        input.setOnTypicalServingClickListener(this::editTypicalServing);
         if (carried != null) {
             // What the user was working on wins (refresh, rotation).
             input.setup(servingQuantity, unit);

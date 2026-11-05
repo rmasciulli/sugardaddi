@@ -736,6 +736,12 @@
     <string name="quantity_not_set">Not set</string>
     <string name="quantity_decrease">Fewer servings</string>
     <string name="quantity_increase">More servings</string>
+    <string name="quantity_edit_typical">Edit the typical serving size</string>
+    <!-- Typical serving editor (TypicalServingDialog) -->
+    <string name="typical_serving_dialog_title">Typical serving size</string>
+    <string name="typical_serving_source">Source value: %1$s</string>
+    <string name="typical_serving_source_none">The source gives no serving size.</string>
+    <string name="typical_serving_reset">Use source value</string>
     <!-- Page indicator (PagerDotsView), read by TalkBack -->
     <string name="pager_page_indicator">Page %1$d of %2$d</string>
     <string name="remove_item">Remove item</string>

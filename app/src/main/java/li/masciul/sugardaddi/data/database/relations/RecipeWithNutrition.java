@@ -74,6 +74,8 @@ public class RecipeWithNutrition {
             recipeModel.setFavorite(data.isFavorite());
             recipeModel.setUserImagePath(data.getImagePath());
             recipeModel.setUserThumbnailPath(data.getThumbnailPath());
+            recipeModel.setUserServing(data.getServingQuantity(),
+                    UserItemDataEntity.servingUnitOf(data));
             recipeModel.setLastUpdated(lastUpdated);
         }
 

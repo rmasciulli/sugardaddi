@@ -735,6 +735,12 @@
     <string name="quantity_not_set">Non renseignée</string>
     <string name="quantity_decrease">Moins de portions</string>
     <string name="quantity_increase">Plus de portions</string>
+    <string name="quantity_edit_typical">Modifier la portion habituelle</string>
+    <!-- Éditeur de la portion habituelle (TypicalServingDialog) -->
+    <string name="typical_serving_dialog_title">Portion habituelle</string>
+    <string name="typical_serving_source">Valeur de la source : %1$s</string>
+    <string name="typical_serving_source_none">La source n\'indique pas de portion.</string>
+    <string name="typical_serving_reset">Valeur de la source</string>
     <!-- Indicateur de page (PagerDotsView), lu par TalkBack -->
     <string name="pager_page_indicator">Page %1$d sur %2$d</string>
     <string name="remove_item">Retirer l\'aliment</string>

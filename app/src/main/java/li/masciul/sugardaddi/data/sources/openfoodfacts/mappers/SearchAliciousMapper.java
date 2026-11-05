@@ -7,8 +7,6 @@ import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousHit;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.SearchAliciousResponse;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.ServingSize;
-import li.masciul.sugardaddi.core.enums.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -297,21 +295,18 @@ public class SearchAliciousMapper {
     }
 
     /**
-     * Map metadata: completeness score, quantity/serving size.
+     * Map metadata: completeness score.
+     *
+     * No serving size here: the only size a search hit carries is "quantity", the
+     * PACKAGE's net quantity ("400 g", "1 L"). It used to be mapped as the serving
+     * size, so an item opened from search defaulted to the whole package. The real
+     * serving size arrives with the full product (OpenFoodFactsMapper).
      */
     private static void mapMetadata(FoodProduct product, SearchAliciousHit hit) {
         // Completeness maps to data quality fields
         if (hit.getCompleteness() != null) {
             product.setDataCompleteness(hit.getCompleteness().floatValue());
             product.setDataQualityScore((int) (hit.getCompleteness() * 100));
-        }
-
-        // Parse serving size from quantity string
-        if (hit.getQuantity() != null && !hit.getQuantity().trim().isEmpty()) {
-            ServingSize servingSize = parseServingSize(hit.getQuantity());
-            if (servingSize != null) {
-                product.setServingSize(servingSize);
-            }
         }
     }
 
@@ -413,70 +408,6 @@ public class SearchAliciousMapper {
         }
 
         return true;
-    }
-
-    /**
-     * Parse serving size from a quantity string.
-     *
-     * Handles formats like "100 g", "1 L", "250ml", "500g", "1.5 kg".
-     *
-     * @param quantityStr Quantity string from SearchAlicious
-     * @return ServingSize or null if not parseable
-     */
-    private static ServingSize parseServingSize(String quantityStr) {
-        if (quantityStr == null || quantityStr.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            String normalized = quantityStr.trim().toLowerCase();
-
-            // Extract numeric part and unit part
-            String numberPart = normalized.replaceAll("[^0-9.,]", "");
-            String unitPart = normalized.replaceAll("[0-9.,\\s]", "");
-
-            if (numberPart.isEmpty()) {
-                return null;
-            }
-
-            double amount = Double.parseDouble(numberPart.replace(',', '.'));
-            Unit unit = parseUnit(unitPart);
-            if (unit == null) {
-                unit = Unit.G; // default to grams if unit unrecognized
-            }
-
-            ServingSize servingSize = new ServingSize(amount, unit);
-            servingSize.setDescription(quantityStr);
-            return servingSize;
-
-        } catch (NumberFormatException e) {
-            Log.w(TAG, "Failed to parse quantity: " + quantityStr, e);
-            return null;
-        }
-    }
-
-    /**
-     * Parse unit string to Unit enum.
-     *
-     * @param unitStr Unit string (e.g., "g", "ml", "l", "kg")
-     * @return Unit enum value, or null if unrecognized
-     */
-    private static Unit parseUnit(String unitStr) {
-        if (unitStr == null || unitStr.isEmpty()) return null;
-
-        switch (unitStr.toLowerCase()) {
-            case "g": case "gr": case "gram": case "grams":         return Unit.G;
-            case "kg": case "kilo": case "kilogram": case "kilograms": return Unit.KG;
-            case "mg": case "milligram": case "milligrams":         return Unit.MG;
-            case "cg": case "centigram": case "centigrams":         return Unit.CG;
-            case "l": case "liter": case "liters":
-            case "litre": case "litres":                            return Unit.L;
-            case "ml": case "milliliter": case "milliliters":
-            case "millilitre": case "millilitres":                  return Unit.ML;
-            case "cl": case "centiliter": case "centiliters":
-            case "centilitre": case "centilitres":                  return Unit.CL;
-            default:                                                return null;
-        }
     }
 
     // ========== VALIDATION ==========

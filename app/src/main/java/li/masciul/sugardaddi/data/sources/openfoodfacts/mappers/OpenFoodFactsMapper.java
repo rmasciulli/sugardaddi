@@ -5,6 +5,7 @@ import android.util.Log;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.openfoodfacts.OpenFoodFactsConstants;
@@ -707,17 +708,52 @@ public class OpenFoodFactsMapper {
     }
 
     /**
-     * Map serving size
+     * Map serving size.
+     *
+     * serving_size is free text ("1 biscuit (12 g)", "250 ml"): kept as the
+     * description. serving_quantity is the same serving as a NUMBER, in
+     * serving_quantity_unit (g or ml): it becomes the gram or ml equivalent, which
+     * is what the default amount and the quantity input use. Parsing the text alone
+     * lost it ("1 biscuit (12 g)" read as 1 x "biscuit", no grams).
      */
     private void mapServingSize(FoodProduct product, OpenFoodFactsProduct offProduct) {
-        if (offProduct.getServingSize() != null && !offProduct.getServingSize().trim().isEmpty()) {
-            try {
-                // Use ServingSize constructor that parses description
-                ServingSize serving = new ServingSize(offProduct.getServingSize());
-                product.setServingSize(serving);
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to parse serving size: " + offProduct.getServingSize(), e);
+        String text = offProduct.getServingSize();
+        if (text != null && text.trim().isEmpty()) text = null;
+        Double quantity = offProduct.getServingQuantity();
+        boolean hasQuantity = quantity != null && quantity > 0
+                && !quantity.isInfinite() && !quantity.isNaN();
+        if (text == null && !hasQuantity) return;
+
+        try {
+            boolean volume = hasQuantity && isVolumeServing(product, offProduct);
+            ServingSize serving = text != null
+                    ? new ServingSize(text.trim())           // parses the description
+                    : new ServingSize(quantity, volume ? Unit.ML : Unit.G);
+            if (hasQuantity) {
+                if (volume) {
+                    serving.setMlEquivalent(quantity);
+                } else {
+                    serving.setGramEquivalent(quantity);
+                }
             }
+            product.setServingSize(serving);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to map serving size: " + text + " / " + quantity, e);
         }
+    }
+
+    /**
+     * Is serving_quantity in ml? serving_quantity_unit says so when present; older
+     * records lack it, and then the nutrition basis decides (per 100 ml -> ml).
+     */
+    private static boolean isVolumeServing(FoodProduct product, OpenFoodFactsProduct offProduct) {
+        String unit = offProduct.getServingQuantityUnit();
+        if (unit != null && !unit.trim().isEmpty()) {
+            return unit.trim().equalsIgnoreCase("ml");
+        }
+        NutritionBasis basis = product.getNutrition() != null
+                ? product.getNutrition().getBasis()
+                : resolveBasis(offProduct.getQuantity());
+        return basis == NutritionBasis.PER_100ML;
     }
 }

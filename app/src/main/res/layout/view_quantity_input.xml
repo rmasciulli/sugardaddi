@@ -55,10 +55,16 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
+            <!-- Typical serving: tap to edit it (QuantityInputView reports the tap,
+                 the screen opens TypicalServingDialog). Primary color + pencil
+                 say it is editable. -->
             <LinearLayout
+                android:id="@+id/servingsTypicalRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
+                android:background="?attr/selectableItemBackground"
+                android:contentDescription="@string/quantity_edit_typical"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -75,8 +81,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_edit"
+                    app:tint="?attr/colorPrimary" />
 
             </LinearLayout>
 
@@ -163,10 +177,16 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
+            <!-- Typical serving: tap to edit it (QuantityInputView reports the tap,
+                 the screen opens TypicalServingDialog). Primary color + pencil
+                 say it is editable. -->
             <LinearLayout
+                android:id="@+id/customTypicalRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
+                android:background="?attr/selectableItemBackground"
+                android:contentDescription="@string/quantity_edit_typical"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -183,8 +203,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="4dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_edit"
+                    app:tint="?attr/colorPrimary" />
 
             </LinearLayout>
 

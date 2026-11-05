@@ -3,6 +3,7 @@ package li.masciul.sugardaddi.core.models;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.Difficulty;
 import li.masciul.sugardaddi.core.enums.ProductType;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.interfaces.Categorizable;
@@ -101,6 +102,15 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     // ========== STATUS FLAGS ==========
     private boolean isFavorite = false;
     private boolean isTemplate = false;
+
+    // ========== USER'S PREFERRED SERVING (change 5b) ==========
+    // From user_item_data, attached on read (FoodProductWithNutrition /
+    // RecipeWithNutrition). Never part of the source data: not compared, not
+    // merged, not written to the cached row.
+    /** Typical serving the user set, in userServingUnit; null = use the source's. */
+    private Double userServingQuantity;
+    /** G or ML; set together with userServingQuantity. */
+    private Unit userServingUnit;
 
     /** True when this Recipe was built from a lightweight search result that
      * structurally lacks full detail (e.g. FatSecret's recipes/search/v3,
@@ -1037,6 +1047,17 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
 
     public boolean isFavorite() { return isFavorite; }
     public void setFavorite(boolean favorite) { this.isFavorite = favorite; touch(); }
+
+    // ========== USER'S PREFERRED SERVING (change 5b) ==========
+
+    public Double getUserServingQuantity() { return userServingQuantity; }
+    public Unit getUserServingUnit() { return userServingUnit; }
+
+    /** Set or clear (null) the user's preferred serving. No touch(): not source data. */
+    public void setUserServing(Double quantity, Unit unit) {
+        this.userServingQuantity = quantity;
+        this.userServingUnit = quantity != null ? unit : null;
+    }
 
     public boolean isTemplate() { return isTemplate; }
     public void setTemplate(boolean template) { this.isTemplate = template; touch(); }

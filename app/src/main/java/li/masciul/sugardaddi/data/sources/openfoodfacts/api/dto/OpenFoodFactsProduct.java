@@ -159,6 +159,10 @@ public class OpenFoodFactsProduct {
     @SerializedName("serving_quantity")
     private Double servingQuantity;
 
+    /** Unit of serving_quantity: "g" or "ml" (absent on older records). */
+    @SerializedName("serving_quantity_unit")
+    private String servingQuantityUnit;
+
     // ========== METADATA ==========
     @SerializedName("countries")
     private String countries;
@@ -395,6 +399,7 @@ public class OpenFoodFactsProduct {
     public String getNutritionDataPer() { return nutritionDataPer; }
     public String getServingSize() { return servingSize; }
     public Double getServingQuantity() { return servingQuantity; }
+    public String getServingQuantityUnit() { return servingQuantityUnit; }
 
     // ========== GETTERS - METADATA ==========
     public String getCountries() { return countries; }

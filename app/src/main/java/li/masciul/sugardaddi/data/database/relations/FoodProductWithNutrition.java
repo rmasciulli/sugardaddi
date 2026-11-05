@@ -63,6 +63,8 @@ public class FoodProductWithNutrition {
             foodProduct.setFavorite(data.isFavorite());
             foodProduct.setUserImagePath(data.getImagePath());
             foodProduct.setUserThumbnailPath(data.getThumbnailPath());
+            foodProduct.setUserServing(data.getServingQuantity(),
+                    UserItemDataEntity.servingUnitOf(data));
         }
         return foodProduct;
     }

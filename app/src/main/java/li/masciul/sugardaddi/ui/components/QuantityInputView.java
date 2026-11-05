@@ -84,6 +84,8 @@ public class QuantityInputView extends LinearLayout {
     private boolean updatingField;
 
     @Nullable private OnQuantityChangedListener listener;
+    /** Told when the user taps "Typical serving size" (the screen opens the editor). */
+    @Nullable private Runnable typicalServingClickListener;
 
     // ========== CONSTRUCTORS ==========
 
@@ -138,6 +140,12 @@ public class QuantityInputView extends LinearLayout {
         });
         // The number has no box and can be short ("5"): the whole row is the target.
         findViewById(R.id.customQuantityRow).setOnClickListener(v -> focusCustomField());
+        // Typical serving size, on both pages: the screen decides what editing means.
+        OnClickListener typicalClick = v -> {
+            if (typicalServingClickListener != null) typicalServingClickListener.run();
+        };
+        findViewById(R.id.servingsTypicalRow).setOnClickListener(typicalClick);
+        findViewById(R.id.customTypicalRow).setOnClickListener(typicalClick);
 
         customQuantityInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -200,6 +208,38 @@ public class QuantityInputView extends LinearLayout {
 
     public void setOnQuantityChangedListener(@Nullable OnQuantityChangedListener listener) {
         this.listener = listener;
+    }
+
+    /**
+     * Called when the user taps "Typical serving size". Without a listener the
+     * rows still look editable, so a screen showing the input must set one.
+     */
+    public void setOnTypicalServingClickListener(@Nullable Runnable listener) {
+        this.typicalServingClickListener = listener;
+    }
+
+    /** The serving size the input currently works with (null when unknown). */
+    @Nullable
+    public Double getTypicalServing() {
+        return state.getServingQuantity();
+    }
+
+    /**
+     * The typical serving size changed (the user edited it). What the user
+     * entered is kept and re-read with the new size (decision 5b, question 4):
+     * a number of servings stays and its amount follows (2 x 40 g = 80 g); a
+     * typed quantity stays and its number of servings follows.
+     *
+     * @param servingQuantity the new size in the input's unit, or null for none
+     */
+    public void setTypicalServing(@Nullable Double servingQuantity) {
+        PortionQuantity.InputMode mode = state.getInputMode();
+        double count = state.getServingCount();
+        Double custom = state.getCustomQuantity();
+        state = new QuantityInputState(servingQuantity, state.getUnit());
+        state.restoreEdits(mode, count, custom);
+        refreshAll();
+        notifyChanged();
     }
 
     /**

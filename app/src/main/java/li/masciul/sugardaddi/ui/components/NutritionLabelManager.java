@@ -21,13 +21,17 @@ import java.util.Locale;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
+import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Meal;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientCategory;
 import li.masciul.sugardaddi.core.models.Nutrition.NutrientInfo;
+import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
 
 /**
@@ -223,9 +227,12 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
      * no longer drift apart (they used to: recipes showed 150 g in the
      * renderer but added 100 g).
      *
-     * Rule: the item's own serving size when it has a usable one, else
-     * {@link #FALLBACK_AMOUNT}. The unit follows the item's nutrition
-     * basis (g or ml) - this returns only the number.
+     * Rule (change 5b): the user's preferred serving when set, else the
+     * item's own serving size when it has a usable one, else
+     * {@link #FALLBACK_AMOUNT}. The unit follows the item's nutrition basis
+     * (g or ml) - this returns only the number, read in that unit: a serving
+     * is read in ml for a per-100 ml item, in g otherwise (never converted
+     * through a density).
      */
     public static double defaultAmountFor(@NonNull Nutritional item) {
         // Meal.getNutrition() is already an absolute total (summed across
@@ -243,11 +250,30 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             return 100.0;
         }
 
+        boolean volume = item.getNutrition() != null
+                && item.getNutrition().getBasis() == NutritionBasis.PER_100ML;
+
+        // 1. The user's preferred serving, when it is in the item's basis unit.
+        Double userQuantity = null;
+        Unit userUnit = null;
+        if (item instanceof FoodProduct) {
+            userQuantity = ((FoodProduct) item).getUserServingQuantity();
+            userUnit = ((FoodProduct) item).getUserServingUnit();
+        } else if (item instanceof Recipe) {
+            userQuantity = ((Recipe) item).getUserServingQuantity();
+            userUnit = ((Recipe) item).getUserServingUnit();
+        }
+        if (userQuantity != null && userQuantity > 0
+                && (userUnit == Unit.ML) == volume) {
+            return userQuantity;
+        }
+
+        // 2. The source's serving size, read in the basis unit.
         ServingSize serving = item.getServingSize();
         if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                return servingGrams;
+            Double amount = volume ? serving.getAsMilliliters() : serving.getAsGrams();
+            if (amount != null && amount > 0) {
+                return amount;
             }
         }
         return FALLBACK_AMOUNT;

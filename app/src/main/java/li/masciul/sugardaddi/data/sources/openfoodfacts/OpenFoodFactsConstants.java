@@ -34,14 +34,14 @@ public final class OpenFoodFactsConstants {
             "code,product_name,brands,categories," +
                     "image_url,image_front_url,image_small_url,image_front_small_url," +
                     "nutrition_grade,ecoscore_grade," +
-                    "serving_size,serving_quantity";
+                    "serving_size,serving_quantity,serving_quantity_unit";
 
     public static final String DETAIL_FIELDS =
             "code,product_name,brands," +
                     "image_url,image_front_url,image_nutrition_url," +
                     "nutrition_grade,ecoscore_grade," +
                     "nutriments,ingredients_text,allergens,traces," +
-                    "serving_size,serving_quantity,quantity," +
+                    "serving_size,serving_quantity,serving_quantity_unit,quantity," +
                     "packaging,manufacturing_places,origins,stores," +
                     "categories,categories_hierarchy,categories_tags,categories_lc";
 

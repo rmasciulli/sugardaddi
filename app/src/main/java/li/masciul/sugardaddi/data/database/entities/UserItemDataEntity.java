@@ -7,6 +7,8 @@ import androidx.room.Index;
 
 import java.util.List;
 
+import li.masciul.sugardaddi.core.enums.Unit;
+
 /**
  * UserItemDataEntity - everything the USER set on a product or recipe (one row
  * per item that has any).
@@ -122,6 +124,23 @@ public class UserItemDataEntity {
             if (row != null && itemType.equals(row.itemType)) return row;
         }
         return null;
+    }
+
+    /**
+     * The row's serving unit as a Unit: ML for "ml", G otherwise; null when no
+     * serving is set. Static on purpose: an instance method named after the
+     * column could be taken by Room for its getter.
+     */
+    @Nullable
+    public static Unit servingUnitOf(@NonNull UserItemDataEntity data) {
+        if (data.servingQuantity == null) return null;
+        return UNIT_ML.equals(data.servingUnit) ? Unit.ML : Unit.G;
+    }
+
+    /** The column value for a Unit: "ml" for ML, "g" for anything else. */
+    @NonNull
+    public static String unitToColumn(@Nullable Unit unit) {
+        return unit == Unit.ML ? UNIT_ML : UNIT_G;
     }
 
     /** True when nothing is set: such a row is deleted (see the class rules). */

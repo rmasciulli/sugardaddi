@@ -289,7 +289,7 @@ public interface OpenFoodFactsAPI {
          * - categories_tags: Standardized category tags with language prefixes
          */
         public static final String CATEGORY_ENHANCED =
-                "code,product_name,brands,image_url,nutriments,serving_size,serving_quantity," +
+                "code,product_name,brands,image_url,nutriments,serving_size,serving_quantity,serving_quantity_unit," +
                         "nutrition_grades,categories,categories_hierarchy,categories_tags," +
                         "categories_tags_en,categories_tags_fr"; // Explicit language variants for categories
 
@@ -300,14 +300,14 @@ public interface OpenFoodFactsAPI {
          * LANGUAGE BEHAVIOR: Product name localized, nutrition data universal
          */
         public static final String NUTRITION_ONLY =
-                "code,product_name,nutriments,serving_size,serving_quantity,nutrition_grades";
+                "code,product_name,nutriments,serving_size,serving_quantity,serving_quantity_unit,nutrition_grades";
 
         /**
          * Extended basic fields with serving information
          * Good balance between performance and information completeness
          */
         public static final String EXTENDED_BASIC =
-                OpenFoodFactsConstants.SEARCH_FIELDS + ",quantity,serving_size,serving_quantity";
+                OpenFoodFactsConstants.SEARCH_FIELDS + ",quantity,serving_size,serving_quantity,serving_quantity_unit";
 
         /**
          * Image-focused fields for visual product displays
