@@ -6,8 +6,8 @@
       1. Hero image - full-width, 200dp, GONE when no imageUrl
       2. Main content card - single card with four sections + three dividers:
            a. Header: cocktail name + category·alcoholic status description
-              Nutrition Facts (GONE unless adding to a meal): quantity input
-              and a "no nutrition data" line where the table will go
+              Nutrition Facts: quantity input and a "no nutrition data" line
+              where the table will go
            b. Glass type row (GONE when no glass tag present)
            c. Ingredients: dot-leader rows (FoodPortion stubs)
            d. Instructions: numbered step rows
@@ -122,20 +122,18 @@
                 </LinearLayout>
 
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-                <!-- NUTRITION FACTS - only when adding to a     -->
-                <!-- meal (this source has no nutrition). Shown  -->
-                <!-- and set up by RecipeDetailsActivity. Same   -->
-                <!-- structure as the product screens: header,   -->
-                <!-- amount input, then where the table goes.    -->
-                <!-- Carries its own leading divider so the      -->
-                <!-- card looks the same when it is GONE.        -->
+                <!-- NUTRITION FACTS - always shown (change 6):  -->
+                <!-- the quantity input sets the amount logged   -->
+                <!-- and the typical serving even without        -->
+                <!-- nutrition, and the table takes the notice's -->
+                <!-- place if this source ever gets nutrition.   -->
+                <!-- Same structure as the product screens.      -->
                 <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
                 <LinearLayout
                     android:id="@+id/nutritionSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                    android:orientation="vertical">
 
                     <View
                         android:layout_width="match_parent"

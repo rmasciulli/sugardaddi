@@ -15,7 +15,6 @@ import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -37,14 +36,11 @@ import li.masciul.sugardaddi.ui.delegates.detail.DefaultProductDetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRenderer;
 import li.masciul.sugardaddi.ui.delegates.detail.DetailRendererRegistry;
 import li.masciul.sugardaddi.ui.delegates.detail.OffProductDetailRenderer;
-import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.ui.delegates.detail.USDAProductDetailRenderer;
 import li.masciul.sugardaddi.ui.scan.ProductBarcodeScanner;
-import li.masciul.sugardaddi.core.models.PortionQuantity;
-import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
-import li.masciul.sugardaddi.ui.utils.MealEntryHelper;
+import li.masciul.sugardaddi.ui.utils.DetailQuantityController;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
 
@@ -154,19 +150,11 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     // Meal context - set when launched with RETURN_TO_MEAL intent extra
     private String returnToMealId = null;
 
-    // Meal entry: Add or Update (see RecipeDetailsActivity for the same flow)
-    /** True once the meal has been checked for this product; the button waits for it. */
-    private boolean mealLookupDone;
-    /** True when the product is already in the meal: the button updates its entry. */
-    private boolean inMeal;
-    /** The entry's logged amount when inMeal; fills the amount field. */
-    @Nullable
-    private PortionQuantity loggedQuantity;
-    /** Product the lookup was started for, so a re-render does not start it again. */
-    @Nullable
-    private String lookupItemId;
-    /** True while a save is running: the button stays disabled with its progress text. */
-    private boolean savingToMeal;
+    /**
+     * The quantity input: setup, typical serving, state, and in meal context the
+     * Add / Update flow. Shared with RecipeDetailsActivity (change 6).
+     */
+    private DetailQuantityController quantityController;
 
     // Scan context - set when launched from a barcode scan (EXTRA_FROM_BARCODE_SCAN)
     private boolean fromBarcodeScan = false;
@@ -186,6 +174,14 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         initializeUIComponents();
         initializeBusinessLogic();
         setupMealContext();
+
+        // Quantity input, typical serving editor, Add / Update (meal context).
+        View mealButtonView = (returnToMealId != null && addToMealContainer != null)
+                ? addToMealContainer.findViewById(R.id.btnAddToMeal) : null;
+        quantityController = new DetailQuantityController(this, UserItemDataEntity.TYPE_PRODUCT,
+                returnToMealId,
+                mealButtonView instanceof android.widget.Button ? (android.widget.Button) mealButtonView : null,
+                savedInstanceState, this::onQuantityAmountChanged);
 
         fromBarcodeScan = getIntent().getBooleanExtra(EXTRA_FROM_BARCODE_SCAN, false);
 
@@ -254,15 +250,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     private void setupMealContext() {
         returnToMealId = getIntent().getStringExtra("RETURN_TO_MEAL");
         if (returnToMealId != null && addToMealContainer != null) {
+            // The button itself is driven by DetailQuantityController.
             addToMealContainer.setVisibility(View.VISIBLE);
-
-            View btnAddToMeal = addToMealContainer.findViewById(R.id.btnAddToMeal);
-            if (btnAddToMeal != null) {
-                btnAddToMeal.setOnClickListener(v -> addToMeal());
-            }
-            // Disabled until the product and the meal are both loaded, so the
-            // label never flips from "Add" to "Update" under the finger.
-            updateAddButtonState();
         }
     }
 
@@ -274,8 +263,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         if (product != null && activeRenderer != null && activeRendererView != null) {
             String language = getCurrentLanguage().getCode();
             activeRenderer.populate(activeRendererView, product, language);
-            // populate() puts the default amount back in the amount field.
-            applyLoggedAmountToField();
+            // populate() rebuilt the table at the default amount: show the input's.
+            if (quantityController != null) quantityController.reapplyAmount();
         }
     }
 
@@ -283,6 +272,7 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     protected void onDestroy() {
         super.onDestroy();
         if (imagePicker != null) imagePicker.shutdown();
+        if (quantityController != null) quantityController.shutdown();
 
         // Destroy the active renderer to release any held resources
         if (activeRenderer != null) {
@@ -461,10 +451,8 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         activeRenderer = renderer;
         activeRendererView = rendererView;
 
-        // 7b. Meal entry: Add or Update, and the logged amount in the amount field
-        applyLoggedAmountToField();
-        startMealLookup(product);
-        updateAddButtonState();
+        // 7b. Quantity input: drives the table, and Add / Update in meal context
+        quantityController.bind(rendererView, product, Unit.G);
 
         // 8. Update toolbar title from renderer (falls back to default string if null)
         String rendererTitle = renderer.getToolbarTitle(product, language);
@@ -817,152 +805,20 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         }
     }
 
-    // ========== ADD TO MEAL ==========
+    // ========== QUANTITY INPUT ==========
 
-    /**
-     * Save the current product in the meal identified by returnToMealId: add it,
-     * or update the amount of its entry when it is already there (re-checked at
-     * save time by MealEntryHelper).
-     *
-     * Uses the quantity currently visible in the renderer's custom amount input.
-     * The renderer must be an OffProductDetailRenderer or DefaultProductDetailRenderer
-     * for the input to be present; in all cases we fall back to the shared default.
-     *
-     * A product WITHOUT nutrition data is saved as 1 serving instead: there
-     * is nothing to scale, so a weight would be an invented number. The
-     * meal counts it as an item with no data (confidence "approximate").
-     */
-    private void addToMeal() {
-        FoodProduct product = productManager.getCurrentProduct();
-        if (product == null) {
-            Toast.makeText(this, "Product not loaded", Toast.LENGTH_SHORT).show();
-            return;
+    /** The input's amount changed: the renderer rescales its nutrition table. */
+    private void onQuantityAmountChanged(double amount) {
+        FoodProduct product = productManager != null ? productManager.getCurrentProduct() : null;
+        if (product != null && activeRenderer != null && activeRendererView != null) {
+            activeRenderer.onAmountChanged(activeRendererView, product, amount,
+                    getCurrentLanguage().getCode());
         }
-
-        // Read quantity from the renderer's amount input (if accessible)
-        FoodPortion portion = product.hasNutritionData()
-                ? new FoodPortion(product, getQuantityFromRenderer(), Unit.G)
-                : new FoodPortion(product, 1, Unit.SERVING);
-        portion.setParentType("MEAL");
-        portion.setParentId(returnToMealId);
-
-        // Disable the button to prevent a double tap
-        savingToMeal = true;
-        updateAddButtonState();
-
-        MealEntryHelper.save(this, returnToMealId, portion, new MealEntryHelper.SaveCallback() {
-            @Override
-            public void onSaved(boolean updated) {
-                Toast.makeText(ProductDetailsActivity.this,
-                        updated ? R.string.meal_updated : R.string.added_to_meal,
-                        Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(ProductDetailsActivity.this, MealDetailsActivity.class);
-                intent.putExtra("extra_meal_id", returnToMealId);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-                finish();
-            }
-
-            @Override
-            public void onError(@NonNull String message) {
-                Toast.makeText(ProductDetailsActivity.this,
-                        "Error saving: " + message, Toast.LENGTH_LONG).show();
-                savingToMeal = false;
-                updateAddButtonState();
-            }
-        });
     }
 
-    /**
-     * Read the quantity value from the renderer's custom amount input.
-     *
-     * The renderer inflated a view with @id/customAmountEditText inside it
-     * and pre-filled it with the default amount, so in practice the field
-     * always holds what the label is showing. We look it up via the active
-     * renderer view. If it is missing or invalid (e.g. layout has no input,
-     * or the user cleared it), fall back to the same shared default the
-     * renderer used: serving size, else 20 g/ml.
-     */
-    private double getQuantityFromRenderer() {
-        if (activeRendererView != null) {
-            com.google.android.material.textfield.TextInputEditText amountInput =
-                    activeRendererView.findViewById(R.id.customAmountEditText);
-            if (amountInput != null) {
-                try {
-                    String text = amountInput.getText().toString().trim();
-                    if (!text.isEmpty()) {
-                        double amount = Double.parseDouble(text);
-                        if (amount > 0) return amount;
-                    }
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-
-        // Fallback: the one shared default (serving size, else 20 g/ml)
-        FoodProduct product = productManager.getCurrentProduct();
-        return product != null
-                ? li.masciul.sugardaddi.ui.components.NutritionLabelManager.defaultAmountFor(product)
-                : li.masciul.sugardaddi.ui.components.NutritionLabelManager.FALLBACK_AMOUNT;
-    }
-
-    /**
-     * Re-enable the Add to Meal button after a failed operation.
-     */
-    /**
-     * Label and state of the meal button: "Add to Meal" or "Update in meal"
-     * depending on whether the product is already in the meal, "Adding..." /
-     * "Updating..." while saving; enabled once the product and the meal lookup
-     * are both done.
-     */
-    private void updateAddButtonState() {
-        if (addToMealContainer == null) return;
-        View view = addToMealContainer.findViewById(R.id.btnAddToMeal);
-        if (!(view instanceof android.widget.Button)) return;
-        android.widget.Button button = (android.widget.Button) view;
-
-        if (savingToMeal) {
-            button.setText(inMeal ? R.string.updating_meal : R.string.adding_to_meal);
-            button.setEnabled(false);
-            return;
-        }
-        button.setText(inMeal ? R.string.update_in_meal : R.string.add_to_meal);
-        button.setEnabled(mealLookupDone && productManager != null
-                && productManager.getCurrentProduct() != null);
-    }
-
-    /**
-     * Check once per product whether it is already in the meal. The answer
-     * sets the button (Add or Update) and fills the amount field with the
-     * logged amount.
-     */
-    private void startMealLookup(@NonNull FoodProduct product) {
-        if (returnToMealId == null) return;
-        String itemId = product.getSearchableId();
-        if (itemId == null || itemId.equals(lookupItemId)) return;
-        lookupItemId = itemId;
-        mealLookupDone = false;
-        updateAddButtonState();
-
-        MealEntryHelper.lookup(this, returnToMealId, "FOOD_PRODUCT", itemId, (found, logged) -> {
-            if (!itemId.equals(lookupItemId)) return; // a newer lookup took over
-            mealLookupDone = true;
-            inMeal = found;
-            loggedQuantity = found ? logged : null;
-            applyLoggedAmountToField();
-            updateAddButtonState();
-        });
-    }
-
-    /**
-     * Products keep the old custom amount field until change 6: put the logged
-     * grams in it, so Update starts from what is logged. Runs after every
-     * populate(), which resets the field to the default amount.
-     */
-    private void applyLoggedAmountToField() {
-        if (loggedQuantity == null || activeRendererView == null) return;
-        Double total = loggedQuantity.getTotalQuantity();
-        if (total == null || total <= 0 || loggedQuantity.getUnit() != Unit.G) return;
-        android.widget.EditText field = activeRendererView.findViewById(R.id.customAmountEditText);
-        if (field != null) field.setText(NutritionLabelManager.formatAmountForInput(total));
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (quantityController != null) quantityController.onSaveInstanceState(outState);
     }
 }

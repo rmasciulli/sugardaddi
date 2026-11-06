@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.ui.delegates.detail;
 
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.widget.FrameLayout;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,22 +11,17 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
 
-import java.util.Locale;
 
 /**
  * DefaultProductDetailRenderer - Catch-all fallback renderer for any FoodProduct.
@@ -62,7 +55,6 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
     private final Context context;
 
     private NutritionLabelManager<FoodProduct> nutritionLabelManager;
-    private TextWatcher customAmountWatcher;
 
     public DefaultProductDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -123,7 +115,6 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
             nutritionLabelManager.clear();
             nutritionLabelManager = null;
         }
-        customAmountWatcher = null;
     }
 
     // ========== POPULATE HELPERS ==========
@@ -301,60 +292,14 @@ public class DefaultProductDetailRenderer implements DetailRenderer {
         double defaultAmount = NutritionLabelManager.defaultAmountFor(product);
         nutritionLabelManager.display(product, defaultAmount);
 
-        TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
-        TextInputEditText amountInput = view.findViewById(R.id.customAmountEditText);
-
-        if (amountLayout != null && amountInput != null) {
-            updateAmountHint(amountLayout, product);
-
-            customAmountWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (nutritionLabelManager == null) return;
-                    try {
-                        String input = s.toString().trim();
-                        if (!input.isEmpty()) {
-                            double amount = Double.parseDouble(input);
-                            if (amount > 0) nutritionLabelManager.updateCustomAmount(amount);
-                        }
-                    } catch (NumberFormatException ignored) {}
-                }
-            };
-            // Pre-fill the field with the amount the label is already
-            // showing (serving size, else 20), so what the user sees in the
-            // field is exactly what "Add to meal" will add. Set BEFORE the
-            // watcher is attached: the label was displayed at this amount
-            // just above, so no recalculation is needed.
-            amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
-            amountInput.setSelectAllOnFocus(true);
-            amountInput.addTextChangedListener(customAmountWatcher);
+        // No nutrition: the input above still sets the amount logged and the
+        // typical serving; say so where the table would be.
+        if (!product.hasNutritionData()) {
+            DetailRendererUtils.showNoNutritionNotice(context, nutritionContainer,
+                    R.string.no_nutrition_data);
         }
     }
 
     // ========== HELPERS ==========
 
-    private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull FoodProduct product) {
-        ServingSize serving = product.getServingSize();
-        String unit = product.getNutrition() != null
-                ? product.getNutrition().getBasis().getUnitLabel()
-                : "g";
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                layout.setHint(context.getString(R.string.custom_amount_with_serving,
-                        formatAmount(servingGrams) + unit));
-                return;
-            }
-        }
-        layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    private String formatAmount(double amount) {
-        return (amount == Math.floor(amount))
-                ? String.format(Locale.getDefault(), "%.0f", amount)
-                : String.format(Locale.getDefault(), "%.1f", amount);
-    }
 }

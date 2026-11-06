@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.ui.delegates.detail;
 
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,9 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -63,9 +58,6 @@ public class USDAProductDetailRenderer implements DetailRenderer {
 
     /** Holds reference to the current NutritionLabelManager for amount updates. */
     private NutritionLabelManager<FoodProduct> nutritionLabelManager;
-
-    /** TextWatcher reference for cleanup in destroy(). */
-    private TextWatcher customAmountWatcher;
 
     public USDAProductDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -124,7 +116,6 @@ public class USDAProductDetailRenderer implements DetailRenderer {
             nutritionLabelManager.clear();
             nutritionLabelManager = null;
         }
-        customAmountWatcher = null;
     }
 
     // ========== POPULATE HELPERS ==========
@@ -258,56 +249,12 @@ public class USDAProductDetailRenderer implements DetailRenderer {
         double defaultAmount = NutritionLabelManager.defaultAmountFor(product);
         nutritionLabelManager.display(product, defaultAmount);
 
-        TextInputLayout   amountLayout = view.findViewById(R.id.customAmountInputLayout);
-        TextInputEditText amountInput  = view.findViewById(R.id.customAmountEditText);
-
-        if (amountLayout != null && amountInput != null) {
-            updateAmountHint(amountLayout, product);
-
-            customAmountWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int i, int i1, int i2) {}
-                @Override public void afterTextChanged(Editable s) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (nutritionLabelManager == null) return;
-                    try {
-                        String input = s.toString().trim();
-                        if (!input.isEmpty()) {
-                            double amount = Double.parseDouble(input);
-                            if (amount > 0) nutritionLabelManager.updateCustomAmount(amount);
-                        }
-                    } catch (NumberFormatException ignored) {}
-                }
-            };
-            // Pre-fill with the amount the label already shows (see the
-            // note in DefaultProductDetailRenderer); BEFORE the watcher.
-            amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
-            amountInput.setSelectAllOnFocus(true);
-            amountInput.addTextChangedListener(customAmountWatcher);
+        // No nutrition: the input above still sets the amount logged and the
+        // typical serving; say so where the table would be.
+        if (!product.hasNutritionData()) {
+            DetailRendererUtils.showNoNutritionNotice(context, nutritionContainer,
+                    R.string.no_nutrition_data);
         }
     }
 
-    private void updateAmountHint(@NonNull TextInputLayout layout,
-                                  @NonNull FoodProduct product) {
-        ServingSize serving = product.getServingSize();
-        String unit = product.getNutrition() != null
-                ? product.getNutrition().getBasis().getUnitLabel()
-                : "g";
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                layout.setHint(context.getString(R.string.custom_amount_with_serving,
-                        formatAmount(servingGrams) + unit));
-                return;
-            }
-        }
-        layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    private String formatAmount(double amount) {
-        return (amount == Math.floor(amount))
-                ? String.format(java.util.Locale.getDefault(), "%.0f", amount)
-                : String.format(java.util.Locale.getDefault(), "%.1f", amount);
-    }
 }

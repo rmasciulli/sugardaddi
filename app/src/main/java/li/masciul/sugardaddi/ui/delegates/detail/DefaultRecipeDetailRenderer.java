@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.ui.delegates.detail;
 
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +10,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
@@ -22,12 +17,10 @@ import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.models.FoodPortion;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.RecipeStep;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * DefaultRecipeDetailRenderer - Catch-all detail renderer for Recipe items.
@@ -58,8 +51,6 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
     private final Context context;
 
     private NutritionLabelManager<Recipe> nutritionLabelManager;
-
-    private TextWatcher customAmountWatcher;
 
     public DefaultRecipeDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -102,7 +93,18 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
             nutritionLabelManager.clear();
             nutritionLabelManager = null;
         }
-        customAmountWatcher = null;
+    }
+
+    /**
+     * Called by the screen (DetailQuantityController) whenever the quantity
+     * input's amount changes: rescale the nutrition table to it.
+     */
+    @Override
+    public void onAmountChanged(@NonNull View view, @NonNull Searchable item,
+                                double amount, @NonNull String language) {
+        if (nutritionLabelManager != null && amount > 0) {
+            nutritionLabelManager.updateCustomAmount(amount);
+        }
     }
 
     /**
@@ -366,49 +368,23 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
         View nutritionCard = view.findViewById(R.id.nutritionCard);
         LinearLayout nutritionContainer = view.findViewById(R.id.nutritionContainer);
         View noNutritionCard = view.findViewById(R.id.noNutritionCard);
-        if (nutritionCard == null || nutritionContainer == null || noNutritionCard == null) return;
+        if (nutritionCard == null || nutritionContainer == null) return;
+
+        // The card always shows: its quantity input works with or without
+        // nutrition (amount logged, typical serving), and the table takes the
+        // notice's place the day the recipe gets nutrition.
+        nutritionCard.setVisibility(View.VISIBLE);
+        if (noNutritionCard != null) noNutritionCard.setVisibility(View.GONE);
 
         if (recipe.hasNutritionData()) {
-            nutritionCard.setVisibility(View.VISIBLE);
-            noNutritionCard.setVisibility(View.GONE);
-
             nutritionLabelManager = new NutritionLabelManager<>(
                     context, nutritionContainer, NutritionLabelMode.DETAILED);
-
-            double defaultAmount = NutritionLabelManager.defaultAmountFor(recipe);
-            nutritionLabelManager.display(recipe, defaultAmount);
-
-            TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
-            TextInputEditText amountInput = view.findViewById(R.id.customAmountEditText);
-
-            if (amountLayout != null && amountInput != null) {
-                updateAmountHint(amountLayout, recipe);
-
-                customAmountWatcher = new TextWatcher() {
-                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                    @Override public void afterTextChanged(Editable s) {}
-
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {
-                        if (nutritionLabelManager == null) return;
-                        try {
-                            String input = s.toString().trim();
-                            if (!input.isEmpty()) {
-                                double amount = Double.parseDouble(input);
-                                if (amount > 0) nutritionLabelManager.updateCustomAmount(amount);
-                            }
-                        } catch (NumberFormatException ignored) {}
-                    }
-                };
-                // Pre-fill with the amount the label already shows (see the
-                // note in DefaultProductDetailRenderer); BEFORE the watcher.
-                amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
-                amountInput.setSelectAllOnFocus(true);
-                amountInput.addTextChangedListener(customAmountWatcher);
-            }
+            // Shown at the default amount; the screen's quantity input then
+            // pushes its own amount through onAmountChanged().
+            nutritionLabelManager.display(recipe, NutritionLabelManager.defaultAmountFor(recipe));
         } else {
-            nutritionCard.setVisibility(View.GONE);
-            noNutritionCard.setVisibility(View.VISIBLE);
+            DetailRendererUtils.showNoNutritionNotice(context, nutritionContainer,
+                    R.string.recipe_no_nutrition_data);
         }
     }
 
@@ -418,31 +394,4 @@ public class DefaultRecipeDetailRenderer implements DetailRenderer {
 
     // ========== NUTRITION AMOUNT HELPERS ==========
 
-    /**
-     * Hint text for the custom-amount field: shows the serving size in grams
-     * when known, a generic prompt otherwise. Unit comes from the recipe's
-     * own nutrition basis (per-100g or per-100ml, as declared by its
-     * source) - never assumed from the recipe's physical nature.
-     */
-    private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull Recipe recipe) {
-        ServingSize serving = recipe.getServingSize();
-        String unit = recipe.getNutrition() != null
-                ? recipe.getNutrition().getBasis().getUnitLabel()
-                : "g";
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                layout.setHint(context.getString(R.string.custom_amount_with_serving,
-                        formatAmount(servingGrams) + unit));
-                return;
-            }
-        }
-        layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    private String formatAmount(double amount) {
-        return (amount == Math.floor(amount))
-                ? String.format(Locale.getDefault(), "%.0f", amount)
-                : String.format(Locale.getDefault(), "%.1f", amount);
-    }
 }

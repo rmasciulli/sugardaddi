@@ -347,41 +347,13 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
-                        <!-- Custom amount field with visible border -->
-                        <LinearLayout
+                        <!-- Quantity input: servings / portion size. It drives the table below
+                             and what is logged in a meal; set up by the screen
+                             (DetailQuantityController), not by the renderer. -->
+                        <li.masciul.sugardaddi.ui.components.QuantityInputView
+                            android:id="@+id/quantityInput"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:background="@drawable/bg_nutrition_block"
-                            android:padding="1dp">
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/customAmountInputLayout"
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/custom_amount_default"
-                                app:boxBackgroundColor="?attr/colorSurface"
-                                app:boxStrokeColor="@android:color/transparent"
-                                app:boxStrokeWidthFocused="0dp"
-                                app:boxCornerRadiusTopStart="7dp"
-                                app:boxCornerRadiusTopEnd="7dp"
-                                app:boxCornerRadiusBottomStart="7dp"
-                                app:boxCornerRadiusBottomEnd="7dp">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/customAmountEditText"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:background="?attr/colorSurface"
-                                    android:inputType="numberDecimal"
-                                    android:maxLines="1"
-                                    android:paddingTop="8dp"
-                                    android:paddingBottom="8dp" />
-
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                        </LinearLayout>
+                            android:layout_height="wrap_content" />
 
                         <!-- Gap between amount field and nutrition table -->
                         <Space

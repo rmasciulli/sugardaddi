@@ -1,8 +1,6 @@
 package li.masciul.sugardaddi.ui.delegates.detail;
 
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.widget.FrameLayout;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,16 +11,12 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
-import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
@@ -52,7 +46,7 @@ import java.util.Locale;
  *   inflate() → inflate detail_off_product.xml and cache view references
  *   populate() → bind all product data to views
  *   onAmountChanged() → delegate to NutritionLabelManager.updateCustomAmount()
- *   destroy() → clear NutritionLabelManager, release TextWatcher
+ *   destroy() → clear NutritionLabelManager
  *
  * @version 1.0
  */
@@ -64,10 +58,6 @@ public class OffProductDetailRenderer implements DetailRenderer {
 
     // NutritionLabelManager is stateful; keep a reference for amount updates and cleanup.
     private NutritionLabelManager<FoodProduct> nutritionLabelManager;
-
-    // Keep a reference to the TextWatcher so we can remove it on destroy()
-    // to prevent memory leaks when the activity is destroyed.
-    private TextWatcher customAmountWatcher;
 
     public OffProductDetailRenderer(@NonNull Context context) {
         this.context = context;
@@ -132,7 +122,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
     }
 
     /**
-     * Remove TextWatcher and clear NutritionLabelManager on destroy.
+     * Clear NutritionLabelManager on destroy.
      * This prevents memory leaks if the renderer outlives the view.
      */
     @Override
@@ -141,7 +131,6 @@ public class OffProductDetailRenderer implements DetailRenderer {
             nutritionLabelManager.clear();
             nutritionLabelManager = null;
         }
-        customAmountWatcher = null;
     }
 
     // ========== POPULATE HELPERS ==========
@@ -365,7 +354,7 @@ public class OffProductDetailRenderer implements DetailRenderer {
      * NutritionLabelManager is instantiated fresh for this view instance
      * so that it holds a reference to the correct container LinearLayout.
      *
-     * The TextWatcher is attached here and removed in destroy() to prevent leaks.
+     * The amount comes from the screen's quantity input (onAmountChanged()).
      */
     private void populateNutrition(@NonNull View view, @NonNull FoodProduct product,
                                    @NonNull String language) {
@@ -382,75 +371,14 @@ public class OffProductDetailRenderer implements DetailRenderer {
         double defaultAmount = NutritionLabelManager.defaultAmountFor(product);
         nutritionLabelManager.display(product, defaultAmount);
 
-        // Wire custom amount input
-        TextInputLayout amountLayout = view.findViewById(R.id.customAmountInputLayout);
-        TextInputEditText amountInput = view.findViewById(R.id.customAmountEditText);
-
-        if (amountLayout != null && amountInput != null) {
-            // Update hint to reflect the serving size
-            updateAmountHint(amountLayout, product);
-
-            // TextWatcher: live recalculation as user types
-            customAmountWatcher = new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void afterTextChanged(Editable s) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (nutritionLabelManager == null) return;
-                    try {
-                        String input = s.toString().trim();
-                        if (!input.isEmpty()) {
-                            double amount = Double.parseDouble(input);
-                            if (amount > 0) {
-                                nutritionLabelManager.updateCustomAmount(amount);
-                            }
-                        }
-                    } catch (NumberFormatException ignored) {
-                        // User mid-type: do nothing, wait for valid input
-                    }
-                }
-            };
-            // Pre-fill the field with the amount the label is already
-            // showing, so what the user sees in the field is exactly what
-            // "Add to meal" will add. Set BEFORE the watcher is attached:
-            // the label was displayed at this amount just above.
-            amountInput.setText(NutritionLabelManager.formatAmountForInput(defaultAmount));
-            amountInput.setSelectAllOnFocus(true);
-            amountInput.addTextChangedListener(customAmountWatcher);
+        // No nutrition: the input above still sets the amount logged and the
+        // typical serving; say so where the table would be.
+        if (!product.hasNutritionData()) {
+            DetailRendererUtils.showNoNutritionNotice(context, nutritionContainer,
+                    R.string.no_nutrition_data);
         }
     }
 
     // ========== HELPERS ==========
 
-    /**
-     * Update the custom amount input hint to reflect serving size.
-     * "Custom amount (serving size: 125ml)" or "Custom amount" if no serving.
-     */
-    private void updateAmountHint(@NonNull TextInputLayout layout, @NonNull FoodProduct product) {
-        ServingSize serving = product.getServingSize();
-        String unit = product.getNutrition() != null
-                ? product.getNutrition().getBasis().getUnitLabel()
-                : "g";
-
-        if (serving != null && serving.isValid()) {
-            Double servingGrams = serving.getAsGrams();
-            if (servingGrams != null && servingGrams > 0) {
-                String servingText = formatAmount(servingGrams) + unit;
-                layout.setHint(context.getString(R.string.custom_amount_with_serving, servingText));
-                return;
-            }
-        }
-        layout.setHint(context.getString(R.string.custom_amount_default));
-    }
-
-    /**
-     * Format a double amount: drops trailing ".0" for clean display.
-     * 20.0 → "20", 12.5 → "12.5"
-     */
-    private String formatAmount(double amount) {
-        return (amount == Math.floor(amount))
-                ? String.format(Locale.getDefault(), "%.0f", amount)
-                : String.format(Locale.getDefault(), "%.1f", amount);
-    }
 }

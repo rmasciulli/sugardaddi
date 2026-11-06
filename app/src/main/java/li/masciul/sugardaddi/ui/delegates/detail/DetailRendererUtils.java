@@ -4,10 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+
+import com.google.android.material.color.MaterialColors;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -94,5 +98,30 @@ public final class DetailRendererUtils {
             panel.setClickable(false);
             panel.setFocusable(false);
         }
+    }
+
+    /**
+     * Where the nutrition table would be, for an item without nutrition data:
+     * a short line saying so. The quantity input above it stays usable (it sets
+     * the amount logged and the typical serving), and the table takes this
+     * place the day the item gets nutrition.
+     *
+     * NutritionLabelManager hides the container for such items; this shows it
+     * again with the line only.
+     *
+     * @param messageRes e.g. R.string.no_nutrition_data or R.string.recipe_no_nutrition_data
+     */
+    public static void showNoNutritionNotice(@NonNull Context context,
+                                             @NonNull LinearLayout container,
+                                             @StringRes int messageRes) {
+        container.removeAllViews();
+        TextView notice = new TextView(context);
+        notice.setText(messageRes);
+        notice.setTextAppearance(
+                com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+        notice.setTextColor(MaterialColors.getColor(container,
+                com.google.android.material.R.attr.colorOnSurfaceVariant));
+        container.addView(notice);
+        container.setVisibility(View.VISIBLE);
     }
 }
