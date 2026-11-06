@@ -13,8 +13,8 @@
         page 2 - "Portion size": typical serving size, quantity typed on the
                  numpad with the item's unit shown right after it
         page 3 - "Measurements & quantity": the preferred unit, g | ml, one tap
-                 switches; disabled, with a line saying why, when the item
-                 can only be shown in one unit (no density from its source)
+                 switches; locked on the used unit, with a line saying why,
+                 when the item can only be shown in one unit (no density)
       PagerDotsView (one tappable dot per page)
 
     Pages carry their own 12dp side padding, so while swiping their content
@@ -372,8 +372,9 @@
 
                 <!-- Segmented g | ml: one tap on the other segment switches.
                      selectionRequired: one unit is always selected. The labels
-                     are the units' abbreviations, set in code. Disabled (both
-                     segments) when the item has only one unit. -->
+                     are the units' abbreviations, set in code. When the item
+                     has only one unit, the other segment is disabled and the
+                     used one keeps its checked color (QuantityInputView). -->
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/unitToggle"
                     android:layout_width="wrap_content"

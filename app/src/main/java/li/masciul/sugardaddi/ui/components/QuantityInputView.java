@@ -427,8 +427,11 @@ public class QuantityInputView extends LinearLayout {
     }
 
     /**
-     * Page 3: the segment of the current unit checked; both segments disabled,
-     * with the reason underneath, when the item has only one unit.
+     * Page 3: the segment of the current unit checked. When the item has only
+     * one unit, the OTHER segment is disabled and the reason shown underneath;
+     * the current one stays enabled (only made inert), so it keeps the checked
+     * color and the user still sees which unit is used. Disabling it too would
+     * drop that color: Material draws a disabled segment unfilled.
      */
     private void refreshUnitPage() {
         updatingToggle = true;
@@ -437,9 +440,14 @@ public class QuantityInputView extends LinearLayout {
         } finally {
             updatingToggle = false;
         }
-        unitToggle.setEnabled(unitSwitchable);
-        unitGButton.setEnabled(unitSwitchable);
-        unitMlButton.setEnabled(unitSwitchable);
+        MaterialButton current = state.getUnit() == Unit.ML ? unitMlButton : unitGButton;
+        MaterialButton other = current == unitGButton ? unitMlButton : unitGButton;
+        current.setEnabled(true);
+        current.setClickable(unitSwitchable);
+        current.setFocusable(unitSwitchable);
+        other.setEnabled(unitSwitchable);
+        other.setClickable(true);
+        other.setFocusable(true);
         unitOnlyNote.setText(state.getUnit() == Unit.ML
                 ? R.string.quantity_unit_only_ml
                 : R.string.quantity_unit_only_g);
