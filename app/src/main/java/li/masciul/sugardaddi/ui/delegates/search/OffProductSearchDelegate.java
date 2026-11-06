@@ -15,6 +15,7 @@ import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
@@ -34,7 +35,8 @@ import java.util.Locale;
  * - productType label (explicitly GONE for standard food products)
  * - Brand name (Inter semi-bold, primary color)
  * - Primary category (Roboto Condensed light, sentence case, 2 lines)
- * - Serving info with kcal (Roboto Condensed italic)
+ * - Size and kcal (Roboto Condensed italic): package size, else serving size,
+ *   then kcal per 100 g or 100 ml (the item's own basis)
  * - Product image (72dp, loaded via Glide)
  * - Green-Score leaf icon
  * - Nutri-Score TPL sticker
@@ -166,21 +168,37 @@ public class OffProductSearchDelegate
         }
     }
 
+    /**
+     * "330 ml \u00b7 42 kcal/100ml".
+     *
+     * Size: the PACKAGE size first. Every search hit carries it, so the card
+     * reads the same before and after the product is opened (opening loads the
+     * full record into the cache, serving size and nutrition included). Then
+     * the serving size, then nothing: never a made-up "100g".
+     * kcal: only when nutrition is known (search hits carry none), labelled
+     * with the item's own basis, per 100 g or per 100 ml.
+     */
     private void bindServingInfo(ViewHolder holder, FoodProduct product) {
         StringBuilder info = new StringBuilder();
-        ServingSize servingSize = product.getServingSize();
-        String servingText = servingSize != null ? servingSize.getDisplayText() : null;
-        info.append(servingText != null && !servingText.trim().isEmpty()
-                ? servingText : "100g");
-        if (product.getNutrition() != null) {
-            Double energy = product.getNutrition().getEnergyKcal();
+        String size = product.getQuantity();
+        if (size == null || size.trim().isEmpty()) {
+            ServingSize servingSize = product.getServingSize();
+            size = servingSize != null ? servingSize.getDisplayText() : null;
+        }
+        if (size != null && !size.trim().isEmpty()) {
+            info.append(size.trim());
+        }
+        Nutrition nutrition = product.getNutrition();
+        if (nutrition != null) {
+            Double energy = nutrition.getEnergyKcal();
             if (energy != null && energy > 0) {
-                info.append(" \u00b7 ");
-                info.append(String.format(Locale.getDefault(), "%.0f kcal/100g", energy));
+                if (info.length() > 0) info.append(" \u00b7 ");
+                info.append(String.format(Locale.getDefault(), "%.0f kcal/100%s",
+                        energy, nutrition.getBasis().getUnitLabel()));
             }
         }
         holder.servingInfo.setText(info.toString());
-        holder.servingInfo.setVisibility(View.VISIBLE);
+        holder.servingInfo.setVisibility(info.length() > 0 ? View.VISIBLE : View.GONE);
     }
 
     // Compact score dimensions for search result cards.
