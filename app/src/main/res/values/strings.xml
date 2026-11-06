@@ -721,6 +721,10 @@
     <!-- Quantity input (QuantityInputView) -->
     <string name="quantity_page_servings">Number of servings</string>
     <string name="quantity_page_portion">Portion size</string>
+    <string name="quantity_page_units">Measurements &amp; quantity</string>
+    <string name="quantity_preferred_unit">Preferred unit:</string>
+    <string name="quantity_unit_only_g">This data is only available in grams</string>
+    <string name="quantity_unit_only_ml">This data is only available in milliliters</string>
     <string name="quantity_typical_serving">Typical serving size:</string>
     <string name="quantity_servings">Servings:</string>
     <string name="quantity_custom">Custom quantity:</string>

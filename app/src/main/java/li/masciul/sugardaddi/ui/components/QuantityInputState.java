@@ -30,6 +30,8 @@ import li.masciul.sugardaddi.core.models.PortionQuantity;
  * - The servings value is always valid. A typed quantity is valid only when it
  *   is a positive number: until then toPortionQuantity() returns null, so the
  *   screen can disable its Add button.
+ * - Switching unit (g / ml, through the item's density) keeps the same
+ *   physical amount: inUnit().
  */
 public final class QuantityInputState {
 
@@ -140,6 +142,26 @@ public final class QuantityInputState {
         } else if (isPositive(servingCount)) {
             setServingsEdited(servingCount);
         }
+    }
+
+    /**
+     * The same input in the other unit, after the user switched g / ml on the
+     * "Measurements & quantity" page. The same physical amount is kept: a
+     * number of servings stays as it is (its serving size comes in the new
+     * unit), a typed quantity is multiplied by factor (75 g of milk at
+     * 1.033 g/ml becomes 72.6 ml). Which value was edited last does not change.
+     *
+     * @param newUnit         G or ML
+     * @param servingQuantity size of one serving in newUnit, or null if unknown
+     * @param factor          amount in newUnit for 1 of the current unit (> 0)
+     */
+    @NonNull
+    public QuantityInputState inUnit(@NonNull Unit newUnit, @Nullable Double servingQuantity,
+                                     double factor) {
+        QuantityInputState converted = new QuantityInputState(servingQuantity, newUnit);
+        Double custom = customQuantity != null ? customQuantity * factor : null;
+        converted.restoreEdits(inputMode, servingCount, custom);
+        return converted;
     }
 
     // ========== READS ==========

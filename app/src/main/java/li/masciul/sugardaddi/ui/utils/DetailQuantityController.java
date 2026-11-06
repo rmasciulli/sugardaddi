@@ -36,11 +36,14 @@ import li.masciul.sugardaddi.ui.components.TypicalServingDialog;
  * input, shared by ProductDetailsActivity and RecipeDetailsActivity (change 6).
  *
  * The screen owns the input; renderers only display. The controller:
- * - sets the input up for the item: one unit (the nutrition basis, else the
- *   item's serving unit, else the screen's default), the typical serving (the
- *   user's preferred one, else the source's), and the starting value;
- * - pushes every new amount to the screen (AmountListener), which forwards it
- *   to the renderer's nutrition table (DetailRenderer.onAmountChanged());
+ * - sets the input up for the item: its unit (see UNIT below), the typical
+ *   serving (the user's preferred one, else the source's, read in that unit),
+ *   and the starting value;
+ * - pushes every new amount, with its unit, to the screen (AmountListener),
+ *   which forwards it to the renderer's nutrition table
+ *   (DetailRenderer.onAmountChanged()), shown in that same unit;
+ * - switches g / ml when the user asks on the input's "Measurements &
+ *   quantity" page, and remembers the choice per item (user_item_data);
  * - keeps what the user entered across refresh re-renders and rotation;
  * - opens the typical serving editor and stores the answer (user_item_data);
  * - in meal context (RETURN_TO_MEAL): finds the item in the meal, offers Add or
@@ -54,14 +57,28 @@ import li.masciul.sugardaddi.ui.components.TypicalServingDialog;
  *      page with the fallback amount (20 g / ml) typed in, so the table has a
  *      real amount and no invented serving is shown (decision, change 6).
  *
+ * UNIT (g or ml):
+ * - The item's own unit is its nutrition basis; without nutrition, the kind
+ *   of its serving unit; else the screen's default (ml for drinks).
+ * - The other unit is offered only when the item has nutrition AND a density
+ *   from its source: everything shown or logged in it is converted through
+ *   that density (DensityConversion), never stored converted.
+ * - Opening unit: the user's preferred unit, else the unit of the source's
+ *   typical serving (FatSecret's default serving), else the item's own unit.
+ *   An entry being updated opens in the unit it was logged in.
+ *
  * Threading: everything runs on the main thread except the database writes,
  * which go to a single background executor.
  */
 public final class DetailQuantityController {
 
-    /** Told every time the amount to display changes (in the item's basis unit). */
+    /** Told every time the amount to display changes. */
     public interface AmountListener {
-        void onAmountChanged(double amount);
+        /**
+         * @param amount the amount, in unit
+         * @param unit   G or ML: the input's unit, which the table follows
+         */
+        void onAmountChanged(double amount, @NonNull Unit unit);
     }
 
     private static final String STATE_QUANTITY_INPUT = "quantity_input";
@@ -78,13 +95,19 @@ public final class DetailQuantityController {
 
     @Nullable private Searchable item;
     @Nullable private QuantityInputView input;
+    /** The unit the input works in now (G or ML). */
     @NonNull private Unit unit = Unit.G;
+    /** The item's own unit: its nutrition basis (see UNIT in the class comment). */
+    @NonNull private Unit basisUnit = Unit.G;
+    /** True when the item can also be shown in the other unit (nutrition + density). */
+    private boolean switchable;
     /** The source's own serving size in unit (shown for reference when editing). */
     @Nullable private Double sourceServing;
     /** The serving size the input was set up with (user's, else source's). */
     @Nullable private Double effectiveServing;
-    /** Last amount pushed to the screen, for reapplyAmount(). */
+    /** Last amount pushed to the screen and its unit, for reapplyAmount(). */
     @Nullable private Double lastAmount;
+    @NonNull private Unit lastUnit = Unit.G;
 
     /** Input saved before re-creation (rotation), applied at the next bind(). */
     @Nullable private Bundle pendingState;
@@ -150,27 +173,33 @@ public final class DetailQuantityController {
             return;
         }
 
-        unit = unitFor(item, unitWithoutNutrition);
-        sourceServing = sourceServingIn(item, unit);
-        Double userServing = userServingIn(item, unit);
-        effectiveServing = userServing != null ? userServing : sourceServing;
+        basisUnit = unitFor(item, unitWithoutNutrition);
+        switchable = hasNutrition(item) && densityOf(item) != null;
+        Unit openingUnit = openingUnitFor(item);
 
         input.setOnQuantityChangedListener(quantity -> {
             pushAmount(quantity);
             updateButton();
         });
         input.setOnTypicalServingClickListener(this::editTypicalServing);
+        input.setOnUnitSelectedListener(this::onUnitSelected);
+        input.setUnitSwitchable(switchable);
 
         if (carried != null) {
-            // What the user was working on wins (refresh, rotation).
+            // What the user was working on wins (refresh, rotation), unit included.
+            applyUnit(openingUnit);
             input.setup(effectiveServing, unit);
             input.restoreState(carried);
+            adoptInputUnit();
             prefilled = true;
         } else if (loggedQuantity != null) {
             // Updating an entry and the lookup already answered (rule A).
+            applyUnit(entryUnit(loggedQuantity, openingUnit));
             input.setup(effectiveServing, unit, loggedQuantity);
+            adoptInputUnit();
             prefilled = true;
         } else {
+            applyUnit(openingUnit);
             setupDefault();
             prefilled = false;
         }
@@ -181,7 +210,7 @@ public final class DetailQuantityController {
 
     /** Push the current amount again (the renderer repopulated its table). */
     public void reapplyAmount() {
-        if (lastAmount != null) amountListener.onAmountChanged(lastAmount);
+        if (lastAmount != null) amountListener.onAmountChanged(lastAmount, lastUnit);
     }
 
     /** What Add / Update would log now, or null when the input holds nothing valid. */
@@ -221,8 +250,100 @@ public final class DetailQuantityController {
         if (quantity == null) return;   // invalid typed value: the table keeps the last one
         Double total = quantity.getTotalQuantity();
         if (total == null || total <= 0) return;   // servings without a known size
+        Unit amountUnit = quantity.getUnit() == Unit.ML || quantity.getUnit() == Unit.G
+                ? quantity.getUnit() : unit;
+        // An amount in the other unit with no density to show it (an entry logged
+        // in ml whose item lost its density since): the table keeps the last one.
+        if (amountUnit != basisUnit && !switchable) return;
         lastAmount = total;
-        amountListener.onAmountChanged(total);
+        lastUnit = amountUnit;
+        amountListener.onAmountChanged(total, amountUnit);
+    }
+
+    // ========== UNIT (g / ml) ==========
+
+    /**
+     * Work in the given unit: the typical servings (source and user) are read
+     * in it. Does not touch the input.
+     */
+    private void applyUnit(@NonNull Unit newUnit) {
+        unit = newUnit;
+        if (item == null) return;
+        sourceServing = sourceServingIn(item, unit);
+        Double userServing = userServingIn(item, unit);
+        effectiveServing = userServing != null ? userServing : sourceServing;
+    }
+
+    /** The input may have taken another unit (restored state, logged entry): follow it. */
+    private void adoptInputUnit() {
+        if (input == null) return;
+        Unit inputUnit = input.getUnit();
+        if (inputUnit != unit) applyUnit(inputUnit);
+    }
+
+    /**
+     * The unit the item opens in: the user's preferred unit, else the unit of
+     * the source's typical serving, else the item's own unit. The first two
+     * only count when the item can be shown in both units.
+     */
+    @NonNull
+    private Unit openingUnitFor(@NonNull Searchable target) {
+        if (!switchable) return basisUnit;
+        Unit preferred = preferredUnitOf(target);
+        if (preferred == Unit.G || preferred == Unit.ML) return preferred;
+        return sourceUnitFor(target);
+    }
+
+    /** The unit the source presents the item in: its typical serving's, else the basis. */
+    @NonNull
+    private Unit sourceUnitFor(@NonNull Searchable target) {
+        ServingSize serving = servingOf(target);
+        Unit kind = serving != null ? DensityConversion.kindOf(serving.getUnit()) : null;
+        return switchable && kind != null ? kind : basisUnit;
+    }
+
+    /** The unit an entry was logged in, when it is g or ml; else the fallback. */
+    @NonNull
+    private static Unit entryUnit(@NonNull PortionQuantity logged, @NonNull Unit fallback) {
+        Unit loggedUnit = logged.getUnit();
+        return loggedUnit == Unit.G || loggedUnit == Unit.ML ? loggedUnit : fallback;
+    }
+
+    /**
+     * The user picked the other unit on the "Measurements & quantity" page.
+     * The input keeps the same physical amount (its serving size and a typed
+     * quantity converted through the density; an entry being updated keeps its
+     * logged serving size, converted), and the choice is stored for the item.
+     */
+    private void onUnitSelected(@NonNull Unit newUnit) {
+        if (input == null || item == null || newUnit == unit) return;
+        Double factor = DensityConversion.convert(1.0, unit, newUnit, densityOf(item));
+        if (factor == null) {
+            input.setUnitSwitchable(switchable);   // cannot convert: show the current unit again
+            return;
+        }
+        Double serving = input.getTypicalServing();
+        Double newServing = serving != null ? serving * factor : null;
+        applyUnit(newUnit);
+        effectiveServing = newServing;
+        input.switchUnit(newUnit, newServing, factor);
+        savePreferredUnit(item, newUnit);
+    }
+
+    /**
+     * Store the user's unit for the item. Picking the source's own unit clears
+     * the preference instead (null): the item then simply follows its source,
+     * and a row holding nothing else is not kept in the cache for it.
+     */
+    private void savePreferredUnit(@NonNull Searchable target, @NonNull Unit chosen) {
+        String itemId = target.getSearchableId();
+        if (itemId == null) return;
+        Unit stored = chosen == sourceUnitFor(target) ? null : chosen;
+        executor.execute(() -> {
+            AppDatabase.getInstance(activity).userItemDataDao().setPreferredUnit(
+                    itemType, itemId, stored != null ? UserItemDataEntity.unitToColumn(stored) : null);
+            activity.runOnUiThread(() -> setPreferredUnit(target, stored));
+        });
     }
 
     // ========== TYPICAL SERVING (change 5b, everywhere since change 6) ==========
@@ -289,7 +410,9 @@ public final class DetailQuantityController {
             // The input was set up before the answer: show the logged amount now,
             // unless it already shows the user's own figures.
             if (input != null && !prefilled && loggedQuantity != null) {
+                applyUnit(entryUnit(loggedQuantity, unit));
                 input.setup(effectiveServing, unit, loggedQuantity);
+                adoptInputUnit();
                 prefilled = true;
             }
             updateButton();
@@ -444,6 +567,19 @@ public final class DetailQuantityController {
         if (quantity == null || quantity <= 0) return null;
         return DensityConversion.convert(quantity, userUnit == Unit.ML ? Unit.ML : Unit.G,
                 unit == Unit.ML ? Unit.ML : Unit.G, densityOf(item));
+    }
+
+    /** The unit the user chose for the item (G or ML), or null. */
+    @Nullable
+    private static Unit preferredUnitOf(@NonNull Searchable item) {
+        if (item instanceof FoodProduct) return ((FoodProduct) item).getUserPreferredUnit();
+        if (item instanceof Recipe) return ((Recipe) item).getUserPreferredUnit();
+        return null;
+    }
+
+    private static void setPreferredUnit(@NonNull Searchable item, @Nullable Unit unit) {
+        if (item instanceof FoodProduct) ((FoodProduct) item).setUserPreferredUnit(unit);
+        else if (item instanceof Recipe) ((Recipe) item).setUserPreferredUnit(unit);
     }
 
     private static void setUserServing(@NonNull Searchable item, @Nullable Double quantity,

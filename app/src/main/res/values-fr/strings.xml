@@ -720,6 +720,10 @@
     <!-- Saisie de quantité (QuantityInputView) -->
     <string name="quantity_page_servings">Nombre de portions</string>
     <string name="quantity_page_portion">Taille de la portion</string>
+    <string name="quantity_page_units">Mesures et quantité</string>
+    <string name="quantity_preferred_unit">Unité préférée :</string>
+    <string name="quantity_unit_only_g">Ces données ne sont disponibles qu\'en grammes</string>
+    <string name="quantity_unit_only_ml">Ces données ne sont disponibles qu\'en millilitres</string>
     <string name="quantity_typical_serving">Portion habituelle :</string>
     <string name="quantity_servings">Portions :</string>
     <string name="quantity_custom">Quantité personnalisée :</string>

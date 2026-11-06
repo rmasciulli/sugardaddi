@@ -12,6 +12,9 @@
         page 1 - "Number of servings": typical serving size, servings with - / +
         page 2 - "Portion size": typical serving size, quantity typed on the
                  numpad with the item's unit shown right after it
+        page 3 - "Measurements & quantity": the preferred unit, g | ml, one tap
+                 switches; disabled, with a line saying why, when the item
+                 can only be shown in one unit (no density from its source)
       PagerDotsView (one tappable dot per page)
 
     Pages carry their own 12dp side padding, so while swiping their content
@@ -330,6 +333,93 @@
                     app:iconTint="@color/quantity_icon_on_surface" />
 
             </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ~~~~~~~~ PAGE 3 - MEASUREMENTS & QUANTITY ~~~~~~~~ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/quantity_page_units"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:minHeight="28dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/unitLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/quantity_preferred_unit"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <!-- Segmented g | ml: one tap on the other segment switches.
+                     selectionRequired: one unit is always selected. The labels
+                     are the units' abbreviations, set in code. Disabled (both
+                     segments) when the item has only one unit. -->
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/unitToggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/unitG"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="52dp"
+                        android:layout_height="32dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        tools:text="g" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/unitMl"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="52dp"
+                        android:layout_height="32dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        tools:text="ml" />
+
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            </LinearLayout>
+
+            <!-- Shown only when the toggle is disabled: why it cannot change -->
+            <TextView
+                android:id="@+id/unitOnlyNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:text="@string/quantity_unit_only_g"
+                tools:visibility="visible" />
 
         </LinearLayout>
 

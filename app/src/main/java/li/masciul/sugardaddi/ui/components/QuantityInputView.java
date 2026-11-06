@@ -8,6 +8,7 @@ import android.text.TextWatcher;
 import android.text.method.DigitsKeyListener;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -17,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.Unit;
@@ -25,12 +27,16 @@ import li.masciul.sugardaddi.core.models.PortionQuantity;
 /**
  * QuantityInputView - the quantity input of a detail screen.
  *
- * Two pages, swiped with the finger (SwipePagerView) and shown by tappable dots
- * (PagerDotsView):
- *   1. "Number of servings" - typical serving size (read-only until change 5)
- *      and a number of servings with - / +.
+ * Three pages, swiped with the finger (SwipePagerView) and shown by tappable
+ * dots (PagerDotsView):
+ *   1. "Number of servings" - typical serving size (editable, the screen opens
+ *      the editor) and a number of servings with - / +.
  *   2. "Portion size" - typical serving size and a quantity typed on the
  *      numpad, with the input's unit shown right after the number.
+ *   3. "Measurements & quantity" - the preferred unit, g | ml. The view only
+ *      reports the tap (OnUnitSelectedListener): the screen knows the item's
+ *      density, works the conversion out and calls switchUnit(). Disabled,
+ *      with a line saying why, when the item has only one unit.
  *
  * This view only displays and forwards: every rule (steps, conversions, which
  * value gets logged, validity) lives in QuantityInputState, and every number is
@@ -46,6 +52,11 @@ import li.masciul.sugardaddi.core.models.PortionQuantity;
  * saveState() in onSaveInstanceState() and restoreState() after setup() instead.
  */
 public class QuantityInputView extends LinearLayout {
+
+    /** Told when the user picks the other unit on the "Measurements & quantity" page. */
+    public interface OnUnitSelectedListener {
+        void onUnitSelected(@NonNull Unit unit);
+    }
 
     /** Told every time the value that would be logged changes. */
     public interface OnQuantityChangedListener {
@@ -76,6 +87,11 @@ public class QuantityInputView extends LinearLayout {
     private EditText customQuantityInput;
     private TextView customUnitLabel;
 
+    private MaterialButtonToggleGroup unitToggle;
+    private MaterialButton unitGButton;
+    private MaterialButton unitMlButton;
+    private TextView unitOnlyNote;
+
     // ========== STATE ==========
 
     /** The rules and values; replaced by setup() for each item. */
@@ -84,7 +100,13 @@ public class QuantityInputView extends LinearLayout {
     /** Set while the code fills the field itself, so the watcher doesn't treat it as typing. */
     private boolean updatingField;
 
+    /** True when the item can be shown in both g and ml (it has a density). */
+    private boolean unitSwitchable;
+    /** Set while the code checks a segment itself, so the toggle doesn't report it. */
+    private boolean updatingToggle;
+
     @Nullable private OnQuantityChangedListener listener;
+    @Nullable private OnUnitSelectedListener unitListener;
     /** Told when the user taps "Typical serving size" (the screen opens the editor). */
     @Nullable private Runnable typicalServingClickListener;
 
@@ -127,6 +149,23 @@ public class QuantityInputView extends LinearLayout {
         customTypicalValue = findViewById(R.id.customTypicalValue);
         customQuantityInput = findViewById(R.id.customQuantityInput);
         customUnitLabel = findViewById(R.id.customUnitLabel);
+
+        unitToggle = findViewById(R.id.unitToggle);
+        unitGButton = findViewById(R.id.unitG);
+        unitMlButton = findViewById(R.id.unitMl);
+        unitOnlyNote = findViewById(R.id.unitOnlyNote);
+        unitGButton.setText(Unit.G.getAbbreviation());
+        unitMlButton.setText(Unit.ML.getAbbreviation());
+        unitToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked || updatingToggle) return;
+            Unit chosen = checkedId == R.id.unitMl ? Unit.ML : Unit.G;
+            if (chosen == state.getUnit()) return;
+            if (unitListener != null) {
+                unitListener.onUnitSelected(chosen);
+            } else {
+                refreshUnitPage();   // nobody to convert: show the current unit again
+            }
+        });
 
         // Accept "." and "," whatever the keyboard sends (French keyboards show ","),
         // while keeping the numeric keypad. setKeyListener() resets the input type,
@@ -218,6 +257,40 @@ public class QuantityInputView extends LinearLayout {
 
     public void setOnQuantityChangedListener(@Nullable OnQuantityChangedListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnUnitSelectedListener(@Nullable OnUnitSelectedListener listener) {
+        this.unitListener = listener;
+    }
+
+    /**
+     * Whether the "Measurements & quantity" toggle can be used: true only when
+     * the item can be shown in both g and ml. Call after setup().
+     */
+    public void setUnitSwitchable(boolean switchable) {
+        this.unitSwitchable = switchable;
+        refreshUnitPage();
+    }
+
+    /** G or ML: the unit the input works in now. */
+    @NonNull
+    public Unit getUnit() {
+        return state.getUnit();
+    }
+
+    /**
+     * Show the input in the other unit, keeping the same physical amount
+     * (QuantityInputState.inUnit()): servings stay, a typed quantity is
+     * converted.
+     *
+     * @param unit            G or ML
+     * @param servingQuantity the typical serving in that unit, or null
+     * @param factor          amount in unit for 1 of the current unit (> 0)
+     */
+    public void switchUnit(@NonNull Unit unit, @Nullable Double servingQuantity, double factor) {
+        state = state.inUnit(unit, servingQuantity, factor);
+        refreshAll();
+        notifyChanged();
     }
 
     /**
@@ -343,6 +416,7 @@ public class QuantityInputView extends LinearLayout {
         servingsTypicalValue.setText(typical);
         customTypicalValue.setText(typical);
         customUnitLabel.setText(state.getUnit().getAbbreviation());
+        refreshUnitPage();
 
         Double custom = state.getCustomQuantity();
         String fieldText = custom != null ? QuantityText.format(custom) : "";
@@ -350,6 +424,26 @@ public class QuantityInputView extends LinearLayout {
             setFieldText(fieldText);
         }
         refreshServingsPage();
+    }
+
+    /**
+     * Page 3: the segment of the current unit checked; both segments disabled,
+     * with the reason underneath, when the item has only one unit.
+     */
+    private void refreshUnitPage() {
+        updatingToggle = true;
+        try {
+            unitToggle.check(state.getUnit() == Unit.ML ? R.id.unitMl : R.id.unitG);
+        } finally {
+            updatingToggle = false;
+        }
+        unitToggle.setEnabled(unitSwitchable);
+        unitGButton.setEnabled(unitSwitchable);
+        unitMlButton.setEnabled(unitSwitchable);
+        unitOnlyNote.setText(state.getUnit() == Unit.ML
+                ? R.string.quantity_unit_only_ml
+                : R.string.quantity_unit_only_g);
+        unitOnlyNote.setVisibility(unitSwitchable ? View.GONE : View.VISIBLE);
     }
 
     private void refreshServingsPage() {

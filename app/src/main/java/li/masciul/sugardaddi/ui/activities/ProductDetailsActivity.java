@@ -808,10 +808,10 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
     // ========== QUANTITY INPUT ==========
 
     /** The input's amount changed: the renderer rescales its nutrition table. */
-    private void onQuantityAmountChanged(double amount) {
+    private void onQuantityAmountChanged(double amount, @NonNull Unit unit) {
         FoodProduct product = productManager != null ? productManager.getCurrentProduct() : null;
         if (product != null && activeRenderer != null && activeRendererView != null) {
-            activeRenderer.onAmountChanged(activeRendererView, product, amount,
+            activeRenderer.onAmountChanged(activeRendererView, product, amount, unit,
                     getCurrentLanguage().getCode());
         }
     }

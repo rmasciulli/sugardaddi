@@ -15,6 +15,7 @@ import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionLabelMode;
 import li.masciul.sugardaddi.core.enums.ProductType;
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
@@ -103,9 +104,9 @@ public class OffProductDetailRenderer implements DetailRenderer {
      */
     @Override
     public void onAmountChanged(@NonNull View view, @NonNull Searchable item,
-                                double amount, @NonNull String language) {
+                                double amount, @NonNull Unit unit, @NonNull String language) {
         if (nutritionLabelManager != null && amount > 0) {
-            nutritionLabelManager.updateCustomAmount(amount);
+            nutritionLabelManager.updateCustomAmount(amount, unit);
         }
     }
 

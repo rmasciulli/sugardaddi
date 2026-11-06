@@ -93,6 +93,12 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     private boolean isExpanded = false;
     private T currentItem;
     private double currentCustomAmount = DEFAULT_CUSTOM_AMOUNT;
+    /**
+     * G or ML: the unit the table is shown in, chosen on the quantity input.
+     * Null = the nutrition's own basis. The other unit is shown only through
+     * the item's density (shownNutrition()); without one, the basis is shown.
+     */
+    private Unit displayUnit;
 
     private View headerView;
     private LinearLayout subContainer;
@@ -153,16 +159,22 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         container.removeAllViews();
         container.setVisibility(View.VISIBLE);
 
-        buildNutritionLabel(item, nutrition, customAmount);
+        buildNutritionLabel(item, shownNutrition(nutrition), customAmount);
     }
 
     /**
      * Update custom amount and refresh display
      * CRITICAL: Preserves expanded/collapsed state AND updates header
+     *
+     * @param customAmount the amount of the third column, in unit
+     * @param unit         G or ML: the unit the whole table is shown in (the
+     *                     quantity input's unit); the other unit than the
+     *                     nutrition's basis needs a density, see shownNutrition()
      */
-    public void updateCustomAmount(double customAmount) {
+    public void updateCustomAmount(double customAmount, @NonNull Unit unit) {
         if (currentItem != null && customAmount > 0) {
             this.currentCustomAmount = customAmount;
+            this.displayUnit = unit;
 
             // PRESERVE STATE: Remember if expanded before rebuilding
             boolean wasExpanded = this.isExpanded;
@@ -303,6 +315,24 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     // LABEL BUILDING
     // ========================================================================
 
+    /**
+     * The values to show: the stored ones in their own basis, or, when the
+     * table is shown in the other unit, a converted copy for display only
+     * (never stored): per 100 ml = per 100 g x density, per 100 g = per
+     * 100 ml / density. Without a density the stored values are shown as they
+     * are, in their own unit.
+     */
+    @NonNull
+    private Nutrition shownNutrition(@NonNull Nutrition nutrition) {
+        Unit basisUnit = nutrition.getBasis() == NutritionBasis.PER_100ML ? Unit.ML : Unit.G;
+        if (displayUnit == null || displayUnit == basisUnit) return nutrition;
+        Double factor = DensityConversion.per100Factor(basisUnit, displayUnit, nutrition.getDensity());
+        if (factor == null) return nutrition;
+        Nutrition shown = nutrition.scale(factor);
+        shown.setBasis(displayUnit == Unit.ML ? NutritionBasis.PER_100ML : NutritionBasis.PER_100G);
+        return shown;
+    }
+
     private boolean categoryHasMandatoryNutrients(NutrientCategory category) {
         for (NutrientInfo info : NutrientInfo.getMandatoryNutrients()) {
             if (info.getCategory() == category) {
@@ -335,7 +365,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
         container.addView(subContainer);
 
-        addHeader(item, customAmount);  // Column headers + dynamic 3rd column
+        addHeader(nutrition, customAmount);  // Column headers + dynamic 3rd column
 
         nutrientSection = new LinearLayout(context);
         nutrientSection.setOrientation(LinearLayout.VERTICAL);
@@ -562,7 +592,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     /**
      * Add table header with simplified, dynamic 3rd column
      */
-    private void addHeader(T item, double customAmount) {
+    private void addHeader(Nutrition nutrition, double customAmount) {
         // Choose header layout based on mode
         int headerLayout = (mode == NutritionLabelMode.SUMMARY)
                 ? R.layout.nutrition_label_header_summary
@@ -582,10 +612,10 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             // Column 1: Nutrient name
             col1.setText(R.string.nutrition_label_nutrient_column);
 
-            // Column 2: per-100 in the unit the nutrition data was
-            // expressed in by its source (never converted between g and
-            // ml - density is not ours to assume).
-            String unit = item.getNutrition().getBasis().getUnitLabel();
+            // Column 2: per-100 in the unit shown: the source's own basis, or
+            // the other unit converted through the source's density (see
+            // shownNutrition(); never a density of our own).
+            String unit = nutrition.getBasis().getUnitLabel();
             col2.setText(context.getString(R.string.nutrition_per_100, unit));
 
             // Column 3: SIMPLIFIED - Just "per 20g" (dynamic)

@@ -17,6 +17,8 @@ import static org.junit.Assert.assertTrue;
 public class QuantityInputStateTest {
 
     private static final double EPS = 1e-9;
+    /** Whole milk, grams per ml. */
+    private static final double MILK = 1.033;
 
     // ========== steps ==========
 
@@ -249,5 +251,49 @@ public class QuantityInputStateTest {
         assertEquals(Unit.ML, state.getUnit());
         assertNull(state.getServingQuantity());
         assertEquals(250.0, state.getCustomQuantity(), EPS);
+    }
+
+    // ========== unit switch (g / ml through a density) ==========
+
+    @Test
+    public void inUnit_servings_keepTheCountAndFollowTheNewServingSize() {
+        QuantityInputState grams = new QuantityInputState(30.0, Unit.G);
+        grams.increaseServings();                     // 1.5 servings = 45 g
+        QuantityInputState ml = grams.inUnit(Unit.ML, 30.0 / MILK, 1 / MILK);
+        assertEquals(Unit.ML, ml.getUnit());
+        assertEquals(1.5, ml.getServingCount(), EPS);
+        assertEquals(45.0 / MILK, ml.getCustomQuantity(), EPS);
+        assertEquals(PortionQuantity.InputMode.SERVINGS, ml.getInputMode());
+    }
+
+    @Test
+    public void inUnit_typedQuantity_isConverted() {
+        QuantityInputState grams = new QuantityInputState(null, Unit.G);
+        grams.setCustomQuantity(75.0);
+        QuantityInputState ml = grams.inUnit(Unit.ML, null, 1 / MILK);
+        assertEquals(72.604065827686, ml.getCustomQuantity(), 1e-9);
+        assertEquals(PortionQuantity.InputMode.QUANTITY, ml.getInputMode());
+        PortionQuantity logged = ml.toPortionQuantity();
+        assertNotNull(logged);
+        assertEquals(Unit.ML, logged.getUnit());
+    }
+
+    @Test
+    public void inUnit_andBack_keepsTheTypedAmount() {
+        QuantityInputState grams = new QuantityInputState(30.0, Unit.G);
+        grams.setCustomQuantity(75.0);
+        QuantityInputState back = grams.inUnit(Unit.ML, 30.0 / MILK, 1 / MILK)
+                .inUnit(Unit.G, 30.0, MILK);
+        assertEquals(75.0, back.getCustomQuantity(), EPS);
+        assertEquals(2.5, back.getServingCount(), EPS);
+    }
+
+    @Test
+    public void inUnit_emptyTypedQuantity_staysEmptyAndInvalid() {
+        QuantityInputState grams = new QuantityInputState(30.0, Unit.G);
+        grams.setCustomQuantity(null);
+        QuantityInputState ml = grams.inUnit(Unit.ML, 30.0 / MILK, 1 / MILK);
+        assertNull(ml.getCustomQuantity());
+        assertNull(ml.toPortionQuantity());
     }
 }

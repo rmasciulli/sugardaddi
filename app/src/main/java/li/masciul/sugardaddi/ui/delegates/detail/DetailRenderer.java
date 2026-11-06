@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 
 /**
@@ -20,7 +21,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
  * 1. supports(item) → checked to find the right renderer
  * 2. inflate(inflater, container) → creates the view hierarchy
  * 3. populate(view, item, language) → fills in the data
- * 4. onAmountChanged(view, item, amount, language) → real-time updates (optional)
+ * 4. onAmountChanged(view, item, amount, unit, language) → real-time updates (optional)
  * 5. destroy() → cleanup when activity is destroyed
  *
  * SEPARATION OF CONCERNS:
@@ -80,11 +81,13 @@ public interface DetailRenderer {
      *
      * @param view     The view returned by inflate()
      * @param item     The current item
-     * @param amount   New amount in grams
+     * @param amount   New amount, in unit
+     * @param unit     G or ML: the unit chosen on the quantity input, which the
+     *                 whole nutrition table follows
      * @param language Current language code
      */
     default void onAmountChanged(@NonNull View view, @NonNull Searchable item,
-                                 double amount, @NonNull String language) {
+                                 double amount, @NonNull Unit unit, @NonNull String language) {
         // Default: no-op. Override in renderers that support amount changes.
     }
 

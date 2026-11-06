@@ -275,10 +275,10 @@ public class RecipeDetailsActivity extends BaseActivity
     // ========== QUANTITY INPUT ==========
 
     /** The input's amount changed: the renderer rescales its nutrition table. */
-    private void onQuantityAmountChanged(double amount) {
+    private void onQuantityAmountChanged(double amount, @NonNull Unit unit) {
         Recipe recipe = recipeManager != null ? recipeManager.getCurrentRecipe() : null;
         if (recipe != null && activeRenderer != null && activeRendererView != null) {
-            activeRenderer.onAmountChanged(activeRendererView, recipe, amount,
+            activeRenderer.onAmountChanged(activeRendererView, recipe, amount, unit,
                     getCurrentLanguage().getCode());
         }
     }
