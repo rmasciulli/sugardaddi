@@ -199,6 +199,7 @@ public final class FatSecretMapper {
         Nutrition n = new Nutrition();
         n.setBasis(NutritionBasis.PER_100G);
         n.setEnergyKcal(Double.parseDouble(m.group(2)) * scale);
+        n.setEnergyKj(kjFromKcal(n.getEnergyKcal()));
         n.setFat(Double.parseDouble(m.group(3)) * scale);
         n.setCarbohydrates(Double.parseDouble(m.group(4)) * scale);
         n.setProteins(Double.parseDouble(m.group(5)) * scale);
@@ -316,6 +317,7 @@ public final class FatSecretMapper {
                 ? NutritionBasis.PER_100ML
                 : NutritionBasis.PER_100G);
         n.setEnergyKcal(scaled(chosen.calories, scale));
+        n.setEnergyKj(kjFromKcal(n.getEnergyKcal()));
         n.setCarbohydrates(scaled(chosen.carbohydrate, scale));
         n.setProteins(scaled(chosen.protein, scale));
         n.setFat(scaled(chosen.fat, scale));
@@ -895,6 +897,7 @@ public final class FatSecretMapper {
         // normalization site where the basis is actually decided.
         n.setBasis(NutritionBasis.PER_100G);
         n.setEnergyKcal(scaled(serving.calories, scale));
+        n.setEnergyKj(kjFromKcal(n.getEnergyKcal()));
         n.setCarbohydrates(scaled(serving.carbohydrate, scale));
         n.setProteins(scaled(serving.protein, scale));
         n.setFat(scaled(serving.fat, scale));
@@ -982,6 +985,17 @@ public final class FatSecretMapper {
     @Nullable
     private static Double scaled(@Nullable Double value, double scale) {
         return value != null ? value * scale : null;
+    }
+
+    /**
+     * FatSecret gives energy in kcal only. kJ is derived with the standard
+     * factor (1 kcal = 4.184 kJ), as OpenFoodFactsMapper does when a product
+     * declares only one of the two, so the label never shows an empty kJ row
+     * next to a known kcal value.
+     */
+    @Nullable
+    private static Double kjFromKcal(@Nullable Double kcal) {
+        return kcal != null ? kcal * 4.184 : null;
     }
 
     private FatSecretMapper() {
