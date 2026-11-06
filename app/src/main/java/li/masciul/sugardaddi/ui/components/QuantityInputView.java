@@ -432,8 +432,14 @@ public class QuantityInputView extends LinearLayout {
      * the current one stays enabled (only made inert), so it keeps the checked
      * color and the user still sees which unit is used. Disabling it too would
      * drop that color: Material draws a disabled segment unfilled.
+     *
+     * Both segments are enabled BEFORE checking: MaterialButton.setChecked()
+     * ignores a disabled button, so checking "ml" while it was still disabled
+     * from the previous refresh (a fresh input starts in g) left it unchecked.
      */
     private void refreshUnitPage() {
+        unitGButton.setEnabled(true);
+        unitMlButton.setEnabled(true);
         updatingToggle = true;
         try {
             unitToggle.check(state.getUnit() == Unit.ML ? R.id.unitMl : R.id.unitG);
