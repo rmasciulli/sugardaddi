@@ -827,9 +827,11 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         int textColor = MaterialColors.getColor(context,
                 com.google.android.material.R.attr.colorOnSurface,
                 ContextCompat.getColor(context, R.color.md_theme_onSurface));
+        // Same fill as the table box (bg_nutrition_block) so the button sits
+        // on it without a visible color step.
         int bgColor = MaterialColors.getColor(context,
-                com.google.android.material.R.attr.colorSurface,
-                ContextCompat.getColor(context, R.color.md_theme_surface));
+                com.google.android.material.R.attr.colorSurfaceContainerLowest,
+                ContextCompat.getColor(context, R.color.md_theme_surfaceContainerLowest));
         int strokeColor = MaterialColors.getColor(context,
                 com.google.android.material.R.attr.colorOutline,
                 ContextCompat.getColor(context, R.color.md_theme_outline));

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    quantity_icon_on_surface.xml - icon tint of the quantity input's dark
+    buttons (- / + and the custom quantity pencil).
+
+    colorOnSurface: black in light mode, near-white in dark mode. Disabled
+    (the - button at its minimum) at 38% alpha, the Material disabled level,
+    so it still looks off as it did with the default tint.
+    The typical serving pencil keeps the style's own tint (primary blue).
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_enabled="false"
+        android:alpha="0.38"
+        android:color="?attr/colorOnSurface" />
+
+    <item android:color="?attr/colorOnSurface" />
+
+</selector>

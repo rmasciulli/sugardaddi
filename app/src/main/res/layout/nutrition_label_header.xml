@@ -8,15 +8,14 @@
       LabelMedium is the correct token for table column headings.
 
     DARK MODE:
-      Background uses ?attr/colorSurface (resolves to surface_dark in night).
+      No background: the table box (bg_nutrition_block) shows through.
       Text uses ?attr/colorOnSurface.
       Divider uses ?attr/colorOnSurface at 20% alpha.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:orientation="vertical">
 
     <!-- Column headers row -->
     <LinearLayout

@@ -96,15 +96,7 @@
     <string name="per_20g">pour 20g</string>
     <string name="per_100ml">pour 100ml</string>
     <string name="serving_size_portion">1 portion</string>
-    <string name="serving_size_custom">Quantité personnalisée</string>
-    <string name="custom_amount">Quantité personnalisée</string>
-    <string name="custom_amount_hint">Saisissez la quantité (%1$s)</string>
-    <string name="custom_amount_error">Veuillez saisir une quantité valide</string>
-    <string name="amount_with_serving">Quantité (%1$s)</string>
-    <string name="custom_amount_with_unit">Quantité personnalisée (%1$s)</string>
     <string name="nutrition_per_serving">par portion (%1$s)</string>
-    <string name="custom_amount_with_serving">Quantité personnalisée (Une portion : %1$s)</string>
-    <string name="custom_amount_default">Quantité personnalisée</string>
     <string name="nutrition_info">Informations Nutritionnelles :</string>
 
     <!-- Enhanced Nutrition Display -->
@@ -736,6 +728,7 @@
     <string name="quantity_decrease">Moins de portions</string>
     <string name="quantity_increase">Plus de portions</string>
     <string name="quantity_edit_typical">Modifier la portion habituelle</string>
+    <string name="quantity_edit_custom">Modifier la quantité</string>
     <!-- Éditeur de la portion habituelle (TypicalServingDialog) -->
     <string name="typical_serving_dialog_title">Portion habituelle</string>
     <string name="typical_serving_source">Valeur de la source : %1$s</string>

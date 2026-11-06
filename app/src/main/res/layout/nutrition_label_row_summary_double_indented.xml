@@ -3,14 +3,13 @@
     nutrition_label_row_summary_double_indented.xml - SUMMARY mode double-indented row (level 2).
 
     TYPOGRAPHY: textAppearanceLabelSmall (11sp) for name and value.
-    DARK MODE: ?attr/colorSurface background.
+    DARK MODE: no background (the table box shows through).
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"

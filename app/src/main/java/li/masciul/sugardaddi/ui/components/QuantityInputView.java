@@ -36,9 +36,10 @@ import li.masciul.sugardaddi.core.models.PortionQuantity;
  * value gets logged, validity) lives in QuantityInputState, and every number is
  * read and written by QuantityText. Both are plain Java and unit-tested.
  *
- * It is not a card: it draws a white rounded rectangle (bg_quantity_input, same
- * spirit as the confidence banner) and sits in a detail card's "Nutrition
- * Facts" section. The rectangle stays still; the pages slide inside it.
+ * It is not a card: it draws the same box as the nutrition table below it
+ * (bg_nutrition_block: white, square corners, thin grey border) and sits in a
+ * detail card's "Nutrition Facts" section. The box stays still; the pages
+ * slide inside it, kept 1dp inside the border so they never cover it.
  *
  * STATE ACROSS RE-CREATION: the screen rebuilds this view after an asynchronous
  * load, too late for Android's automatic view-state restore. The owner calls
@@ -106,8 +107,12 @@ public class QuantityInputView extends LinearLayout {
 
     private void init(@NonNull Context context) {
         setOrientation(VERTICAL);
-        // White rounded rectangle; spacing comes from the pages and the dots.
-        setBackgroundResource(R.drawable.bg_quantity_input);
+        // Same box as the nutrition table; spacing comes from the pages and the
+        // dots. The 1dp padding keeps the sliding pages inside the 1dp border
+        // (the pager clips its pages to its own bounds).
+        setBackgroundResource(R.drawable.bg_nutrition_block);
+        int border = Math.round(getResources().getDisplayMetrics().density);
+        setPadding(border, border, border, border);
 
         LayoutInflater.from(context).inflate(R.layout.view_quantity_input, this, true);
 
@@ -140,10 +145,15 @@ public class QuantityInputView extends LinearLayout {
         });
         // The number has no box and can be short ("5"): the whole row is the target.
         findViewById(R.id.customQuantityRow).setOnClickListener(v -> focusCustomField());
+        findViewById(R.id.customQuantityEdit).setOnClickListener(v -> focusCustomField());
         // Typical serving size, on both pages: the screen decides what editing means.
         OnClickListener typicalClick = v -> {
             if (typicalServingClickListener != null) typicalServingClickListener.run();
         };
+        // The pencil buttons are the visible control; the rows answer too, so
+        // tapping the label or the value works as well.
+        findViewById(R.id.servingsTypicalEdit).setOnClickListener(typicalClick);
+        findViewById(R.id.customTypicalEdit).setOnClickListener(typicalClick);
         findViewById(R.id.servingsTypicalRow).setOnClickListener(typicalClick);
         findViewById(R.id.customTypicalRow).setOnClickListener(typicalClick);
 

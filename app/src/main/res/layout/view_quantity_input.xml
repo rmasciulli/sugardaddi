@@ -2,9 +2,9 @@
 <!--
     view_quantity_input.xml - content of QuantityInputView.
 
-    Merged into QuantityInputView, a vertical LinearLayout drawing a white
-    rounded rectangle (bg_quantity_input, 8dp corners like the confidence
-    banner). It sits in the "Nutrition Facts" section of a detail card, which
+    Merged into QuantityInputView, a vertical LinearLayout drawing the same
+    box as the nutrition table (bg_nutrition_block: white, square corners,
+    thin grey border). It sits in the "Nutrition Facts" section of a detail card, which
     provides the section title and the margins.
 
     STRUCTURE:
@@ -20,6 +20,13 @@
     area (8dp under the dot) plus a 5dp margin, so the gap under the dots reads
     like the other three sides.
     The pager is as tall as its tallest page: the box never changes height.
+    VALUES: the typical serving value uses the same size as the value under it
+    (BodyLarge), regular weight and primary color: bold stays for the amount
+    that gets logged. Every row ends with a 28dp outlined button in the same
+    column (+ on page 1, pencils elsewhere), so the values line up. Icons:
+    primary blue for the typical serving pencil (it edits the item), dark
+    (quantity_icon_on_surface) for - / + and the quantity pencil (they edit
+    the amount being logged).
 
     ICON BUTTONS: padding, insets and icon gravity are set explicitly. The
     Material defaults are made for 48dp buttons with insets and push the icon
@@ -55,16 +62,16 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
-            <!-- Typical serving: tap to edit it (QuantityInputView reports the tap,
-                 the screen opens TypicalServingDialog). Primary color + pencil
-                 say it is editable. -->
+            <!-- Typical serving: the pencil button edits it (QuantityInputView
+                 reports the tap, the screen opens TypicalServingDialog). The
+                 whole row also answers the tap, for a larger target; only the
+                 button shows a ripple. -->
             <LinearLayout
                 android:id="@+id/servingsTypicalRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="?attr/selectableItemBackground"
-                android:contentDescription="@string/quantity_edit_typical"
+                android:minHeight="28dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -80,17 +87,28 @@
                     android:id="@+id/servingsTypicalValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:layout_marginEnd="8dp"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
 
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_edit"
-                    app:tint="?attr/colorPrimary" />
+                <!-- Same 28dp outlined square as - / +, in the + column -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/servingsTypicalEdit"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    android:contentDescription="@string/quantity_edit_typical"
+                    app:cornerRadius="6dp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="16dp" />
 
             </LinearLayout>
 
@@ -136,7 +154,8 @@
                     app:icon="@drawable/ic_remove"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
-                    app:iconSize="16dp" />
+                    app:iconSize="16dp"
+                    app:iconTint="@color/quantity_icon_on_surface" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/servingsPlus"
@@ -154,7 +173,8 @@
                     app:icon="@drawable/ic_add"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
-                    app:iconSize="16dp" />
+                    app:iconSize="16dp"
+                    app:iconTint="@color/quantity_icon_on_surface" />
 
             </LinearLayout>
 
@@ -177,16 +197,16 @@
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
-            <!-- Typical serving: tap to edit it (QuantityInputView reports the tap,
-                 the screen opens TypicalServingDialog). Primary color + pencil
-                 say it is editable. -->
+            <!-- Typical serving: the pencil button edits it (QuantityInputView
+                 reports the tap, the screen opens TypicalServingDialog). The
+                 whole row also answers the tap, for a larger target; only the
+                 button shows a ripple. -->
             <LinearLayout
                 android:id="@+id/customTypicalRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="?attr/selectableItemBackground"
-                android:contentDescription="@string/quantity_edit_typical"
+                android:minHeight="28dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -202,17 +222,28 @@
                     android:id="@+id/customTypicalValue"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:layout_marginEnd="8dp"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
 
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_edit"
-                    app:tint="?attr/colorPrimary" />
+                <!-- Same 28dp outlined square as - / +, in the + column -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/customTypicalEdit"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    android:contentDescription="@string/quantity_edit_typical"
+                    app:cornerRadius="6dp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="16dp" />
 
             </LinearLayout>
 
@@ -263,16 +294,40 @@
                     android:textStyle="bold"
                     tools:text="105" />
 
-                <!-- The input's unit, appended automatically -->
+                <!-- The input's unit, appended automatically. Same 8dp gap before
+                     the button as the values above, so "75 g" ends where
+                     "30 g" ends. -->
                 <TextView
                     android:id="@+id/customUnitLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
+                    android:layout_marginEnd="8dp"
                     android:textAppearance="?attr/textAppearanceBodyLarge"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="g" />
+
+                <!-- Pencil in the + column, dark icon: edits the amount being
+                     logged (focuses the field), unlike the blue one above,
+                     which edits the item's typical serving. -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/customQuantityEdit"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    android:contentDescription="@string/quantity_edit_custom"
+                    app:cornerRadius="6dp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/quantity_icon_on_surface" />
 
             </LinearLayout>
 

@@ -96,15 +96,7 @@
     <string name="per_20g">per 20g</string>
     <string name="per_100ml">per 100ml</string>
     <string name="serving_size_portion">1 Serving</string>
-    <string name="serving_size_custom">Custom Amount</string>
-    <string name="custom_amount">Custom Amount</string>
-    <string name="custom_amount_hint">Enter amount (%1$s)</string>
-    <string name="custom_amount_error">Please enter a valid amount</string>
-    <string name="amount_with_serving">Amount (%1$s)</string>
-    <string name="custom_amount_with_unit">Custom amount (%1$s)</string>
     <string name="nutrition_per_serving">per serving (%1$s)</string>
-    <string name="custom_amount_with_serving">Custom amount (serving size: %1$s)</string>
-    <string name="custom_amount_default">Custom amount</string>
     <string name="nutrition_info">Nutrition Information:</string>
 
     <!-- Enhanced Nutrition Display -->
@@ -737,6 +729,7 @@
     <string name="quantity_decrease">Fewer servings</string>
     <string name="quantity_increase">More servings</string>
     <string name="quantity_edit_typical">Edit the typical serving size</string>
+    <string name="quantity_edit_custom">Edit the quantity</string>
     <!-- Typical serving editor (TypicalServingDialog) -->
     <string name="typical_serving_dialog_title">Typical serving size</string>
     <string name="typical_serving_source">Source value: %1$s</string>

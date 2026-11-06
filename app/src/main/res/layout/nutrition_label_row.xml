@@ -9,14 +9,13 @@
       (secondary, slightly dimmed to draw eye to the name column first).
 
     DARK MODE:
-      Background ?attr/colorSurface. Divider ?attr/colorOnSurface at 10% alpha.
+      No background (the table box shows through). Divider ?attr/colorOnSurface at 10% alpha.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"

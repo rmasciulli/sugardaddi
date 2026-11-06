@@ -9,7 +9,7 @@
       than top-level nutrient names (14sp BodyMedium), never larger.
 
     DARK MODE:
-      Background ?attr/colorSurface. Text ?attr/colorPrimary (brand blue, works on
+      No background (the table box shows through). Text ?attr/colorPrimary (brand blue, works on
       both light and dark surfaces). Divider ?attr/colorPrimary at 40% alpha.
 
     SPACING:
@@ -21,8 +21,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/categoryHeaderText"

@@ -10,14 +10,13 @@
 
     INDENTATION: paddingStart="16dp" on the name TextView pushes it right.
 
-    DARK MODE: ?attr/colorSurface background, divider at 10% alpha.
+    DARK MODE: no background (the table box shows through), divider at 10% alpha.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
