@@ -157,9 +157,11 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     /**
      * Every serving the source offers in the nutrition basis unit (g for
      * per-100g values, ml for per-100ml), in source order. servingSize is the
-     * typical one; this is the full set. It never holds a serving in the
-     * other unit: Unit.ML converts 1:1 to grams, so a "240 ml" entry next to
-     * per-100g values would be read as 240 g by any getAsGrams() caller.
+     * typical one; this is the full set. It holds a serving in the OTHER unit
+     * only when the nutrition has a density: such a serving must be read with
+     * DensityConversion.servingIn(), never getAsGrams() (Unit.ML converts 1:1
+     * to grams, so "240 ml" next to per-100g values would read as 240 g).
+     * The same goes for servingSize.
      */
     private List<ServingSize> servingOptions = new ArrayList<>();
 
@@ -214,6 +216,8 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
     private Double userServingQuantity;
     /** G or ML; set together with userServingQuantity. */
     private Unit userServingUnit;
+    /** G or ML: the unit the user chose to see and log this item in; null = the source's. */
+    private Unit userPreferredUnit;
 
     // ========== CONSTRUCTORS ==========
 
@@ -1293,6 +1297,13 @@ public class FoodProduct implements Nutritional, Searchable, Categorizable, Alle
         this.userServingQuantity = quantity;
         this.userServingUnit = quantity != null ? unit : null;
     }
+
+    // ========== USER'S PREFERRED UNIT (g or ml) ==========
+
+    public Unit getUserPreferredUnit() { return userPreferredUnit; }
+
+    /** Set or clear (null) the user's unit. No touch(): not source data. */
+    public void setUserPreferredUnit(Unit unit) { this.userPreferredUnit = unit; }
 
     public int getAccessCount() {
         return accessCount;

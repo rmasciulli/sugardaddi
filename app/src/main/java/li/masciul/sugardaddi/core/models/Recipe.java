@@ -111,6 +111,8 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
     private Double userServingQuantity;
     /** G or ML; set together with userServingQuantity. */
     private Unit userServingUnit;
+    /** G or ML: the unit the user chose to see and log this item in; null = the source's. */
+    private Unit userPreferredUnit;
 
     /** True when this Recipe was built from a lightweight search result that
      * structurally lacks full detail (e.g. FatSecret's recipes/search/v3,
@@ -1058,6 +1060,13 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         this.userServingQuantity = quantity;
         this.userServingUnit = quantity != null ? unit : null;
     }
+
+    // ========== USER'S PREFERRED UNIT (g or ml) ==========
+
+    public Unit getUserPreferredUnit() { return userPreferredUnit; }
+
+    /** Set or clear (null) the user's unit. No touch(): not source data. */
+    public void setUserPreferredUnit(Unit unit) { this.userPreferredUnit = unit; }
 
     public boolean isTemplate() { return isTemplate; }
     public void setTemplate(boolean template) { this.isTemplate = template; touch(); }

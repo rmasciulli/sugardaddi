@@ -23,6 +23,7 @@ import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.PortionQuantity;
 import li.masciul.sugardaddi.core.models.Recipe;
 import li.masciul.sugardaddi.core.models.ServingSize;
+import li.masciul.sugardaddi.core.utils.DensityConversion;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.UserItemDataEntity;
 import li.masciul.sugardaddi.ui.activities.MealDetailsActivity;
@@ -409,19 +410,26 @@ public final class DetailQuantityController {
     }
 
     /**
-     * The source's serving size read in the given unit, never converted through
-     * a density: ml for a volume input, g otherwise. Same reading as
-     * NutritionLabelManager.defaultAmountFor().
+     * The source's serving size read in the given unit, converted through the
+     * item's density when the serving is in the other unit (DensityConversion).
+     * Same reading as NutritionLabelManager.defaultAmountFor().
      */
     @Nullable
     private static Double sourceServingIn(@NonNull Searchable item, @NonNull Unit unit) {
-        ServingSize serving = servingOf(item);
-        if (serving == null) return null;
-        Double size = unit == Unit.ML ? serving.getAsMilliliters() : serving.getAsGrams();
-        return (size != null && size > 0) ? size : null;
+        return DensityConversion.servingIn(servingOf(item), unit, densityOf(item));
     }
 
-    /** The user's preferred serving, when it is in the given unit. */
+    /** Grams per ml of the item, or null when its source gives none. */
+    @Nullable
+    private static Double densityOf(@NonNull Searchable item) {
+        Nutrition nutrition = nutritionOf(item);
+        return nutrition != null ? nutrition.getDensity() : null;
+    }
+
+    /**
+     * The user's preferred serving read in the given unit: as stored when the
+     * units match, through the density when they differ, else null.
+     */
     @Nullable
     private static Double userServingIn(@NonNull Searchable item, @NonNull Unit unit) {
         Double quantity = null;
@@ -434,7 +442,8 @@ public final class DetailQuantityController {
             userUnit = ((Recipe) item).getUserServingUnit();
         }
         if (quantity == null || quantity <= 0) return null;
-        return (userUnit == Unit.ML) == (unit == Unit.ML) ? quantity : null;
+        return DensityConversion.convert(quantity, userUnit == Unit.ML ? Unit.ML : Unit.G,
+                unit == Unit.ML ? Unit.ML : Unit.G, densityOf(item));
     }
 
     private static void setUserServing(@NonNull Searchable item, @Nullable Double quantity,

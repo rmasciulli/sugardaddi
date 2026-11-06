@@ -65,6 +65,7 @@ public class FoodProductWithNutrition {
             foodProduct.setUserThumbnailPath(data.getThumbnailPath());
             foodProduct.setUserServing(data.getServingQuantity(),
                     UserItemDataEntity.servingUnitOf(data));
+            foodProduct.setUserPreferredUnit(UserItemDataEntity.preferredUnitOf(data));
         }
         return foodProduct;
     }

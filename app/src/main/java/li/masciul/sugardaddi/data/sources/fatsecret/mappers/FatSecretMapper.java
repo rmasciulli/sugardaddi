@@ -492,19 +492,23 @@ public final class FatSecretMapper {
         if (nutrition == null || servings == null || servings.isEmpty()) return;
 
         NutritionBasis basis = nutrition.getBasis();
-        product.setServingOptions(mapServingOptions(servings, basis));
-        product.setServingSize(pickTypicalServing(servings, basis));
+        boolean bothUnits = nutrition.getDensity() != null;
+        product.setServingOptions(mapServingOptions(servings, basis, bothUnits));
+        product.setServingSize(pickTypicalServing(servings, basis, bothUnits));
     }
 
     /**
-     * Every serving usable for quantity in the given basis, in source order.
+     * Every serving usable for quantity, in source order, each in its own unit
+     * (g or ml).
      *
-     * Kept: a metric amount above 0 whose unit IS the basis unit (g for
-     * per-100g values, ml for per-100ml). Dropped:
-     * - servings in the OTHER unit. Unit.ML converts 1:1 to grams, so a
-     *   "1 cup (240 ml)" entry next to per-100g values would be read as
-     *   240 g by any getAsGrams() caller. They become usable once a
-     *   source-derived density exists (planned as a separate change).
+     * Kept: a metric amount above 0 whose unit is the basis unit (g for
+     * per-100g values, ml for per-100ml), and, when the food has a density
+     * (bothUnits), the ones in the other unit too: every serving reader
+     * converts them through that density (DensityConversion), so a
+     * "1 cup (240 ml)" next to per-100 g values is read as 240 ml x density.
+     * Dropped:
+     * - servings in the other unit when there is no density: they would be
+     *   read 1:1 (ServingSize counts a ml as a gram).
      * - "oz" servings: FatSecret doesn't say whether that is a mass ounce
      *   (28.35 g) or a fluid ounce (29.57 ml).
      * - servings with no metric amount at all (e.g. a brand's "1 bar").
@@ -512,12 +516,12 @@ public final class FatSecretMapper {
     @NonNull
     private static List<ServingSize> mapServingOptions(
             @NonNull List<FoodGetResponse.FoodServing> servings,
-            @NonNull NutritionBasis basis) {
+            @NonNull NutritionBasis basis, boolean bothUnits) {
 
         List<ServingSize> options = new ArrayList<>();
         for (FoodGetResponse.FoodServing s : servings) {
-            if (isUsableServing(s, basis)) {
-                options.add(toServingSize(s, basis));
+            if (isUsableServing(s, basis, bothUnits)) {
+                options.add(toServingSize(s));
             }
         }
         return options;
@@ -525,32 +529,39 @@ public final class FatSecretMapper {
 
     /**
      * The serving shown as "typical": FatSecret's own is_default serving when
-     * it is usable, otherwise the first usable one. The exact 100 g / 100 ml
-     * serving never qualifies - it would only repeat the label's per-100
-     * column. Null when nothing qualifies, which leaves the shared fallback
-     * amount in place (see NutritionLabelManager.defaultAmountFor()).
+     * it is usable, otherwise the first usable one. Its unit is also the unit
+     * the food opens in (FatSecret's default for milk is "1 cup (244 g)", so
+     * milk opens in grams; a "1 can (355 ml)" default opens in ml). The exact
+     * 100 g / 100 ml serving never qualifies - it would only repeat the
+     * label's per-100 column. Null when nothing qualifies, which leaves the
+     * shared fallback amount in place (see NutritionLabelManager.defaultAmountFor()).
      */
     @Nullable
     private static ServingSize pickTypicalServing(
             @NonNull List<FoodGetResponse.FoodServing> servings,
-            @NonNull NutritionBasis basis) {
+            @NonNull NutritionBasis basis, boolean bothUnits) {
 
         FoodGetResponse.FoodServing firstUsable = null;
         for (FoodGetResponse.FoodServing s : servings) {
-            if (!isUsableServing(s, basis) || s.metricServingAmount == 100.0) continue;
+            if (!isUsableServing(s, basis, bothUnits) || s.metricServingAmount == 100.0) continue;
             if (s.isDefault != null && s.isDefault == 1) {
-                return toServingSize(s, basis);
+                return toServingSize(s);
             }
             if (firstUsable == null) firstUsable = s;
         }
-        return firstUsable != null ? toServingSize(firstUsable, basis) : null;
+        return firstUsable != null ? toServingSize(firstUsable) : null;
     }
 
-    /** Metric amount above 0, expressed in the basis unit ("g" or "ml"). */
+    /**
+     * Metric amount above 0, in the basis unit ("g" or "ml"), or in either of
+     * the two when the food has a density.
+     */
     private static boolean isUsableServing(@NonNull FoodGetResponse.FoodServing s,
-                                           @NonNull NutritionBasis basis) {
-        return s.metricServingAmount != null && s.metricServingAmount > 0
-                && basis.getUnitLabel().equalsIgnoreCase(s.metricServingUnit);
+                                           @NonNull NutritionBasis basis, boolean bothUnits) {
+        if (s.metricServingAmount == null || s.metricServingAmount <= 0) return false;
+        if (basis.getUnitLabel().equalsIgnoreCase(s.metricServingUnit)) return true;
+        return bothUnits && ("g".equalsIgnoreCase(s.metricServingUnit)
+                || "ml".equalsIgnoreCase(s.metricServingUnit));
     }
 
     /**
@@ -560,9 +571,9 @@ public final class FatSecretMapper {
      * constructor here, so the metric values are never overwritten by it.
      */
     @NonNull
-    private static ServingSize toServingSize(@NonNull FoodGetResponse.FoodServing s,
-                                             @NonNull NutritionBasis basis) {
-        Unit unit = basis == NutritionBasis.PER_100ML ? Unit.ML : Unit.G;
+    private static ServingSize toServingSize(@NonNull FoodGetResponse.FoodServing s) {
+        // Only "g" and "ml" servings get here (isUsableServing()).
+        Unit unit = "ml".equalsIgnoreCase(s.metricServingUnit) ? Unit.ML : Unit.G;
         ServingSize serving = new ServingSize(s.metricServingAmount, unit);
         if (s.servingDescription != null && !s.servingDescription.trim().isEmpty()) {
             serving.setDescription(s.servingDescription.trim());

@@ -404,9 +404,9 @@
     <string name="cache_downloaded_note">Vider une source supprime ses données du disque. Les éléments que vous avez marqués comme favoris sont conservés mais ne sont plus catégorisés comme provenant d\'une source de données téléchargée.</string>
 
     <string name="cache_clear_all_title">Effacer toutes les données en cache</string>
-    <string name="cache_clear_all_action">Supprime les éléments recherchés, les favoris et les sources de données téléchargées. Les éléments utilisés dans un repas et ceux que vous avez personnalisés (photos, portions) sont conservés.</string>
+    <string name="cache_clear_all_action">Supprime les éléments recherchés, les favoris et les sources de données téléchargées. Les éléments utilisés dans un repas et ceux que vous avez personnalisés (photos, portions, unités) sont conservés.</string>
     <string name="cache_reset_custom_title">Réinitialiser mes personnalisations</string>
-    <string name="cache_reset_custom_action">Supprime vos photos personnalisées et vos portions préférées de tous les produits et recettes. Les favoris sont conservés.</string>
+    <string name="cache_reset_custom_action">Supprime vos photos personnalisées, vos portions préférées et vos unités préférées de tous les produits et recettes. Les favoris sont conservés.</string>
 
     <string name="cache_products_count">Produits : %1$d</string>
     <string name="cache_recipes_count">Recettes : %1$d</string>

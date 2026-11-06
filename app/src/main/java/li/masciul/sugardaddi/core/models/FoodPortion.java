@@ -4,6 +4,7 @@ import li.masciul.sugardaddi.core.enums.NutritionBasis;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
+import li.masciul.sugardaddi.core.utils.DensityConversion;
 import java.util.UUID;
 
 /**
@@ -179,11 +180,14 @@ public class FoodPortion {
      * This portion's amount in the item's nutrition basis units - grams for a
      * per-100g item, ml for a per-100ml one - or null when it can't be known.
      *
-     * - Weight or volume units (G, ML, KG...): the serving's own conversion.
-     *   Unit.ML counts 1:1, which is the app's existing convention: the
-     *   amount field and the label already work in the item's basis unit.
-     *   Strict g/ml handling (through density) comes with the quantity input,
-     *   where the saved unit stops being hardcoded (roadmap change 6).
+     * - A logged entry (snapshot): its frozen total, in its own unit. When
+     *   that unit is not the item's basis ("250 ml" of milk stored per 100 g),
+     *   it is converted through the item's CURRENT density, like per-100
+     *   nutrition, which is not frozen either. No density: no amount, never a
+     *   1:1 reading (decision, unit preference).
+     * - Weight or volume units (G, ML, KG...) without a snapshot: the
+     *   serving's own conversion, where Unit.ML counts 1:1 (recipe
+     *   ingredients; unchanged).
      * - SERVING / PORTION: quantity x the item's own serving weight, read
      *   from the resolved item at calculation time - "2 servings" of a bar
      *   whose serving is 40 g is 80 g, and stays right if the source later
@@ -195,7 +199,10 @@ public class FoodPortion {
         // A logged entry is a record: its frozen total is the amount, never
         // recomputed from the item's current serving size. Null total = the
         // entry has no known amount (servings of an item without a serving size).
-        if (quantity != null) return quantity.getTotalQuantity();
+        if (quantity != null) {
+            Double total = quantity.getTotalQuantity();
+            return total != null ? inBasisUnits(total, quantity.getUnit()) : null;
+        }
 
         // Below: portions without a snapshot (recipe ingredients, and any entry
         // built through the generic ServingSize constructor).
@@ -217,14 +224,46 @@ public class FoodPortion {
         return gramsEquivalent;
     }
 
-    /** Weight of ONE serving of the resolved item, in its basis units, or null. */
+    /**
+     * Weight of ONE serving of the resolved item, in its basis units, or null.
+     * A serving in the other unit is converted through the item's density
+     * (DensityConversion.servingIn()).
+     */
     private Double resolvedServingWeight() {
         Searchable resolved = getResolvedItem();
         if (!(resolved instanceof Nutritional)) return null;
-        ServingSize itemServing = ((Nutritional) resolved).getServingSize();
-        if (itemServing == null) return null;
-        Double weight = itemServing.getAsGrams();
-        return (weight != null && weight > 0) ? weight : null;
+        Nutritional item = (Nutritional) resolved;
+        return DensityConversion.servingIn(item.getServingSize(), basisUnitOf(item),
+                densityOf(item));
+    }
+
+    /**
+     * A logged total in the resolved item's basis units. Same unit as the
+     * basis: unchanged. The other one (g / ml): through the item's density,
+     * null without one. A total with no g / ml unit, or an item without
+     * nutrition, is taken as is (nothing to convert against).
+     */
+    private Double inBasisUnits(double total, Unit unit) {
+        Searchable resolved = getResolvedItem();
+        if (!(resolved instanceof Nutritional)) return total;
+        Nutritional item = (Nutritional) resolved;
+        if (!item.hasNutritionData()) return total;
+        Unit kind = DensityConversion.kindOf(unit);
+        if (kind == null) return total;
+        return DensityConversion.convert(total, kind, basisUnitOf(item), densityOf(item));
+    }
+
+    /** ML for a per-100 ml item, G otherwise (including items without nutrition). */
+    private static Unit basisUnitOf(Nutritional item) {
+        Nutrition nutrition = item != null ? item.getNutrition() : null;
+        return nutrition != null && nutrition.getBasis() == NutritionBasis.PER_100ML
+                ? Unit.ML : Unit.G;
+    }
+
+    /** Grams per ml of the item, or null. */
+    private static Double densityOf(Nutritional item) {
+        Nutrition nutrition = item != null ? item.getNutrition() : null;
+        return nutrition != null ? nutrition.getDensity() : null;
     }
 
     /**
@@ -445,11 +484,6 @@ public class FoodPortion {
      */
     private static PortionQuantity snapshotFor(Nutritional item, double amount, Unit unit) {
         ServingSize itemServing = item != null ? item.getServingSize() : null;
-        Double servingQuantity = null;
-        if (itemServing != null) {
-            Double size = itemServing.getAsGrams();
-            if (size != null && size > 0) servingQuantity = size;
-        }
 
         Unit entryUnit;
         if (item != null && item.hasNutritionData()) {
@@ -461,6 +495,11 @@ public class FoodPortion {
         } else {
             entryUnit = Unit.G;
         }
+
+        // The typical serving frozen with the entry, in the entry's unit (through
+        // the item's density when the serving is in the other unit).
+        Double servingQuantity = DensityConversion.servingIn(itemServing, entryUnit,
+                densityOf(item));
 
         if (unit == Unit.SERVING || unit == Unit.PORTION) {
             return PortionQuantity.ofServings(amount, servingQuantity, entryUnit);

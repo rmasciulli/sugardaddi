@@ -8,6 +8,7 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
+import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import li.masciul.sugardaddi.data.database.converters.*;
@@ -22,12 +23,13 @@ import java.util.concurrent.Executors;
  *
  * ALPHA SCHEMA POLICY
  * ===================
- * The project has no shipped users and the schema is still evolving, so there
- * are deliberately NO hand-written Room migrations. The builder uses
- * fallbackToDestructiveMigration(): any version bump recreates the schema from
- * scratch and clears all local data. Updating or reinstalling the app after a
- * schema change therefore resets the local database. Formal migrations return
- * once the schema stabilises toward v1.0.
+ * The project has no shipped users and the schema is still evolving. The
+ * builder uses fallbackToDestructiveMigration(): a version bump with no
+ * migration for it recreates the schema from scratch and clears all local data.
+ *
+ * Hand-written migrations are added when a change is small and worth keeping
+ * the data for. First one: MIGRATION_21_22 (one nullable column), so meals,
+ * favorites and customisations survive the update. Older versions still wipe.
  *
  * NOTE: destructive recreation clears Room rows only - image files cached on
  * disk are NOT removed by Room and must be purged separately.
@@ -48,9 +50,8 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class,        // Recipes (user-created + external)
                 UserItemDataEntity.class   // User data on items: favorite, serving, photos
         },
-        version = 21,        // keep getDatabaseVersion() in sync - bumped for
-                             // user_item_data (favorites, custom photos and preferred
-                             // serving moved off food_products / recipes)
+        version = 22,        // keep getDatabaseVersion() in sync - bumped for
+                             // user_item_data.preferredUnit (MIGRATION_21_22)
         exportSchema = true
 )
 @TypeConverters({
@@ -68,6 +69,19 @@ public abstract class AppDatabase extends RoomDatabase {
 
     private static final String TAG = ApiConfig.DATABASE_LOG_TAG;
     private static final String DATABASE_NAME = "sugardaddi_database";
+
+    /**
+     * v21 -> v22: user_item_data.preferredUnit, the unit (g or ml) the user
+     * chose for an item. Nullable TEXT with no default: exactly what Room
+     * expects for the entity's @Nullable String field, so its schema check
+     * after the migration passes. Existing rows get NULL (the source's unit).
+     */
+    static final Migration MIGRATION_21_22 = new Migration(21, 22) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `user_item_data` ADD COLUMN `preferredUnit` TEXT");
+        }
+    };
 
     private static volatile AppDatabase INSTANCE;
     private static final Object LOCK = new Object();
@@ -103,7 +117,9 @@ public abstract class AppDatabase extends RoomDatabase {
                         context,
                         AppDatabase.class,
                         DATABASE_NAME)
-                // Alpha policy: no hand-written migrations - recreate on version bump.
+                // Known migrations first; any other version bump recreates the
+                // schema (alpha policy, see the class comment).
+                .addMigrations(MIGRATION_21_22)
                 .fallbackToDestructiveMigration()
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
                 .setQueryExecutor(Executors.newFixedThreadPool(4))
@@ -150,7 +166,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     /** Current schema version. Keep in sync with the @Database version above. */
     public static int getDatabaseVersion() {
-        return 21;
+        return 22;
     }
 
     /** Database file name. */

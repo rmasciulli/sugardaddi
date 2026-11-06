@@ -23,13 +23,15 @@ import li.masciul.sugardaddi.core.enums.Unit;
  * WHAT IT HOLDS:
  * - isFavorite                     the favorite pin
  * - servingQuantity / servingUnit  the preferred typical serving (change 5b)
+ * - preferredUnit                  "g" or "ml": the unit the item is shown and
+ *                                  logged in, when the user chose one (DB v22)
  * - imagePath / thumbnailPath      custom photos set with ImagePickerHelper
  *
  * RULES:
  * - One row per item: primary key (itemType, itemId). itemType is needed
  *   because a product and a recipe can share an id (FatSecret numbers both).
  * - A row exists only while it holds something: the DAO deletes rows left with
- *   no favorite, no serving and no photo (deleteEmpty()), so "has a row" means
+ *   no favorite, no serving, no unit and no photo (deleteEmpty()), so "has a row" means
  *   "the user set something" and can drive retention directly.
  * - itemId has no foreign key (it points at food_products OR recipes). Rows of
  *   items that no longer exist are swept by cache eviction (deleteOrphans()).
@@ -68,7 +70,8 @@ public class UserItemDataEntity {
 
     /** SQL condition: the row holds a customisation (anything but the favorite pin). */
     public static final String HAS_CUSTOMISATION =
-            "(servingQuantity IS NOT NULL OR imagePath IS NOT NULL OR thumbnailPath IS NOT NULL)";
+            "(servingQuantity IS NOT NULL OR preferredUnit IS NOT NULL "
+                    + "OR imagePath IS NOT NULL OR thumbnailPath IS NOT NULL)";
 
     public static final String CUSTOMISED_PRODUCT_IDS =
             "SELECT itemId FROM user_item_data WHERE itemType = 'FOOD_PRODUCT' AND " + HAS_CUSTOMISATION;
@@ -93,6 +96,15 @@ public class UserItemDataEntity {
     /** "g" or "ml"; set together with servingQuantity. */
     @Nullable
     private String servingUnit;
+
+    /**
+     * "g" or "ml": the unit the user chose on the input's "Measurements &
+     * quantity" page. Null = the source's own unit. Added in v22 by a real
+     * migration (AppDatabase.MIGRATION_21_22), so its column is nullable TEXT
+     * with no default, exactly what ALTER TABLE ADD COLUMN creates.
+     */
+    @Nullable
+    private String preferredUnit;
 
     /** Custom full-size photo (local file). */
     @Nullable
@@ -137,6 +149,13 @@ public class UserItemDataEntity {
         return UNIT_ML.equals(data.servingUnit) ? Unit.ML : Unit.G;
     }
 
+    /** The row's preferred unit as a Unit (G or ML), or null when none is set. */
+    @Nullable
+    public static Unit preferredUnitOf(@NonNull UserItemDataEntity data) {
+        if (data.preferredUnit == null) return null;
+        return UNIT_ML.equals(data.preferredUnit) ? Unit.ML : Unit.G;
+    }
+
     /** The column value for a Unit: "ml" for ML, "g" for anything else. */
     @NonNull
     public static String unitToColumn(@Nullable Unit unit) {
@@ -145,7 +164,8 @@ public class UserItemDataEntity {
 
     /** True when nothing is set: such a row is deleted (see the class rules). */
     public boolean isEmpty() {
-        return !isFavorite && servingQuantity == null && imagePath == null && thumbnailPath == null;
+        return !isFavorite && servingQuantity == null && preferredUnit == null
+                && imagePath == null && thumbnailPath == null;
     }
 
     // ========== GETTERS / SETTERS (Room) ==========
@@ -164,6 +184,9 @@ public class UserItemDataEntity {
 
     @Nullable public String getServingUnit() { return servingUnit; }
     public void setServingUnit(@Nullable String servingUnit) { this.servingUnit = servingUnit; }
+
+    @Nullable public String getPreferredUnit() { return preferredUnit; }
+    public void setPreferredUnit(@Nullable String preferredUnit) { this.preferredUnit = preferredUnit; }
 
     @Nullable public String getImagePath() { return imagePath; }
     public void setImagePath(@Nullable String imagePath) { this.imagePath = imagePath; }

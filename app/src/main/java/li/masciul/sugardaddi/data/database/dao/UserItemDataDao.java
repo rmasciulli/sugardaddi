@@ -37,7 +37,7 @@ public abstract class UserItemDataDao {
     @Query("SELECT COUNT(*) FROM user_item_data WHERE itemType = :itemType AND isFavorite = 1")
     public abstract int getFavoriteCount(String itemType);
 
-    /** Items with a customisation (preferred serving or custom photo), for Settings. */
+    /** Items with a customisation (preferred serving or unit, custom photo), for Settings. */
     @Query("SELECT COUNT(*) FROM user_item_data WHERE " + UserItemDataEntity.HAS_CUSTOMISATION)
     public abstract int getCustomisedCount();
 
@@ -89,6 +89,21 @@ public abstract class UserItemDataDao {
         deleteEmpty();
     }
 
+    /**
+     * Unit the item is shown and logged in (the input's "Measurements &
+     * quantity" page); null goes back to the source's own unit.
+     *
+     * @param unit UserItemDataEntity.UNIT_G, UNIT_ML or null
+     */
+    @Transaction
+    public void setPreferredUnit(@NonNull String itemType, @NonNull String itemId,
+                                 @Nullable String unit) {
+        long now = System.currentTimeMillis();
+        insertIfAbsent(UserItemDataEntity.empty(itemType, itemId, now));
+        updatePreferredUnit(itemType, itemId, unit, now);
+        deleteEmpty();
+    }
+
     // ========== SETTINGS OPERATIONS ==========
 
     /** Every favorite pin removed (rows left with a customisation stay). */
@@ -99,7 +114,7 @@ public abstract class UserItemDataDao {
     }
 
     /**
-     * "Reset my customisations": preferred servings and custom photos removed
+     * "Reset my customisations": preferred servings and units and custom photos removed
      * (favorites stay). The photo files become orphans for the image purge.
      */
     @Transaction
@@ -135,11 +150,15 @@ public abstract class UserItemDataDao {
             + "WHERE itemType = :itemType AND itemId = :itemId")
     protected abstract void updateServing(String itemType, String itemId, Double quantity, String unit, long now);
 
+    @Query("UPDATE user_item_data SET preferredUnit = :unit, updatedAt = :now "
+            + "WHERE itemType = :itemType AND itemId = :itemId")
+    protected abstract void updatePreferredUnit(String itemType, String itemId, String unit, long now);
+
     @Query("UPDATE user_item_data SET isFavorite = 0")
     protected abstract void unfavoriteAll();
 
     @Query("UPDATE user_item_data SET servingQuantity = NULL, servingUnit = NULL, "
-            + "imagePath = NULL, thumbnailPath = NULL")
+            + "preferredUnit = NULL, imagePath = NULL, thumbnailPath = NULL")
     protected abstract void clearCustomisationColumns();
 
     /** Rows holding nothing any more: removing them releases the item to the cache rules. */

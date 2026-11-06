@@ -404,9 +404,9 @@
     <string name="cache_downloaded_note">Clearing a source removes its data from the disk. Items you’ve marked as favourite are kept but they’re not categorised as being from a downloaded data source anymore.</string>
 
     <string name="cache_clear_all_title">Clear all cached data</string>
-    <string name="cache_clear_all_action">Removes searched items, favourites and downloaded data sources. Items used in a meal and items you customised (photos, serving sizes) are kept.</string>
+    <string name="cache_clear_all_action">Removes searched items, favourites and downloaded data sources. Items used in a meal and items you customised (photos, serving sizes, units) are kept.</string>
     <string name="cache_reset_custom_title">Reset my customisations</string>
-    <string name="cache_reset_custom_action">Removes your custom photos and preferred serving sizes from every product and recipe. Favourites are kept.</string>
+    <string name="cache_reset_custom_action">Removes your custom photos, preferred serving sizes and preferred units from every product and recipe. Favourites are kept.</string>
 
     <string name="cache_products_count">Products: %1$d</string>
     <string name="cache_recipes_count">Recipes: %1$d</string>
