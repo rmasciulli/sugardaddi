@@ -798,7 +798,7 @@ public class MealDetailsActivity extends BaseActivity {
 
     private void editMealProperties() {
         // TODO: Navigate to EditMealPropertiesActivity/Dialog
-        Toast.makeText(this, "Edit meal properties - Coming soon", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.coming_soon, Toast.LENGTH_SHORT).show();
     }
 
     private void deleteMeal() {
@@ -893,9 +893,11 @@ public class MealDetailsActivity extends BaseActivity {
 
             @Override
             public void onError(String error) {
+                // The detail is technical and in English: logged, not shown.
+                Log.e(TAG, "Saving the meal failed: " + error);
                 runOnUiThread(() -> {
                     Toast.makeText(MealDetailsActivity.this,
-                            getString(R.string.error_saving_meal) + ": " + error,
+                            R.string.error_saving_meal,
                             Toast.LENGTH_LONG).show();
                 });
             }

@@ -291,7 +291,7 @@ public class CreateMealActivity extends BaseActivity {
 
     private void onCreateMealClicked() {
         if (selectedMealType == null) {
-            Toast.makeText(this, "Please select a meal type", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.select_meal_type, Toast.LENGTH_SHORT).show();
             return;
         }
 

@@ -3,6 +3,7 @@ package li.masciul.sugardaddi.ui.utils;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -81,6 +82,7 @@ public final class DetailQuantityController {
         void onAmountChanged(double amount, @NonNull Unit unit);
     }
 
+    private static final String TAG = "DetailQuantityController";
     private static final String STATE_QUANTITY_INPUT = "quantity_input";
 
     private final Activity activity;
@@ -471,7 +473,9 @@ public final class DetailQuantityController {
 
             @Override
             public void onError(@NonNull String message) {
-                Toast.makeText(activity, "Error saving: " + message, Toast.LENGTH_LONG).show();
+                // The detail is technical and in English: logged, not shown.
+                Log.e(TAG, "Saving the meal entry failed: " + message);
+                Toast.makeText(activity, R.string.error_saving_meal, Toast.LENGTH_LONG).show();
                 saving = false;
                 updateButton();
             }
