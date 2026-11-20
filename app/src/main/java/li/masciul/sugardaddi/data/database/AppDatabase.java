@@ -15,6 +15,8 @@ import li.masciul.sugardaddi.data.database.converters.*;
 import li.masciul.sugardaddi.data.database.dao.*;
 import li.masciul.sugardaddi.data.database.entities.*;
 import li.masciul.sugardaddi.data.network.ApiConfig;
+import li.masciul.sugardaddi.data.sources.ciqual.CiqualManagementProvider;
+import li.masciul.sugardaddi.data.sources.usda.USDAManagementProvider;
 
 import java.util.concurrent.Executors;
 
@@ -33,6 +35,13 @@ import java.util.concurrent.Executors;
  *
  * NOTE: destructive recreation clears Room rows only - image files cached on
  * disk are NOT removed by Room and must be purged separately.
+ *
+ * DOWNLOADED DATASETS: Ciqual and USDA rows live in this database, but whether
+ * a dataset is "imported" is remembered in SharedPreferences, which a wipe does
+ * not touch. Every time the database starts empty (destructive migration, or a
+ * new database file), forgetDownloadedDatasets() resets that state, so the
+ * sources stop searching an empty local table and Settings offers the download
+ * again.
  *
  * STRUCTURE
  * =========
@@ -131,6 +140,16 @@ public abstract class AppDatabase extends RoomDatabase {
                         if (ApiConfig.DEBUG_LOGGING) {
                             Log.d(TAG, "Database created");
                         }
+                        // A new, empty file (first install, or a restore that
+                        // brought the preferences back without the database).
+                        forgetDownloadedDatasets(context);
+                    }
+
+                    @Override
+                    public void onDestructiveMigration(@NonNull SupportSQLiteDatabase db) {
+                        super.onDestructiveMigration(db);
+                        Log.i(TAG, "Database recreated by a version bump: local data cleared");
+                        forgetDownloadedDatasets(context);
                     }
 
                     @Override
@@ -142,6 +161,23 @@ public abstract class AppDatabase extends RoomDatabase {
                     }
                 })
                 .build();
+    }
+
+    /**
+     * The database is empty: tell every source with a downloadable dataset that
+     * its import is gone. Without this, isImported() keeps answering true after
+     * a wipe, local search finds nothing and silently falls back to the online
+     * API, Settings still shows the dataset version, and Ciqual claims to work
+     * offline.
+     *
+     * Only SharedPreferences are written (the providers' own reset, the one the
+     * Settings screen uses), so this is safe while Room is opening the database:
+     * no query, no other database access. A new source with a local dataset
+     * must be added here.
+     */
+    private static void forgetDownloadedDatasets(@NonNull Context context) {
+        new CiqualManagementProvider().resetDatabaseState(context);
+        new USDAManagementProvider().resetDatabaseState(context);
     }
 
     // ========== UTILITY METHODS ==========
