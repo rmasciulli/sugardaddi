@@ -32,7 +32,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import li.masciul.sugardaddi.R;
-import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
@@ -390,20 +389,11 @@ public class USDAImportService extends Service {
 
         // ── Build NutritionEntity from the nutrient map ────────────────────
         if (!nutrients.isEmpty()) {
+            // Same builder as the detail endpoint: energy precedence, kJ and
+            // salt (sodium mg x 2.5 / 1000; this path used to forget the
+            // /1000 and stored salt 1000 times too high).
             li.masciul.sugardaddi.core.models.Nutrition nutrition =
-                    new li.masciul.sugardaddi.core.models.Nutrition();
-
-            for (Map.Entry<Integer, Double> e : nutrients.entrySet()) {
-                USDAMapper.mapNutrientById(nutrition, e.getKey(), e.getValue());
-            }
-
-            // Derive salt from sodium if not directly provided (sodium mg → salt g)
-            if (nutrition.getSalt() == null && nutrition.getSodium() != null) {
-                nutrition.setSalt(nutrition.getSodium() * 2.5);
-            }
-
-            // Set confidence before creating the entity
-            nutrition.setDataConfidence(DataConfidence.SCIENTIFIC);
+                    USDAMapper.nutritionFromValues(nutrients);
             NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
                     nutrition, "product", entityId);
             nutritionEntity.setDataSource(USDAConstants.SOURCE_ID);

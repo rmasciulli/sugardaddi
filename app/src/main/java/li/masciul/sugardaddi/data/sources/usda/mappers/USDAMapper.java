@@ -6,7 +6,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
@@ -40,7 +42,9 @@ import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
  *
  * NUTRIENT ID MAP (FDC INFOODS numbers)
  * ======================================
- * Energy:        1008=kcal, 2047=kJ
+ * Energy:        1008=kcal, 1062=kJ; 2047 / 2048 = kcal by the Atwater general /
+ *                specific factors (recent Foundation foods have only these;
+ *                USDA stopped reporting kJ in 2020). See nutritionFromValues().
  * Macros:        1003=protein, 1004=fat, 1005=carbs, 1079=fiber
  * Carbs detail:  2000=sugars, 1050=sugars-alt, 1009=starch
  * Fat detail:    1258=saturated, 1292=monounsat, 1293=polyunsat, 1257=trans
@@ -205,7 +209,11 @@ public final class USDAMapper {
      */
     @Nullable
     private static Nutrition mapSearchNutrition(@NonNull FDCSearchFood food) {
-        Double kcal  = food.getEnergyKcal();
+        // Same energy precedence as nutritionFromValues(): 1008, else the
+        // Atwater kcal values (recent Foundation foods have no 1008).
+        Double kcal  = firstPresent(food.getEnergyKcal(),
+                searchValue(food, NUTRIENT_KCAL_ATWATER_GENERAL),
+                searchValue(food, NUTRIENT_KCAL_ATWATER_SPECIFIC));
         Double prot  = food.getProtein();
         Double fat   = food.getFat();
         Double carbs = food.getCarbohydrates();
@@ -216,6 +224,7 @@ public final class USDAMapper {
 
         Nutrition n = new Nutrition();
         n.setEnergyKcal(kcal);
+        if (kcal != null) n.setEnergyKj(kcal * KJ_PER_KCAL);
         n.setProteins(prot);
         n.setFat(fat);
         n.setCarbohydrates(carbs);
@@ -230,27 +239,60 @@ public final class USDAMapper {
      */
     @NonNull
     private static Nutrition mapDetailNutrition(@NonNull FDCFoodDetail detail) {
-        Nutrition n = new Nutrition();
-
+        Map<Integer, Double> values = new HashMap<>();
         for (FDCFoodDetail.FDCFoodNutrient fn : detail.getFoodNutrients()) {
             int id     = fn.getNutrientId();
             double val = fn.getAmount();
-            if (val <= 0) continue; // Skip zero/negative values
+            if (id > 0 && val > 0) values.put(id, val); // Skip zero/negative values
+        }
+        return nutritionFromValues(values);
+    }
 
-            mapNutrientById(n, id, val);
+    // FDC nutrient ids handled outside mapNutrientById() (precedence rules).
+    private static final int NUTRIENT_KCAL = 1008;
+    private static final int NUTRIENT_KCAL_ATWATER_GENERAL = 2047;
+    private static final int NUTRIENT_KCAL_ATWATER_SPECIFIC = 2048;
+    private static final double KJ_PER_KCAL = 4.184;
+
+    /**
+     * Build a Nutrition from FDC nutrient values (id -> amount, native units).
+     * The ONE place both paths go through: the detail endpoint
+     * (mapDetailNutrition) and the bulk import (USDAImportService), so the
+     * rules below cannot drift apart again.
+     *
+     * ENERGY:
+     * - kcal: 1008, else 2047 (Atwater general factors), else 2048 (Atwater
+     *   specific factors). Recent Foundation foods have no 1008 any more.
+     * - kJ: 1062 when the food has it (SR Legacy, older Foundation foods),
+     *   else computed from kcal (x 4.184), as for Open Food Facts and
+     *   FatSecret. USDA stopped reporting kJ in October 2020.
+     *
+     * SALT: FDC has only elemental sodium (1093, mg). Salt (g) = sodium x 2.5
+     * / 1000, the EU labelling formula.
+     *
+     * All USDA FDC data types (Foundation, SR Legacy, Survey) are measured or
+     * compiled by USDA nutritionists: SCIENTIFIC confidence.
+     */
+    @NonNull
+    public static Nutrition nutritionFromValues(@NonNull Map<Integer, Double> values) {
+        Nutrition n = new Nutrition();
+        for (Map.Entry<Integer, Double> e : values.entrySet()) {
+            if (e.getKey() != null && e.getValue() != null) {
+                mapNutrientById(n, e.getKey(), e.getValue());
+            }
         }
 
-        // FDC has no distinct "salt"/sodium-chloride nutrient ID - only
-        // elemental sodium (1093). Derive salt using the standard EU
-        // labeling formula (salt = sodium x 2.5) when sodium was found and
-        // nothing already set salt directly. sodium is mg, salt is g (see
-        // Nutrition's field comments) so we need to divide by 1000.
+        n.setEnergyKcal(firstPresent(values.get(NUTRIENT_KCAL),
+                values.get(NUTRIENT_KCAL_ATWATER_GENERAL),
+                values.get(NUTRIENT_KCAL_ATWATER_SPECIFIC)));
+        if (n.getEnergyKj() == null && n.getEnergyKcal() != null) {
+            n.setEnergyKj(n.getEnergyKcal() * KJ_PER_KCAL);
+        }
+
         if (n.getSalt() == null && n.getSodium() != null) {
             n.setSalt(n.getSodium() * 2.5 / 1000.0);
         }
 
-        // All USDA FDC data types (Foundation, SR Legacy, Survey) are lab-measured
-        // by USDA nutritionists - SCIENTIFIC confidence for all.
         n.setDataConfidence(DataConfidence.SCIENTIFIC);
         return n;
     }
@@ -264,9 +306,9 @@ public final class USDAMapper {
      */
     public static void mapNutrientById(@NonNull Nutrition n, int id, double val) {
         switch (id) {
-            // Energy
-            case 1008: n.setEnergyKcal(val); break;
-            case 2047: n.setEnergyKj(val);   break;
+            // Energy: kcal (1008, 2047, 2048) is set by nutritionFromValues(),
+            // which applies the precedence between the three ids.
+            case 1062: n.setEnergyKj(val);   break;
 
             // Macronutrients (g)
             case 1003: n.setProteins(val);       break;
@@ -304,15 +346,6 @@ public final class USDAMapper {
             case 1092: n.setPotassium(val); break;
             case 1095: n.setZinc(val);      break;
 
-            // NOTE: salt (Nutrition.salt, documented in g per 100g/ml -
-            // a different unit than sodium's mg) is not computed anywhere
-            // in this mapper despite an earlier comment here claiming it
-            // happened "after the loop in mapDetailNutrition" - checked,
-            // it doesn't. USDA products currently have no salt value at
-            // all. Not fixed here - flagging as a separate, smaller gap
-            // (a missing feature, not a unit bug) rather than folding it
-            // into this fix unrequested.
-
             // Fat-soluble vitamins
             case 1106: n.setVitaminA(val);    break; // µg RAE
             case 1114: n.setVitaminD(val);    break; // µg
@@ -337,6 +370,21 @@ public final class USDAMapper {
     // =========================================================================
     // HELPERS
     // =========================================================================
+
+    /** The first non-null value, or null. */
+    @Nullable
+    private static Double firstPresent(@Nullable Double... values) {
+        for (Double v : values) if (v != null) return v;
+        return null;
+    }
+
+    /** A search result's value for one nutrient id, or null (zero counts as absent). */
+    @Nullable
+    private static Double searchValue(@NonNull FDCSearchFood food, int nutrientId) {
+        FDCSearchFood.FDCSearchNutrient n = food.getNutrientById(nutrientId);
+        Double v = n != null ? n.getValue() : null;
+        return v != null && v > 0 ? v : null;
+    }
 
     /**
      * Convert USDA ALL-CAPS description to sentence case.

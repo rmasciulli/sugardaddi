@@ -98,7 +98,8 @@ public class FDCFoodDetail {
 
     /**
      * Find a nutrient by its FDC nutrient ID.
-     * Common IDs: 1008=Energy(kcal), 2047=Energy(kJ), 1003=Protein,
+     * Common IDs: 1008=Energy(kcal), 1062=Energy(kJ), 2047/2048=Energy(kcal,
+     * Atwater general / specific factors), 1003=Protein,
      * 1004=Total fat, 1005=Carbohydrates, 1079=Fiber, 1093=Sodium,
      * 1258=Saturated fat, 1292=Monounsaturated fat, 2000=Sugars
      */
@@ -117,10 +118,10 @@ public class FDCFoodDetail {
         return n != null ? n.getAmount() : null;
     }
 
-    /** Convenience accessor - energy in kJ (nutrient 2047) */
+    /** Convenience accessor - energy in kJ (nutrient 1062; 2047 is kcal) */
     @Nullable
     public Double getEnergyKj() {
-        FDCFoodNutrient n = getNutrientById(2047);
+        FDCFoodNutrient n = getNutrientById(1062);
         return n != null ? n.getAmount() : null;
     }
 
