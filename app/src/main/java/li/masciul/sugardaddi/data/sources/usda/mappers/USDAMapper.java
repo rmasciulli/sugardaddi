@@ -190,6 +190,11 @@ public final class USDAMapper {
         Nutrition nutrition = mapDetailNutrition(detail);
         product.setNutrition(nutrition);
 
+        // ── Portions: serving list in grams + typical serving (USDAPortions) ──
+        List<USDAPortions.Portion> portions = toPortions(detail.getFoodPortions());
+        product.setServingOptions(USDAPortions.servingOptions(portions));
+        product.setServingSize(USDAPortions.typicalServing(portions));
+
         // See mapSearchFood() for the rationale - same computed, relocated call.
         String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), null);
         if (sourceUrl != null) {
@@ -370,6 +375,25 @@ public final class USDAMapper {
     // =========================================================================
     // HELPERS
     // =========================================================================
+
+    /** The detail response's portions in the shared form read by USDAPortions. */
+    @NonNull
+    private static List<USDAPortions.Portion> toPortions(
+            @NonNull List<FDCFoodDetail.FDCFoodPortion> dtos) {
+        List<USDAPortions.Portion> portions = new ArrayList<>();
+        for (FDCFoodDetail.FDCFoodPortion dto : dtos) {
+            if (dto == null) continue;
+            USDAPortions.Portion p = new USDAPortions.Portion();
+            p.gramWeight = dto.getGramWeight();
+            p.amount = dto.getAmount();
+            p.sequenceNumber = dto.getSequenceNumber();
+            p.unitName = dto.getMeasureUnitName();
+            p.modifier = dto.getModifier();
+            p.portionDescription = dto.getPortionDescription();
+            portions.add(p);
+        }
+        return portions;
+    }
 
     /** The first non-null value, or null. */
     @Nullable

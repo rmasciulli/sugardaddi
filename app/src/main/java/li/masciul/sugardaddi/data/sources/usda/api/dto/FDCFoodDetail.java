@@ -59,6 +59,11 @@ public class FDCFoodDetail {
     @Nullable
     private List<FDCFoodNutrient> foodNutrients;
 
+    /** Household measures with their gram weight (see USDAPortions). */
+    @SerializedName("foodPortions")
+    @Nullable
+    private List<FDCFoodPortion> foodPortions;
+
     // ===== CONSTRUCTORS =====
 
     public FDCFoodDetail() {
@@ -86,6 +91,10 @@ public class FDCFoodDetail {
 
     public List<FDCFoodNutrient> getFoodNutrients() {
         return foodNutrients != null ? foodNutrients : new ArrayList<>();
+    }
+
+    public List<FDCFoodPortion> getFoodPortions() {
+        return foodPortions != null ? foodPortions : new ArrayList<>();
     }
 
     public boolean isValid() {
@@ -250,6 +259,65 @@ public class FDCFoodDetail {
 
         @Nullable
         public FDCNutrient getNutrient() { return nutrient; }
+    }
+
+    // =========================================================================
+    // NESTED: FDCFoodPortion
+    // =========================================================================
+
+    /**
+     * A household measure of the food. Which field holds the words depends on
+     * the data type (see USDAPortions for the three formats):
+     * {
+     *   "gramWeight": 244.0, "amount": 1.0, "sequenceNumber": 1,
+     *   "modifier": "cup", "portionDescription": "1 cup",
+     *   "measureUnit": { "id": 9999, "name": "undetermined", "abbreviation": "undetermined" }
+     * }
+     * Boxed types: any field may be absent.
+     */
+    public static class FDCFoodPortion {
+
+        @SerializedName("gramWeight")
+        @Nullable
+        private Double gramWeight;
+
+        @SerializedName("amount")
+        @Nullable
+        private Double amount;
+
+        @SerializedName("sequenceNumber")
+        @Nullable
+        private Integer sequenceNumber;
+
+        @SerializedName("modifier")
+        @Nullable
+        private String modifier;
+
+        @SerializedName("portionDescription")
+        @Nullable
+        private String portionDescription;
+
+        @SerializedName("measureUnit")
+        @Nullable
+        private FDCMeasureUnit measureUnit;
+
+        @Nullable public Double getGramWeight()           { return gramWeight; }
+        @Nullable public Double getAmount()               { return amount; }
+        @Nullable public Integer getSequenceNumber()      { return sequenceNumber; }
+        @Nullable public String getModifier()             { return modifier; }
+        @Nullable public String getPortionDescription()   { return portionDescription; }
+
+        @Nullable
+        public String getMeasureUnitName() {
+            return measureUnit != null ? measureUnit.name : null;
+        }
+    }
+
+    /** measureUnit of a portion: only the name is used ("cup", "RACC", "undetermined"). */
+    public static class FDCMeasureUnit {
+        @SerializedName("name")
+        @Nullable
+        private String name;
     }
 
     // =========================================================================

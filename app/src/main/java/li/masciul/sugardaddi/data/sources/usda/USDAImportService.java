@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
 import li.masciul.sugardaddi.data.sources.usda.mappers.USDAMapper;
+import li.masciul.sugardaddi.data.sources.usda.mappers.USDAPortions;
 
 /**
  * USDAImportService - Imports USDA Foundation Foods and SR Legacy into Room.
@@ -336,6 +338,7 @@ public class USDAImportService extends Service {
         String categoryDesc  = null;
         // Nutrient id → amount
         Map<Integer, Double> nutrients = new HashMap<>();
+        List<USDAPortions.Portion> portions = new ArrayList<>();
 
         reader.beginObject();
         while (reader.hasNext()) {
@@ -352,6 +355,9 @@ public class USDAImportService extends Service {
                     break;
                 case "foodNutrients":
                     parseFoodNutrients(reader, nutrients);
+                    break;
+                case "foodPortions":
+                    parseFoodPortions(reader, portions);
                     break;
                 default:
                     reader.skipValue();
@@ -381,6 +387,11 @@ public class USDAImportService extends Service {
         String searchable = displayName.toLowerCase();
         if (categoryDesc != null) searchable += " " + categoryDesc.toLowerCase();
         entity.setSearchableText(searchable);
+
+        // Household measures: serving list in grams + typical serving, same
+        // rules as the detail endpoint (USDAPortions).
+        entity.setServingOptions(USDAPortions.servingOptions(portions));
+        entity.setServingSize(USDAPortions.typicalServing(portions));
 
         entity.setCreatedAt(System.currentTimeMillis());
         entity.setLocalImport(true);   // bulk-imported USDA dataset row: TTL-exempt, cleared only via Settings cache management
@@ -469,6 +480,111 @@ public class USDAImportService extends Service {
             }
         }
         reader.endArray();
+    }
+
+    /**
+     * Parse the foodPortions array into the shared form read by USDAPortions.
+     * Fields depend on the data type (see USDAPortions); every one is optional
+     * here and a malformed value is read as absent rather than failing the
+     * whole import.
+     *
+     * { "gramWeight": 244.0, "amount": 1.0, "sequenceNumber": 1,
+     *   "modifier": "cup", "measureUnit": { "name": "undetermined" } }
+     */
+    private void parseFoodPortions(@NonNull JsonReader reader,
+                                   @NonNull List<USDAPortions.Portion> out) throws IOException {
+        if (reader.peek() == JsonToken.NULL) {
+            reader.nextNull();
+            return;
+        }
+        reader.beginArray();
+        while (reader.hasNext()) {
+            if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+                reader.skipValue();
+                continue;
+            }
+            USDAPortions.Portion p = new USDAPortions.Portion();
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String key = reader.nextName();
+                switch (key) {
+                    case "gramWeight":
+                        p.gramWeight = nextDoubleOrNull(reader);
+                        break;
+                    case "amount":
+                        p.amount = nextDoubleOrNull(reader);
+                        break;
+                    case "sequenceNumber": {
+                        Double sequence = nextDoubleOrNull(reader);
+                        p.sequenceNumber = sequence != null ? sequence.intValue() : null;
+                        break;
+                    }
+                    case "modifier":
+                        p.modifier = nextStringOrNull(reader);
+                        break;
+                    case "portionDescription":
+                        p.portionDescription = nextStringOrNull(reader);
+                        break;
+                    case "measureUnit":
+                        p.unitName = parseMeasureUnitName(reader);
+                        break;
+                    default:
+                        reader.skipValue();
+                        break;
+                }
+            }
+            reader.endObject();
+            out.add(p);
+        }
+        reader.endArray();
+    }
+
+    /** measureUnit object -> its "name", or null. */
+    @Nullable
+    private String parseMeasureUnitName(@NonNull JsonReader reader) throws IOException {
+        if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+            reader.skipValue();
+            return null;
+        }
+        String name = null;
+        reader.beginObject();
+        while (reader.hasNext()) {
+            if ("name".equals(reader.nextName())) {
+                name = nextStringOrNull(reader);
+            } else {
+                reader.skipValue();
+            }
+        }
+        reader.endObject();
+        return name;
+    }
+
+    /** A number (or a numeric string), else null; the value is consumed either way. */
+    @Nullable
+    private static Double nextDoubleOrNull(@NonNull JsonReader reader) throws IOException {
+        JsonToken token = reader.peek();
+        if (token == JsonToken.NUMBER || token == JsonToken.STRING) {
+            try {
+                return reader.nextDouble();
+            } catch (NumberFormatException e) {
+                // nextDouble() leaves a non-numeric string unconsumed
+                reader.skipValue();
+                return null;
+            }
+        }
+        reader.skipValue();
+        return null;
+    }
+
+    /** A string (or a number read as text), else null; the value is consumed either way. */
+    @Nullable
+    private static String nextStringOrNull(@NonNull JsonReader reader) throws IOException {
+        JsonToken token = reader.peek();
+        if (token == JsonToken.STRING || token == JsonToken.NUMBER) {
+            return reader.nextString();
+        }
+        reader.skipValue();
+        return null;
     }
 
     // ===== BATCH DB WRITE =====
