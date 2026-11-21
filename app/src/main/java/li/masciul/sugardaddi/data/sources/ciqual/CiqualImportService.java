@@ -197,12 +197,14 @@ public class CiqualImportService extends Service {
         executor.execute(() -> {
             try {
                 runImport();
-                broadcastComplete();
+                // Flag first, then broadcast: the settings card redraws its status
+                // as soon as it receives COMPLETE and reads the flag at that moment.
                 writePrefs(true);
+                broadcastComplete();
             } catch (Exception e) {
                 Log.e(TAG, "Import failed", e);
-                broadcastError(e.getMessage() != null ? e.getMessage() : "Unknown error");
                 writePrefs(false);
+                broadcastError(e.getMessage() != null ? e.getMessage() : "Unknown error");
             } finally {
                 running = false;
                 stopForeground(STOP_FOREGROUND_REMOVE);
@@ -616,7 +618,9 @@ public class CiqualImportService extends Service {
             ed.putString(PREF_IMPORT_VERSION, CiqualConstants.DATASET_VERSION);
             ed.putLong(PREF_IMPORT_DATE, System.currentTimeMillis());
         }
-        ed.apply();
+        // commit(), not apply(): we are on the import thread, and the flag must be
+        // on disk before the broadcast goes out and before the service stops.
+        ed.commit();
     }
 
     /** True if the DB has been imported AND the stored version matches the current dataset version. */
