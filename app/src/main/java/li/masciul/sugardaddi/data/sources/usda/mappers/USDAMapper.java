@@ -46,7 +46,10 @@ import li.masciul.sugardaddi.data.sources.usda.api.dto.FDCSearchResponse;
  *                specific factors (recent Foundation foods have only these;
  *                USDA stopped reporting kJ in 2020). See nutritionFromValues().
  * Macros:        1003=protein, 1004=fat, 1005=carbs, 1079=fiber
- * Carbs detail:  2000=sugars, 1050=sugars-alt, 1009=starch
+ * Carbs:         1005=by difference, else 1050=by summation (Foundation)
+ * Sugars:        2000=Total Sugars, else 1063=Sugars, Total (Foundation)
+ * Fat:           1004=Total lipid, else 1085=Total fat (NLEA) (Foundation oils)
+ * Carbs detail:  1009=starch
  * Fat detail:    1258=saturated, 1292=monounsat, 1293=polyunsat, 1257=trans
  * Minerals:      1093=sodium, 1087=calcium, 1089=iron, 1090=magnesium,
  *                1091=phosphorus, 1092=potassium, 1095=zinc (all mg,
@@ -265,6 +268,9 @@ public final class USDAMapper {
     private static final int NUTRIENT_KCAL_ATWATER_GENERAL = 2047;
     private static final int NUTRIENT_KCAL_ATWATER_SPECIFIC = 2048;
     private static final double KJ_PER_KCAL = 4.184;
+    private static final int NUTRIENT_CARBS_BY_SUMMATION = 1050;
+    private static final int NUTRIENT_SUGARS_FOUNDATION = 1063;
+    private static final int NUTRIENT_FAT_NLEA = 1085;
 
     /**
      * Build a Nutrition from FDC nutrient values (id -> amount, native units).
@@ -282,6 +288,17 @@ public final class USDAMapper {
      * SALT: FDC has only elemental sodium (1093, mg). Salt (g) = sodium x 2.5
      * / 1000, the EU labelling formula.
      *
+     * FOUNDATION FALLBACKS (checked on real records, 2026-11-22): Foundation
+     * foods often carry other ids than SR Legacy for the same nutrient.
+     * - carbohydrates: 1005 (by difference), else 1050 (by summation).
+     *   1050 used to be read as SUGARS: broccoli 747447 showed 3.8 g of sugars
+     *   (its carbohydrate by summation) instead of 1.4 g.
+     * - sugars: 2000, else 1063 ("Sugars, Total", Foundation's id).
+     * - fat: 1004, else 1085 ("Total fat (NLEA)"): Foundation oils (olive oil
+     *   748608, peanut oil 1750348) have only 1085, so they showed nothing.
+     * Missing ids are never invented: a Foundation oil without energy, protein
+     * or carbohydrates shows only what USDA measured.
+     *
      * All USDA FDC data types (Foundation, SR Legacy, Survey) are measured or
      * compiled by USDA nutritionists: SCIENTIFIC confidence.
      */
@@ -293,6 +310,10 @@ public final class USDAMapper {
                 mapNutrientById(n, e.getKey(), e.getValue());
             }
         }
+
+        if (n.getCarbohydrates() == null) n.setCarbohydrates(values.get(NUTRIENT_CARBS_BY_SUMMATION));
+        if (n.getSugars() == null) n.setSugars(values.get(NUTRIENT_SUGARS_FOUNDATION));
+        if (n.getFat() == null) n.setFat(values.get(NUTRIENT_FAT_NLEA));
 
         n.setEnergyKcal(firstPresent(values.get(NUTRIENT_KCAL),
                 values.get(NUTRIENT_KCAL_ATWATER_GENERAL),
@@ -329,9 +350,10 @@ public final class USDAMapper {
             case 1079: n.setFiber(val);           break;
             case 1051: n.setWater(val);           break;
 
-            // Carbohydrate detail (g)
-            case 2000: // fall-through
-            case 1050: n.setSugars(val);          break;
+            // Carbohydrate detail (g). 1050 (carbohydrate by summation), 1063
+            // (Foundation sugars) and 1085 (NLEA fat) are fallbacks, applied by
+            // nutritionFromValues().
+            case 2000: n.setSugars(val);          break;
             case 1009: n.setStarch(val);          break;
 
             // Fat detail (g)
