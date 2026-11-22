@@ -68,6 +68,10 @@
     <string name="nutrient_vitamin_b12">Vitamine B12</string>
     <string name="nutrient_vitamin_c">Vitamine C</string>
     <string name="nutrient_choline">Choline</string>
+    <string name="nutrient_vitamin_d2">Vitamine D2 (ergocalciférol)</string>
+    <string name="nutrient_vitamin_d3">Vitamine D3 (cholécalciférol)</string>
+    <string name="nutrient_food_folate">Folates naturels</string>
+    <string name="nutrient_folic_acid">Acide folique (ajouté)</string>
 
     <!-- Amino acids specific nutrients -->
     <string name="nutrient_tryptophan">Tryptophane</string>

@@ -1979,6 +1979,12 @@ public class Nutrition {
         // ========== OTHER WATER-SOLUBLE VITAMINS (Order: 67-68) ==========
         VITAMIN_C("vitaminC", "nutrient_vitamin_c", "mg", NutrientCategory.VITAMINS, false, 67, 0),
         CHOLINE("choline", "nutrient_choline", "mg", NutrientCategory.VITAMINS, false, 68, 0),
+        // Detail rows under vitamin D and vitamin B9 (indent 1; parent links in
+        // NutritionLabelManager.isActualChildOf()). Ciqual and USDA set them.
+        VITAMIN_D2("vitaminD2", "nutrient_vitamin_d2", "µg", NutrientCategory.VITAMINS, false, 69, 1),
+        VITAMIN_D3("vitaminD3", "nutrient_vitamin_d3", "µg", NutrientCategory.VITAMINS, false, 70, 1),
+        FOOD_FOLATE("intrinsicFolate", "nutrient_food_folate", "µg", NutrientCategory.VITAMINS, false, 71, 1),
+        FOLIC_ACID("folicAcid", "nutrient_folic_acid", "µg", NutrientCategory.VITAMINS, false, 72, 1),
 
         // ========================================
         // CATEGORY 3: MINERALS

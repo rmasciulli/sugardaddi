@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.color.MaterialColors;
@@ -378,112 +379,76 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         }
     }
 
+    /**
+     * Every nutrient the item has, as a tree (fat > saturated > lauric acid...),
+     * at any depth.
+     *
+     * RULES:
+     * - A nutrient is shown when it is mandatory, has a value (0 included), or
+     *   has a shown nutrient under it. So an unknown parent still carries its
+     *   known children: "Omega-3: -" then "ALA: 651 mg". Children used to be
+     *   dropped with their parent, and nothing below the third level (ALA, EPA,
+     *   DHA, linoleic acid...) was ever shown.
+     * - Optional rows are hidden until "Show all nutrients".
+     * - Parent / child links: isActualChildOf().
+     */
     private void buildNutrientsUnified(Nutrition nutrition, double customAmount) {
-        List<NutrientInfo> allNutrients = new ArrayList<>();
-
+        List<NutrientInfo> roots = new ArrayList<>();
         for (NutrientInfo info : NutrientInfo.values()) {
-            if (info.isMandatory()) {
-                allNutrients.add(info);
-            } else {
-                if (info.getValue(nutrition) != null) {
-                    allNutrients.add(info);
-                }
+            if (info.getIndentLevel() == 0 && isShown(info, nutrition)) {
+                roots.add(info);
             }
         }
-
-        List<NutrientInfo> parents = new ArrayList<>();
-        List<NutrientInfo> children = new ArrayList<>();
-
-        for (NutrientInfo info : allNutrients) {
-            if (info.getIndentLevel() == 0) {
-                parents.add(info);
-            } else {
-                children.add(info);
-            }
-        }
-
-        parents.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
+        roots.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
 
         NutrientCategory lastCategory = null;
-
-        for (NutrientInfo parent : parents) {
-            NutrientCategory category = parent.getCategory();
-
+        for (NutrientInfo root : roots) {
+            NutrientCategory category = root.getCategory();
             if (category != lastCategory) {
                 View headerView = addCategoryHeader(nutrientSection, category);
-
                 if (!categoryHasMandatoryNutrients(category)) {
                     optionalRows.add(headerView);
                     headerView.setVisibility(View.GONE);
                 }
-
                 lastCategory = category;
             }
-
-            Double value = parent.getValue(nutrition);
-            View parentRow = addNutrientRow(nutrientSection, parent, value, customAmount);
-
-            if (!parent.isMandatory()) {
-                optionalRows.add(parentRow);
-                parentRow.setVisibility(View.GONE);
-            }
-
-            addChildNutrients(parent, children, nutrition, customAmount);
+            addNutrientTree(root, nutrition, customAmount);
         }
     }
 
-    private void addChildNutrients(NutrientInfo parent, List<NutrientInfo> candidates,
-                                   Nutrition nutrition, double customAmount) {
-        List<NutrientInfo> directChildren = getChildrenOf(parent, candidates);
-        directChildren.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
-
-        for (NutrientInfo child : directChildren) {
-            Double childValue = child.getValue(nutrition);
-
-            if (child.isMandatory() || childValue != null) {
-                View childRow = addNutrientRow(nutrientSection, child, childValue, customAmount);
-
-                if (!child.isMandatory()) {
-                    optionalRows.add(childRow);
-                    childRow.setVisibility(View.GONE);
-                }
-
-                List<NutrientInfo> grandchildren = getChildrenOf(child, candidates);
-                grandchildren.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
-
-                for (NutrientInfo grandchild : grandchildren) {
-                    Double grandchildValue = grandchild.getValue(nutrition);
-
-                    if (grandchild.isMandatory() || grandchildValue != null) {
-                        View grandchildRow = addNutrientRow(nutrientSection, grandchild, grandchildValue, customAmount);
-
-                        if (!grandchild.isMandatory()) {
-                            optionalRows.add(grandchildRow);
-                            grandchildRow.setVisibility(View.GONE);
-                        }
-                    }
-                }
+    /** The row of one nutrient, then its shown children, recursively. */
+    private void addNutrientTree(NutrientInfo info, Nutrition nutrition, double customAmount) {
+        View row = addNutrientRow(nutrientSection, info, info.getValue(nutrition), customAmount);
+        if (!info.isMandatory()) {
+            optionalRows.add(row);
+            row.setVisibility(View.GONE);
+        }
+        for (NutrientInfo child : childrenOf(info)) {
+            if (isShown(child, nutrition)) {
+                addNutrientTree(child, nutrition, customAmount);
             }
         }
     }
 
-    // ========================================================================
-    // PARENT-CHILD RELATIONSHIPS
-    // ========================================================================
+    /** Mandatory, known (0 included), or carrying a shown nutrient below it. */
+    private boolean isShown(NutrientInfo info, Nutrition nutrition) {
+        if (info.isMandatory() || info.getValue(nutrition) != null) return true;
+        for (NutrientInfo child : childrenOf(info)) {
+            if (isShown(child, nutrition)) return true;
+        }
+        return false;
+    }
 
-    private List<NutrientInfo> getChildrenOf(NutrientInfo parent, List<NutrientInfo> candidates) {
+    /** Direct children of a nutrient (one indent level down), in display order. */
+    private List<NutrientInfo> childrenOf(NutrientInfo parent) {
         List<NutrientInfo> children = new ArrayList<>();
-
-        for (NutrientInfo candidate : candidates) {
-            if (candidate.getIndentLevel() != parent.getIndentLevel() + 1) {
-                continue;
-            }
-
-            if (isActualChildOf(candidate, parent)) {
+        for (NutrientInfo candidate : NutrientInfo.values()) {
+            if (candidate.getIndentLevel() == parent.getIndentLevel() + 1
+                    && isActualChildOf(candidate, parent)) {
                 children.add(candidate);
             }
         }
-
+        children.sort(Comparator.comparingInt(NutrientInfo::getDisplayOrder));
         return children;
     }
 
@@ -530,7 +495,8 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
         if (parentKey.equals("nutrient_polyunsaturated_fat")) {
             return childKey.equals("nutrient_omega3") ||
-                    childKey.equals("nutrient_omega6");
+                    childKey.equals("nutrient_omega6") ||
+                    childKey.equals("nutrient_conjugated_linoleic_acid");
         }
 
         if (parentKey.equals("nutrient_omega3")) {
@@ -543,6 +509,16 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             return childKey.equals("nutrient_linoleic_acid") ||
                     childKey.equals("nutrient_arachidonic_acid") ||
                     childKey.equals("nutrient_gamma_linolenic_acid");
+        }
+
+        if (parentKey.equals("nutrient_vitamin_d")) {
+            return childKey.equals("nutrient_vitamin_d2") ||
+                    childKey.equals("nutrient_vitamin_d3");
+        }
+
+        if (parentKey.equals("nutrient_vitamin_b9")) {
+            return childKey.equals("nutrient_food_folate") ||
+                    childKey.equals("nutrient_folic_acid");
         }
 
         return false;
@@ -803,8 +779,8 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             nameView.setText(nutrientName);
 
             if (totalView != null) {
-                double customValue = calculateScaledValue(value, customAmount);
-                totalView.setText(formatNutrientValue(customValue, info.getUnit(), info.isMandatory()));
+                totalView.setText(formatNutrientValue(
+                        calculateScaledValue(value, customAmount), info.getUnit()));
             }
 
         } else {
@@ -835,14 +811,13 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
             // Column 2: per 100g value
             if (per100View != null) {
-                per100View.setText(formatNutrientValue(value != null ? value : 0.0,
-                        info.getUnit(), info.isMandatory()));
+                per100View.setText(formatNutrientValue(value, info.getUnit()));
             }
 
             // Column 3: custom amount value
             if (customView != null) {
-                double customValue = calculateScaledValue(value, customAmount);
-                customView.setText(formatNutrientValue(customValue, info.getUnit(), info.isMandatory()));
+                customView.setText(formatNutrientValue(
+                        calculateScaledValue(value, customAmount), info.getUnit()));
             }
         }
 
@@ -927,20 +902,26 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         return result.toString();
     }
 
-    private double calculateScaledValue(Double valuePer100, double amount) {
+    /** The value for the custom amount; null stays null (unknown is not 0). */
+    @Nullable
+    private Double calculateScaledValue(@Nullable Double valuePer100, double amount) {
         if (valuePer100 == null) {
-            return 0.0;
+            return null;
         }
         return valuePer100 * (amount / 100.0);
     }
 
-    private String formatNutrientValue(double value, String unit, boolean isMandatory) {
-        if (value == 0.0 && !isMandatory) {
-            return "0 " + unit;
+    /**
+     * "-" for an unknown value (null), "0 g" for a confirmed zero. Both used to
+     * show "-" on mandatory rows, so a measured "no fiber" looked unknown.
+     */
+    private String formatNutrientValue(@Nullable Double value, String unit) {
+        if (value == null) {
+            return "-";
         }
 
         if (value == 0.0) {
-            return "-";
+            return "0 " + unit;
         }
 
         // Energy is conventionally displayed as a whole number - the one
