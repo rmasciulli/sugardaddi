@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import li.masciul.sugardaddi.R;
+import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.data.database.AppDatabase;
 import li.masciul.sugardaddi.data.database.entities.FoodProductEntity;
 import li.masciul.sugardaddi.data.database.entities.NutritionEntity;
@@ -405,6 +406,10 @@ public class USDAImportService extends Service {
             // /1000 and stored salt 1000 times too high).
             li.masciul.sugardaddi.core.models.Nutrition nutrition =
                     USDAMapper.nutritionFromValues(nutrients);
+            // Density for liquid-like foods, same rule as the detail endpoint.
+            if (USDAPortions.isLiquid(categoryDesc, description)) {
+                nutrition.setDensity(USDAPortions.density(portions), DataConfidence.SCIENTIFIC);
+            }
             NutritionEntity nutritionEntity = NutritionEntity.fromNutrition(
                     nutrition, "product", entityId);
             nutritionEntity.setDataSource(USDAConstants.SOURCE_ID);

@@ -195,6 +195,13 @@ public final class USDAMapper {
         product.setServingOptions(USDAPortions.servingOptions(portions));
         product.setServingSize(USDAPortions.typicalServing(portions));
 
+        // ── Density: liquid-like foods only, from their volume portions ───────
+        // Same USDA data as the values above, so the same confidence. It only
+        // lets the screen show and log this food in ml; values stay per 100 g.
+        if (USDAPortions.isLiquid(detail.getFoodCategoryDescription(), detail.getDescription())) {
+            nutrition.setDensity(USDAPortions.density(portions), DataConfidence.SCIENTIFIC);
+        }
+
         // See mapSearchFood() for the rationale - same computed, relocated call.
         String sourceUrl = ProductUrlBuilder.resolveUrl(product.getSourceIdentifier(), null);
         if (sourceUrl != null) {
