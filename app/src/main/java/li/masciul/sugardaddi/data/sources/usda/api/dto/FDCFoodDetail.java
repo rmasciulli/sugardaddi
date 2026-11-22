@@ -238,8 +238,10 @@ public class FDCFoodDetail {
         @Nullable
         private FDCNutrient nutrient;
 
+        /** Boxed: group headings ("Proximates") have no amount, which is not 0. */
         @SerializedName("amount")
-        private double amount;
+        @Nullable
+        private Double amount;
 
         public int getNutrientId() {
             return nutrient != null ? nutrient.getId() : 0;
@@ -255,7 +257,7 @@ public class FDCFoodDetail {
             return nutrient != null ? nutrient.getUnitName() : null;
         }
 
-        public double getAmount() { return amount; }
+        @Nullable public Double getAmount() { return amount; }
 
         @Nullable
         public FDCNutrient getNutrient() { return nutrient; }

@@ -449,7 +449,7 @@ public class USDAImportService extends Service {
         reader.beginArray();
         while (reader.hasNext()) {
             int    nutrientId = 0;
-            double amount     = 0.0;
+            Double amount     = null;   // absent for group headings ("Proximates")
 
             reader.beginObject();
             while (reader.hasNext()) {
@@ -480,7 +480,8 @@ public class USDAImportService extends Service {
             }
             reader.endObject();
 
-            if (nutrientId > 0 && amount > 0) {
+            // 0 is kept (measured or assumed zero by USDA); negatives dropped.
+            if (nutrientId > 0 && amount != null && amount >= 0) {
                 out.put(nutrientId, amount);
             }
         }

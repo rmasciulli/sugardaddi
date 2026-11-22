@@ -257,8 +257,10 @@ public final class USDAMapper {
         Map<Integer, Double> values = new HashMap<>();
         for (FDCFoodDetail.FDCFoodNutrient fn : detail.getFoodNutrients()) {
             int id     = fn.getNutrientId();
-            double val = fn.getAmount();
-            if (id > 0 && val > 0) values.put(id, val); // Skip zero/negative values
+            Double val = fn.getAmount();
+            // No amount = a group heading ("Proximates") or no value: skipped.
+            // 0 is kept (see nutritionFromValues(), ZEROS); negatives dropped.
+            if (id > 0 && val != null && val >= 0) values.put(id, val);
         }
         return nutritionFromValues(values);
     }
@@ -271,6 +273,7 @@ public final class USDAMapper {
     private static final int NUTRIENT_CARBS_BY_SUMMATION = 1050;
     private static final int NUTRIENT_SUGARS_FOUNDATION = 1063;
     private static final int NUTRIENT_FAT_NLEA = 1085;
+    private static final int NUTRIENT_CYSTINE = 1216;
 
     /**
      * Build a Nutrition from FDC nutrient values (id -> amount, native units).
@@ -299,6 +302,10 @@ public final class USDAMapper {
      * Missing ids are never invented: a Foundation oil without energy, protein
      * or carbohydrates shows only what USDA measured.
      *
+     * ZEROS: a 0 is kept. USDA's 0 is measured (or "assumed zero" by USDA,
+     * e.g. fiber in milk) and Nutrition distinguishes 0 (none present) from
+     * null (unknown). Only negative values are dropped.
+     *
      * All USDA FDC data types (Foundation, SR Legacy, Survey) are measured or
      * compiled by USDA nutritionists: SCIENTIFIC confidence.
      */
@@ -314,6 +321,11 @@ public final class USDAMapper {
         if (n.getCarbohydrates() == null) n.setCarbohydrates(values.get(NUTRIENT_CARBS_BY_SUMMATION));
         if (n.getSugars() == null) n.setSugars(values.get(NUTRIENT_SUGARS_FOUNDATION));
         if (n.getFat() == null) n.setFat(values.get(NUTRIENT_FAT_NLEA));
+        // Cysteine: 1232, else cystine (1216, two cysteines bound: the form SR
+        // Legacy reports, listed as "cystine/cysteine" in food tables), g -> mg.
+        if (n.getCysteine() == null && values.get(NUTRIENT_CYSTINE) != null) {
+            n.setCysteine(values.get(NUTRIENT_CYSTINE) * MG_PER_G);
+        }
 
         n.setEnergyKcal(firstPresent(values.get(NUTRIENT_KCAL),
                 values.get(NUTRIENT_KCAL_ATWATER_GENERAL),
@@ -330,71 +342,141 @@ public final class USDAMapper {
         return n;
     }
 
+    /** USDA reports these in g per 100 g; Nutrition stores them in mg. */
+    private static final double MG_PER_G = 1000.0;
+
     /**
      * Map a single nutrient value by FDC nutrient ID into a Nutrition object.
-     * IDs are INFOODS-based and stable across USDA releases.
+     * IDs are INFOODS-based and stable across USDA releases. Every id below was
+     * checked by name and unit on real records (SR Legacy, Foundation, Survey,
+     * 2026-11-22).
      *
-     * Units: all values are in the nutrient's native unit (g, mg, µg, kcal).
-     * Sodium is in mg - convert to g for our model (same as Ciqual convention).
+     * UNITS: FDC values are in the nutrient's own unit (g, mg, µg, kcal), and
+     * most match Nutrition's field unit. Two groups do not: individual omega
+     * fatty acids (ALA, EPA, DHA, GLA, CLA) and amino acids are g in FDC and mg
+     * in Nutrition (see its field comments), so they are multiplied by 1000.
+     *
+     * NOT HERE: kcal (1008, 2047, 2048) and the Foundation fallbacks (1050,
+     * 1063, 1085, 1216) are applied by nutritionFromValues(), which knows the
+     * precedence between ids.
+     *
+     * NOT MAPPED (no matching Nutrition field, or not the same nutrient):
+     * undifferentiated groups such as "PUFA 18:3" (1270), "PUFA 20:4" (1271)
+     * or "MUFA 18:1" (1268), which mix isomers (ALA, arachidonic acid, oleic
+     * acid are each only part of them); "Folate, DFE" (1190, a computed
+     * equivalent); IU duplicates of vitamins A and D (1104, 1110); individual
+     * carotenoids, tocopherols and sterols without a field.
      */
     public static void mapNutrientById(@NonNull Nutrition n, int id, double val) {
         switch (id) {
-            // Energy: kcal (1008, 2047, 2048) is set by nutritionFromValues(),
-            // which applies the precedence between the three ids.
-            case 1062: n.setEnergyKj(val);   break;
+            // Energy in kJ (kcal: see nutritionFromValues())
+            case 1062: n.setEnergyKj(val);              break;
 
             // Macronutrients (g)
-            case 1003: n.setProteins(val);       break;
-            case 1004: n.setFat(val);             break;
-            case 1005: n.setCarbohydrates(val);   break;
-            case 1079: n.setFiber(val);           break;
-            case 1051: n.setWater(val);           break;
+            case 1003: n.setProteins(val);              break;
+            case 1004: n.setFat(val);                   break;
+            case 1005: n.setCarbohydrates(val);         break;
+            case 1079: n.setFiber(val);                 break;
+            case 1051: n.setWater(val);                 break;
+            case 1018: n.setAlcohol(val);               break;
+            case 1007: n.setAsh(val);                   break;
 
-            // Carbohydrate detail (g). 1050 (carbohydrate by summation), 1063
-            // (Foundation sugars) and 1085 (NLEA fat) are fallbacks, applied by
-            // nutritionFromValues().
-            case 2000: n.setSugars(val);          break;
-            case 1009: n.setStarch(val);          break;
+            // Carbohydrate detail (g)
+            case 2000: n.setSugars(val);                break;
+            case 1009: n.setStarch(val);                break;
+            case 1011: n.setGlucose(val);               break;
+            case 1012: n.setFructose(val);              break;
+            case 1010: n.setSucrose(val);               break;
+            case 1013: n.setLactose(val);               break;
+            case 1014: n.setMaltose(val);               break;
+            case 1075: n.setGalactose(val);             break;
 
             // Fat detail (g)
-            case 1258: n.setSaturatedFat(val);       break;
-            case 1292: n.setMonounsaturatedFat(val); break;
-            case 1293: n.setPolyunsaturatedFat(val); break;
-            case 1257: n.setTransFat(val);            break;
-            case 1253: n.setCholesterol(val);         break;
+            case 1258: n.setSaturatedFat(val);          break;
+            case 1292: n.setMonounsaturatedFat(val);    break;
+            case 1293: n.setPolyunsaturatedFat(val);    break;
+            case 1257: n.setTransFat(val);              break;
+            case 1259: n.setButyricAcid(val);           break; // SFA 4:0
+            case 1260: n.setCaproicAcid(val);           break; // SFA 6:0
+            case 1261: n.setCaprylicAcid(val);          break; // SFA 8:0
+            case 1262: n.setCapricAcid(val);            break; // SFA 10:0
+            case 1263: n.setLauricAcid(val);            break; // SFA 12:0
+            case 1264: n.setMyristicAcid(val);          break; // SFA 14:0
+            case 1265: n.setPalmiticAcid(val);          break; // SFA 16:0
+            case 1266: n.setStearicAcid(val);           break; // SFA 18:0
+            case 1316: n.setLinoleicAcid(val);          break; // PUFA 18:2 n-6 c,c (g)
 
-            // Specific omega fatty acids (g)
-            case 1404: n.setALA(val);  break; // 18:3 n-3 (ALA)
-            case 1405: n.setEPA(val);  break; // 20:5 n-3 (EPA)  - rare in Foundation
-            case 1406: n.setDHA(val);  break; // 22:6 n-3 (DHA)
+            // Individual omega fatty acids: g in FDC, mg in Nutrition
+            case 1404: n.setALA(val * MG_PER_G);                    break; // PUFA 18:3 n-3 c,c,c
+            case 1278: n.setEPA(val * MG_PER_G);                    break; // PUFA 20:5 n-3 (1405 is 20:3 n-3)
+            case 1272: n.setDHA(val * MG_PER_G);                    break; // PUFA 22:6 n-3 (1406 is 20:3 n-6)
+            case 1321: n.setGammaLinolenicAcid(val * MG_PER_G);     break; // PUFA 18:3 n-6 c,c,c
+            case 1311: n.setConjugatedLinoleicAcid(val * MG_PER_G); break; // PUFA 18:2 CLAs
 
-            // Minerals - FDC's native unit is mg, matching Nutrition's own
-            // "mg per 100g/ml" field convention directly (same as Ciqual's
-            // mapper, which stores ANSES's mg values with no conversion) -
-            // no division needed.
-            case 1093: n.setSodium(val);    break;
-            case 1087: n.setCalcium(val);   break;
-            case 1089: n.setIron(val);      break;
-            case 1090: n.setMagnesium(val); break;
-            case 1091: n.setPhosphorus(val);break;
-            case 1092: n.setPotassium(val); break;
-            case 1095: n.setZinc(val);      break;
+            case 1253: n.setCholesterol(val);           break; // mg
+
+            // Minerals (mg, except selenium and iodine in µg) - FDC's units
+            // match Nutrition's own convention, no conversion
+            case 1093: n.setSodium(val);                break;
+            case 1087: n.setCalcium(val);               break;
+            case 1089: n.setIron(val);                  break;
+            case 1090: n.setMagnesium(val);             break;
+            case 1091: n.setPhosphorus(val);            break;
+            case 1092: n.setPotassium(val);             break;
+            case 1095: n.setZinc(val);                  break;
+            case 1098: n.setCopper(val);                break;
+            case 1101: n.setManganese(val);             break;
+            case 1103: n.setSelenium(val);              break; // µg
+            case 1100: n.setIodine(val);                break; // µg
 
             // Fat-soluble vitamins
-            case 1106: n.setVitaminA(val);    break; // µg RAE
-            case 1114: n.setVitaminD(val);    break; // µg
-            case 1109: n.setVitaminE(val);    break; // mg
-            case 1185: n.setVitaminK1(val);   break; // µg
+            case 1106: n.setVitaminA(val);              break; // µg RAE
+            case 1105: n.setRetinol(val);               break; // µg
+            case 1107: n.setBetaCarotene(val);          break; // µg
+            case 1114: n.setVitaminD(val);              break; // µg (D2 + D3)
+            case 1111: n.setVitaminD2(val);             break; // µg
+            case 1112: n.setVitaminD3(val);             break; // µg
+            case 1109: n.setVitaminE(val);              break; // mg alpha-tocopherol
+            case 1185: n.setVitaminK1(val);             break; // µg phylloquinone
+            case 1183: n.setVitaminK2(val);             break; // µg menaquinone-4
 
             // Water-soluble vitamins
-            case 1165: n.setVitaminB1(val);   break; // mg thiamin
-            case 1166: n.setVitaminB2(val);   break; // mg riboflavin
-            case 1167: n.setVitaminB3(val);   break; // mg niacin
-            case 1170: n.setVitaminB5(val);   break; // mg pantothenic acid
-            case 1175: n.setVitaminB6(val);   break; // mg
-            case 1177: n.setVitaminB9(val);   break; // µg DFE folate
-            case 1178: n.setVitaminB12(val);  break; // µg
-            case 1162: n.setVitaminC(val);    break; // mg
+            case 1165: n.setVitaminB1(val);             break; // mg thiamin
+            case 1166: n.setVitaminB2(val);             break; // mg riboflavin
+            case 1167: n.setVitaminB3(val);             break; // mg niacin
+            case 1170: n.setVitaminB5(val);             break; // mg pantothenic acid
+            case 1175: n.setVitaminB6(val);             break; // mg
+            case 1176: n.setVitaminB7(val);             break; // µg biotin
+            case 1177: n.setVitaminB9(val);             break; // µg folate, total
+            case 1187: n.setIntrinsicFolate(val);       break; // µg folate, food
+            case 1186: n.setFolicAcid(val);             break; // µg folic acid (added)
+            case 1178: n.setVitaminB12(val);            break; // µg
+            case 1162: n.setVitaminC(val);              break; // mg
+            case 1180: n.setCholine(val);               break; // mg
+
+            // Amino acids: g in FDC, mg in Nutrition
+            case 1210: n.setTryptophan(val * MG_PER_G);     break;
+            case 1211: n.setThreonine(val * MG_PER_G);      break;
+            case 1212: n.setIsoleucine(val * MG_PER_G);     break;
+            case 1213: n.setLeucine(val * MG_PER_G);        break;
+            case 1214: n.setLysine(val * MG_PER_G);         break;
+            case 1215: n.setMethionine(val * MG_PER_G);     break;
+            case 1232: n.setCysteine(val * MG_PER_G);       break; // 1216 cystine: fallback
+            case 1217: n.setPhenylalanine(val * MG_PER_G);  break;
+            case 1218: n.setTyrosine(val * MG_PER_G);       break;
+            case 1219: n.setValine(val * MG_PER_G);         break;
+            case 1220: n.setArginine(val * MG_PER_G);       break;
+            case 1221: n.setHistidine(val * MG_PER_G);      break;
+            case 1222: n.setAlanine(val * MG_PER_G);        break;
+            case 1223: n.setAsparticAcid(val * MG_PER_G);   break;
+            case 1224: n.setGlutamicAcid(val * MG_PER_G);   break;
+            case 1225: n.setGlycine(val * MG_PER_G);        break;
+            case 1226: n.setProline(val * MG_PER_G);        break;
+            case 1227: n.setSerine(val * MG_PER_G);         break;
+
+            // Other (mg)
+            case 1057: n.setCaffeine(val);              break;
+            case 1058: n.setTheobromine(val);           break;
 
             default:
                 break; // Unmapped nutrient - silently skip
