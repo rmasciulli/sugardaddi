@@ -434,6 +434,11 @@ public class CiqualElasticsearchMapper {
         Nutrition nutrition = new Nutrition();
         int matchedCount = 0;
 
+        // Same rule as the downloaded dataset (CiqualImportService): the WORST
+        // ANSES grade among the values read sets the badge. A or B: SCIENTIFIC;
+        // one C or D: ESTIMATED. A value without a grade does not count.
+        DataConfidence confidence = DataConfidence.SCIENTIFIC;
+
         // Iterate through all composition entries
         for (CiqualElasticsearchComposition comp : compos) {
             if (comp == null) {
@@ -461,6 +466,11 @@ public class CiqualElasticsearchMapper {
 
             CiqualNutritionWriter.write(nutrition, constituent, value);
             matchedCount++;
+
+            String grade = comp.getCompoCodeConfiance();
+            if (grade != null && !grade.trim().isEmpty()) {
+                confidence = confidence.lowest(DataConfidence.fromCiqualCode(grade));
+            }
         }
 
         Log.d(TAG, "Matched " + matchedCount + " nutrients out of " + compos.size() + " entries");
@@ -478,7 +488,7 @@ public class CiqualElasticsearchMapper {
 
         // Return nutrition object only if we matched at least some basic nutrients
         if (matchedCount > 0) {
-            nutrition.setDataConfidence(DataConfidence.SCIENTIFIC);
+            nutrition.setDataConfidence(confidence);
             return nutrition;
         }
 

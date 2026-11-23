@@ -391,6 +391,11 @@ public class CiqualImportService extends Service {
             // conf.get(code) holds a frequency map e.g. {"A":12, "B":3, "C":1}.
             // We take the WORST (lowest confidence) code present - even one C or D
             // nutrient lowers the overall product confidence to ESTIMATED.
+            // Kept on purpose (Romain, 2026-11-23): when ANSES itself grades a
+            // value as less reliable, the app says so, even if it concerns most
+            // foods. The live search applies the same rule
+            // (CiqualElasticsearchMapper), so a food gets the same badge whichever
+            // path loaded it.
             Map<String, Integer> codeCounts = conf.get(code);
             DataConfidence confidence = DataConfidence.SCIENTIFIC; // optimistic default
 
