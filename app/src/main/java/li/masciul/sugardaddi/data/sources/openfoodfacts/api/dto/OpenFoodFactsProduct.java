@@ -153,6 +153,9 @@ public class OpenFoodFactsProduct {
     @SerializedName("nutrition_data_per")
     private String nutritionDataPer;  // "100g" or "serving"
 
+    @SerializedName("nutrition_data_prepared_per")
+    private String nutritionDataPreparedPer;  // "100g" or "100ml": basis of the prepared set
+
     @SerializedName("serving_size")
     private String servingSize;
 
@@ -397,6 +400,7 @@ public class OpenFoodFactsProduct {
     // ========== GETTERS - NUTRITION ==========
     public OpenFoodFactsNutriments getNutriments() { return nutriments; }
     public String getNutritionDataPer() { return nutritionDataPer; }
+    public String getNutritionDataPreparedPer() { return nutritionDataPreparedPer; }
     public String getServingSize() { return servingSize; }
     public Double getServingQuantity() { return servingQuantity; }
     public String getServingQuantityUnit() { return servingQuantityUnit; }

@@ -12,6 +12,7 @@ import java.util.Map;
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.enums.NutritionPreparation;
 
 
 /**
@@ -38,6 +39,14 @@ public class Nutrition {
      * never relabels one as the other. Never null; defaults to PER_100G.
      */
     private NutritionBasis basis = NutritionBasis.PER_100G;
+
+    /**
+     * The state of the food these values describe: as sold (the reference and
+     * default) or prepared following the package instructions - see
+     * {@link NutritionPreparation}. Like the basis, a property of the DATA:
+     * one object describes one state, never a mix. Never null.
+     */
+    private NutritionPreparation preparation = NutritionPreparation.AS_SOLD;
 
     // ========== ENERGY ==========
     private Double energyKj;        // Kilojoules per 100g/ml
@@ -247,6 +256,7 @@ public class Nutrition {
         if (source != null) {
             // Storage convention
             this.basis = source.basis;
+            this.preparation = source.preparation;
 
             // Energy
             this.energyKj = source.energyKj;
@@ -395,6 +405,7 @@ public class Nutrition {
 
         // Storage convention
         copy.basis = this.basis;
+        copy.preparation = this.preparation;
 
         // Energy
         copy.energyKj = this.energyKj;
@@ -698,6 +709,7 @@ public class Nutrition {
 
         // Storage convention
         scaled.basis = this.basis;
+        scaled.preparation = this.preparation;
 
         // Scale all non-null values
         if (energyKj != null) scaled.energyKj = energyKj * multiplier;
@@ -828,6 +840,9 @@ public class Nutrition {
         // definition gram-basis. Callers mixing bases upstream are
         // responsible for that decision - add() cannot resolve it.
         sum.basis = NutritionBasis.PER_100G;
+        // A total of amounts actually eaten has no "as sold / prepared" state:
+        // each part was logged in its own state. Left at the default.
+        sum.preparation = NutritionPreparation.AS_SOLD;
 
         sum.energyKj = addNullable(this.energyKj, other.energyKj);
         sum.energyKcal = addNullable(this.energyKcal, other.energyKcal);
@@ -980,6 +995,7 @@ public class Nutrition {
             if (total == null) {
                 total = new Nutrition(part);
                 total.basis = NutritionBasis.PER_100G; // same as add()
+                total.preparation = NutritionPreparation.AS_SOLD; // same as add()
                 // An aggregate has no single density - add() never sets one,
                 // and a one-part total must look the same as a many-part one.
                 total.density = null;
@@ -1060,6 +1076,18 @@ public class Nutrition {
      */
     public void setBasis(NutritionBasis basis) {
         this.basis = basis != null ? basis : NutritionBasis.PER_100G;
+    }
+
+    /** Never returns null - see field Javadoc. */
+    @NonNull
+    public NutritionPreparation getPreparation() { return preparation; }
+
+    /** True when the values describe the food prepared, not as sold. */
+    public boolean isPrepared() { return preparation == NutritionPreparation.PREPARED; }
+
+    /** Null-tolerant: null normalizes to AS_SOLD (rows written before v23). */
+    public void setPreparation(NutritionPreparation preparation) {
+        this.preparation = preparation != null ? preparation : NutritionPreparation.AS_SOLD;
     }
 
     // Energy
@@ -2358,6 +2386,7 @@ public class Nutrition {
         }
         // Derived from the source's own declared servings, so it is source
         // content: a genuinely changed density is worth a refresh offer.
+        if (this.preparation != other.preparation) return false;
         return ContentCompare.numbersEqual(this.density, other.density);
     }
 

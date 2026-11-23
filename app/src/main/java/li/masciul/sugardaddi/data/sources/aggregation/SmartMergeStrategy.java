@@ -312,6 +312,11 @@ public class SmartMergeStrategy implements MergeStrategy {
         if (primary.getBasis() != secondary.getBasis()) {
             return;
         }
+        // Same for the state: an as-sold value next to prepared ones (or the
+        // reverse) would describe two different foods. See NutritionPreparation.
+        if (primary.getPreparation() != secondary.getPreparation()) {
+            return;
+        }
 
         // Fill missing values from secondary
         if (primary.getEnergyKcal() == null && secondary.getEnergyKcal() != null) {

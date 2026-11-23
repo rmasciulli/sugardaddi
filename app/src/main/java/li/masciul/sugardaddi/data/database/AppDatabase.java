@@ -59,8 +59,8 @@ import java.util.concurrent.Executors;
                 RecipeEntity.class,        // Recipes (user-created + external)
                 UserItemDataEntity.class   // User data on items: favorite, serving, photos
         },
-        version = 22,        // keep getDatabaseVersion() in sync - bumped for
-                             // user_item_data.preferredUnit (MIGRATION_21_22)
+        version = 23,        // keep getDatabaseVersion() in sync - bumped for
+                             // nutrition.preparation (no migration: wipes, alpha policy)
         exportSchema = true
 )
 @TypeConverters({
@@ -202,7 +202,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     /** Current schema version. Keep in sync with the @Database version above. */
     public static int getDatabaseVersion() {
-        return 22;
+        return 23;
     }
 
     /** Database file name. */

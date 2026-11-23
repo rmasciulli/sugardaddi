@@ -604,8 +604,12 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             // Column 2: per-100 in the unit shown: the source's own basis, or
             // the other unit converted through the source's density (see
             // shownNutrition(); never a density of our own).
+            // Prepared values say so in the header: "per 100 ml prepared" is not
+            // the product as sold (see NutritionPreparation).
             String unit = nutrition.getBasis().getUnitLabel();
-            col2.setText(context.getString(R.string.nutrition_per_100, unit));
+            col2.setText(context.getString(nutrition.isPrepared()
+                    ? R.string.nutrition_per_100_prepared
+                    : R.string.nutrition_per_100, unit));
 
             // Column 3: SIMPLIFIED - Just "per 20g" (dynamic)
             String customHeader = formatAmount(customAmount) + unit;
@@ -715,6 +719,14 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 addAttributionLine(badge, nutritionSource.getDisplayWithEmoji(context),
                         textColor, density);
             }
+
+            // Prepared values: the amount logged is the prepared food, and what
+            // went into it (water, milk) is already counted - logging that milk
+            // again would count it twice.
+            if (nutrition.isPrepared()) {
+                addBadgeLine(badge, context.getString(R.string.nutrition_prepared_note),
+                        textColor, density);
+            }
         }
 
         container.addView(badge);
@@ -722,8 +734,14 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
     /** Small italic "Nutrition data via ..." line under the confidence text. */
     private void addAttributionLine(LinearLayout badge, String sources, int textColor, float density) {
+        addBadgeLine(badge, context.getString(R.string.nutrition_secondary_attribution, sources),
+                textColor, density);
+    }
+
+    /** Small italic line under the confidence text (attribution, prepared note). */
+    private void addBadgeLine(LinearLayout badge, String text, int textColor, float density) {
         TextView attributionView = new TextView(context);
-        attributionView.setText(context.getString(R.string.nutrition_secondary_attribution, sources));
+        attributionView.setText(text);
         attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
         attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
         attributionView.setTextColor(textColor);

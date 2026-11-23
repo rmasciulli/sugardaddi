@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey;
 
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.enums.NutritionPreparation;
 import li.masciul.sugardaddi.core.models.Nutrition;
 
 /**
@@ -55,6 +56,11 @@ public class NutritionEntity {
 
     // ========== MEASUREMENT BASIS ==========
     private String measurementBasis = "per_100g";  // NutritionBasis ids: "per_100g" or "per_100ml"
+
+    // ========== PREPARATION (v23) ==========
+    // NutritionPreparation ids: "as_sold" or "prepared". Null or unknown reads
+    // as "as_sold", the reference state (see NutritionPreparation).
+    private String preparation = "as_sold";
 
     // ========== DENSITY ==========
     // See Nutrition.density. Grams per ml, source-derived only; null when
@@ -259,6 +265,9 @@ public class NutritionEntity {
     // Measurement
     public String getMeasurementBasis() { return measurementBasis; }
     public void setMeasurementBasis(String measurementBasis) { this.measurementBasis = measurementBasis; }
+
+    public String getPreparation() { return preparation; }
+    public void setPreparation(String preparation) { this.preparation = preparation; }
 
     public Double getDensity() { return density; }
     public void setDensity(Double density) { this.density = density; }
@@ -627,6 +636,7 @@ public class NutritionEntity {
 
         // Measurement basis
         nutrition.setBasis(NutritionBasis.fromId(this.measurementBasis));
+        nutrition.setPreparation(NutritionPreparation.fromId(this.preparation));
 
         // Density (both or neither - see Nutrition.setDensity)
         nutrition.setDensity(this.density, this.densityConfidence);
@@ -788,6 +798,7 @@ public class NutritionEntity {
         if (nutrition != null) {
             // Measurement basis
             entity.setMeasurementBasis(nutrition.getBasis().getId());
+            entity.setPreparation(nutrition.getPreparation().getId());
 
             // Density
             entity.setDensity(nutrition.getDensity());

@@ -213,6 +213,10 @@ public class OffProductSearchDelegate
                 if (info.length() > 0) info.append(" \u00b7 ");
                 info.append(String.format(Locale.getDefault(), "%.0f kcal/100%s",
                         energy, nutrition.getBasis().getUnitLabel()));
+                // Prepared values are not the product as sold: say so
+                if (nutrition.isPrepared()) {
+                    info.append(' ').append(context.getString(R.string.nutrition_prepared_short));
+                }
             }
         }
         holder.servingInfo.setText(info.toString());

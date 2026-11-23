@@ -5,6 +5,7 @@ import android.util.Log;
 import li.masciul.sugardaddi.core.enums.DataConfidence;
 import li.masciul.sugardaddi.core.enums.DataSourceType;
 import li.masciul.sugardaddi.core.enums.NutritionBasis;
+import li.masciul.sugardaddi.core.enums.NutritionPreparation;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
@@ -538,118 +539,41 @@ public class OpenFoodFactsMapper {
     }
 
     /**
-     * Map nutrition from OFF's "_100g" fields.
+     * Map nutrition: one OFF nutrient set, AS SOLD FIRST.
      *
-     * Those fields are already per 100 g / 100 ml, whatever the label gave (OFF
-     * computes them from per-serving entries itself), and in grams for every
-     * nutrient measured by weight: see OffUnits. Energy: kJ and kcal, the missing
-     * one computed with 1 kcal = 4.184 kJ. Alcohol: % vol, see OffAlcohol.
+     * OFF can hold two sets for a product: as sold ("_100g") and prepared
+     * following the package instructions ("_prepared_100g"). The as-sold set is
+     * used whenever it has at least one value, even when a prepared set exists:
+     * - it is the EU reference: nutrition values are for the food as sold, values
+     *   after preparation are only an allowed alternative when the package gives
+     *   the instructions (Regulation (EU) No 1169/2011, Article 31(3));
+     * - it is what Ciqual, USDA and the other sources describe, so items stay
+     *   comparable in a meal;
+     * - the amount logged then means the product as bought.
+     * The prepared set is used only when there is no as-sold value at all (some
+     * labels only give prepared values: dried soups, infant formula, drink
+     * powders), and then on its own, flagged PREPARED (see NutritionPreparation).
+     * The two sets are never mixed: a per-field fallback used to put prepared
+     * sugars next to as-sold energy on the same label.
+     *
+     * Choosing between both sets on screen is a possible later step, not done.
      */
     private void mapNutrition(FoodProduct product, OpenFoodFactsProduct offProduct) {
-        if (offProduct.getNutriments() == null) {
+        OpenFoodFactsNutriments off = offProduct.getNutriments();
+        if (off == null) {
             return;
         }
 
-        OpenFoodFactsNutriments off = offProduct.getNutriments();
-        Nutrition nutrition = new Nutrition();
-
-        // Basis of everything mapped below - see resolveBasis().
-        nutrition.setBasis(resolveBasis(offProduct.getQuantity()));
-
-        // ========== ENERGY (with auto-conversion between kJ and kcal) ==========
-        Double energyKj = off.getEnergyKj100g();
-        Double energyKcal = off.getEnergyKcal100g();
-
-        // Auto-convert if one is missing
-        if (energyKj == null && energyKcal != null) {
-            // Calculate kJ from kcal: kJ = kcal * 4.184
-            energyKj = energyKcal * 4.184;
-            Log.d(TAG, "Calculated missing energy kJ from kcal: " + energyKj);
-        } else if (energyKcal == null && energyKj != null) {
-            // Calculate kcal from kJ: kcal = kJ / 4.184
-            energyKcal = energyKj / 4.184;
-            Log.d(TAG, "Calculated missing energy kcal from kJ: " + energyKcal);
+        Nutrition nutrition = nutrientSet(off, OpenFoodFactsNutriments.AS_SOLD,
+                resolveBasis(offProduct.getQuantity()));
+        if (!nutrition.hasData()) {
+            Nutrition prepared = nutrientSet(off, OpenFoodFactsNutriments.PREPARED,
+                    preparedBasis(offProduct.getNutritionDataPreparedPer()));
+            if (prepared.hasData()) {
+                prepared.setPreparation(NutritionPreparation.PREPARED);
+                nutrition = prepared;
+            }
         }
-
-        nutrition.setEnergyKj(energyKj);
-        nutrition.setEnergyKcal(energyKcal);
-
-        // ========== MACRONUTRIENTS ==========
-        nutrition.setProteins(off.getProteins100g());
-        nutrition.setCarbohydrates(off.getCarbohydrates100g());
-        nutrition.setFat(off.getFat100g());
-        nutrition.setFiber(off.getFiber100g());
-        // Alcohol: alcohol_100g is the strength in % vol, see OffAlcohol
-        nutrition.setAlcohol(OffAlcohol.gramsPer100ml(off.getAlcohol100g(),
-                nutrition.getBasis() == NutritionBasis.PER_100ML));
-        nutrition.setWater(off.getWater100g());
-
-        // ========== CARBOHYDRATE DETAILS ==========
-        nutrition.setSugars(off.getSugars100g());
-        nutrition.setStarch(off.getStarch100g());
-        nutrition.setPolyols(off.getPolyols100g());
-        nutrition.setGlucose(off.getGlucose100g());
-        nutrition.setFructose(off.getFructose100g());
-        nutrition.setSucrose(off.getSucrose100g());
-        nutrition.setLactose(off.getLactose100g());
-        nutrition.setMaltose(off.getMaltose100g());
-        nutrition.setGalactose(off.getGalactose100g());
-
-        // ========== FAT DETAILS ==========
-        nutrition.setSaturatedFat(off.getSaturatedFat100g());
-        nutrition.setMonounsaturatedFat(off.getMonounsaturatedFat100g());
-        nutrition.setPolyunsaturatedFat(off.getPolyunsaturatedFat100g());
-        nutrition.setTransFat(off.getTransFat100g());
-        nutrition.setCholesterol(fromGrams(off.getCholesterol100g(), NutrientInfo.CHOLESTEROL));
-
-        // ========== OMEGA FATTY ACIDS ==========
-        nutrition.setOmega3(off.getOmega3Fat100g());
-        nutrition.setOmega6(off.getOmega6Fat100g());
-        nutrition.setOmega9(off.getOmega9Fat100g());
-        nutrition.setLinoleicAcid(off.getLinoleicAcid100g());
-        nutrition.setALA(fromGrams(off.getAlphaLinolenicAcid100g(), NutrientInfo.ALA));
-        nutrition.setEPA(fromGrams(off.getEicosapentaenoicAcid100g(), NutrientInfo.EPA));
-        nutrition.setDHA(fromGrams(off.getDocosahexaenoicAcid100g(), NutrientInfo.DHA));
-        nutrition.setArachidonicAcid(fromGrams(off.getArachidonicAcid100g(), NutrientInfo.ARACHIDONIC_ACID));
-        nutrition.setGammaLinolenicAcid(fromGrams(off.getGammaLinolenicAcid100g(), NutrientInfo.GAMMA_LINOLENIC_ACID));
-
-        // ========== MINERALS ==========
-        nutrition.setSalt(off.getSalt100g());
-        nutrition.setSodium(fromGrams(off.getSodium100g(), NutrientInfo.SODIUM));
-        nutrition.setCalcium(fromGrams(off.getCalcium100g(), NutrientInfo.CALCIUM));
-        nutrition.setPhosphorus(fromGrams(off.getPhosphorus100g(), NutrientInfo.PHOSPHORUS));
-        nutrition.setMagnesium(fromGrams(off.getMagnesium100g(), NutrientInfo.MAGNESIUM));
-        nutrition.setPotassium(fromGrams(off.getPotassium100g(), NutrientInfo.POTASSIUM));
-        nutrition.setChloride(fromGrams(off.getChloride100g(), NutrientInfo.CHLORIDE));
-        nutrition.setIron(fromGrams(off.getIron100g(), NutrientInfo.IRON));
-        nutrition.setZinc(fromGrams(off.getZinc100g(), NutrientInfo.ZINC));
-        nutrition.setCopper(fromGrams(off.getCopper100g(), NutrientInfo.COPPER));
-        nutrition.setManganese(fromGrams(off.getManganese100g(), NutrientInfo.MANGANESE));
-        nutrition.setSelenium(fromGrams(off.getSelenium100g(), NutrientInfo.SELENIUM));
-        nutrition.setIodine(fromGrams(off.getIodine100g(), NutrientInfo.IODINE));
-        nutrition.setChromium(fromGrams(off.getChromium100g(), NutrientInfo.CHROMIUM));
-        nutrition.setMolybdenum(fromGrams(off.getMolybdenum100g(), NutrientInfo.MOLYBDENUM));
-        nutrition.setFluoride(fromGrams(off.getFluoride100g(), NutrientInfo.FLUORIDE));
-
-        // ========== VITAMINS ==========
-        nutrition.setVitaminA(fromGrams(off.getVitaminA100g(), NutrientInfo.VITAMIN_A));
-        nutrition.setVitaminD(fromGrams(off.getVitaminD100g(), NutrientInfo.VITAMIN_D));
-        nutrition.setVitaminE(fromGrams(off.getVitaminE100g(), NutrientInfo.VITAMIN_E));
-        nutrition.setVitaminK(fromGrams(off.getVitaminK100g(), NutrientInfo.VITAMIN_K));
-        nutrition.setVitaminC(fromGrams(off.getVitaminC100g(), NutrientInfo.VITAMIN_C));
-        nutrition.setVitaminB1(fromGrams(off.getVitaminB1100g(), NutrientInfo.VITAMIN_B1));
-        nutrition.setVitaminB2(fromGrams(off.getVitaminB2100g(), NutrientInfo.VITAMIN_B2));
-        nutrition.setVitaminB3(fromGrams(off.getVitaminB3100g(), NutrientInfo.VITAMIN_B3));
-        nutrition.setVitaminB5(fromGrams(off.getVitaminB5100g(), NutrientInfo.VITAMIN_B5));
-        nutrition.setVitaminB6(fromGrams(off.getVitaminB6100g(), NutrientInfo.VITAMIN_B6));
-        nutrition.setVitaminB7(fromGrams(off.getBiotin100g(), NutrientInfo.VITAMIN_B7));
-        nutrition.setVitaminB9(fromGrams(off.getVitaminB9100g(), NutrientInfo.VITAMIN_B9));
-        nutrition.setVitaminB12(fromGrams(off.getVitaminB12100g(), NutrientInfo.VITAMIN_B12));
-        nutrition.setBetaCarotene(fromGrams(off.getBetaCarotene100g(), NutrientInfo.BETA_CAROTENE));
-
-        // ========== OTHER COMPOUNDS ==========
-        nutrition.setCaffeine(fromGrams(off.getCaffeine100g(), NutrientInfo.CAFFEINE));
-        nutrition.setTaurine(fromGrams(off.getTaurine100g(), NutrientInfo.TAURINE));
 
         // Set data source and calculate completeness
         nutrition.setDataSource("OpenFoodFacts");
@@ -657,6 +581,132 @@ public class OpenFoodFactsMapper {
         nutrition.calculateCompleteness();
 
         product.setNutrition(nutrition);
+    }
+
+    /**
+     * Basis of the prepared set. resolveBasis() reads the package quantity, which
+     * describes the product as sold (a 400 g tin of powder) and says nothing about
+     * the prepared food. OFF's nutrition_data_prepared_per does: "100ml" or "100g".
+     */
+    private static NutritionBasis preparedBasis(String per) {
+        return per != null && per.trim().equalsIgnoreCase("100ml")
+                ? NutritionBasis.PER_100ML
+                : NutritionBasis.PER_100G;
+    }
+
+    /**
+     * One OFF nutrient set into a Nutrition object.
+     *
+     * Same rules for both sets: values already per 100 g / 100 ml (OFF computes
+     * them from per-serving entries itself), in grams for every nutrient measured
+     * by weight (converted by OffUnits to the app's g, mg or µg), kJ and kcal for
+     * energy (the missing one computed with 1 kcal = 4.184 kJ), % vol for alcohol
+     * (see OffAlcohol).
+     *
+     * @param set   OpenFoodFactsNutriments.AS_SOLD or .PREPARED
+     * @param basis per 100 g or per 100 ml, for this set
+     */
+    private static Nutrition nutrientSet(OpenFoodFactsNutriments off, String set,
+                                         NutritionBasis basis) {
+        Nutrition nutrition = new Nutrition();
+        nutrition.setBasis(basis);
+
+        // ========== ENERGY (with auto-conversion between kJ and kcal) ==========
+        // energy_100g is kJ too (OFF: the same as energy-kj, or computed from kcal)
+        Double energyKj = off.get("energy-kj", set);
+        if (energyKj == null) energyKj = off.get("energy", set);
+        Double energyKcal = off.get("energy-kcal", set);
+
+        // Auto-convert if one is missing
+        if (energyKj == null && energyKcal != null) {
+            energyKj = energyKcal * 4.184;
+        } else if (energyKcal == null && energyKj != null) {
+            energyKcal = energyKj / 4.184;
+        }
+
+        nutrition.setEnergyKj(energyKj);
+        nutrition.setEnergyKcal(energyKcal);
+
+        // ========== MACRONUTRIENTS ==========
+        nutrition.setProteins(off.get("proteins", set));
+        nutrition.setCarbohydrates(off.get("carbohydrates", set));
+        nutrition.setFat(off.get("fat", set));
+        nutrition.setFiber(off.get("fiber", set));
+        // Alcohol: alcohol_100g is the strength in % vol, see OffAlcohol
+        nutrition.setAlcohol(OffAlcohol.gramsPer100ml(off.get("alcohol", set),
+                nutrition.getBasis() == NutritionBasis.PER_100ML));
+        nutrition.setWater(off.get("water", set));
+
+        // ========== CARBOHYDRATE DETAILS ==========
+        nutrition.setSugars(off.get("sugars", set));
+        nutrition.setStarch(off.get("starch", set));
+        nutrition.setPolyols(off.get("polyols", set));
+        nutrition.setGlucose(off.get("glucose", set));
+        nutrition.setFructose(off.get("fructose", set));
+        nutrition.setSucrose(off.get("sucrose", set));
+        nutrition.setLactose(off.get("lactose", set));
+        nutrition.setMaltose(off.get("maltose", set));
+        nutrition.setGalactose(off.get("galactose", set));
+
+        // ========== FAT DETAILS ==========
+        nutrition.setSaturatedFat(off.get("saturated-fat", set));
+        nutrition.setMonounsaturatedFat(off.get("monounsaturated-fat", set));
+        nutrition.setPolyunsaturatedFat(off.get("polyunsaturated-fat", set));
+        nutrition.setTransFat(off.get("trans-fat", set));
+        nutrition.setCholesterol(fromGrams(off.get("cholesterol", set), NutrientInfo.CHOLESTEROL));
+
+        // ========== OMEGA FATTY ACIDS ==========
+        nutrition.setOmega3(off.get("omega-3-fat", set));
+        nutrition.setOmega6(off.get("omega-6-fat", set));
+        nutrition.setOmega9(off.get("omega-9-fat", set));
+        nutrition.setLinoleicAcid(off.get("linoleic-acid", set));
+        nutrition.setALA(fromGrams(off.get("alpha-linolenic-acid", set), NutrientInfo.ALA));
+        nutrition.setEPA(fromGrams(off.get("eicosapentaenoic-acid", set), NutrientInfo.EPA));
+        nutrition.setDHA(fromGrams(off.get("docosahexaenoic-acid", set), NutrientInfo.DHA));
+        nutrition.setArachidonicAcid(fromGrams(off.get("arachidonic-acid", set), NutrientInfo.ARACHIDONIC_ACID));
+        nutrition.setGammaLinolenicAcid(fromGrams(off.get("gamma-linolenic-acid", set), NutrientInfo.GAMMA_LINOLENIC_ACID));
+
+        // ========== MINERALS ==========
+        nutrition.setSalt(off.get("salt", set));
+        nutrition.setSodium(fromGrams(off.get("sodium", set), NutrientInfo.SODIUM));
+        nutrition.setCalcium(fromGrams(off.get("calcium", set), NutrientInfo.CALCIUM));
+        nutrition.setPhosphorus(fromGrams(off.get("phosphorus", set), NutrientInfo.PHOSPHORUS));
+        nutrition.setMagnesium(fromGrams(off.get("magnesium", set), NutrientInfo.MAGNESIUM));
+        nutrition.setPotassium(fromGrams(off.get("potassium", set), NutrientInfo.POTASSIUM));
+        nutrition.setChloride(fromGrams(off.get("chloride", set), NutrientInfo.CHLORIDE));
+        nutrition.setIron(fromGrams(off.get("iron", set), NutrientInfo.IRON));
+        nutrition.setZinc(fromGrams(off.get("zinc", set), NutrientInfo.ZINC));
+        nutrition.setCopper(fromGrams(off.get("copper", set), NutrientInfo.COPPER));
+        nutrition.setManganese(fromGrams(off.get("manganese", set), NutrientInfo.MANGANESE));
+        nutrition.setSelenium(fromGrams(off.get("selenium", set), NutrientInfo.SELENIUM));
+        nutrition.setIodine(fromGrams(off.get("iodine", set), NutrientInfo.IODINE));
+        nutrition.setChromium(fromGrams(off.get("chromium", set), NutrientInfo.CHROMIUM));
+        nutrition.setMolybdenum(fromGrams(off.get("molybdenum", set), NutrientInfo.MOLYBDENUM));
+        nutrition.setFluoride(fromGrams(off.get("fluoride", set), NutrientInfo.FLUORIDE));
+
+        // ========== VITAMINS ==========
+        nutrition.setVitaminA(fromGrams(off.get("vitamin-a", set), NutrientInfo.VITAMIN_A));
+        nutrition.setVitaminD(fromGrams(off.get("vitamin-d", set), NutrientInfo.VITAMIN_D));
+        nutrition.setVitaminE(fromGrams(off.get("vitamin-e", set), NutrientInfo.VITAMIN_E));
+        nutrition.setVitaminK(fromGrams(off.get("vitamin-k", set), NutrientInfo.VITAMIN_K));
+        nutrition.setVitaminC(fromGrams(off.get("vitamin-c", set), NutrientInfo.VITAMIN_C));
+        nutrition.setVitaminB1(fromGrams(off.get("vitamin-b1", set), NutrientInfo.VITAMIN_B1));
+        nutrition.setVitaminB2(fromGrams(off.get("vitamin-b2", set), NutrientInfo.VITAMIN_B2));
+        // OFF ids: niacin is "vitamin-pp", B5 is "pantothenic-acid" (nutrients
+        // taxonomy); "vitamin-b3" / "vitamin-b5" do not exist and were never filled.
+        nutrition.setVitaminB3(fromGrams(off.get("vitamin-pp", set), NutrientInfo.VITAMIN_B3));
+        nutrition.setVitaminB5(fromGrams(off.get("pantothenic-acid", set), NutrientInfo.VITAMIN_B5));
+        nutrition.setVitaminB6(fromGrams(off.get("vitamin-b6", set), NutrientInfo.VITAMIN_B6));
+        nutrition.setVitaminB7(fromGrams(off.get("biotin", set), NutrientInfo.VITAMIN_B7));
+        nutrition.setVitaminB9(fromGrams(off.get("vitamin-b9", set), NutrientInfo.VITAMIN_B9));
+        nutrition.setVitaminB12(fromGrams(off.get("vitamin-b12", set), NutrientInfo.VITAMIN_B12));
+        nutrition.setBetaCarotene(fromGrams(off.get("beta-carotene", set), NutrientInfo.BETA_CAROTENE));
+
+        // ========== OTHER COMPOUNDS ==========
+        nutrition.setCaffeine(fromGrams(off.get("caffeine", set), NutrientInfo.CAFFEINE));
+        nutrition.setTaurine(fromGrams(off.get("taurine", set), NutrientInfo.TAURINE));
+
+        return nutrition;
     }
 
     /**
@@ -684,6 +734,17 @@ public class OpenFoodFactsMapper {
                 && !quantity.isInfinite() && !quantity.isNaN();
         if (text == null && !hasQuantity) return;
 
+        // Prepared values: OFF's serving may describe the powder (20 g) or the
+        // prepared food (a 250 ml bowl). Only a volume with values per 100 ml can
+        // only be the prepared food; anything else would scale the prepared values
+        // by the powder's weight. Left out: the user sets the amount.
+        Nutrition nutrition = product.getNutrition();
+        if (nutrition != null && nutrition.isPrepared()
+                && !(nutrition.getBasis() == NutritionBasis.PER_100ML
+                     && isStatedVolume(text, offProduct.getServingQuantityUnit()))) {
+            return;
+        }
+
         try {
             boolean volume = hasQuantity && isVolumeServing(product, offProduct);
             ServingSize serving = text != null
@@ -700,6 +761,17 @@ public class OpenFoodFactsMapper {
         } catch (Exception e) {
             Log.w(TAG, "Failed to map serving size: " + text + " / " + quantity, e);
         }
+    }
+
+    /**
+     * Does the record itself say the serving is a volume: serving_quantity_unit
+     * "ml", or, without a unit, a volume in the serving text ("250 ml", "25 cl")?
+     */
+    private static boolean isStatedVolume(String text, String unit) {
+        if (unit != null && !unit.trim().isEmpty()) {
+            return unit.trim().equalsIgnoreCase("ml");
+        }
+        return text != null && VOLUME_QUANTITY.matcher(text).find();
     }
 
     /**

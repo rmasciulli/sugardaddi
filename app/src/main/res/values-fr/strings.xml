@@ -112,6 +112,8 @@
     <string name="serving_size_per_100g">pour 100g</string>
     <string name="serving_size_per_100ml">pour 100ml</string>
     <string name="nutrition_per_100">pour 100%s</string>
+    <string name="nutrition_per_100_prepared">pour 100%s préparé</string>
+    <string name="nutrition_prepared_short">préparé</string>
 
     <!-- Nutrition category headers -->
     <string name="nutrition_category_macronutrients">Macronutriments</string>
@@ -527,6 +529,7 @@
 
     <!-- Secondary (nutrition-specific) attribution -->
     <string name="nutrition_secondary_attribution">Données nutritionnelles via %1$s</string>
+    <string name="nutrition_prepared_note">Valeurs pour le produit préparé selon l\'emballage (eau ou lait compris).</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Créez un nouveau repas</string>
