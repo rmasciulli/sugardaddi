@@ -62,11 +62,14 @@ public final class OffProductNames {
     }
 
     /**
-     * Title shown for a product: the brand in front of the name, unless the name
-     * already contains it ("Blonde" + "Leffe" gives "Leffe Blonde"; "La Chouffe" +
-     * "Chouffe" stays "La Chouffe"). Accents and case are ignored in that check.
-     * Display only: the stored name is not changed.
+     * Title shown for a product: the first brand in front of the name, unless the
+     * name already contains one of the listed brands ("Blonde" + "Leffe" gives
+     * "Leffe Blonde"; "La Chouffe" + "Chouffe" stays "La Chouffe"; "Chicorée &
+     * Café, RICORÉ® L'Original" + "Nestlé, NESTLE FRANCE, Ricoré" stays as it is,
+     * the name already names its brand). Accents and case are ignored in that
+     * check. Display only: the stored name is not changed.
      *
+     * @param brands OFF's comma-separated "brands" field, as is
      * @return the title, or null when there is neither a name nor a brand
      */
     public static String withBrand(String name, String brands) {
@@ -74,10 +77,21 @@ public final class OffProductNames {
         boolean hasName = name != null && !name.trim().isEmpty();
         if (!hasName) return brand;
         String trimmed = name.trim();
-        if (brand == null || normalize(trimmed).contains(normalize(brand))) {
+        if (brand == null || containsAnyBrand(trimmed, brands)) {
             return trimmed;
         }
         return brand + " " + trimmed;
+    }
+
+    /** Does the name contain any of the comma-separated brands? */
+    private static boolean containsAnyBrand(String name, String brands) {
+        String normalizedName = normalize(name);
+        for (String brand : brands.split(",")) {
+            String trimmed = brand.trim();
+            if (trimmed.isEmpty() || trimmed.equalsIgnoreCase("unknown")) continue;
+            if (normalizedName.contains(normalize(trimmed))) return true;
+        }
+        return false;
     }
 
     /**

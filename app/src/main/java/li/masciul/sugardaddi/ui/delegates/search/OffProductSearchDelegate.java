@@ -110,15 +110,14 @@ public class OffProductSearchDelegate
     }
 
     /**
-     * Sentence-cased name with the brand in front unless the name already contains
-     * it. The brand is capitalized the same way as on the brand line.
+     * Sentence-cased name with the first brand in front, unless the name already
+     * contains one of the brands: the same rule and the same text as the detail
+     * screen (OffProductNames.withBrand), so a card and its detail match.
      */
     private static String title(FoodProduct product, String language) {
         String name = product.getDisplayName(language);
         if (name != null && !name.trim().isEmpty()) name = sentenceCase(name);
-        String brand = OffProductNames.firstBrand(product.getBrand(language));
-        return OffProductNames.withBrand(name,
-                brand != null ? CategoryCleaner.capitalizeWords(brand) : null);
+        return OffProductNames.withBrand(name, product.getBrand(language));
     }
 
     /**

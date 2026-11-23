@@ -49,6 +49,15 @@ public class OffProductNamesTest {
         assertEquals("Chouffe IPA", OffProductNames.withBrand(name, ""));
     }
 
+    /** 3033710073467 Ricore: the name contains the third brand, no prefix. */
+    @Test
+    public void ricore_nameContainsAnotherListedBrand() {
+        String name = "Chicorée & Café, RICORÉ® L'Original, Boîte de 100g";
+        String brands = "Nestlé, NESTLE FRANCE, Ricoré";
+        assertEquals(name, OffProductNames.withBrand(name, brands));
+        assertEquals("Nestlé Nesquik", OffProductNames.withBrand("Nesquik", "Nestlé, NESTLE FRANCE"));
+    }
+
     // ========== names: order and edges ==========
 
     @Test
