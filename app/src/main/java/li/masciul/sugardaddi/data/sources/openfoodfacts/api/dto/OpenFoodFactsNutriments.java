@@ -5,15 +5,10 @@ import com.google.gson.annotations.SerializedName;
 /**
  * OpenFoodFactsNutriments - COMPLETE OpenFoodFacts nutriments model
  *
- * FIXED v2.0 - Handles both per-100g and per-serving data
- *
- * Maps ALL nutrition fields from OFF API to our Nutrition domain model.
- * Supports BOTH data formats:
- * - nutrition_data_per: "100g" → uses "nutrient_100g" fields
- * - nutrition_data_per: "serving" → uses "nutrient" fields (no suffix)
- *
- * Field naming: OFF uses "nutrient_100g" format (e.g., "energy-kcal_100g")
- * BUT some products only have "nutrient" (per serving)
+ * Only OFF's "{nutrient}_100g" fields are read. OFF computes them itself, per
+ * 100 g / 100 ml even when the label gives values per serving, and in grams for
+ * every nutrient measured by weight (kJ for energy, % vol for alcohol). The
+ * unsuffixed "{nutrient}" fields are per 100 g OR per serving, as typed: not used.
  */
 public class OpenFoodFactsNutriments {
 
@@ -21,51 +16,27 @@ public class OpenFoodFactsNutriments {
     @SerializedName("energy-kj_100g")
     private Double energyKj100g;
 
-    @SerializedName("energy-kj")
-    private Double energyKj;  // Per serving fallback
-
     @SerializedName("energy-kcal_100g")
     private Double energyKcal100g;
 
-    @SerializedName("energy-kcal")
-    private Double energyKcal;  // Per serving fallback
-
     @SerializedName("energy_100g")
     private Double energy100g;  // Generic fallback
-
-    @SerializedName("energy")
-    private Double energy;  // Generic per serving
 
     // ========== MACRONUTRIENTS - BASIC (both formats) ==========
     @SerializedName("proteins_100g")
     private Double proteins100g;
 
-    @SerializedName("proteins")
-    private Double proteins;  // Per serving fallback
-
     @SerializedName("carbohydrates_100g")
     private Double carbohydrates100g;
-
-    @SerializedName("carbohydrates")
-    private Double carbohydrates;  // Per serving fallback
 
     @SerializedName("fat_100g")
     private Double fat100g;
 
-    @SerializedName("fat")
-    private Double fat;  // Per serving fallback
-
     @SerializedName("fiber_100g")
     private Double fiber100g;
 
-    @SerializedName("fiber")
-    private Double fiber;  // Per serving fallback
-
     @SerializedName("alcohol_100g")
     private Double alcohol100g;
-
-    @SerializedName("alcohol_unit")
-    private String alcoholUnit;  // "% vol" (OFF's default) or "g"
 
     @SerializedName("water_100g")
     private Double water100g;
@@ -73,9 +44,6 @@ public class OpenFoodFactsNutriments {
     // ========== CARBOHYDRATE DETAILS (both formats) ==========
     @SerializedName("sugars_100g")
     private Double sugars100g;
-
-    @SerializedName("sugars")
-    private Double sugars;  // Per serving fallback
 
     @SerializedName("starch_100g")
     private Double starch100g;
@@ -106,9 +74,6 @@ public class OpenFoodFactsNutriments {
     @SerializedName("saturated-fat_100g")
     private Double saturatedFat100g;
 
-    @SerializedName("saturated-fat")
-    private Double saturatedFat;  // Per serving fallback
-
     @SerializedName("monounsaturated-fat_100g")
     private Double monounsaturatedFat100g;
 
@@ -118,14 +83,8 @@ public class OpenFoodFactsNutriments {
     @SerializedName("trans-fat_100g")
     private Double transFat100g;
 
-    @SerializedName("trans-fat")
-    private Double transFat;  // Per serving fallback
-
     @SerializedName("cholesterol_100g")
     private Double cholesterol100g;
-
-    @SerializedName("cholesterol")
-    private Double cholesterol;  // Per serving fallback
 
     // Omega fatty acids
     @SerializedName("omega-3-fat_100g")
@@ -161,14 +120,8 @@ public class OpenFoodFactsNutriments {
     @SerializedName("salt_100g")
     private Double salt100g;
 
-    @SerializedName("salt")
-    private Double salt;  // Per serving fallback
-
     @SerializedName("sodium_100g")
     private Double sodium100g;
-
-    @SerializedName("sodium")
-    private Double sodium;  // Per serving fallback
 
     @SerializedName("calcium_100g")
     private Double calcium100g;
@@ -302,66 +255,50 @@ public class OpenFoodFactsNutriments {
     // ========== GETTERS WITH FALLBACK LOGIC ==========
 
     /**
-     * Get energy in kJ per 100g
-     * Falls back to per-serving value if 100g not available
+     * Energy in kJ per 100 g. energy_100g is kJ too (OFF: the same as energy-kj,
+     * or computed from energy-kcal).
      */
     public Double getEnergyKj100g() {
         if (energyKj100g != null) return energyKj100g;
-        if (energyKj != null) return energyKj;
         if (energy100g != null) return energy100g;
         return energyKjPrepared100g;
     }
 
-    /**
-     * Get energy in kcal per 100g
-     * Falls back to per-serving value if 100g not available
-     */
+    /** Energy in kcal per 100 g. */
     public Double getEnergyKcal100g() {
         if (energyKcal100g != null) return energyKcal100g;
-        if (energyKcal != null) return energyKcal;
         return energyKcalPrepared100g;
-    }
-
-    public Double getEnergy100g() {
-        if (energy100g != null) return energy100g;
-        return energy;
     }
 
     // ========== GETTERS - MACRONUTRIENTS WITH FALLBACK ==========
 
     public Double getProteins100g() {
         if (proteins100g != null) return proteins100g;
-        if (proteins != null) return proteins;
         return proteinsPrepared100g;
     }
 
     public Double getCarbohydrates100g() {
         if (carbohydrates100g != null) return carbohydrates100g;
-        if (carbohydrates != null) return carbohydrates;
         return carbohydratesPrepared100g;
     }
 
     public Double getFat100g() {
         if (fat100g != null) return fat100g;
-        if (fat != null) return fat;
         return fatPrepared100g;
     }
 
     public Double getFiber100g() {
         if (fiber100g != null) return fiber100g;
-        if (fiber != null) return fiber;
         return fiberPrepared100g;
     }
 
     public Double getAlcohol100g() { return alcohol100g; }
-    public String getAlcoholUnit() { return alcoholUnit; }
     public Double getWater100g() { return water100g; }
 
     // ========== GETTERS - CARBOHYDRATES WITH FALLBACK ==========
 
     public Double getSugars100g() {
         if (sugars100g != null) return sugars100g;
-        if (sugars != null) return sugars;
         return sugarsPrepared100g;
     }
 
@@ -378,22 +315,15 @@ public class OpenFoodFactsNutriments {
 
     public Double getSaturatedFat100g() {
         if (saturatedFat100g != null) return saturatedFat100g;
-        if (saturatedFat != null) return saturatedFat;
         return saturatedFatPrepared100g;
     }
 
     public Double getMonounsaturatedFat100g() { return monounsaturatedFat100g; }
     public Double getPolyunsaturatedFat100g() { return polyunsaturatedFat100g; }
 
-    public Double getTransFat100g() {
-        if (transFat100g != null) return transFat100g;
-        return transFat;
-    }
+    public Double getTransFat100g() { return transFat100g; }
 
-    public Double getCholesterol100g() {
-        if (cholesterol100g != null) return cholesterol100g;
-        return cholesterol;
-    }
+    public Double getCholesterol100g() { return cholesterol100g; }
 
     public Double getOmega3Fat100g() { return omega3Fat100g; }
     public Double getOmega6Fat100g() { return omega6Fat100g; }
@@ -409,13 +339,11 @@ public class OpenFoodFactsNutriments {
 
     public Double getSalt100g() {
         if (salt100g != null) return salt100g;
-        if (salt != null) return salt;
         return saltPrepared100g;
     }
 
     public Double getSodium100g() {
         if (sodium100g != null) return sodium100g;
-        if (sodium != null) return sodium;
         return sodiumPrepared100g;
     }
 

@@ -15,6 +15,7 @@ import li.masciul.sugardaddi.data.sources.openfoodfacts.api.dto.OpenFoodFactsSea
 
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.core.models.Nutrition.NutrientInfo;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.core.utils.AllergenUtils;
 import li.masciul.sugardaddi.data.network.ApiConfig;
@@ -537,12 +538,12 @@ public class OpenFoodFactsMapper {
     }
 
     /**
-     * Map nutrition with per-serving to per-100g conversion AND energy conversion
+     * Map nutrition from OFF's "_100g" fields.
      *
-     * FEATURES:
-     * - Handles both nutrition_data_per formats ("100g" and "serving")
-     * - Automatically converts between kJ and kcal when one is missing
-     * - Uses standard conversion: 1 kcal = 4.184 kJ
+     * Those fields are already per 100 g / 100 ml, whatever the label gave (OFF
+     * computes them from per-serving entries itself), and in grams for every
+     * nutrient measured by weight: see OffUnits. Energy: kJ and kcal, the missing
+     * one computed with 1 kcal = 4.184 kJ. Alcohol: % vol, see OffAlcohol.
      */
     private void mapNutrition(FoodProduct product, OpenFoodFactsProduct offProduct) {
         if (offProduct.getNutriments() == null) {
@@ -552,22 +553,12 @@ public class OpenFoodFactsMapper {
         OpenFoodFactsNutriments off = offProduct.getNutriments();
         Nutrition nutrition = new Nutrition();
 
-        // Basis of everything mapped below - see resolveBasis(). Applies
-        // equally to the per-serving conversion path: OFF's serving_quantity
-        // is itself expressed in the product's sold unit (g or ml), so the
-        // converted per-100 values inherit the same basis.
+        // Basis of everything mapped below - see resolveBasis().
         nutrition.setBasis(resolveBasis(offProduct.getQuantity()));
 
-        // Check if data needs conversion from serving to 100g
-        String nutritionDataPer = offProduct.getNutritionDataPer();
-        Double servingQuantity = offProduct.getServingQuantity();
-        boolean needsConversion = "serving".equals(nutritionDataPer) &&
-                servingQuantity != null &&
-                servingQuantity > 0;
-
         // ========== ENERGY (with auto-conversion between kJ and kcal) ==========
-        Double energyKj = convertTo100g(off.getEnergyKj100g(), servingQuantity, needsConversion);
-        Double energyKcal = convertTo100g(off.getEnergyKcal100g(), servingQuantity, needsConversion);
+        Double energyKj = off.getEnergyKj100g();
+        Double energyKcal = off.getEnergyKcal100g();
 
         // Auto-convert if one is missing
         if (energyKj == null && energyKcal != null) {
@@ -584,86 +575,81 @@ public class OpenFoodFactsMapper {
         nutrition.setEnergyKcal(energyKcal);
 
         // ========== MACRONUTRIENTS ==========
-        nutrition.setProteins(convertTo100g(off.getProteins100g(), servingQuantity, needsConversion));
-        nutrition.setCarbohydrates(convertTo100g(off.getCarbohydrates100g(), servingQuantity, needsConversion));
-        nutrition.setFat(convertTo100g(off.getFat100g(), servingQuantity, needsConversion));
-        nutrition.setFiber(convertTo100g(off.getFiber100g(), servingQuantity, needsConversion));
-        // Alcohol: OFF gives the strength in % vol, see OffAlcohol. A value already
-        // in grams (unit "g") goes through the usual per-100 path.
-        if (OffAlcohol.isPercentVol(off.getAlcoholUnit())) {
-            nutrition.setAlcohol(OffAlcohol.gramsPer100ml(off.getAlcohol100g(),
-                    nutrition.getBasis() == NutritionBasis.PER_100ML));
-        } else {
-            nutrition.setAlcohol(convertTo100g(off.getAlcohol100g(), servingQuantity, needsConversion));
-        }
-        nutrition.setWater(convertTo100g(off.getWater100g(), servingQuantity, needsConversion));
+        nutrition.setProteins(off.getProteins100g());
+        nutrition.setCarbohydrates(off.getCarbohydrates100g());
+        nutrition.setFat(off.getFat100g());
+        nutrition.setFiber(off.getFiber100g());
+        // Alcohol: alcohol_100g is the strength in % vol, see OffAlcohol
+        nutrition.setAlcohol(OffAlcohol.gramsPer100ml(off.getAlcohol100g(),
+                nutrition.getBasis() == NutritionBasis.PER_100ML));
+        nutrition.setWater(off.getWater100g());
 
         // ========== CARBOHYDRATE DETAILS ==========
-        nutrition.setSugars(convertTo100g(off.getSugars100g(), servingQuantity, needsConversion));
-        nutrition.setStarch(convertTo100g(off.getStarch100g(), servingQuantity, needsConversion));
-        nutrition.setPolyols(convertTo100g(off.getPolyols100g(), servingQuantity, needsConversion));
-        nutrition.setGlucose(convertTo100g(off.getGlucose100g(), servingQuantity, needsConversion));
-        nutrition.setFructose(convertTo100g(off.getFructose100g(), servingQuantity, needsConversion));
-        nutrition.setSucrose(convertTo100g(off.getSucrose100g(), servingQuantity, needsConversion));
-        nutrition.setLactose(convertTo100g(off.getLactose100g(), servingQuantity, needsConversion));
-        nutrition.setMaltose(convertTo100g(off.getMaltose100g(), servingQuantity, needsConversion));
-        nutrition.setGalactose(convertTo100g(off.getGalactose100g(), servingQuantity, needsConversion));
+        nutrition.setSugars(off.getSugars100g());
+        nutrition.setStarch(off.getStarch100g());
+        nutrition.setPolyols(off.getPolyols100g());
+        nutrition.setGlucose(off.getGlucose100g());
+        nutrition.setFructose(off.getFructose100g());
+        nutrition.setSucrose(off.getSucrose100g());
+        nutrition.setLactose(off.getLactose100g());
+        nutrition.setMaltose(off.getMaltose100g());
+        nutrition.setGalactose(off.getGalactose100g());
 
         // ========== FAT DETAILS ==========
-        nutrition.setSaturatedFat(convertTo100g(off.getSaturatedFat100g(), servingQuantity, needsConversion));
-        nutrition.setMonounsaturatedFat(convertTo100g(off.getMonounsaturatedFat100g(), servingQuantity, needsConversion));
-        nutrition.setPolyunsaturatedFat(convertTo100g(off.getPolyunsaturatedFat100g(), servingQuantity, needsConversion));
-        nutrition.setTransFat(convertTo100g(off.getTransFat100g(), servingQuantity, needsConversion));
-        nutrition.setCholesterol(convertTo100g(off.getCholesterol100g(), servingQuantity, needsConversion));
+        nutrition.setSaturatedFat(off.getSaturatedFat100g());
+        nutrition.setMonounsaturatedFat(off.getMonounsaturatedFat100g());
+        nutrition.setPolyunsaturatedFat(off.getPolyunsaturatedFat100g());
+        nutrition.setTransFat(off.getTransFat100g());
+        nutrition.setCholesterol(fromGrams(off.getCholesterol100g(), NutrientInfo.CHOLESTEROL));
 
         // ========== OMEGA FATTY ACIDS ==========
-        nutrition.setOmega3(convertTo100g(off.getOmega3Fat100g(), servingQuantity, needsConversion));
-        nutrition.setOmega6(convertTo100g(off.getOmega6Fat100g(), servingQuantity, needsConversion));
-        nutrition.setOmega9(convertTo100g(off.getOmega9Fat100g(), servingQuantity, needsConversion));
-        nutrition.setLinoleicAcid(convertTo100g(off.getLinoleicAcid100g(), servingQuantity, needsConversion));
-        nutrition.setALA(convertTo100g(off.getAlphaLinolenicAcid100g(), servingQuantity, needsConversion));
-        nutrition.setEPA(convertTo100g(off.getEicosapentaenoicAcid100g(), servingQuantity, needsConversion));
-        nutrition.setDHA(convertTo100g(off.getDocosahexaenoicAcid100g(), servingQuantity, needsConversion));
-        nutrition.setArachidonicAcid(convertTo100g(off.getArachidonicAcid100g(), servingQuantity, needsConversion));
-        nutrition.setGammaLinolenicAcid(convertTo100g(off.getGammaLinolenicAcid100g(), servingQuantity, needsConversion));
+        nutrition.setOmega3(off.getOmega3Fat100g());
+        nutrition.setOmega6(off.getOmega6Fat100g());
+        nutrition.setOmega9(off.getOmega9Fat100g());
+        nutrition.setLinoleicAcid(off.getLinoleicAcid100g());
+        nutrition.setALA(fromGrams(off.getAlphaLinolenicAcid100g(), NutrientInfo.ALA));
+        nutrition.setEPA(fromGrams(off.getEicosapentaenoicAcid100g(), NutrientInfo.EPA));
+        nutrition.setDHA(fromGrams(off.getDocosahexaenoicAcid100g(), NutrientInfo.DHA));
+        nutrition.setArachidonicAcid(fromGrams(off.getArachidonicAcid100g(), NutrientInfo.ARACHIDONIC_ACID));
+        nutrition.setGammaLinolenicAcid(fromGrams(off.getGammaLinolenicAcid100g(), NutrientInfo.GAMMA_LINOLENIC_ACID));
 
         // ========== MINERALS ==========
-        nutrition.setSalt(convertTo100g(off.getSalt100g(), servingQuantity, needsConversion));
-        nutrition.setSodium(convertTo100g(off.getSodium100g(), servingQuantity, needsConversion));
-        nutrition.setCalcium(convertTo100g(off.getCalcium100g(), servingQuantity, needsConversion));
-        nutrition.setPhosphorus(convertTo100g(off.getPhosphorus100g(), servingQuantity, needsConversion));
-        nutrition.setMagnesium(convertTo100g(off.getMagnesium100g(), servingQuantity, needsConversion));
-        nutrition.setPotassium(convertTo100g(off.getPotassium100g(), servingQuantity, needsConversion));
-        nutrition.setChloride(convertTo100g(off.getChloride100g(), servingQuantity, needsConversion));
-        nutrition.setIron(convertTo100g(off.getIron100g(), servingQuantity, needsConversion));
-        nutrition.setZinc(convertTo100g(off.getZinc100g(), servingQuantity, needsConversion));
-        nutrition.setCopper(convertTo100g(off.getCopper100g(), servingQuantity, needsConversion));
-        nutrition.setManganese(convertTo100g(off.getManganese100g(), servingQuantity, needsConversion));
-        nutrition.setSelenium(convertTo100g(off.getSelenium100g(), servingQuantity, needsConversion));
-        nutrition.setIodine(convertTo100g(off.getIodine100g(), servingQuantity, needsConversion));
-        nutrition.setChromium(convertTo100g(off.getChromium100g(), servingQuantity, needsConversion));
-        nutrition.setMolybdenum(convertTo100g(off.getMolybdenum100g(), servingQuantity, needsConversion));
-        nutrition.setFluoride(convertTo100g(off.getFluoride100g(), servingQuantity, needsConversion));
+        nutrition.setSalt(off.getSalt100g());
+        nutrition.setSodium(fromGrams(off.getSodium100g(), NutrientInfo.SODIUM));
+        nutrition.setCalcium(fromGrams(off.getCalcium100g(), NutrientInfo.CALCIUM));
+        nutrition.setPhosphorus(fromGrams(off.getPhosphorus100g(), NutrientInfo.PHOSPHORUS));
+        nutrition.setMagnesium(fromGrams(off.getMagnesium100g(), NutrientInfo.MAGNESIUM));
+        nutrition.setPotassium(fromGrams(off.getPotassium100g(), NutrientInfo.POTASSIUM));
+        nutrition.setChloride(fromGrams(off.getChloride100g(), NutrientInfo.CHLORIDE));
+        nutrition.setIron(fromGrams(off.getIron100g(), NutrientInfo.IRON));
+        nutrition.setZinc(fromGrams(off.getZinc100g(), NutrientInfo.ZINC));
+        nutrition.setCopper(fromGrams(off.getCopper100g(), NutrientInfo.COPPER));
+        nutrition.setManganese(fromGrams(off.getManganese100g(), NutrientInfo.MANGANESE));
+        nutrition.setSelenium(fromGrams(off.getSelenium100g(), NutrientInfo.SELENIUM));
+        nutrition.setIodine(fromGrams(off.getIodine100g(), NutrientInfo.IODINE));
+        nutrition.setChromium(fromGrams(off.getChromium100g(), NutrientInfo.CHROMIUM));
+        nutrition.setMolybdenum(fromGrams(off.getMolybdenum100g(), NutrientInfo.MOLYBDENUM));
+        nutrition.setFluoride(fromGrams(off.getFluoride100g(), NutrientInfo.FLUORIDE));
 
         // ========== VITAMINS ==========
-        nutrition.setVitaminA(convertTo100g(off.getVitaminA100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminD(convertTo100g(off.getVitaminD100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminE(convertTo100g(off.getVitaminE100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminK(convertTo100g(off.getVitaminK100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminC(convertTo100g(off.getVitaminC100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB1(convertTo100g(off.getVitaminB1100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB2(convertTo100g(off.getVitaminB2100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB3(convertTo100g(off.getVitaminB3100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB5(convertTo100g(off.getVitaminB5100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB6(convertTo100g(off.getVitaminB6100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB7(convertTo100g(off.getBiotin100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB9(convertTo100g(off.getVitaminB9100g(), servingQuantity, needsConversion));
-        nutrition.setVitaminB12(convertTo100g(off.getVitaminB12100g(), servingQuantity, needsConversion));
-        nutrition.setBetaCarotene(convertTo100g(off.getBetaCarotene100g(), servingQuantity, needsConversion));
+        nutrition.setVitaminA(fromGrams(off.getVitaminA100g(), NutrientInfo.VITAMIN_A));
+        nutrition.setVitaminD(fromGrams(off.getVitaminD100g(), NutrientInfo.VITAMIN_D));
+        nutrition.setVitaminE(fromGrams(off.getVitaminE100g(), NutrientInfo.VITAMIN_E));
+        nutrition.setVitaminK(fromGrams(off.getVitaminK100g(), NutrientInfo.VITAMIN_K));
+        nutrition.setVitaminC(fromGrams(off.getVitaminC100g(), NutrientInfo.VITAMIN_C));
+        nutrition.setVitaminB1(fromGrams(off.getVitaminB1100g(), NutrientInfo.VITAMIN_B1));
+        nutrition.setVitaminB2(fromGrams(off.getVitaminB2100g(), NutrientInfo.VITAMIN_B2));
+        nutrition.setVitaminB3(fromGrams(off.getVitaminB3100g(), NutrientInfo.VITAMIN_B3));
+        nutrition.setVitaminB5(fromGrams(off.getVitaminB5100g(), NutrientInfo.VITAMIN_B5));
+        nutrition.setVitaminB6(fromGrams(off.getVitaminB6100g(), NutrientInfo.VITAMIN_B6));
+        nutrition.setVitaminB7(fromGrams(off.getBiotin100g(), NutrientInfo.VITAMIN_B7));
+        nutrition.setVitaminB9(fromGrams(off.getVitaminB9100g(), NutrientInfo.VITAMIN_B9));
+        nutrition.setVitaminB12(fromGrams(off.getVitaminB12100g(), NutrientInfo.VITAMIN_B12));
+        nutrition.setBetaCarotene(fromGrams(off.getBetaCarotene100g(), NutrientInfo.BETA_CAROTENE));
 
         // ========== OTHER COMPOUNDS ==========
-        nutrition.setCaffeine(convertTo100g(off.getCaffeine100g(), servingQuantity, needsConversion));
-        nutrition.setTaurine(convertTo100g(off.getTaurine100g(), servingQuantity, needsConversion));
+        nutrition.setCaffeine(fromGrams(off.getCaffeine100g(), NutrientInfo.CAFFEINE));
+        nutrition.setTaurine(fromGrams(off.getTaurine100g(), NutrientInfo.TAURINE));
 
         // Set data source and calculate completeness
         nutrition.setDataSource("OpenFoodFacts");
@@ -674,32 +660,11 @@ public class OpenFoodFactsMapper {
     }
 
     /**
-     * Convert nutrient value from per-serving to per-100g if needed
-     *
-     * @param value Value (either per-100g or per-serving depending on needsConversion)
-     * @param servingSize Serving size in grams (only used if needsConversion is true)
-     * @param needsConversion True if value is per-serving and needs conversion
-     * @return Value per 100g, or null if input is null
+     * OFF value in grams (a "_100g" field) in the unit of the app's field
+     * (g, mg or µg), see OffUnits.
      */
-    private Double convertTo100g(Double value, Double servingSize, boolean needsConversion) {
-        if (value == null) {
-            return null;
-        }
-
-        if (!needsConversion) {
-            // Already per 100g, return as-is
-            return value;
-        }
-
-        // Convert from per-serving to per-100g
-        // Formula: (valuePerServing / servingSize) * 100
-        if (servingSize != null && servingSize > 0) {
-            return (value / servingSize) * 100.0;
-        }
-
-        // If serving size is missing, we can't convert - return null
-        Log.w(TAG, "Cannot convert nutrient to per-100g: serving size missing or zero");
-        return null;
+    private static Double fromGrams(Double grams, NutrientInfo info) {
+        return OffUnits.fromGrams(grams, info.getUnit());
     }
 
     /**

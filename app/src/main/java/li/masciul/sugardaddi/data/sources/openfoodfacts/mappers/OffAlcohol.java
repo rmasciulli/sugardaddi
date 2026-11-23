@@ -3,8 +3,9 @@ package li.masciul.sugardaddi.data.sources.openfoodfacts.mappers;
 /**
  * OffAlcohol - Open Food Facts alcohol values into grams.
  *
- * OFF stores alcohol as "% vol" (alcohol_unit), the strength printed on the label:
- * millilitres of ethanol per 100 ml of drink. The app stores alcohol in grams per
+ * OFF's alcohol_100g is always the strength in "% vol" (OFF product nutrition
+ * schema), the figure printed on the label: millilitres of ethanol per 100 ml of
+ * drink. The app stores alcohol in grams per
  * 100 g or 100 ml, like Ciqual and USDA. So:
  *
  *   g per 100 ml = % vol x density of ethanol (0.789 g/ml at 20 degrees C, the
@@ -24,14 +25,6 @@ public final class OffAlcohol {
     static final double ETHANOL_DENSITY_G_PER_ML = 0.789;
 
     private OffAlcohol() { /* no instances */ }
-
-    /**
-     * Is this alcohol_unit a strength by volume? OFF's default unit for alcohol is
-     * "% vol", so a missing unit counts as one too.
-     */
-    public static boolean isPercentVol(String unit) {
-        return unit == null || unit.trim().isEmpty() || unit.contains("%");
-    }
 
     /**
      * Grams of alcohol per 100 ml from a strength in % vol.

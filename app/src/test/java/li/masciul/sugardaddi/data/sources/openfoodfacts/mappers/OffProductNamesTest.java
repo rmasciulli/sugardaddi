@@ -79,9 +79,6 @@ public class OffProductNamesTest {
     /** Chouffe IPA: alcohol 9 "% vol", per 100 ml. */
     @Test
     public void alcohol_percentVolToGrams() {
-        assertTrue(OffAlcohol.isPercentVol("% vol"));
-        assertTrue(OffAlcohol.isPercentVol(null));
-        assertFalse(OffAlcohol.isPercentVol("g"));
         assertEquals(7.101, OffAlcohol.gramsPer100ml(9.0, true), EPS);
     }
 
