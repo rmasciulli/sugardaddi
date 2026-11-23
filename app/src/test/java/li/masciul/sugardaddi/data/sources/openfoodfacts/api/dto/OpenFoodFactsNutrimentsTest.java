@@ -41,17 +41,27 @@ public class OpenFoodFactsNutrimentsTest {
     }
 
     /**
-     * Prepared-only shape (keys as in OFF's schema: "<nutrient>_prepared_100g").
-     * Constructed: values of a cocoa drink made with milk, for the test only.
+     * 3033710073467 Ricore L'Original (100 g tin of powder), prepared values only,
+     * per 100 ml ("nutrition_data_prepared_per": "100ml"); part of its
+     * "nutriments" copied from API v2 (2026-11-23).
      */
+    private static final String RICORE = "{"
+            + "\"energy-kcal_prepared\":50,\"energy-kcal_prepared_100g\":50,"
+            + "\"energy-kcal_prepared_serving\":100,\"energy-kcal_unit\":\"kcal\","
+            + "\"energy-kj_prepared_100g\":211,\"energy_prepared_100g\":211,"
+            + "\"magnesium_prepared_100g\":0.0282,\"magnesium_unit\":\"g\","
+            + "\"sodium_prepared_100g\":0.04,\"sodium_prepared_modifier\":\"~\","
+            + "\"sugars_prepared_100g\":4.9,\"sugars_unit\":\"g\"}";
+
     @Test
-    public void preparedSet_readWithItsOwnSuffix() {
-        OpenFoodFactsNutriments n = parse("{"
-                + "\"energy-kcal_prepared_100g\":79,\"energy-kj_prepared_100g\":333,"
-                + "\"sugars_prepared_100g\":9.5,\"sodium_prepared_100g\":0.05}");
+    public void realPreparedOnlyRecord_readWithItsOwnSuffix() {
+        OpenFoodFactsNutriments n = parse(RICORE);
         assertNull(n.get("energy-kcal", OpenFoodFactsNutriments.AS_SOLD));
-        assertEquals(79.0, n.get("energy-kcal", OpenFoodFactsNutriments.PREPARED), EPS);
-        assertEquals(0.05, n.get("sodium", OpenFoodFactsNutriments.PREPARED), EPS);
+        assertEquals(50.0, n.get("energy-kcal", OpenFoodFactsNutriments.PREPARED), EPS);
+        assertEquals(211.0, n.get("energy", OpenFoodFactsNutriments.PREPARED), EPS);
+        // grams in OFF: 28.2 mg of magnesium, 40 mg of sodium per 100 ml prepared
+        assertEquals(0.0282, n.get("magnesium", OpenFoodFactsNutriments.PREPARED), EPS);
+        assertEquals(0.04, n.get("sodium", OpenFoodFactsNutriments.PREPARED), EPS);
     }
 
     @Test

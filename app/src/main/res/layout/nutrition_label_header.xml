@@ -40,7 +40,10 @@
             android:text="@string/nutrition_label_nutrient_column" />
 
         <!-- Column 2: Per 100g - EU mandatory column, always visible.
-             autoSizeTextType adapts if the unit string "pour 100ml" is long. -->
+             autoSizeTextType adapts if the unit string "pour 100ml" is long.
+             Two lines allowed: prepared values read "per 100ml prepared", which
+             does not fit one line even at 10sp and was clipped after "100ml".
+             Any other header still fits one line. -->
         <TextView
             android:id="@+id/headerPer100g"
             android:layout_width="0dp"
@@ -49,7 +52,7 @@
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"
-            android:maxLines="1"
+            android:maxLines="2"
             android:autoSizeTextType="uniform"
             android:autoSizeMinTextSize="10sp"
             android:autoSizeMaxTextSize="12sp"
