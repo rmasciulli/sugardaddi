@@ -1,6 +1,8 @@
 package li.masciul.sugardaddi.data.sources.ciqual.api.dto;
 
 import com.google.gson.annotations.SerializedName;
+
+import li.masciul.sugardaddi.data.sources.ciqual.CiqualConstituents;
 import java.util.List;
 
 /**
@@ -53,13 +55,8 @@ import java.util.List;
  *
  * PARSING STRATEGY:
  * =================
- * To extract nutrients, we match constNomFr/constNomEng against known patterns:
- * - "Energie.*kcal" → energy in kcal
- * - "Energie.*kJ" → energy in kJ
- * - "Protéines" / "Protein" → proteins
- * - "Glucides" / "Carbohydrate" → carbohydrates
- * - "Lipides" / "Fat" → fats
- * - etc.
+ * The entry has no constituent code: CiqualElasticsearchMapper finds it by its
+ * exact name in CiqualConstituents (the table the downloaded dataset uses too).
  *
  * CONFIDENCE CODES:
  * =================
@@ -104,7 +101,8 @@ public class CiqualElasticsearchComposition {
      *
      * Important: This is ALWAYS a string in the API, even for numbers.
      * Use getValueAsDouble() to safely parse as a number.
-     * A value of "-" or "" means "not available" or "trace amounts"
+     * "-" or "" means not available, "traces" a negligible amount (read as 0),
+     * "< 0,5" an upper limit (read as unknown).
      */
     @SerializedName("compoTeneur")
     private String compoTeneur;
@@ -237,17 +235,8 @@ public class CiqualElasticsearchComposition {
      * @return Numeric value, or null if not available/parseable
      */
     public Double getValueAsDouble() {
-        if (compoTeneur == null || compoTeneur.isEmpty() || "-".equals(compoTeneur)) {
-            return null;
-        }
-
-        try {
-            // Handle French decimal separator (comma)
-            String normalized = compoTeneur.replace(',', '.');
-            return Double.parseDouble(normalized);
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        // Same reading as the downloaded dataset: "traces" = 0, "< x" = unknown
+        return CiqualConstituents.parseValue(compoTeneur);
     }
 
     /**

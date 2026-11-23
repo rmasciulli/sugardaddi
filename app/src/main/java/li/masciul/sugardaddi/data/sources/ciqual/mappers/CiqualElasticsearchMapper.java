@@ -13,6 +13,8 @@ import li.masciul.sugardaddi.core.models.ProductTranslation;
 import li.masciul.sugardaddi.core.models.SourceIdentifier;
 import li.masciul.sugardaddi.core.utils.ProductUrlBuilder;
 import li.masciul.sugardaddi.data.sources.ciqual.CiqualConstants;
+import li.masciul.sugardaddi.data.sources.ciqual.CiqualConstituents;
+import li.masciul.sugardaddi.data.sources.ciqual.CiqualNutritionWriter;
 import li.masciul.sugardaddi.data.sources.ciqual.xml.CiqualCategoryLookup;
 import li.masciul.sugardaddi.data.sources.ciqual.api.dto.CiqualElasticsearchComposition;
 import li.masciul.sugardaddi.data.sources.ciqual.api.dto.CiqualElasticsearchFood;
@@ -24,7 +26,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * CiqualElasticsearchMapper - Maps Elasticsearch responses to domain models
@@ -55,15 +56,15 @@ import java.util.regex.Pattern;
  *
  * COMPOS PARSING STRATEGY:
  * ========================
- * Each CiqualElasticsearchComposition has constNomFr and constNomEng fields containing
- * the nutrient name with unit. We use regex patterns to match these:
+ * The live API gives no constituent code, only the names with their unit
+ * ("Fer (mg/100 g)", "Iron (mg/100g)"). Each name is looked up, exactly, in
+ * CiqualConstituents, the table the downloaded dataset uses too, and the value is
+ * written by CiqualNutritionWriter: same field, same unit as the import.
  *
- * - "Energie.*kcal" â†’ nutrition.setEnergyKcal()
- * - "Energie.*kJ" â†’ nutrition.setEnergyKj()
- * - "ProtÃ©ines|Protein" â†’ nutrition.setProteins()
- * - "Glucides|Carbohydrate" â†’ nutrition.setCarbohydrates()
- * - "Lipides|Fat" â†’ nutrition.setFat()
- * - etc.
+ * Loose patterns used to do this and mixed nutrients up: "vitamine b1" also
+ * matched "Vitamine B12", "sodium" matched "Sel chlorure de sodium", "^fer$"
+ * never matched "Fer (mg/100 g)", and several constituents (energy variants,
+ * B9 / folates / folic acid, K1 / K2) landed in one field, the last one winning.
  *
  * USAGE:
  * ```java
@@ -88,144 +89,6 @@ import java.util.regex.Pattern;
 public class CiqualElasticsearchMapper {
 
     private static final String TAG = "CiqualESMapper";
-
-    // ========== NUTRIENT NAME PATTERNS ==========
-    // Patterns to match nutrient names in constNomFr and constNomEng fields
-    // Case-insensitive matching to handle variations
-
-    // Energy patterns
-    private static final Pattern PATTERN_ENERGY_KCAL = Pattern.compile(
-            "energie.*kcal|energy.*kcal",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_ENERGY_KJ = Pattern.compile(
-            "energie.*kj|energy.*kj",
-            Pattern.CASE_INSENSITIVE
-    );
-
-    // Macronutrients
-    private static final Pattern PATTERN_PROTEIN = Pattern.compile(
-            "protéines|protein",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_CARBS = Pattern.compile(
-            "glucides|carbohydrate",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_FAT = Pattern.compile(
-            "lipides(?!.*insatur)|^fat(?!.*fatty)|total fat",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_SUGAR = Pattern.compile(
-            "sucres|sugar",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_FIBER = Pattern.compile(
-            "fibres|fiber|fibre",
-            Pattern.CASE_INSENSITIVE
-    );
-
-    // Specific fats
-    private static final Pattern PATTERN_SATURATED_FAT = Pattern.compile(
-            "ag saturés|saturated",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_MONOUNSAT_FAT = Pattern.compile(
-            "ag monoinsaturés|monounsaturated",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_POLYUNSAT_FAT = Pattern.compile(
-            "ag polyinsaturés|polyunsaturated",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_CHOLESTEROL = Pattern.compile(
-            "cholestérol|cholesterol",
-            Pattern.CASE_INSENSITIVE
-    );
-
-    // Minerals
-    private static final Pattern PATTERN_SODIUM = Pattern.compile(
-            "sodium",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_SALT = Pattern.compile(
-            "sel chlorure|^sel$|^salt$",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_CALCIUM = Pattern.compile(
-            "calcium",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_MAGNESIUM = Pattern.compile(
-            "magnésium|magnesium",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_PHOSPHORUS = Pattern.compile(
-            "phosphore|phosphorus",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_POTASSIUM = Pattern.compile(
-            "potassium",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_IRON = Pattern.compile(
-            "^fer$|^iron$",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_ZINC = Pattern.compile(
-            "zinc",
-            Pattern.CASE_INSENSITIVE
-    );
-
-    // Vitamins
-    private static final Pattern PATTERN_VITAMIN_C = Pattern.compile(
-            "vitamine c|vitamin c|acide ascorbique|ascorbic",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B1 = Pattern.compile(
-            "vitamine b1|vitamin b1|thiamine",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B2 = Pattern.compile(
-            "vitamine b2|vitamin b2|riboflavine",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B3 = Pattern.compile(
-            "vitamine b3|vitamin b3|niacine|niacin",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B5 = Pattern.compile(
-            "vitamine b5|vitamin b5|pantothénique|pantothenic",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B6 = Pattern.compile(
-            "vitamine b6|vitamin b6|pyridoxine",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B9 = Pattern.compile(
-            "vitamine b9|vitamin b9|folates|folate|acide folique|folic",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_B12 = Pattern.compile(
-            "vitamine b12|vitamin b12|cobalamine|cobalamin",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_A = Pattern.compile(
-            "vitamine a|vitamin a|rétinol|retinol",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_D = Pattern.compile(
-            "vitamine d|vitamin d",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_E = Pattern.compile(
-            "vitamine e|vitamin e|tocophérol|tocopherol",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern PATTERN_VITAMIN_K = Pattern.compile(
-            "vitamine k|vitamin k",
-            Pattern.CASE_INSENSITIVE
-    );
 
     /**
      * Maps Elasticsearch search response to list of FoodProducts
@@ -278,8 +141,8 @@ public class CiqualElasticsearchMapper {
      * NUTRITION PARSING:
      * If includeNutrition=true and compos array exists, this method:
      * 1. Iterates through all CiqualElasticsearchComposition entries
-     * 2. Matches constNomFr/constNomEng against patterns
-     * 3. Extracts numeric values and populates Nutrition object
+     * 2. Finds each constituent by its exact name (CiqualConstituents)
+     * 3. Writes its value with CiqualNutritionWriter
      *
      * @param food CiqualElasticsearchFood DTO from Elasticsearch
      * @param language Requested language ("fr" or "en")
@@ -544,14 +407,14 @@ public class CiqualElasticsearchMapper {
      * The Ciqual API returns nutrition as an array of CiqualElasticsearchComposition objects.
      * Each composition has:
      * - compoTeneur: The value (e.g., "492", "8.7")
-     * - constNomFr: French name (e.g., "Energie...kcal", "ProtÃ©ines")
+     * - constNomFr: French name with unit (e.g., "Fer (mg/100 g)")
      * - constNomEng: English name (e.g., "Energy...kcal", "Protein")
      *
      * This method:
      * 1. Iterates through all compositions
-     * 2. Matches constNomFr/constNomEng against regex patterns
-     * 3. Extracts numeric values using getValueAsDouble()
-     * 4. Populates the Nutrition object
+     * 2. Finds the constituent by its exact name (CiqualConstituents)
+     * 3. Reads the value with CiqualConstituents.parseValue()
+     * 4. Writes it with CiqualNutritionWriter
      *
      * All values are per 100g (Ciqual standard).
      *
@@ -573,132 +436,37 @@ public class CiqualElasticsearchMapper {
 
         // Iterate through all composition entries
         for (CiqualElasticsearchComposition comp : compos) {
-            if (comp == null || !comp.hasValue()) {
+            if (comp == null) {
                 continue;
             }
 
-            String nameFr = comp.getConstNomFr();
-            String nameEn = comp.getConstNomEng();
-            Double value = comp.getValueAsDouble();
+            // Exact name, French or English (see CiqualConstituents.byName)
+            CiqualConstituents.Constituent constituent =
+                    CiqualConstituents.byName(comp.getConstNomFr());
+            if (constituent == null) {
+                constituent = CiqualConstituents.byName(comp.getConstNomEng());
+            }
+            if (constituent == null) {
+                // Not read by the app on purpose (see CiqualConstituents), or a
+                // name Ciqual changed: logged so a rename shows up.
+                Log.d(TAG, "Constituent not read: " + comp.getConstNomFr());
+                continue;
+            }
 
+            // "traces" = 0, "< x" = unknown: see CiqualConstituents.parseValue
+            Double value = CiqualConstituents.parseValue(comp.getCompoTeneur());
             if (value == null) {
                 continue;
             }
 
-            // Try to match against known patterns
-            // Check both French and English names for maximum compatibility
-
-            // Energy
-            if (matches(PATTERN_ENERGY_KCAL, nameFr, nameEn)) {
-                nutrition.setEnergyKcal(value);
-                matchedCount++;
-                Log.d(TAG, "Matched energy kcal: " + value);
-            } else if (matches(PATTERN_ENERGY_KJ, nameFr, nameEn)) {
-                nutrition.setEnergyKj(value);
-                matchedCount++;
-                Log.d(TAG, "Matched energy kJ: " + value);
-            }
-            // Macronutrients
-            else if (matches(PATTERN_PROTEIN, nameFr, nameEn)) {
-                nutrition.setProteins(value);
-                matchedCount++;
-            } else if (matches(PATTERN_CARBS, nameFr, nameEn)) {
-                nutrition.setCarbohydrates(value);
-                matchedCount++;
-            } else if (matches(PATTERN_FAT, nameFr, nameEn)) {
-                nutrition.setFat(value);
-                matchedCount++;
-            } else if (matches(PATTERN_SUGAR, nameFr, nameEn)) {
-                nutrition.setSugars(value);
-                matchedCount++;
-            } else if (matches(PATTERN_FIBER, nameFr, nameEn)) {
-                nutrition.setFiber(value);
-                matchedCount++;
-            }
-            // Specific fats
-            else if (matches(PATTERN_SATURATED_FAT, nameFr, nameEn)) {
-                nutrition.setSaturatedFat(value);
-                matchedCount++;
-            } else if (matches(PATTERN_MONOUNSAT_FAT, nameFr, nameEn)) {
-                nutrition.setMonounsaturatedFat(value);
-                matchedCount++;
-            } else if (matches(PATTERN_POLYUNSAT_FAT, nameFr, nameEn)) {
-                nutrition.setPolyunsaturatedFat(value);
-                matchedCount++;
-            } else if (matches(PATTERN_CHOLESTEROL, nameFr, nameEn)) {
-                nutrition.setCholesterol(value);
-                matchedCount++;
-            }
-            // Minerals
-            else if (matches(PATTERN_SODIUM, nameFr, nameEn)) {
-                nutrition.setSodium(value);
-                matchedCount++;
-            } else if (matches(PATTERN_SALT, nameFr, nameEn)) {
-                nutrition.setSalt(value);
-                matchedCount++;
-            } else if (matches(PATTERN_CALCIUM, nameFr, nameEn)) {
-                nutrition.setCalcium(value);
-                matchedCount++;
-            } else if (matches(PATTERN_MAGNESIUM, nameFr, nameEn)) {
-                nutrition.setMagnesium(value);
-                matchedCount++;
-            } else if (matches(PATTERN_PHOSPHORUS, nameFr, nameEn)) {
-                nutrition.setPhosphorus(value);
-                matchedCount++;
-            } else if (matches(PATTERN_POTASSIUM, nameFr, nameEn)) {
-                nutrition.setPotassium(value);
-                matchedCount++;
-            } else if (matches(PATTERN_IRON, nameFr, nameEn)) {
-                nutrition.setIron(value);
-                matchedCount++;
-            } else if (matches(PATTERN_ZINC, nameFr, nameEn)) {
-                nutrition.setZinc(value);
-                matchedCount++;
-            }
-            // Vitamins
-            else if (matches(PATTERN_VITAMIN_C, nameFr, nameEn)) {
-                nutrition.setVitaminC(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B1, nameFr, nameEn)) {
-                nutrition.setVitaminB1(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B2, nameFr, nameEn)) {
-                nutrition.setVitaminB2(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B3, nameFr, nameEn)) {
-                nutrition.setVitaminB3(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B5, nameFr, nameEn)) {
-                nutrition.setVitaminB5(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B6, nameFr, nameEn)) {
-                nutrition.setVitaminB6(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B9, nameFr, nameEn)) {
-                nutrition.setVitaminB9(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_B12, nameFr, nameEn)) {
-                nutrition.setVitaminB12(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_A, nameFr, nameEn)) {
-                nutrition.setVitaminA(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_D, nameFr, nameEn)) {
-                nutrition.setVitaminD(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_E, nameFr, nameEn)) {
-                nutrition.setVitaminE(value);
-                matchedCount++;
-            } else if (matches(PATTERN_VITAMIN_K, nameFr, nameEn)) {
-                nutrition.setVitaminK(value);
-                matchedCount++;
-            }
+            CiqualNutritionWriter.write(nutrition, constituent, value);
+            matchedCount++;
         }
 
         Log.d(TAG, "Matched " + matchedCount + " nutrients out of " + compos.size() + " entries");
 
-        // Ciqual usually reports salt directly (lab-measured, matched above
-        // via PATTERN_SALT) - but like any per-product field in a real
+        // Ciqual usually reports salt directly (constituent 10004, "Sel
+        // chlorure de sodium") - but like any per-product field in a real
         // dataset, some specific entries lack it even when sodium is
         // present. Fallback only: never overrides a real measured value,
         // which is better data than a formula. Same derivation as
@@ -716,24 +484,6 @@ public class CiqualElasticsearchMapper {
 
         Log.w(TAG, "No nutrients matched from compos array");
         return null;
-    }
-
-    /**
-     * Helper method to match a pattern against French and English names
-     *
-     * @param pattern Regex pattern to match
-     * @param nameFr French nutrient name
-     * @param nameEn English nutrient name
-     * @return true if pattern matches either name
-     */
-    private static boolean matches(Pattern pattern, String nameFr, String nameEn) {
-        if (nameFr != null && pattern.matcher(nameFr).find()) {
-            return true;
-        }
-        if (nameEn != null && pattern.matcher(nameEn).find()) {
-            return true;
-        }
-        return false;
     }
 
     // ========== PRIVATE: UTILITIES ==========

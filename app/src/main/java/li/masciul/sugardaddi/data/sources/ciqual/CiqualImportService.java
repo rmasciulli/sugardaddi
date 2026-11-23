@@ -95,84 +95,10 @@ public class CiqualImportService extends Service {
     private static final String NOTIF_CHANNEL_ID = "ciqual_import";
     private static final int    NOTIF_ID         = 7001;
 
-    /**
-     * Maps Ciqual const_code integers to Nutrition setter keys.
-     * Const codes are stable INFOODS/Ciqual identifiers - more reliable than name matching.
-     *
-     * VITAMIN D: 52100=total D, 52200=D2 (ergocalciferol), 52300=D3 (cholecalciferol)
-     * FOLATE:    56600=total DFE, 56610=intrinsic (food matrix), 56620=folic acid (fortification)
-     * ENERGY:    327=kJ (EU 1169), 328=kcal (EU 1169) - Jones-factor variants skipped
-     *
-     * Verify codes against assets/const_2025_11_03.xml if a nutrient appears wrong after import.
-     */
-    private static final Map<Integer, String> CONST_CODE_MAP = new HashMap<>();
-    static {
-        CONST_CODE_MAP.put(327,   "energy_kj");
-        CONST_CODE_MAP.put(328,   "energy_kcal");
-        CONST_CODE_MAP.put(25000, "proteins");
-        CONST_CODE_MAP.put(31000, "carbohydrates");
-        CONST_CODE_MAP.put(40000, "fat");
-        CONST_CODE_MAP.put(34100, "fiber");
-        CONST_CODE_MAP.put(32000, "sugars");
-        CONST_CODE_MAP.put(33110, "starch");
-        CONST_CODE_MAP.put(75100, "polyols");
-        CONST_CODE_MAP.put(10400, "alcohol");
-        CONST_CODE_MAP.put(400,   "water");
-        CONST_CODE_MAP.put(1320,  "ash");
-        CONST_CODE_MAP.put(32110, "glucose");
-        CONST_CODE_MAP.put(32120, "fructose");
-        CONST_CODE_MAP.put(32210, "sucrose");
-        CONST_CODE_MAP.put(32130, "lactose");
-        CONST_CODE_MAP.put(32140, "maltose");
-        CONST_CODE_MAP.put(40302, "saturated_fat");
-        CONST_CODE_MAP.put(40303, "monounsaturated_fat");
-        CONST_CODE_MAP.put(40304, "polyunsaturated_fat");
-        CONST_CODE_MAP.put(75200, "cholesterol");
-        CONST_CODE_MAP.put(40401, "butyric_acid");
-        CONST_CODE_MAP.put(40402, "caproic_acid");
-        CONST_CODE_MAP.put(40403, "caprylic_acid");
-        CONST_CODE_MAP.put(40404, "capric_acid");
-        CONST_CODE_MAP.put(40405, "lauric_acid");
-        CONST_CODE_MAP.put(40406, "myristic_acid");
-        CONST_CODE_MAP.put(40407, "palmitic_acid");
-        CONST_CODE_MAP.put(40408, "stearic_acid");
-        CONST_CODE_MAP.put(40501, "linoleic_acid");
-        CONST_CODE_MAP.put(40506, "ala");
-        CONST_CODE_MAP.put(40508, "epa");
-        CONST_CODE_MAP.put(40510, "dha");
-        CONST_CODE_MAP.put(10110, "sodium");
-        CONST_CODE_MAP.put(10100, "salt");
-        CONST_CODE_MAP.put(10120, "calcium");
-        CONST_CODE_MAP.put(10190, "magnesium");
-        CONST_CODE_MAP.put(10200, "phosphorus");
-        CONST_CODE_MAP.put(10150, "potassium");
-        CONST_CODE_MAP.put(10260, "iron");
-        CONST_CODE_MAP.put(10300, "zinc");
-        CONST_CODE_MAP.put(10230, "copper");
-        CONST_CODE_MAP.put(10210, "manganese");
-        CONST_CODE_MAP.put(10320, "selenium");
-        CONST_CODE_MAP.put(10170, "iodine");
-        CONST_CODE_MAP.put(10340, "chloride");
-        CONST_CODE_MAP.put(51200, "vitamin_a");
-        CONST_CODE_MAP.put(51100, "retinol");
-        CONST_CODE_MAP.put(51300, "beta_carotene");
-        CONST_CODE_MAP.put(52100, "vitamin_d");
-        CONST_CODE_MAP.put(52200, "vitamin_d2");
-        CONST_CODE_MAP.put(52300, "vitamin_d3");
-        CONST_CODE_MAP.put(53100, "vitamin_e");
-        CONST_CODE_MAP.put(54100, "vitamin_k1");
-        CONST_CODE_MAP.put(55100, "vitamin_c");
-        CONST_CODE_MAP.put(56100, "vitamin_b1");
-        CONST_CODE_MAP.put(56200, "vitamin_b2");
-        CONST_CODE_MAP.put(56310, "vitamin_b3");
-        CONST_CODE_MAP.put(56400, "vitamin_b5");
-        CONST_CODE_MAP.put(56500, "vitamin_b6");
-        CONST_CODE_MAP.put(56700, "vitamin_b12");
-        CONST_CODE_MAP.put(56600, "vitamin_b9");
-        CONST_CODE_MAP.put(56610, "intrinsic_folate");
-        CONST_CODE_MAP.put(56620, "folic_acid");
-        CONST_CODE_MAP.put(10000, "organic_acids");
-    }
+    // Which constituents are read, with which code, unit and field: see
+    // CiqualConstituents (built from Ciqual's own const file). The previous
+    // table here had wrong codes (calcium read magnesium, B9 and B12 swapped,
+    // salt, alcohol, cholesterol and fatty acids never read).
 
     private ExecutorService executor;
     private volatile boolean running = false;
@@ -427,11 +353,14 @@ public class CiqualImportService extends Service {
                     case XmlPullParser.END_TAG:
                         if ("COMPO".equals(p.getName()) && inCompo) {
                             inCompo = false;
-                            String key = CONST_CODE_MAP.get(constCode);
-                            if (key != null && value != null && codeToEntityId.containsKey(alimentCode)) {
-                                Double v = doubleSafe(value);
+                            CiqualConstituents.Constituent constituent = CiqualConstituents.byCode(constCode);
+                            if (constituent != null && value != null && codeToEntityId.containsKey(alimentCode)) {
+                                // "traces" = 0, "< x" = unknown: see CiqualConstituents.parseValue
+                                Double v = CiqualConstituents.parseValue(value);
                                 if (v != null) {
-                                    applyValue(accumulator.computeIfAbsent(alimentCode, k -> new Nutrition()), key, v);
+                                    CiqualNutritionWriter.write(
+                                            accumulator.computeIfAbsent(alimentCode, k -> new Nutrition()),
+                                            constituent, v);
                                     if (confidence != null)
                                         conf.computeIfAbsent(alimentCode, k -> new HashMap<>()).merge(confidence, 1, Integer::sum);
                                 }
@@ -494,78 +423,6 @@ public class CiqualImportService extends Service {
         Log.i(TAG, "Phase 2: " + saved + " NutritionEntity rows saved");
     }
 
-    // ===== NUTRITION VALUE DISPATCH =====
-
-    private void applyValue(@NonNull Nutrition n, @NonNull String key, double v) {
-        switch (key) {
-            case "energy_kj":           n.setEnergyKj(v);             break;
-            case "energy_kcal":         n.setEnergyKcal(v);           break;
-            case "proteins":            n.setProteins(v);             break;
-            case "carbohydrates":       n.setCarbohydrates(v);        break;
-            case "fat":                 n.setFat(v);                  break;
-            case "fiber":               n.setFiber(v);                break;
-            case "sugars":              n.setSugars(v);               break;
-            case "starch":              n.setStarch(v);               break;
-            case "polyols":             n.setPolyols(v);              break;
-            case "alcohol":             n.setAlcohol(v);              break;
-            case "water":               n.setWater(v);                break;
-            case "ash":                 n.setAsh(v);                  break;
-            case "glucose":             n.setGlucose(v);              break;
-            case "fructose":            n.setFructose(v);             break;
-            case "sucrose":             n.setSucrose(v);              break;
-            case "lactose":             n.setLactose(v);              break;
-            case "maltose":             n.setMaltose(v);              break;
-            case "saturated_fat":       n.setSaturatedFat(v);         break;
-            case "monounsaturated_fat": n.setMonounsaturatedFat(v);   break;
-            case "polyunsaturated_fat": n.setPolyunsaturatedFat(v);   break;
-            case "cholesterol":         n.setCholesterol(v);          break;
-            case "butyric_acid":        n.setButyricAcid(v);          break;
-            case "caproic_acid":        n.setCaproicAcid(v);          break;
-            case "caprylic_acid":       n.setCaprylicAcid(v);         break;
-            case "capric_acid":         n.setCapricAcid(v);           break;
-            case "lauric_acid":         n.setLauricAcid(v);           break;
-            case "myristic_acid":       n.setMyristicAcid(v);         break;
-            case "palmitic_acid":       n.setPalmiticAcid(v);         break;
-            case "stearic_acid":        n.setStearicAcid(v);          break;
-            case "linoleic_acid":       n.setLinoleicAcid(v);         break;
-            case "ala":                 n.setALA(v);                  break;
-            case "epa":                 n.setEPA(v);                  break;
-            case "dha":                 n.setDHA(v);                  break;
-            case "sodium":              n.setSodium(v);               break;
-            case "salt":                n.setSalt(v);                 break;
-            case "calcium":             n.setCalcium(v);              break;
-            case "magnesium":           n.setMagnesium(v);            break;
-            case "phosphorus":          n.setPhosphorus(v);           break;
-            case "potassium":           n.setPotassium(v);            break;
-            case "iron":                n.setIron(v);                 break;
-            case "zinc":                n.setZinc(v);                 break;
-            case "copper":              n.setCopper(v);               break;
-            case "manganese":           n.setManganese(v);            break;
-            case "selenium":            n.setSelenium(v);             break;
-            case "iodine":              n.setIodine(v);               break;
-            case "chloride":            n.setChloride(v);             break;
-            case "vitamin_a":           n.setVitaminA(v);             break;
-            case "retinol":             n.setRetinol(v);              break;
-            case "beta_carotene":       n.setBetaCarotene(v);         break;
-            case "vitamin_d":           n.setVitaminD(v);             break;
-            case "vitamin_d2":          n.setVitaminD2(v);            break;
-            case "vitamin_d3":          n.setVitaminD3(v);            break;
-            case "vitamin_e":           n.setVitaminE(v);             break;
-            case "vitamin_k1":          n.setVitaminK1(v);            break;
-            case "vitamin_c":           n.setVitaminC(v);             break;
-            case "vitamin_b1":          n.setVitaminB1(v);            break;
-            case "vitamin_b2":          n.setVitaminB2(v);            break;
-            case "vitamin_b3":          n.setVitaminB3(v);            break;
-            case "vitamin_b5":          n.setVitaminB5(v);            break;
-            case "vitamin_b6":          n.setVitaminB6(v);            break;
-            case "vitamin_b12":         n.setVitaminB12(v);           break;
-            case "vitamin_b9":          n.setVitaminB9(v);            break;
-            case "intrinsic_folate":    n.setIntrinsicFolate(v);      break;
-            case "folic_acid":          n.setFolicAcid(v);            break;
-            case "organic_acids":       n.setOrganicAcids(v);         break;
-        }
-    }
-
     // ===== HELPERS =====
 
     @Nullable private String bestCode(@Nullable String g, @Nullable String sg, @Nullable String ssg) {
@@ -581,7 +438,6 @@ public class CiqualImportService extends Service {
     }
 
     private int intSafe(@Nullable String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
-    @Nullable private Double doubleSafe(@Nullable String s) { try { return Double.parseDouble(s.replace(',','.')); } catch (Exception e) { return null; } }
     private boolean ok(@Nullable String s) { return s != null && !s.isEmpty(); }
     @Nullable private String blank(@Nullable String s) { return ok(s) ? s : null; }
     @Nullable private String dash(@Nullable String s) { return (s == null || s.trim().isEmpty() || "-".equals(s.trim())) ? null : s.trim(); }
