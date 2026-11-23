@@ -335,6 +335,9 @@ public final class FatSecretMapper {
         n.setPotassium(scaled(chosen.potassium, scale));
         n.setVitaminA(scaled(chosen.vitaminA, scale));
         n.setVitaminC(scaled(chosen.vitaminC, scale));
+        // Micrograms in food.get v5 ("Vitamin D content in micrograms"), the
+        // unit of Nutrition's vitaminD: read by the DTO but never stored before.
+        n.setVitaminD(scaled(chosen.vitaminD, scale));
         n.setCalcium(scaled(chosen.calcium, scale));
         n.setIron(scaled(chosen.iron, scale));
 
