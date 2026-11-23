@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -383,12 +384,14 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
      * Every nutrient the item has, as a tree (fat > saturated > lauric acid...),
      * at any depth.
      *
-     * RULES:
-     * - A nutrient is shown when it is mandatory, has a value (0 included), or
-     *   has a shown nutrient under it. So an unknown parent still carries its
-     *   known children: "Omega-3: -" then "ALA: 651 mg". Children used to be
-     *   dropped with their parent, and nothing below the third level (ALA, EPA,
-     *   DHA, linoleic acid...) was ever shown.
+     * RULES (Romain, 2026-11-22):
+     * - "-" (no value) is shown only on the mandatory rows, the EU label ones.
+     * - Any other nutrient is drawn only when it has a value (0 included).
+     * - An optional parent without a value is not drawn, but its known children
+     *   are: they take its place in the tree (ALA directly under polyunsaturated
+     *   fat when omega-3 is unknown). Children used to be dropped with their
+     *   parent, and nothing below the third level (ALA, EPA, DHA, linoleic
+     *   acid...) was ever shown.
      * - Optional rows are hidden until "Show all nutrients".
      * - Parent / child links: isActualChildOf().
      */
@@ -412,25 +415,35 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 }
                 lastCategory = category;
             }
-            addNutrientTree(root, nutrition, customAmount);
+            addNutrientTree(root, nutrition, customAmount, 0);
         }
     }
 
-    /** The row of one nutrient, then its shown children, recursively. */
-    private void addNutrientTree(NutrientInfo info, Nutrition nutrition, double customAmount) {
-        View row = addNutrientRow(nutrientSection, info, info.getValue(nutrition), customAmount);
-        if (!info.isMandatory()) {
-            optionalRows.add(row);
-            row.setVisibility(View.GONE);
+    /**
+     * The row of one nutrient, then its shown children, recursively. An
+     * optional nutrient without a value draws no row: its children are drawn
+     * at its depth instead.
+     */
+    private void addNutrientTree(NutrientInfo info, Nutrition nutrition,
+                                 double customAmount, int depth) {
+        Double value = info.getValue(nutrition);
+        int childDepth = depth;
+        if (info.isMandatory() || value != null) {
+            View row = addNutrientRow(nutrientSection, info, value, customAmount, depth);
+            if (!info.isMandatory()) {
+                optionalRows.add(row);
+                row.setVisibility(View.GONE);
+            }
+            childDepth = depth + 1;
         }
         for (NutrientInfo child : childrenOf(info)) {
             if (isShown(child, nutrition)) {
-                addNutrientTree(child, nutrition, customAmount);
+                addNutrientTree(child, nutrition, customAmount, childDepth);
             }
         }
     }
 
-    /** Mandatory, known (0 included), or carrying a shown nutrient below it. */
+    /** Mandatory, known (0 included), or carrying a known nutrient below it. */
     private boolean isShown(NutrientInfo info, Nutrition nutrition) {
         if (info.isMandatory() || info.getValue(nutrition) != null) return true;
         for (NutrientInfo child : childrenOf(info)) {
@@ -744,66 +757,80 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     /**
      * Add nutrient row with proper column alignment
      */
-    private View addNutrientRow(LinearLayout parent, NutrientInfo info, Double value, double customAmount) {
+    /**
+     * One row of the table.
+     *
+     * @param depth where the row sits in the DRAWN tree (0 = top level). It is
+     *              not the nutrient's own indent level: a hidden unknown parent
+     *              lifts its children one level up (see addNutrientTree()).
+     *              Depth 2 and more use the deepest layout and the "- " prefix;
+     *              each level past 2 adds 16dp more (ALA under omega-3 used to
+     *              fall back to the top-level layout).
+     */
+    private View addNutrientRow(LinearLayout parent, NutrientInfo info, Double value,
+                                double customAmount, int depth) {
         View row;
 
         // Set nutrient name with dash for level 2+
         String nutrientName = getTranslatedNutrientName(info);
-        if (info.getIndentLevel() >= 2) {
+        if (depth >= 2) {
             nutrientName = "- " + nutrientName;
         }
 
+        // One unit for both columns, chosen from the per-100 value:
+        // 7450 mg reads "7.45 g", and the custom column follows.
+        String unit = displayUnit(value, info.getUnit());
+        double divisor = unit.equals(info.getUnit()) ? 1.0 : 1000.0;
+        Double shown100 = value != null ? value / divisor : null;
+        Double shownCustom = calculateScaledValue(shown100, customAmount);
+
+        TextView nameView;
         if (mode == NutritionLabelMode.SUMMARY) {
             // SUMMARY MODE: 2-column layout
             int layoutId;
-            switch (info.getIndentLevel()) {
+            switch (Math.min(depth, 2)) {
                 case 0:
                     layoutId = R.layout.nutrition_label_row_summary;
                     break;
                 case 1:
                     layoutId = R.layout.nutrition_label_row_summary_indented;
                     break;
-                case 2:
+                default:
                     layoutId = R.layout.nutrition_label_row_summary_double_indented;
                     break;
-                default:
-                    layoutId = R.layout.nutrition_label_row_summary;
             }
 
             row = inflater.inflate(layoutId, parent, false);
 
             // Populate 2-column layout
-            TextView nameView = row.findViewById(R.id.nutrientName);
+            nameView = row.findViewById(R.id.nutrientName);
             TextView totalView = row.findViewById(R.id.nutrientTotal);
 
             nameView.setText(nutrientName);
 
             if (totalView != null) {
-                totalView.setText(formatNutrientValue(
-                        calculateScaledValue(value, customAmount), info.getUnit()));
+                totalView.setText(formatNutrientValue(shownCustom, unit));
             }
 
         } else {
             // DETAILED MODE: 3-column layout
             int layoutId;
-            switch (info.getIndentLevel()) {
+            switch (Math.min(depth, 2)) {
                 case 0:
                     layoutId = R.layout.nutrition_label_row;
                     break;
                 case 1:
                     layoutId = R.layout.nutrition_label_row_indented;
                     break;
-                case 2:
+                default:
                     layoutId = R.layout.nutrition_label_row_double_indented;
                     break;
-                default:
-                    layoutId = R.layout.nutrition_label_row;
             }
 
             row = inflater.inflate(layoutId, parent, false);
 
             // Populate 3-column layout
-            TextView nameView = row.findViewById(R.id.nutrientName);
+            nameView = row.findViewById(R.id.nutrientName);
             TextView per100View = row.findViewById(R.id.valuePer100g);
             TextView customView = row.findViewById(R.id.valueCustomAmount);
 
@@ -811,18 +838,45 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
             // Column 2: per 100g value
             if (per100View != null) {
-                per100View.setText(formatNutrientValue(value, info.getUnit()));
+                per100View.setText(formatNutrientValue(shown100, unit));
             }
 
             // Column 3: custom amount value
             if (customView != null) {
-                customView.setText(formatNutrientValue(
-                        calculateScaledValue(value, customAmount), info.getUnit()));
+                customView.setText(formatNutrientValue(shownCustom, unit));
+            }
+        }
+
+        // Past the deepest layout: push the name and the divider further right.
+        if (depth > 2 && nameView != null) {
+            int extra = Math.round((depth - 2) * 16 * context.getResources().getDisplayMetrics().density);
+            nameView.setPaddingRelative(nameView.getPaddingStart() + extra, nameView.getPaddingTop(),
+                    nameView.getPaddingEnd(), nameView.getPaddingBottom());
+            if (row instanceof ViewGroup && ((ViewGroup) row).getChildCount() > 1) {
+                View divider = ((ViewGroup) row).getChildAt(((ViewGroup) row).getChildCount() - 1);
+                if (divider.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams lp =
+                            (ViewGroup.MarginLayoutParams) divider.getLayoutParams();
+                    lp.setMarginStart(lp.getMarginStart() + extra);
+                    divider.setLayoutParams(lp);
+                }
             }
         }
 
         parent.addView(row);
         return row;
+    }
+
+    /**
+     * The unit to show a value in: mg from 1000 mg up becomes g, µg from
+     * 1000 µg up becomes mg. Stored values never change, only the display.
+     */
+    @NonNull
+    private static String displayUnit(@Nullable Double value, @NonNull String unit) {
+        if (value == null || value < 1000.0) return unit;
+        if ("mg".equals(unit)) return "g";
+        if ("\u00b5g".equals(unit)) return "mg";
+        return unit;
     }
 
     private void addToggleButton() {
