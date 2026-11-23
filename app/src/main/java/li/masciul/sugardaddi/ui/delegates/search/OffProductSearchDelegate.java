@@ -17,6 +17,7 @@ import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
 import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ServingSize;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.OffProductNames;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
 import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
@@ -95,13 +96,29 @@ public class OffProductSearchDelegate
 
     // ========== BINDING HELPERS ==========
 
+    /**
+     * Brand and name, as on the detail screen ("Leffe Blonde"), see title().
+     * No name and no brand: the translated "Unknown product".
+     */
     private void bindName(ViewHolder holder, FoodProduct product, String language) {
-        String name = product.getDisplayName(language);
-        if (name != null && !name.trim().isEmpty()) {
-            holder.productName.setText(sentenceCase(name));
+        String title = title(product, language);
+        if (title != null) {
+            holder.productName.setText(title);
         } else {
-            holder.productName.setText("Unknown Product");
+            holder.productName.setText(R.string.unknown_product);
         }
+    }
+
+    /**
+     * Sentence-cased name with the brand in front unless the name already contains
+     * it. The brand is capitalized the same way as on the brand line.
+     */
+    private static String title(FoodProduct product, String language) {
+        String name = product.getDisplayName(language);
+        if (name != null && !name.trim().isEmpty()) name = sentenceCase(name);
+        String brand = OffProductNames.firstBrand(product.getBrand(language));
+        return OffProductNames.withBrand(name,
+                brand != null ? CategoryCleaner.capitalizeWords(brand) : null);
     }
 
     /**
@@ -141,7 +158,8 @@ public class OffProductSearchDelegate
     private void bindBrand(ViewHolder holder, FoodProduct product, String language) {
         String brand = product.getBrand(language);
         if (brand != null && !brand.trim().isEmpty()
-                && !brand.equalsIgnoreCase("unknown")) {
+                && !brand.equalsIgnoreCase("unknown")
+                && !OffProductNames.titleIsBrand(title(product, language), brand)) {
             String[] brands = brand.split(",");
             String cleanBrand = CategoryCleaner.capitalizeWords(brands[0].trim());
             holder.brandName.setText(cleanBrand);

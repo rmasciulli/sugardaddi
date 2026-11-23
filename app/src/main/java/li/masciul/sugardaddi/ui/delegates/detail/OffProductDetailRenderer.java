@@ -18,6 +18,7 @@ import li.masciul.sugardaddi.core.enums.ProductType;
 import li.masciul.sugardaddi.core.enums.Unit;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.FoodProduct;
+import li.masciul.sugardaddi.data.sources.openfoodfacts.mappers.OffProductNames;
 import li.masciul.sugardaddi.ui.components.AllergenIconHelper;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
@@ -111,15 +112,24 @@ public class OffProductDetailRenderer implements DetailRenderer {
     }
 
     /**
-     * Use the product name as toolbar title.
+     * Toolbar title: brand and name, as on the header card (see title()).
      */
     @Override
     public String getToolbarTitle(@NonNull Searchable item, @NonNull String language) {
         if (item instanceof FoodProduct) {
-            String name = ((FoodProduct) item).getDisplayName(language);
-            return (name != null && !name.trim().isEmpty()) ? name : null;
+            return title((FoodProduct) item, language);
         }
         return null;
+    }
+
+    /**
+     * "Leffe Blonde" rather than "Blonde": the brand goes in front of the name
+     * unless the name already contains it ("La Chouffe"). Display only, see
+     * OffProductNames.withBrand(). Null when there is neither name nor brand.
+     */
+    private static String title(@NonNull FoodProduct product, @NonNull String language) {
+        return OffProductNames.withBrand(product.getDisplayName(language),
+                product.getBrand(language));
     }
 
     /**
@@ -160,20 +170,22 @@ public class OffProductDetailRenderer implements DetailRenderer {
                                 @NonNull String language) {
 
         // Product name - always shown (fallback to string resource)
+        String title = title(product, language);
         TextView productName = view.findViewById(R.id.productName);
         if (productName != null) {
-            String name = product.getDisplayName(language);
-            productName.setText((name != null && !name.trim().isEmpty())
-                    ? name
+            productName.setText(title != null
+                    ? title
                     : context.getString(R.string.unknown_product));
         }
 
-        // Brand name
+        // Brand name - hidden when the title is the brand alone (no name at all),
+        // so it is not shown twice
         TextView brandName = view.findViewById(R.id.brandName);
         if (brandName != null) {
             String brand = product.getBrand(language);
             if (brand != null && !brand.trim().isEmpty()
-                    && !brand.equalsIgnoreCase("unknown")) {
+                    && !brand.equalsIgnoreCase("unknown")
+                    && !OffProductNames.titleIsBrand(title, brand)) {
                 // Use only the first brand when multiple are comma-separated
                 String cleanBrand = brand.split(",")[0].trim();
                 brandName.setText(cleanBrand);

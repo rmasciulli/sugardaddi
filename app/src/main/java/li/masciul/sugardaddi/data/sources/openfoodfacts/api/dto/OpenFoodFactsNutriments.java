@@ -64,6 +64,9 @@ public class OpenFoodFactsNutriments {
     @SerializedName("alcohol_100g")
     private Double alcohol100g;
 
+    @SerializedName("alcohol_unit")
+    private String alcoholUnit;  // "% vol" (OFF's default) or "g"
+
     @SerializedName("water_100g")
     private Double water100g;
 
@@ -351,6 +354,7 @@ public class OpenFoodFactsNutriments {
     }
 
     public Double getAlcohol100g() { return alcohol100g; }
+    public String getAlcoholUnit() { return alcoholUnit; }
     public Double getWater100g() { return water100g; }
 
     // ========== GETTERS - CARBOHYDRATES WITH FALLBACK ==========

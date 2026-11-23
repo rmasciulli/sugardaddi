@@ -422,24 +422,4 @@ public class OpenFoodFactsProduct {
     public boolean hasImage() {
         return imageFrontUrl != null && !imageFrontUrl.isEmpty();
     }
-
-    /**
-     * Get best available product name based on language preference.
-     * Fallback chain: language-specific → generic → "Unknown Product".
-     */
-    public String getBestProductName(String language) {
-        if ("fr".equals(language) && productNameFr != null && !productNameFr.trim().isEmpty()) {
-            return productNameFr;
-        }
-        if ("en".equals(language) && productNameEn != null && !productNameEn.trim().isEmpty()) {
-            return productNameEn;
-        }
-        if (productName != null && !productName.trim().isEmpty()) {
-            return productName;
-        }
-        if (genericName != null && !genericName.trim().isEmpty()) {
-            return genericName;
-        }
-        return "Unknown Product";
-    }
 }

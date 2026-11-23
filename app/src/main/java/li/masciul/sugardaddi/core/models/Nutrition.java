@@ -530,7 +530,22 @@ public class Nutrition {
     // ========== HAS METHODS - Check data availability ==========
 
     // Generic methods
-    public boolean hasData() { return energyKcal != null || proteins != null || carbohydrates != null || fat != null || fiber != null || salt != null; }
+    /**
+     * True when at least one nutrient has a value. The six usual ones are checked
+     * first (fast path, nearly every product); otherwise every NutrientInfo is
+     * looked at, so a product declaring only alcohol, sugars or saturates still
+     * gets its label instead of "No nutrition data available".
+     */
+    public boolean hasData() {
+        if (energyKcal != null || proteins != null || carbohydrates != null
+                || fat != null || fiber != null || salt != null) {
+            return true;
+        }
+        for (NutrientInfo info : NutrientInfo.values()) {
+            if (info.getValue(this) != null) return true;
+        }
+        return false;
+    }
     public boolean hasBasicMacros() { return energyKcal != null && proteins != null && carbohydrates != null && fat != null; }
     public boolean hasDetailedFattyAcids() { return hasOmega3() || hasOmega6() || hasDHA() || hasEPA(); }
     public boolean hasSugarBreakdown() { return glucose != null || fructose != null || sucrose != null || lactose != null || maltose != null; }

@@ -189,30 +189,18 @@ public class OpenFoodFactsMapper {
     }
 
     /**
-     * Get localized product name with proper fallback chain
+     * Name to store, see OffProductNames.pick() for the order. Null when the record
+     * has no name and no brand: setName() then leaves the name empty and the
+     * screens show R.string.unknown_product (translated), instead of an English
+     * "Unknown Product" stored as if it were the product's name.
      */
     private String getLocalizedName(OpenFoodFactsProduct offProduct, String language) {
-        String name = null;
-
-        // Try requested language first
-        if ("en".equals(language) && offProduct.getProductNameEn() != null) {
-            name = offProduct.getProductNameEn();
-        } else if ("fr".equals(language) && offProduct.getProductNameFr() != null) {
-            name = offProduct.getProductNameFr();
-        }
-
-        // Fallback chain
-        if (name == null || name.trim().isEmpty()) {
-            name = offProduct.getProductName();  // Generic name
-        }
-        if (name == null || name.trim().isEmpty()) {
-            name = offProduct.getGenericName();  // Even more generic
-        }
-        if (name == null || name.trim().isEmpty()) {
-            name = "Unknown Product";  // Last resort
-        }
-
-        return name.trim();
+        return OffProductNames.pick(language,
+                offProduct.getProductNameEn(), offProduct.getProductNameFr(),
+                offProduct.getProductName(),
+                offProduct.getGenericNameEn(), offProduct.getGenericNameFr(),
+                offProduct.getGenericName(),
+                offProduct.getBrands());
     }
 
     /**
@@ -600,7 +588,14 @@ public class OpenFoodFactsMapper {
         nutrition.setCarbohydrates(convertTo100g(off.getCarbohydrates100g(), servingQuantity, needsConversion));
         nutrition.setFat(convertTo100g(off.getFat100g(), servingQuantity, needsConversion));
         nutrition.setFiber(convertTo100g(off.getFiber100g(), servingQuantity, needsConversion));
-        nutrition.setAlcohol(convertTo100g(off.getAlcohol100g(), servingQuantity, needsConversion));
+        // Alcohol: OFF gives the strength in % vol, see OffAlcohol. A value already
+        // in grams (unit "g") goes through the usual per-100 path.
+        if (OffAlcohol.isPercentVol(off.getAlcoholUnit())) {
+            nutrition.setAlcohol(OffAlcohol.gramsPer100ml(off.getAlcohol100g(),
+                    nutrition.getBasis() == NutritionBasis.PER_100ML));
+        } else {
+            nutrition.setAlcohol(convertTo100g(off.getAlcohol100g(), servingQuantity, needsConversion));
+        }
         nutrition.setWater(convertTo100g(off.getWater100g(), servingQuantity, needsConversion));
 
         // ========== CARBOHYDRATE DETAILS ==========

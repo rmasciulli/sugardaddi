@@ -394,28 +394,34 @@ public class SearchAliciousHit {
      */
     @Nullable
     public String getLocalizedProductName(String language) {
+        // OFF returns "" for names nobody filled in (product_name of Dutch-language
+        // records, for instance): an empty name counts as missing.
         if (language != null) {
             switch (language.toLowerCase()) {
                 case "en":
-                    if (productNameEn != null) return productNameEn;
+                    if (hasText(productNameEn)) return productNameEn;
                     break;
                 case "fr":
-                    if (productNameFr != null) return productNameFr;
+                    if (hasText(productNameFr)) return productNameFr;
                     break;
                 case "es":
-                    if (productNameEs != null) return productNameEs;
+                    if (hasText(productNameEs)) return productNameEs;
                     break;
                 case "de":
-                    if (productNameDe != null) return productNameDe;
+                    if (hasText(productNameDe)) return productNameDe;
                     break;
             }
         }
 
         // Fallback chain
-        if (productName != null) return productName;
-        if (productNameEn != null) return productNameEn;
-        if (productNameFr != null) return productNameFr;
+        if (hasText(productName)) return productName;
+        if (hasText(productNameEn)) return productNameEn;
+        if (hasText(productNameFr)) return productNameFr;
         return null;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     /**
