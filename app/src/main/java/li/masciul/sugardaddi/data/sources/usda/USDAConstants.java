@@ -6,8 +6,11 @@ import java.util.List;
  * USDAConstants - All USDA FoodData Central data source constants.
  *
  * DATASET UPDATE PROCEDURE (when USDA releases a new FoodData Central build):
- * 1. Update DATASET_VERSION to the new release date string (e.g. "December_2026")
- * 2. Update FOUNDATION_JSON_URL and SR_LEGACY_JSON_URL to the new download URLs
+ * 1. Update DATASET_VERSION to the date in the new Foundation file name, as
+ *    yyyy_MM_dd (FoodData_Central_foundation_food_json_2027-04-29.zip gives
+ *    "2027_04_29"; Settings shows it as "v2027-04-29", like Ciqual's). Foundation
+ *    Foods is released in April and October (fdc.nal.usda.gov/data-documentation).
+ * 2. Update FOUNDATION_JSON_URL (and SR_LEGACY_JSON_URL, final since April 2018)
  * 3. Update gitignore asset patterns if filenames change
  * 4. The app will detect the version mismatch on next launch and trigger a re-import
  *    prompt in the Settings card (no auto-import - USDA DB is opt-in only).
@@ -78,20 +81,22 @@ public final class USDAConstants {
 
     // ===== DATASET VERSION =====
     /**
-     * Current dataset version. Matches USDA release naming.
-     * Foundation Foods: December 2025 release.
-     * SR Legacy: April 2018 (stable - no newer release planned).
+     * Current dataset version: the release date of the Foundation Foods file,
+     * yyyy_MM_dd (shown "v2026-10-29" in Settings, same format as Ciqual).
+     * Foundation Foods: October 2026 release (2026-10-29).
+     * SR Legacy: April 2018 (final release, no newer one planned).
      * When this changes, the settings card shows an "update available" state.
      */
-    public static final String DATASET_VERSION = "December_2025";
+    public static final String DATASET_VERSION = "2026_10_29";
 
     // ===== DOWNLOAD URLS =====
     /**
-     * Foundation Foods JSON - December 2025 release.
-     * Zipped: 467KB, Unzipped: 6.5MB. ~1,200 foods.
+     * Foundation Foods JSON - October 2026 release.
+     * About 0.5 MB zipped, 6.5 MB unzipped, ~1,200 foods (December 2025 sizes;
+     * each release adds foods).
      */
     public static final String FOUNDATION_JSON_URL =
-            "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_json_2025-12-18.zip";
+            "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_json_2026-10-29.zip";
 
     /**
      * SR Legacy JSON - April 2018 release (latest available).
