@@ -5,6 +5,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,20 +17,35 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
- * CiqualConstituents against Ciqual's own files (2025_11_03): the const file in
- * test resources, and values of real foods copied from compo_2025_11_03.xml.
+ * CiqualConstituents against Ciqual's own files: the const file of the current
+ * dataset (app/src/main/assets/const_<DATASET_VERSION>.xml, with the other Ciqual
+ * files), and values of real foods copied from compo_2025_11_03.xml.
+ *
+ * When DATASET_VERSION changes and the new const file is not in assets yet, the
+ * test fails on purpose: see the update procedure in CiqualConstants.
  */
 public class CiqualConstituentsTest {
 
     private static final double EPS = 1e-9;
 
+    /**
+     * The const file of the current dataset. Unit tests do not see assets on the
+     * classpath: the file is opened by its path, from the module folder (the
+     * working directory Gradle runs unit tests in).
+     */
+    private static File constFilePath() {
+        File file = new File("src/main/assets/const_" + CiqualConstants.DATASET_VERSION + ".xml");
+        assertTrue("missing " + file.getPath() + ": add the const file of the new Ciqual"
+                + " release (update procedure in CiqualConstants)", file.isFile());
+        return file;
+    }
+
     /** const_code -> {nom_fr, nom_eng}, read from Ciqual's const file. */
     private static Map<Integer, String[]> constFile() throws Exception {
-        try (InputStream in = CiqualConstituentsTest.class
-                .getResourceAsStream("/ciqual/const_2025_11_03.xml")) {
-            assertNotNull("test resource ciqual/const_2025_11_03.xml", in);
+        try (InputStream in = new FileInputStream(constFilePath())) {
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(in);
             NodeList rows = doc.getElementsByTagName("CONST");
             Map<Integer, String[]> map = new HashMap<>();

@@ -16,7 +16,8 @@ import java.util.Map;
  * French and English names are copied from that file as they are (the English
  * name of 51104 says "µg/100mg" in the source: kept, it is what the API sends).
  * When the dataset is updated, compare this table with the new const file; the
- * unit test CiqualConstituentsTest does that against the copy in test resources.
+ * unit test CiqualConstituentsTest does that against the copy in
+ * app/src/main/assets (see the update procedure in CiqualConstants).
  *
  * ONE TABLE FOR BOTH PATHS:
  * - the downloaded dataset (CiqualImportService) finds a row by its const_code;

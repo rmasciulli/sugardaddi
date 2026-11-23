@@ -9,7 +9,13 @@ package li.masciul.sugardaddi.data.sources.ciqual;
  * 3. Update ASSET_ALIM, ASSET_COMPO filenames to match the new release
  * 4. Replace the bundled alim_grp asset in app/src/main/assets/ (alim and compo
  *    are fetched from Zenodo, so only the category file ships)
- * 5. Bump AppDatabase version if schema changed
+ * 5. Replace const_<version>.xml in app/src/main/assets/ with the new release's
+ *    const file, then run CiqualConstituentsTest: it checks every code and name
+ *    the app reads (CiqualConstituents) against it, and fails while the file is
+ *    missing. Fix CiqualConstituents if ANSES renamed or renumbered a constituent.
+ *    (The app does not read this file; it is kept with the other Ciqual files
+ *    for that check.)
+ * 6. Bump AppDatabase version if schema changed
  *
  * The app will detect the version mismatch on next launch and re-import automatically.
  */
