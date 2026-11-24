@@ -91,6 +91,7 @@ public class QuantityInputView extends LinearLayout {
     private MaterialButton unitGButton;
     private MaterialButton unitMlButton;
     private TextView unitOnlyNote;
+    private TextView preparedNote;
 
     // ========== STATE ==========
 
@@ -154,6 +155,7 @@ public class QuantityInputView extends LinearLayout {
         unitGButton = findViewById(R.id.unitG);
         unitMlButton = findViewById(R.id.unitMl);
         unitOnlyNote = findViewById(R.id.unitOnlyNote);
+        preparedNote = findViewById(R.id.preparedNote);
         unitGButton.setText(Unit.G.getAbbreviation());
         unitMlButton.setText(Unit.ML.getAbbreviation());
         unitToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
@@ -270,6 +272,15 @@ public class QuantityInputView extends LinearLayout {
     public void setUnitSwitchable(boolean switchable) {
         this.unitSwitchable = switchable;
         refreshUnitPage();
+    }
+
+    /**
+     * Whether the item's values are for the prepared product (see
+     * NutritionPreparation): then every amount in the box is an amount of the
+     * prepared product, and a line under the pages says so.
+     */
+    public void setPrepared(boolean prepared) {
+        preparedNote.setVisibility(prepared ? View.VISIBLE : View.GONE);
     }
 
     /** G or ML: the unit the input works in now. */

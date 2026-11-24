@@ -112,7 +112,6 @@
     <string name="serving_size_per_100g">per 100g</string>
     <string name="serving_size_per_100ml">per 100ml</string>
     <string name="nutrition_per_100">per 100%s</string>
-    <string name="nutrition_per_100_prepared">per 100%s prepared</string>
     <string name="nutrition_prepared_short">prepared</string>
 
     <!-- Nutrition Category Headers -->
@@ -531,7 +530,8 @@
 
     <!-- Secondary (nutrition-specific) attribution -->
     <string name="nutrition_secondary_attribution">Nutrition data via %1$s</string>
-    <string name="nutrition_prepared_note">Values for the product prepared as the package says (water or milk included).</string>
+    <string name="nutrition_prepared_caption">Values for the prepared product (water or milk included)</string>
+    <string name="quantity_prepared_note">Amounts are of the prepared product</string>
 
     <!-- Meal Creation -->
     <string name="create_meal_title">Create a new meal</string>

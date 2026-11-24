@@ -5,7 +5,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -13,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.color.MaterialColors;
 
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     private View headerView;
     private LinearLayout subContainer;
     private LinearLayout nutrientSection;
-    private Button toggleButton;
+    private MaterialButton toggleButton;
     private final List<View> optionalRows = new ArrayList<>();
 
     // Track if this is the first category header (for spacing)
@@ -604,19 +604,40 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             // Column 2: per-100 in the unit shown: the source's own basis, or
             // the other unit converted through the source's density (see
             // shownNutrition(); never a density of our own).
-            // Prepared values say so in the header: "per 100 ml prepared" is not
-            // the product as sold (see NutritionPreparation).
             String unit = nutrition.getBasis().getUnitLabel();
-            col2.setText(context.getString(nutrition.isPrepared()
-                    ? R.string.nutrition_per_100_prepared
-                    : R.string.nutrition_per_100, unit));
+            col2.setText(context.getString(R.string.nutrition_per_100, unit));
 
             // Column 3: SIMPLIFIED - Just "per 20g" (dynamic)
             String customHeader = formatAmount(customAmount) + unit;
             col3.setText(context.getString(R.string.nutrition_per_custom, customHeader));
 
+            // Prepared values: one caption above the columns covers both of
+            // them, where EU labels put it, instead of "prepared" in each title.
+            if (nutrition.isPrepared()) {
+                addPreparedCaption();
+            }
             subContainer.addView(headerView);
         }
+    }
+
+    /**
+     * Caption above the column titles for prepared values (see
+     * NutritionPreparation): every value and amount in the table is of the
+     * product prepared as the package says, water or milk included - logging
+     * that milk again would count it twice. Note role (nutrition_text.xml).
+     */
+    private void addPreparedCaption() {
+        float density = context.getResources().getDisplayMetrics().density;
+        TextView caption = new TextView(context);
+        caption.setText(R.string.nutrition_prepared_caption);
+        caption.setTextAppearance(R.style.TextAppearance_SugarDaddi_Nutrition_Note);
+        caption.setTextColor(MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorOnSurfaceVariant,
+                ContextCompat.getColor(context, R.color.md_theme_onSurfaceVariant)));
+        // Same side padding as the column titles (nutrition_label_header.xml)
+        int side = (int) (6 * density);
+        caption.setPadding(side, (int) (10 * density), side, 0);
+        subContainer.addView(caption);
     }
 
     /**
@@ -698,7 +719,9 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 + (isMeal
                 ? getMealConfidenceExplanation((Meal) item, confidence)
                 : confidence.getConfidenceExplanation(context)));
-        confidenceView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+        // Secondary role (nutrition_text.xml); colour after the appearance,
+        // which would otherwise reset it.
+        confidenceView.setTextAppearance(R.style.TextAppearance_SugarDaddi_Nutrition_Secondary);
         confidenceView.setTextColor(textColor);
         badge.addView(confidenceView);
 
@@ -720,30 +743,19 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                         textColor, density);
             }
 
-            // Prepared values: the amount logged is the prepared food, and what
-            // went into it (water, milk) is already counted - logging that milk
-            // again would count it twice.
-            if (nutrition.isPrepared()) {
-                addBadgeLine(badge, context.getString(R.string.nutrition_prepared_note),
-                        textColor, density);
-            }
         }
 
         container.addView(badge);
     }
 
-    /** Small italic "Nutrition data via ..." line under the confidence text. */
+    /**
+     * Small italic "Nutrition data via ..." line under the confidence text.
+     * Note role (nutrition_text.xml).
+     */
     private void addAttributionLine(LinearLayout badge, String sources, int textColor, float density) {
-        addBadgeLine(badge, context.getString(R.string.nutrition_secondary_attribution, sources),
-                textColor, density);
-    }
-
-    /** Small italic line under the confidence text (attribution, prepared note). */
-    private void addBadgeLine(LinearLayout badge, String text, int textColor, float density) {
         TextView attributionView = new TextView(context);
-        attributionView.setText(text);
-        attributionView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11);
-        attributionView.setTypeface(attributionView.getTypeface(), android.graphics.Typeface.ITALIC);
+        attributionView.setText(context.getString(R.string.nutrition_secondary_attribution, sources));
+        attributionView.setTextAppearance(R.style.TextAppearance_SugarDaddi_Nutrition_Note);
         attributionView.setTextColor(textColor);
         LinearLayout.LayoutParams attrParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -898,43 +910,36 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     }
 
     private void addToggleButton() {
-        toggleButton = new Button(context);
+        // Material outlined button, like the - / + and pencil buttons of the
+        // quantity input: no elevation shadow (a plain Button keeps the theme's
+        // one), the theme's outline, corners in dp. Primary role text.
+        toggleButton = new MaterialButton(context, null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle);
         toggleButton.setText(R.string.show_all_nutrients);
         toggleButton.setOnClickListener(v -> toggleExpanded());
+        toggleButton.setAllCaps(false);
+        toggleButton.setTextAppearance(R.style.TextAppearance_SugarDaddi_Nutrition_Primary);
 
+        float density = context.getResources().getDisplayMetrics().density;
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(24, 24, 24, 24);
+        int margin = (int) (8 * density);
+        params.setMargins(margin, margin, margin, margin);
         toggleButton.setLayoutParams(params);
 
-        // Resolve colors from the current theme - adapts automatically to light/dark mode
+        // Colours from the current theme (light and dark): text on surface,
+        // outline stroke, as before.
         int textColor = MaterialColors.getColor(context,
                 com.google.android.material.R.attr.colorOnSurface,
                 ContextCompat.getColor(context, R.color.md_theme_onSurface));
-        // Same fill as the table box (bg_nutrition_block) so the button sits
-        // on it without a visible color step.
-        int bgColor = MaterialColors.getColor(context,
-                com.google.android.material.R.attr.colorSurfaceContainerLowest,
-                ContextCompat.getColor(context, R.color.md_theme_surfaceContainerLowest));
         int strokeColor = MaterialColors.getColor(context,
                 com.google.android.material.R.attr.colorOutline,
                 ContextCompat.getColor(context, R.color.md_theme_outline));
-
         toggleButton.setTextColor(textColor);
-        toggleButton.setAllCaps(false);
-        toggleButton.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14);
-
-        // Convert 2dp stroke width to pixels for density-correct rendering
-        int strokeWidthPx = (int) (2 * context.getResources().getDisplayMetrics().density);
-
-        android.graphics.drawable.GradientDrawable shape =
-                new android.graphics.drawable.GradientDrawable();
-        shape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        shape.setColor(bgColor);
-        shape.setStroke(strokeWidthPx, strokeColor);
-        shape.setCornerRadius(8f);
-        toggleButton.setBackground(shape);
+        toggleButton.setStrokeColor(android.content.res.ColorStateList.valueOf(strokeColor));
+        toggleButton.setStrokeWidth((int) (1 * density));
+        toggleButton.setCornerRadius((int) (8 * density));
 
         subContainer.addView(toggleButton);
     }

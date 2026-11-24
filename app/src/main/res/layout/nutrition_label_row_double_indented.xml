@@ -4,10 +4,10 @@
     Examples: ALA, EPA, DHA (sub-nutrients of Omega-3).
 
     TYPOGRAPHY:
-      Nutrient name: textAppearanceLabelSmall (11sp medium) - deepest hierarchy,
-      smallest text. Still uses colorOnSurfaceVariant to remain readable without
-      fighting the higher-level rows for attention.
-      Values: autoSize 10-12sp.
+      Name and values: Secondary role (res/values/nutrition_text.xml), the same
+      size as level 1: the depth is shown by the indent and the "- " prefix, not
+      by smaller text. colorOnSurfaceVariant. Values auto-size down to the
+      Minimum role.
 
     INDENTATION: paddingStart="32dp" signals second level of nesting.
 
@@ -36,7 +36,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingStart="32dp"
             android:paddingEnd="8dp"
@@ -48,12 +48,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="12sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:paddingEnd="8dp"
@@ -65,12 +65,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="12sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:text="0 mg" />

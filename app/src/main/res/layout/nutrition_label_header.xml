@@ -3,9 +3,10 @@
     nutrition_label_header.xml - Column header for DETAILED mode (3 columns).
 
     TYPOGRAPHY:
-      textAppearanceLabelMedium (12sp, medium weight) for all header columns.
-      Header labels should be smaller/lighter than the data rows below them -
-      LabelMedium is the correct token for table column headings.
+      Title role (res/values/nutrition_text.xml, bold) for all header columns;
+      columns 2 and 3 auto-size down to the Minimum role.
+      For prepared values, NutritionLabelManager adds a caption above this row
+      ("Values for the prepared product"): the column titles stay short.
 
     DARK MODE:
       No background: the table box (bg_nutrition_block) shows through.
@@ -17,8 +18,8 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <!-- Column headers row. center_vertical: when "per 100ml prepared" takes two
-         lines, the one-line titles beside it sit on its middle, not its top. -->
+    <!-- Column headers row. center_vertical: when a column title takes two lines
+         (long units, larger font settings), the others sit on its middle. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -35,29 +36,25 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
             android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold"
             android:paddingEnd="8dp"
             android:text="@string/nutrition_label_nutrient_column" />
 
         <!-- Column 2: Per 100g - EU mandatory column, always visible.
              autoSizeTextType adapts if the unit string "pour 100ml" is long.
-             Two lines allowed: prepared values read "per 100ml prepared", which
-             does not fit one line even at 10sp and was clipped after "100ml".
-             Any other header still fits one line. -->
+             Two lines allowed, so a long title wraps instead of being clipped. -->
         <TextView
             android:id="@+id/headerPer100g"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
             android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold"
             android:maxLines="2"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="12sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_title"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:paddingEnd="8dp"
@@ -69,13 +66,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
             android:textColor="?attr/colorOnSurface"
-            android:textStyle="bold"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="10sp"
-            android:autoSizeMaxTextSize="12sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_title"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:text="@string/per_20g" />

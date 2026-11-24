@@ -15,6 +15,8 @@
         page 3 - "Measurements & quantity": the preferred unit, g | ml, one tap
                  switches; locked on the used unit, with a line saying why,
                  when the item can only be shown in one unit (no density)
+      preparedNote (only for prepared values: the amounts are of the prepared
+                    product, on every page)
       PagerDotsView (one tappable dot per page)
 
     Pages carry their own 12dp side padding, so while swiping their content
@@ -23,8 +25,11 @@
     area (8dp under the dot) plus a 5dp margin, so the gap under the dots reads
     like the other three sides.
     The pager is as tall as its tallest page: the box never changes height.
+    TEXT: sizes and styles come from res/values/nutrition_text.xml (roles
+    Title, Primary, Value, Secondary, Note), shared with the nutrition table and
+    the confidence badge.
     VALUES: the typical serving value uses the same size as the value under it
-    (BodyLarge), regular weight and primary color: bold stays for the amount
+    (Value role), regular weight and primary color: bold stays for the amount
     that gets logged. Every row ends with a 28dp outlined button in the same
     column (+ on page 1, pencils elsewhere), so the values line up. Icons:
     primary blue for the typical serving pencil (it edits the item), dark
@@ -61,9 +66,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/quantity_page_servings"
-                android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
+                android:textColor="?attr/colorOnSurface" />
 
             <!-- Typical serving: the pencil button edits it (QuantityInputView
                  reports the tap, the screen opens TypicalServingDialog). The
@@ -83,7 +87,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/quantity_typical_serving"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Primary"
                     android:textColor="?attr/colorOnSurface" />
 
                 <TextView
@@ -91,7 +95,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Value"
                     android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
 
@@ -128,7 +132,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/quantity_servings"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Primary"
                     android:textColor="?attr/colorOnSurface" />
 
                 <TextView
@@ -136,7 +140,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Value"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="3,5 (105 g)" />
@@ -196,9 +200,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/quantity_page_portion"
-                android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
+                android:textColor="?attr/colorOnSurface" />
 
             <!-- Typical serving: the pencil button edits it (QuantityInputView
                  reports the tap, the screen opens TypicalServingDialog). The
@@ -218,7 +221,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/quantity_typical_serving"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Primary"
                     android:textColor="?attr/colorOnSurface" />
 
                 <TextView
@@ -226,7 +229,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Value"
                     android:textColor="?attr/colorPrimary"
                     tools:text="30 g" />
 
@@ -265,7 +268,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/quantity_custom"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Primary"
                     android:textColor="?attr/colorOnSurface" />
 
                 <!-- Plain number, no box: it reads like the servings value.
@@ -292,7 +295,7 @@
                     android:saveEnabled="false"
                     android:selectAllOnFocus="true"
                     android:hint="@string/quantity_custom_hint"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Value"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="105" />
@@ -306,7 +309,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:layout_marginEnd="8dp"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Value"
                     android:textColor="?attr/colorOnSurface"
                     android:textStyle="bold"
                     tools:text="g" />
@@ -349,9 +352,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/quantity_page_units"
-                android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Title"
+                android:textColor="?attr/colorOnSurface" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -367,7 +369,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/quantity_preferred_unit"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Primary"
                     android:textColor="?attr/colorOnSurface" />
 
                 <!-- Segmented g | ml: one tap on the other segment switches.
@@ -416,7 +418,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone"
                 tools:text="@string/quantity_unit_only_g"
@@ -425,6 +427,22 @@
         </LinearLayout>
 
     </li.masciul.sugardaddi.ui.components.SwipePagerView>
+
+    <!-- Prepared values only: every amount in the box is an amount of the
+         prepared product (QuantityInputView.setPrepared). Outside the pager so
+         it shows on every page. -->
+    <TextView
+        android:id="@+id/preparedNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:text="@string/quantity_prepared_note"
+        android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Note"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
     <!-- One tappable dot per page; attached to the pager in code -->
     <li.masciul.sugardaddi.ui.components.PagerDotsView

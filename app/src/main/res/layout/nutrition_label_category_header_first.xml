@@ -18,7 +18,7 @@
         android:id="@+id/categoryHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
         android:textColor="?attr/colorPrimary"
         android:textStyle="italic"
         android:paddingStart="6dp"

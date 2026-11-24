@@ -186,6 +186,9 @@ public final class DetailQuantityController {
         input.setOnTypicalServingClickListener(this::editTypicalServing);
         input.setOnUnitSelectedListener(this::onUnitSelected);
         input.setUnitSwitchable(switchable);
+        // Prepared values: the amounts typed or chosen are of the prepared product
+        Nutrition itemNutrition = nutritionOf(item);
+        input.setPrepared(itemNutrition != null && itemNutrition.isPrepared());
 
         if (carried != null) {
             // What the user was working on wins (refresh, rotation), unit included.

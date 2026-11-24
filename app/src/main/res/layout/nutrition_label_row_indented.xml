@@ -4,9 +4,9 @@
     Examples: "of which saturated", "of which sugars".
 
     TYPOGRAPHY:
-      Nutrient name: textAppearanceBodySmall (12sp regular) - visually subordinate
-      to level-0 rows. colorOnSurfaceVariant signals secondary content.
-      Values: autoSize 11-13sp.
+      Name and values: Secondary role (res/values/nutrition_text.xml), visually
+      subordinate to level-0 rows; colorOnSurfaceVariant signals secondary
+      content. Values auto-size down to the Minimum role.
 
     INDENTATION: paddingStart="16dp" on the name TextView pushes it right.
 
@@ -35,7 +35,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingStart="16dp"
             android:paddingEnd="8dp"
@@ -47,12 +47,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="11sp"
-            android:autoSizeMaxTextSize="13sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:paddingEnd="8dp"
@@ -64,12 +64,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="11sp"
-            android:autoSizeMaxTextSize="13sp"
+            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
+            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
             android:autoSizeStepGranularity="1sp"
             android:gravity="end"
             android:text="0 g" />

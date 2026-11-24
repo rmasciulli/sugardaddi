@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    nutrition_text.xml - text sizes and styles of the nutrition blocks.
+
+    Used by the quantity input (view_quantity_input.xml), the confidence badge
+    and the nutrition table (NutritionLabelManager and the nutrition_label_*
+    layouts), and nothing else. To adjust how they read, change the sizes below:
+    every text of the three blocks takes its size from one of these roles, none
+    is set anywhere else (no sp in layouts or code).
+
+    ROLES
+      Title      box titles ("Number of servings"), table column headers
+      Primary    box labels, main table rows (name and value), "Show all
+                 nutrients"
+      Value      box values ("300 g", "1 (300 g)"); weight and colour stay per
+                 view (bold only for the amount that gets logged)
+      Secondary  table sub-rows at any depth, badge sentence, category titles,
+                 notes under the box
+      Note       italic lines: badge attribution, the "prepared" caption above
+                 the table columns, the "prepared" line under the box
+      Minimum    smallest size a table value or header may shrink to when it
+                 does not fit its column (auto-size)
+
+    The styles keep the theme's fonts (TextAppearance.SugarDaddi.*, Inter) and
+    only set the size and, where it is part of the role, the weight or slant.
+-->
+<resources>
+
+    <!-- ===== SIZES: the only place to change them ===== -->
+    <dimen name="nutrition_text_title">14sp</dimen>
+    <dimen name="nutrition_text_primary">14sp</dimen>
+    <dimen name="nutrition_text_value">14sp</dimen>
+    <dimen name="nutrition_text_secondary">12sp</dimen>
+    <dimen name="nutrition_text_note">12sp</dimen>
+    <dimen name="nutrition_text_min">11sp</dimen>
+
+    <!-- ===== STYLES ===== -->
+    <style name="TextAppearance.SugarDaddi.Nutrition.Title"
+        parent="TextAppearance.SugarDaddi.TitleSmall">
+        <item name="android:textSize">@dimen/nutrition_text_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Nutrition.Primary"
+        parent="TextAppearance.SugarDaddi.BodyMedium">
+        <item name="android:textSize">@dimen/nutrition_text_primary</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Nutrition.Value"
+        parent="TextAppearance.SugarDaddi.BodyLarge">
+        <item name="android:textSize">@dimen/nutrition_text_value</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Nutrition.Secondary"
+        parent="TextAppearance.SugarDaddi.BodySmall">
+        <item name="android:textSize">@dimen/nutrition_text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Nutrition.Note"
+        parent="TextAppearance.SugarDaddi.BodySmall">
+        <item name="android:textSize">@dimen/nutrition_text_note</item>
+        <item name="android:textStyle">italic</item>
+    </style>
+
+</resources>
