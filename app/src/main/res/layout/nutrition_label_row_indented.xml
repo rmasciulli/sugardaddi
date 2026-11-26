@@ -1,16 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_label_row_indented.xml - Indented nutrient row (indent level 1).
-    Examples: "of which saturated", "of which sugars".
+    nutrition_label_row_indented.xml - Indented nutrient row (indent level 1), e.g. "Sugars", "Saturated fat".
 
-    TYPOGRAPHY:
-      Name and values: Secondary role (res/values/nutrition_text.xml), visually
-      subordinate to level-0 rows; colorOnSurfaceVariant signals secondary
-      content. Values auto-size down to the Minimum role.
+    STRUCTURE (the same in the three row layouts):
+      rowContent (FrameLayout)
+        nameScroll: the name on ONE line, as wide as the whole row. A long name
+          runs under the value columns and is read by dragging it sideways
+          (HorizontalScrollView, one per row).
+        valueBlock (on top, end of the row): the fade, then valueColumns (the
+          table background, opaque) with the per-100 column and the custom
+          amount column.
+          - valueFade: shown only when the name is long enough to run under the
+            values (NutritionLabelManager.fitRow); 16dp from transparent to the
+            table background, so the name fades out instead of being cut.
+          - Column widths are set by NutritionLabelManager from the widest value
+            and title of the table (no wrapping, no auto-size); the gap between
+            the two columns is @dimen/nutrition_column_gap.
+      divider
+    Touches on the values fall through to the name scroller (the value block is
+    not clickable), so the whole row can be dragged.
 
-    INDENTATION: paddingStart="16dp" on the name TextView pushes it right.
+    TEXT (res/values/nutrition_text.xml): Sub role (13sp). Name and per-100 value in
+    colorOnSurfaceVariant (second grey shade). 16dp indent.
+    Custom amount column in ?attr/colorPrimary at every level: it is the amount
+    being logged, told apart from the per-100 column at a glance.
 
-    DARK MODE: no background (the table box shows through), divider at 10% alpha.
+    DARK MODE: valueColumns and the fade use the table's fill
+    (colorSurfaceContainerLowest, as bg_nutrition_block).
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18,64 +34,87 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <LinearLayout
+    <FrameLayout
+        android:id="@+id/rowContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:paddingStart="6dp"
         android:paddingEnd="6dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:gravity="center_vertical"
         android:minHeight="32dp">
 
-        <!-- Column 1: Nutrient name - 16dp indent signals sub-nutrient -->
-        <TextView
-            android:id="@+id/nutrientName"
-            android:layout_width="0dp"
+        <HorizontalScrollView
+            android:id="@+id/nameScroll"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:paddingStart="16dp"
-            android:paddingEnd="8dp"
-            android:text="  of which saturated" />
+            android:layout_gravity="center_vertical"
+            android:overScrollMode="never"
+            android:scrollbars="none">
 
-        <!-- Column 2: Per 100g value -->
-        <TextView
-            android:id="@+id/valuePer100g"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="1"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
-            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
-            android:autoSizeStepGranularity="1sp"
-            android:gravity="end"
-            android:paddingEnd="8dp"
-            android:text="0 g" />
+            <TextView
+                android:id="@+id/nutrientName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:paddingStart="16dp"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Sub"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:text="Nutrient" />
 
-        <!-- Column 3: Custom amount value -->
-        <TextView
-            android:id="@+id/valueCustomAmount"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="1"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="@dimen/nutrition_text_min"
-            android:autoSizeMaxTextSize="@dimen/nutrition_text_secondary"
-            android:autoSizeStepGranularity="1sp"
-            android:gravity="end"
-            android:text="0 g" />
+        </HorizontalScrollView>
 
-    </LinearLayout>
+        <LinearLayout
+            android:id="@+id/valueBlock"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:orientation="horizontal">
 
+            <!-- Gradient set in code (NutritionLabelManager.nameFadeDrawable) -->
+            <View
+                android:id="@+id/valueFade"
+                android:layout_width="@dimen/nutrition_name_fade"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Opaque behind both columns and the gap between them -->
+            <LinearLayout
+                android:id="@+id/valueColumns"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="?attr/colorSurfaceContainerLowest"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/valuePer100g"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Sub"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="0 g" />
+
+                <TextView
+                    android:id="@+id/valueCustomAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/nutrition_column_gap"
+                    android:gravity="end"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Sub"
+                    android:textColor="?attr/colorPrimary"
+                    android:text="0 g" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- Row divider - light separator, not a strong line -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

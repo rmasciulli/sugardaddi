@@ -4,9 +4,9 @@
     (e.g. "Macronutrients", "Vitamins", "Minerals").
 
     TYPOGRAPHY:
-      Secondary role (res/values/nutrition_text.xml) + italic.
+      Sub role (res/values/nutrition_text.xml, 13sp) + italic.
       Category headers label a group - they should be the same size or smaller
-      than top-level nutrient names (Primary role), never larger.
+      than top-level nutrient names (Primary role, 14sp), never larger.
 
     DARK MODE:
       No background (the table box shows through). Text ?attr/colorPrimary (brand blue, works on
@@ -27,7 +27,7 @@
         android:id="@+id/categoryHeaderText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Secondary"
+        android:textAppearance="@style/TextAppearance.SugarDaddi.Nutrition.Sub"
         android:textColor="?attr/colorPrimary"
         android:textStyle="italic"
         android:paddingStart="6dp"

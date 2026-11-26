@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    nutrition_text.xml - text sizes and styles of the nutrition blocks.
+    nutrition_text.xml - text sizes and styles of the nutrition blocks, and the
+    few spacing values of the nutrition table.
 
     Used by the quantity input (view_quantity_input.xml), the confidence badge
     and the nutrition table (NutritionLabelManager and the nutrition_label_*
-    layouts), and nothing else. To adjust how they read, change the sizes below:
-    every text of the three blocks takes its size from one of these roles, none
-    is set anywhere else (no sp in layouts or code).
+    layouts), and nothing else. To adjust how they read, change the values
+    below: every text of the three blocks takes its size from one of these
+    roles, none is set anywhere else (no sp in layouts or code).
 
     ROLES
-      Title      box titles ("Number of servings"), table column headers
-      Primary    box labels, main table rows (name and value), "Show all
+      Title      box titles ("Number of servings"), table column titles
+      Primary    box labels, main table rows (name and values), "Show all
                  nutrients"
       Value      box values ("300 g", "1 (300 g)"); weight and colour stay per
                  view (bold only for the amount that gets logged)
-      Secondary  table sub-rows at any depth, badge sentence, category titles,
-                 notes under the box
+      Sub        table rows one level down ("Sugars", "Saturated fat"), table
+                 category titles ("Macronutrients")
+      Secondary  table rows two levels down and more (ALA, lauric acid), badge
+                 sentence, the unit note of the box
       Note       italic lines: badge attribution, the "prepared" caption above
                  the table columns, the "prepared" line under the box
-      Minimum    smallest size a table value or header may shrink to when it
-                 does not fit its column (auto-size)
 
     The styles keep the theme's fonts (TextAppearance.SugarDaddi.*, Inter) and
     only set the size and, where it is part of the role, the weight or slant.
@@ -30,9 +31,18 @@
     <dimen name="nutrition_text_title">14sp</dimen>
     <dimen name="nutrition_text_primary">14sp</dimen>
     <dimen name="nutrition_text_value">14sp</dimen>
+    <dimen name="nutrition_text_sub">13sp</dimen>
     <dimen name="nutrition_text_secondary">12sp</dimen>
     <dimen name="nutrition_text_note">12sp</dimen>
-    <dimen name="nutrition_text_min">11sp</dimen>
+
+    <!-- ===== TABLE SPACING ===== -->
+    <!-- Space between the per-100 column and the custom amount column -->
+    <dimen name="nutrition_column_gap">12dp</dimen>
+    <!-- Fade where a long name runs under the value columns -->
+    <dimen name="nutrition_name_fade">16dp</dimen>
+    <!-- Third grey shade: rows two levels down and more (alpha on
+         colorOnSurfaceVariant, the second shade) -->
+    <item name="nutrition_deep_alpha" format="float" type="dimen">0.7</item>
 
     <!-- ===== STYLES ===== -->
     <style name="TextAppearance.SugarDaddi.Nutrition.Title"
@@ -49,6 +59,11 @@
     <style name="TextAppearance.SugarDaddi.Nutrition.Value"
         parent="TextAppearance.SugarDaddi.BodyLarge">
         <item name="android:textSize">@dimen/nutrition_text_value</item>
+    </style>
+
+    <style name="TextAppearance.SugarDaddi.Nutrition.Sub"
+        parent="TextAppearance.SugarDaddi.BodyMedium">
+        <item name="android:textSize">@dimen/nutrition_text_sub</item>
     </style>
 
     <style name="TextAppearance.SugarDaddi.Nutrition.Secondary"

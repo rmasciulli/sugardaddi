@@ -5,6 +5,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -63,6 +64,15 @@ import li.masciul.sugardaddi.core.utils.DensityConversion;
  * - Column 2: per 100g (ALWAYS visible - EU legal requirement)
  * - Column 3: per XXg (dynamic, updates with custom amount)
  *
+ * DETAILED COLUMNS (see applyColumnWidths() and fitNameRow()):
+ * - Columns 2 and 3 are as wide as their widest title or value, measured on
+ *   every build: no wrapping ("per 100ml"), no auto-size, the gap between
+ *   them is @dimen/nutrition_column_gap.
+ * - A name stays on one line. When it is longer than the room left, it runs
+ *   under the value columns, a 16dp fade marks where, and the row is dragged
+ *   sideways to read it (one scroller per row for now; moving every row
+ *   together is a later step: share scrollX and give all names one width).
+ *
  * SOURCE TRANSPARENCY (v3.0):
  * Every label now shows the {@link DataConfidence} of the displayed nutrition
  * (e.g. "🔬 Scientific reference data") directly under the header. If the
@@ -107,6 +117,18 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     private LinearLayout nutrientSection;
     private MaterialButton toggleButton;
     private final List<View> optionalRows = new ArrayList<>();
+
+    /**
+     * DETAILED rows of the current build, shown or not: their value columns
+     * get the measured widths (applyColumnWidths()).
+     */
+    private final List<View> detailRows = new ArrayList<>();
+
+    /**
+     * Width of the value columns of the current build (column 2 + gap +
+     * column 3), in px: a name longer than the row minus this runs under them.
+     */
+    private int valuesWidth;
 
     // Track if this is the first category header (for spacing)
     private boolean isFirstCategoryHeader = true;
@@ -157,6 +179,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         this.currentCustomAmount = customAmount;
         this.isExpanded = false;
         this.optionalRows.clear();
+        this.detailRows.clear();
 
         container.removeAllViews();
         container.setVisibility(View.VISIBLE);
@@ -217,6 +240,7 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         currentItem = null;
         isExpanded = false;
         optionalRows.clear();
+        detailRows.clear();
     }
 
     // ========================================================================
@@ -374,6 +398,10 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         subContainer.addView(nutrientSection);
 
         buildNutrientsUnified(nutrition, customAmount);
+
+        if (mode == NutritionLabelMode.DETAILED) {
+            applyColumnWidths();
+        }
 
         if (!optionalRows.isEmpty()) {
             addToggleButton();
@@ -875,6 +903,9 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
             if (customView != null) {
                 customView.setText(formatNutrientValue(shownCustom, unit));
             }
+
+            detailRows.add(row);
+            fitNameRow(row);
         }
 
         // Past the deepest layout: push the name and the divider further right.
@@ -895,6 +926,125 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
 
         parent.addView(row);
         return row;
+    }
+
+    /**
+     * Columns 2 and 3 of the DETAILED table as wide as their widest text:
+     * the column title and every row's value, hidden optional rows included
+     * (so "Show all nutrients" does not move the columns). Run once per build,
+     * after the header and every row exist; a unit switch (g / ml) rebuilds
+     * the table and so measures "per 100ml" again.
+     *
+     * Measured with each view's own paint (its text appearance: Title for the
+     * header, Primary / Sub / Secondary for the rows), plus its padding and
+     * 1px of rounding margin so the text never wraps.
+     */
+    private void applyColumnWidths() {
+        List<TextView> col2 = new ArrayList<>();
+        List<TextView> col3 = new ArrayList<>();
+        if (headerView != null) {
+            col2.add(headerView.findViewById(R.id.headerPer100g));
+            col3.add(headerView.findViewById(R.id.headerCustomAmount));
+        }
+        for (View row : detailRows) {
+            col2.add(row.findViewById(R.id.valuePer100g));
+            col3.add(row.findViewById(R.id.valueCustomAmount));
+        }
+        int w2 = setSameWidth(col2);
+        int w3 = setSameWidth(col3);
+        int gap = context.getResources().getDimensionPixelSize(R.dimen.nutrition_column_gap);
+        valuesWidth = w2 + gap + w3;
+    }
+
+    /** Give every view of a column the width of its widest text; returns it. */
+    private static int setSameWidth(List<TextView> column) {
+        int width = 0;
+        for (TextView view : column) {
+            if (view == null) continue;
+            width = Math.max(width, textWidth(view)
+                    + view.getPaddingLeft() + view.getPaddingRight() + 1);
+        }
+        for (TextView view : column) {
+            if (view == null) continue;
+            ViewGroup.LayoutParams lp = view.getLayoutParams();
+            lp.width = width;
+            view.setLayoutParams(lp);
+        }
+        return width;
+    }
+
+    /** Width of a one-line TextView's text with its own paint (size, weight). */
+    private static int textWidth(TextView view) {
+        CharSequence text = view.getText();
+        return text == null ? 0
+                : (int) Math.ceil(view.getPaint().measureText(text.toString()));
+    }
+
+    /**
+     * A DETAILED row whose name may be longer than the room left of the value
+     * columns (nutrition_label_row*.xml): the name is on one line in a
+     * HorizontalScrollView under the value block.
+     *
+     * After each layout of the row (first draw, "Show all nutrients",
+     * rotation), the name is checked against the room it has:
+     * - it fits: no fade, no end padding, nothing to drag;
+     * - it runs under the values: the fade shows at the start of the value
+     *   block, and the name gets an end padding of the values + the fade, so
+     *   dragging it to the end shows its last letter just left of the fade.
+     * Changes are applied only when the state changes, so the relayout they
+     * cause stops there.
+     */
+    private void fitNameRow(View row) {
+        View rowContent = row.findViewById(R.id.rowContent);
+        HorizontalScrollView scroll = row.findViewById(R.id.nameScroll);
+        TextView nameView = row.findViewById(R.id.nutrientName);
+        View fade = row.findViewById(R.id.valueFade);
+        if (rowContent == null || scroll == null || nameView == null || fade == null) return;
+
+        int fadeWidth = context.getResources().getDimensionPixelSize(R.dimen.nutrition_name_fade);
+        fade.setBackground(nameFadeDrawable());
+
+        rowContent.addOnLayoutChangeListener((v, l, top, r, bottom, ol, ot, or, ob) -> {
+            int room = v.getWidth() - v.getPaddingLeft() - v.getPaddingRight();
+            if (room <= 0) return;
+            // Where the text ends, from the row's start (the indent is the
+            // name's start padding, depth past 2 included).
+            int textEnd = nameView.getPaddingStart() + textWidth(nameView);
+            boolean overflows = textEnd > room - valuesWidth;
+
+            int wantedEnd = overflows ? valuesWidth + fadeWidth : 0;
+            int wantedFade = overflows ? View.VISIBLE : View.GONE;
+            if (nameView.getPaddingEnd() == wantedEnd && fade.getVisibility() == wantedFade) {
+                return;
+            }
+            // Not during the layout pass that called us
+            v.post(() -> {
+                nameView.setPaddingRelative(nameView.getPaddingStart(), nameView.getPaddingTop(),
+                        wantedEnd, nameView.getPaddingBottom());
+                fade.setVisibility(wantedFade);
+                if (!overflows) scroll.scrollTo(0, 0);
+            });
+        });
+    }
+
+    /**
+     * The fade at the start of the value block: from the table's fill,
+     * transparent, to the same fill, opaque (colorSurfaceContainerLowest, as
+     * bg_nutrition_block and valueColumns), so the name fades out under
+     * the values in light and dark mode. Mirrored for right-to-left.
+     */
+    private GradientDrawable nameFadeDrawable() {
+        int fill = MaterialColors.getColor(context,
+                com.google.android.material.R.attr.colorSurfaceContainerLowest,
+                ContextCompat.getColor(context, R.color.md_theme_surfaceContainerLowest));
+        // From the configuration: the row is not attached yet, its own
+        // direction is not resolved.
+        boolean rtl = context.getResources().getConfiguration().getLayoutDirection()
+                == View.LAYOUT_DIRECTION_RTL;
+        return new GradientDrawable(
+                rtl ? GradientDrawable.Orientation.RIGHT_LEFT
+                    : GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{fill & 0x00FFFFFF, fill});
     }
 
     /**
