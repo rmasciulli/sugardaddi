@@ -24,6 +24,7 @@ import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
 import li.masciul.sugardaddi.utils.category.CategoryCleaner;
 import li.masciul.sugardaddi.utils.scores.ScoreOverlayHelper;
 import li.masciul.sugardaddi.utils.scores.ScoreUtils;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
 import java.util.Locale;
 
@@ -210,8 +211,8 @@ public class OffProductSearchDelegate
             Double energy = nutrition.getEnergyKcal();
             if (energy != null && energy > 0) {
                 if (info.length() > 0) info.append(" \u00b7 ");
-                info.append(String.format(Locale.getDefault(), "%.0f kcal/100%s",
-                        energy, nutrition.getBasis().getUnitLabel()));
+                info.append(NutrientFormat.energy(energy)).append(" kcal/100")
+                        .append(nutrition.getBasis().getUnitLabel());
                 // Prepared values are not the product as sold: say so
                 if (nutrition.isPrepared()) {
                     info.append(' ').append(context.getString(R.string.nutrition_prepared_short));

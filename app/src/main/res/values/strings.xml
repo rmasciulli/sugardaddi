@@ -112,6 +112,7 @@
     <string name="serving_size_per_100g">per 100g</string>
     <string name="serving_size_per_100ml">per 100ml</string>
     <string name="nutrition_per_100">per 100%s</string>
+    <string name="nutrition_carbs_per_100">%1$s g of carbohydrates per %2$s</string>
     <string name="nutrition_prepared_short">prepared</string>
 
     <!-- Nutrition Category Headers -->

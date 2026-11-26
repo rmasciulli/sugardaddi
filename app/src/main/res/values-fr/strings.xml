@@ -112,6 +112,7 @@
     <string name="serving_size_per_100g">pour 100g</string>
     <string name="serving_size_per_100ml">pour 100ml</string>
     <string name="nutrition_per_100">pour 100%s</string>
+    <string name="nutrition_carbs_per_100">%1$s g de glucides pour %2$s</string>
     <string name="nutrition_prepared_short">préparé</string>
 
     <!-- Nutrition category headers -->

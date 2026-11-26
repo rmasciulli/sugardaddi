@@ -43,6 +43,7 @@ import li.masciul.sugardaddi.ui.utils.ImagePickerHelper;
 import li.masciul.sugardaddi.ui.utils.DetailQuantityController;
 import li.masciul.sugardaddi.utils.image.ImageProfile;
 import li.masciul.sugardaddi.utils.image.ImageStorageManager;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
 /**
  * ProductDetailsActivity - REFACTORED THIN SHELL (v5.1)
@@ -767,9 +768,9 @@ public class ProductDetailsActivity extends BaseActivity implements ProductManag
         }
 
         if (product.hasNutritionData() && product.getNutrition().getEnergyKcal() != null) {
-            shareText.append(String.format("\n\n• %s: %.0f kcal",
-                    getSafeString(R.string.nutrient_energy),
-                    product.getNutrition().getEnergyKcal()));
+            shareText.append("\n\n• ").append(getSafeString(R.string.nutrient_energy))
+                    .append(": ").append(NutrientFormat.energy(product.getNutrition().getEnergyKcal()))
+                    .append(" kcal");
         }
 
         shareText.append("\n\n").append(getSafeString(R.string.shared_via_sugardaddi));

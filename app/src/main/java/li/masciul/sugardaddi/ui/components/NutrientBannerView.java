@@ -70,7 +70,6 @@ public class NutrientBannerView extends LinearLayout {
     private Typeface robotoCondensed;
     private Typeface robotoCondensedBold;
 
-    private final DecimalFormat valueFormatter = createValueFormatter();
     private final DecimalFormat percentFormatter = createPercentFormatter();
 
     // ========== STATE ==========
@@ -264,7 +263,9 @@ public class NutrientBannerView extends LinearLayout {
         nameText.setText(formatName(label, style));
 
         // Special formatting for energy (2 lines)
-        String energyValue = Math.round(kcal) + "kcal\n" + Math.round(kj) + "KJ";
+        // Whole numbers, same rounding as everywhere else (NutrientFormat)
+        String energyValue = NutrientFormat.energy(kcal) + "kcal\n"
+                + NutrientFormat.energy(kj) + "kJ";
         valueText.setText(energyValue);
 
         percentText.setText(formatPercent(percentDRV));
@@ -392,8 +393,13 @@ public class NutrientBannerView extends LinearLayout {
         return name;
     }
 
+    /**
+     * Up to 2 decimals, rounded half up (NutrientFormat): the same text as the
+     * nutrition table. The old "0.#" format rounded half even to 1 decimal,
+     * so 19.65 g read 19.6 here and 19.7 in the table.
+     */
     private String formatValue(double value, String unit) {
-        return valueFormatter.format(value) + unit;
+        return NutrientFormat.number(value) + unit;
     }
 
     private String formatPercent(double percent) {
@@ -470,13 +476,6 @@ public class NutrientBannerView extends LinearLayout {
     }
 
     // ========== FORMATTERS ==========
-
-    private static DecimalFormat createValueFormatter() {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
-        DecimalFormat formatter = new DecimalFormat("0.#", symbols);
-        formatter.setMaximumFractionDigits(1);
-        return formatter;
-    }
 
     private static DecimalFormat createPercentFormatter() {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());

@@ -22,8 +22,8 @@ import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.core.models.ServingSize;
 import li.masciul.sugardaddi.ui.components.NutritionLabelManager;
 import li.masciul.sugardaddi.ui.utils.ImageDisplayUtils;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
-import java.util.Locale;
 
 /**
  * CiqualProductDetailRenderer - Detail screen for Ciqual (ANSES) products.
@@ -216,17 +216,15 @@ public class CiqualProductDetailRenderer implements DetailRenderer {
             if (hasCarbs || hasKcal) {
                 nutritionSummaryRow.setVisibility(View.VISIBLE);
                 if (hasCarbs && nutritionSummary != null) {
-                    String carbLabel = "fr".equals(language) ? "glucides" : "carbohydrates";
+                    // "12.3 g of carbohydrates per 100g" / "12,3 g de glucides
+                    // pour 100g" (the French one used to read "of glucides per")
                     String unit = "100" + nutrition.getBasis().getUnitLabel();
-                    nutritionSummary.setText(String.format(
-                            java.util.Locale.getDefault(),
-                            "%.1fg of %s per %s", nutrition.getCarbohydrates(), carbLabel, unit));
+                    nutritionSummary.setText(context.getString(R.string.nutrition_carbs_per_100,
+                            NutrientFormat.number(nutrition.getCarbohydrates()), unit));
                     nutritionSummary.setVisibility(View.VISIBLE);
                 }
                 if (hasKcal && kcalBadge != null) {
-                    kcalBadge.setText(String.format(
-                            java.util.Locale.getDefault(),
-                            "%.0f kcal", nutrition.getEnergyKcal()));
+                    kcalBadge.setText(NutrientFormat.energy(nutrition.getEnergyKcal()) + " kcal");
                     kcalBadge.setVisibility(View.VISIBLE);
                 }
             } else {

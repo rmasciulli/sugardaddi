@@ -6,12 +6,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Locale;
 
 import li.masciul.sugardaddi.R;
 import li.masciul.sugardaddi.core.interfaces.Nutritional;
 import li.masciul.sugardaddi.core.interfaces.Searchable;
 import li.masciul.sugardaddi.core.models.Nutrition;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
 /**
  * Binds the shared expandable_nutrition_detail.xml include (6-row
@@ -91,8 +91,8 @@ public final class NutritionGridHelper {
     }
 
     private static void populateGrid(@NonNull View section, @Nullable Nutrition nutrition) {
-        setText(section, R.id.detailEnergy, nutrition == null ? null :
-                String.format(Locale.getDefault(), "%.0f kcal", nutrition.getEnergyKcal()));
+        Double kcal = nutrition == null ? null : nutrition.getEnergyKcal();
+        setText(section, R.id.detailEnergy, kcal == null ? null : NutrientFormat.energy(kcal) + " kcal");
         setText(section, R.id.detailCarbs, formatGrams(nutrition == null ? null : nutrition.getCarbohydrates()));
         setText(section, R.id.detailSugars, formatGrams(nutrition == null ? null : nutrition.getSugars()));
         setText(section, R.id.detailProteins, formatGrams(nutrition == null ? null : nutrition.getProteins()));
@@ -102,7 +102,8 @@ public final class NutritionGridHelper {
 
     @Nullable
     private static String formatGrams(@Nullable Double value) {
-        return value != null ? String.format(Locale.getDefault(), "%.1f g", value) : null;
+        // Same text as the nutrition table (NutrientFormat): "1.76 g", "< 0.01 g"
+        return value != null ? NutrientFormat.value(value, "g") : null;
     }
 
     private static void setText(@NonNull View root, int viewId, @Nullable String text) {

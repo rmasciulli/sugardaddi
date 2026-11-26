@@ -18,6 +18,7 @@ import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.ui.adapters.timeline.TimelineItem;
 import li.masciul.sugardaddi.ui.adapters.timeline.MealTimelineItem;
 import li.masciul.sugardaddi.ui.adapters.timeline.HourMarkerTimelineItem;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -200,7 +201,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 // Calories
                 Double kcal = nutrition.getEnergyKcal();
                 if (kcal != null && kcal > 0) {
-                    caloriesText.setText(String.format("%.0f %s", kcal, context.getString(R.string.unit_kcal)));
+                    caloriesText.setText(NutrientFormat.energy(kcal) + " " + context.getString(R.string.unit_kcal));
                 } else {
                     caloriesText.setText("-- " + context.getString(R.string.unit_kcal));
                 }
@@ -208,7 +209,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 // Carbs
                 Double carbs = nutrition.getCarbohydrates();
                 if (carbs != null && carbs > 0) {
-                    carbsText.setText(context.getString(R.string.nutrient_carbs_format, String.format("%.0f", carbs)));
+                    carbsText.setText(context.getString(R.string.nutrient_carbs_format, NutrientFormat.number(carbs)));
                 } else {
                     carbsText.setText(context.getString(R.string.nutrient_carbs_empty));
                 }
@@ -216,7 +217,7 @@ public class TimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                 // Protein
                 Double protein = nutrition.getProteins();
                 if (protein != null && protein > 0) {
-                    proteinText.setText(context.getString(R.string.nutrient_protein_format, String.format("%.0f", protein)));
+                    proteinText.setText(context.getString(R.string.nutrient_protein_format, NutrientFormat.number(protein)));
                 } else {
                     proteinText.setText(context.getString(R.string.nutrient_protein_empty));
                 }

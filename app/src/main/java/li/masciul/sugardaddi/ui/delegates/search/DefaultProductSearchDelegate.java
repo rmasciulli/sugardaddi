@@ -17,6 +17,7 @@ import li.masciul.sugardaddi.core.models.Nutrition;
 import li.masciul.sugardaddi.ui.delegates.ItemViewDelegate;
 import li.masciul.sugardaddi.ui.delegates.ViewType;
 import li.masciul.sugardaddi.ui.utils.CardThumbnailHelper;
+import li.masciul.sugardaddi.ui.components.NutrientFormat;
 
 import java.util.Locale;
 
@@ -74,7 +75,7 @@ public class DefaultProductSearchDelegate
         bindProductType(holder, product);
         bindBrand(holder, product, language);
         bindCategory(holder, product, language);
-        bindNutritionSummary(holder, product, language);
+        bindNutritionSummary(holder, product);
         bindKcalBadge(holder, product);
         CardThumbnailHelper.bindProductThumbnail(context,
                 holder.thumbnailContainer, holder.thumbnailImage, holder.thumbnailExpandIcon,
@@ -144,7 +145,7 @@ public class DefaultProductSearchDelegate
      * because this is a glycemic-tracking app. GONE when there's no
      * nutrition at all, which is every FatSecret search result today.
      */
-    private void bindNutritionSummary(ViewHolder holder, FoodProduct product, String language) {
+    private void bindNutritionSummary(ViewHolder holder, FoodProduct product) {
         Nutrition nutrition = product.getNutrition();
         if (nutrition == null) {
             holder.nutritionSummary.setVisibility(View.GONE);
@@ -152,11 +153,10 @@ public class DefaultProductSearchDelegate
         }
         Double carbs = nutrition.getCarbohydrates();
         if (carbs != null && carbs > 0) {
-            String label = "fr".equals(language) ? "glucides" : "carbohydrates";
+            // "12.3 g of carbohydrates per 100g" / "12,3 g de glucides pour 100g"
             String unit = "100" + nutrition.getBasis().getUnitLabel();
-            String text = String.format(Locale.getDefault(),
-                    "%.1fg of %s per %s", carbs, label, unit);
-            holder.nutritionSummary.setText(text);
+            holder.nutritionSummary.setText(context.getString(
+                    R.string.nutrition_carbs_per_100, NutrientFormat.number(carbs), unit));
             holder.nutritionSummary.setVisibility(View.VISIBLE);
         } else {
             holder.nutritionSummary.setVisibility(View.GONE);
@@ -172,8 +172,7 @@ public class DefaultProductSearchDelegate
         }
         Double kcal = nutrition.getEnergyKcal();
         if (kcal != null && kcal > 0) {
-            holder.kcalBadge.setText(
-                    String.format(Locale.getDefault(), "%.0f kcal", kcal));
+            holder.kcalBadge.setText(NutrientFormat.energy(kcal) + " kcal");
             holder.kcalBadge.setVisibility(View.VISIBLE);
         } else {
             holder.kcalBadge.setVisibility(View.GONE);

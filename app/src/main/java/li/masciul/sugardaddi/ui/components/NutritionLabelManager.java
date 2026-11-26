@@ -836,10 +836,10 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         }
 
         // One unit for both columns, chosen from the per-100 value:
-        // 7450 mg reads "7.5 g", 1 760 000 µg reads "1.8 g", and the custom
-        // column follows.
-        String unit = displayUnit(value, info.getUnit());
-        double divisor = unitDivisor(info.getUnit(), unit);
+        // 7450 mg reads "7.45 g", 1 760 000 µg reads "1.76 g", and the custom
+        // column follows (NutrientFormat.displayUnit()).
+        String unit = NutrientFormat.displayUnit(value, info.getUnit());
+        double divisor = NutrientFormat.unitDivisor(info.getUnit(), unit);
         Double shown100 = value != null ? value / divisor : null;
         Double shownCustom = calculateScaledValue(shown100, customAmount);
 
@@ -1048,48 +1048,6 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
                 new int[]{fill & 0x00FFFFFF, fill});
     }
 
-    /**
-     * The unit to show a value in: from 1000 up, the next unit up, as many
-     * steps as needed (µg -> mg -> g). 7450 mg is shown in g, 1 760 000 µg
-     * in g too (one step used to stop it at "1760.0 mg"). Stored values never
-     * change, only the display.
-     */
-    @NonNull
-    private static String displayUnit(@Nullable Double value, @NonNull String unit) {
-        if (value == null) return unit;
-        double shown = value;
-        String shownUnit = unit;
-        String larger = largerUnit(shownUnit);
-        while (shown >= 1000.0 && larger != null) {
-            shown /= 1000.0;
-            shownUnit = larger;
-            larger = largerUnit(shownUnit);
-        }
-        return shownUnit;
-    }
-
-    /** The unit 1000 times larger (µg -> mg -> g), or null at the top. */
-    @Nullable
-    private static String largerUnit(@NonNull String unit) {
-        if ("\u00b5g".equals(unit)) return "mg";
-        if ("mg".equals(unit)) return "g";
-        return null;
-    }
-
-    /**
-     * What to divide a stored value by to show it in the unit chosen by
-     * displayUnit(): 1000 per step from the stored unit (1 for the same unit).
-     */
-    private static double unitDivisor(@NonNull String storedUnit, @NonNull String shownUnit) {
-        double divisor = 1.0;
-        String unit = storedUnit;
-        while (unit != null && !unit.equals(shownUnit)) {
-            divisor *= 1000.0;
-            unit = largerUnit(unit);
-        }
-        return unit == null ? 1.0 : divisor;
-    }
-
     private void addToggleButton() {
         // Material outlined button, like the - / + and pencil buttons of the
         // quantity input: no elevation shadow (a plain Button keeps the theme's
@@ -1170,42 +1128,12 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     }
 
     /**
-     * "-" for an unknown value (null), "0 g" for a confirmed zero. Both used to
-     * show "-" on mandatory rows, so a measured "no fiber" looked unknown.
+     * "-" for an unknown value (null), "0 g" for a confirmed zero, up to 2
+     * decimals otherwise, energy in whole numbers: the rules of
+     * NutrientFormat, shared with every other screen.
      */
     private String formatNutrientValue(@Nullable Double value, String unit) {
-        if (value == null) {
-            return "-";
-        }
-
-        if (value == 0.0) {
-            return "0 " + unit;
-        }
-
-        // Energy is conventionally displayed as a whole number - the one
-        // legitimate case for zero decimals. Everything else (g/mg/µg)
-        // must never drop below 1 decimal once it crosses 10, unlike the
-        // old magnitude-tiered logic below - that's what silently
-        // rounded a real 46.5g protein value to "47 g" on the nutrition
-        // label, while the Summary banners and Components card (both
-        // using a flat %.1f, no magnitude tiering) kept showing 46.5g
-        // correctly. This matters most for carbohydrates specifically,
-        // since precise carb tracking is this app's whole purpose, and
-        // any carb value above 10g was silently losing its decimal.
-        boolean isEnergyUnit = "kcal".equals(unit) || "kJ".equals(unit);
-        if (isEnergyUnit) {
-            return String.format("%.0f %s", value, unit);
-        }
-
-        if (value < 0.01) {
-            return "< 0.01 " + unit;
-        }
-
-        if (value < 1.0) {
-            return String.format("%.2f %s", value, unit);
-        } else {
-            return String.format("%.1f %s", value, unit);
-        }
+        return NutrientFormat.value(value, unit);
     }
 
     private String formatAmount(double amount) {
