@@ -63,9 +63,6 @@ public interface RecipeDao {
     @Query("DELETE FROM recipes WHERE id = :recipeId")
     int deleteById(String recipeId);
 
-    @Query("DELETE FROM recipes")
-    void deleteAll();
-
     // ========== BASIC RETRIEVAL ==========
 
     @Query("SELECT * FROM recipes WHERE id = :recipeId LIMIT 1")

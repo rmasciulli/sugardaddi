@@ -1497,27 +1497,6 @@ public class Recipe implements Nutritional, Searchable, Categorizable, AllergenA
         touch();
     }
 
-    // Helper method
-    public Nutrition calculateNutrition() {
-        Nutrition total = new Nutrition();
-
-        if (portions != null) {
-            for (FoodPortion portion : portions) {
-                Nutrition portionNutrition = portion.calculateNutrition();
-                if (portionNutrition != null) {
-                    total = total.add(portionNutrition);
-                }
-            }
-        }
-
-        if (servings != null && servings > 0) {
-            total = total.scale(1.0 / servings);
-        }
-
-        this.nutrition = total;
-        return total;
-    }
-
     /**
      * Calculate and update completeness score based on filled fields
      */

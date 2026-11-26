@@ -857,15 +857,20 @@ public class JournalActivity extends BaseActivity implements
 
     // ========== NUTRITION CALCULATION ==========
 
+    /**
+     * The day's total, with Nutrition.sum() like meal totals. Adding meals to an
+     * empty Nutrition (the previous way) started from an object with no
+     * confidence, which add() treats as ESTIMATED: every day's total was marked
+     * estimated whatever its meals were. sum() starts from the first meal with
+     * data. No meal with data: an empty Nutrition, as before, for the summary.
+     */
     private void calculateDailyNutritionTotal() {
-        dailyNutritionTotal = new Nutrition();
-
+        List<Nutrition> parts = new ArrayList<>();
         for (Meal meal : mealsForCurrentDate) {
-            Nutrition mealNutrition = meal.getNutrition();
-            if (mealNutrition != null) {
-                dailyNutritionTotal = dailyNutritionTotal.add(mealNutrition);
-            }
+            parts.add(meal.getNutrition());   // null and empty parts are skipped by sum()
         }
+        Nutrition total = Nutrition.sum(parts);
+        dailyNutritionTotal = total != null ? total : new Nutrition();
     }
 
     // ========== NAVIGATION ==========

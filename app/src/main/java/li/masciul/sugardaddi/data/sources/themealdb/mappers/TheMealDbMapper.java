@@ -40,9 +40,8 @@ import java.util.Set;
  * NUTRITION
  * =========
  * TheMealDB provides NO nutrition data. The recipe's nutrition field is left null.
- * {@link Recipe#hasNutritionData()} will return false.
- * {@link Recipe#calculateNutrition()} will return zeros since no FoodProduct
- * references are resolved yet - ingredients are stored as unresolved stubs.
+ * {@link Recipe#hasNutritionData()} will return false: ingredients are stored as
+ * unresolved stubs, with no FoodProduct to take nutrition from.
  * Nutrition can only be populated later by:
  *   1. The user manually entering it when editing the recipe (DataConfidence.USER)
  *   2. A future ingredient resolution step matching stub names against

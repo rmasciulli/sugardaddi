@@ -13,7 +13,7 @@ import java.util.List;
  * TWO USAGE MODES:
  * ================
  * 1. SEARCH RESULTS: Only basic fields populated (code, names, categories)
- * 2. PRODUCT DETAILS: All fields including comprehensive nutrition data
+ * 2. PRODUCT DETAILS: basic fields plus the "compos" nutrition array
  *
  * BASIC FIELDS (always present):
  * - code: Ciqual food code (e.g., "13014")
@@ -23,10 +23,9 @@ import java.util.List;
  * - urlFr, urlEn: Website URLs
  * - grps: Category hierarchy
  *
- * NUTRITION FIELDS (only in detailed queries):
- * - All fields nullable
- * - Values in standard units (g/100g, kcal/100g, etc.)
- * - Comprehensive coverage of macros, vitamins, minerals
+ * NUTRITION: only in the "compos" array, one entry per constituent with its
+ * name and value (see CiqualElasticsearchComposition, read through
+ * CiqualConstituents). The API has no flat nutrient fields.
  *
  * EXAMPLE SEARCH RESULT:
  * ```json
@@ -46,11 +45,10 @@ import java.util.List;
  * {
  *   "code": "13014",
  *   "nomFr": "Fraise,crue",
- *   "energie_kcal": 32.0,
- *   "proteines": 0.7,
- *   "glucides": 7.0,
- *   "lipides": 0.3,
- *   ...
+ *   "compos": [
+ *     {"constNomFr": "Energie, Règlement UE N° 1169/2011 (kcal/100 g)", "compoTeneur": "32", ...},
+ *     ...
+ *   ]
  * }
  * ```
  *
@@ -186,246 +184,6 @@ public class CiqualElasticsearchFood {
     @SerializedName("compos")
     private List<CiqualElasticsearchComposition> compos;
 
-    // ========== DEPRECATED DIRECT NUTRITION FIELDS ==========
-    //
-    // WARNING: The fields below do NOT exist in Ciqual's Elasticsearch API!
-    // The actual API returns all nutrition data in the "compos" array above.
-    // These fields will ALWAYS be null. Use getCompos() instead.
-    //
-// ========== ENERGY VALUES (kcal, kJ) ==========
-
-    /**
-     * Energy in kilocalories per 100g
-     * Standard nutritional energy value
-     */
-    @SerializedName("energie_kcal")
-    private Double energieKcal;
-
-    /**
-     * Energy in kilojoules per 100g
-     * Alternative energy measurement (1 kcal â‰ˆ 4.184 kJ)
-     */
-    @SerializedName("energie_kj")
-    private Double energieKj;
-
-    // ========== MACRONUTRIENTS (g/100g) ==========
-
-    /**
-     * Water content (g/100g)
-     * Typically 50-95% for most foods
-     */
-    @SerializedName("eau")
-    private Double eau;
-
-    /**
-     * Protein content (g/100g)
-     * Essential for body building and repair
-     */
-    @SerializedName("proteines")
-    private Double proteines;
-
-    /**
-     * Total carbohydrates (g/100g)
-     * Includes sugars and starches
-     */
-    @SerializedName("glucides")
-    private Double glucides;
-
-    /**
-     * Total lipids/fats (g/100g)
-     * Includes all types of fats
-     */
-    @SerializedName("lipides")
-    private Double lipides;
-
-    /**
-     * Sugars (g/100g)
-     * Simple carbohydrates (glucose, fructose, sucrose, etc.)
-     */
-    @SerializedName("sucres")
-    private Double sucres;
-
-    /**
-     * Dietary fiber (g/100g)
-     * Non-digestible carbohydrates
-     */
-    @SerializedName("fibres")
-    private Double fibres;
-
-    // ========== SPECIFIC FATS (g/100g) ==========
-
-    /**
-     * Saturated fatty acids (g/100g)
-     * "Bad" fats that should be limited
-     */
-    @SerializedName("ag_satures")
-    private Double agSatures;
-
-    /**
-     * Monounsaturated fatty acids (g/100g)
-     * "Good" fats (e.g., olive oil)
-     */
-    @SerializedName("ag_monoinsatures")
-    private Double agMonoinsatures;
-
-    /**
-     * Polyunsaturated fatty acids (g/100g)
-     * "Good" fats including omega-3 and omega-6
-     */
-    @SerializedName("ag_polyinsatures")
-    private Double agPolyinsatures;
-
-    /**
-     * Cholesterol (mg/100g)
-     * Only found in animal products
-     */
-    @SerializedName("cholesterol")
-    private Double cholesterol;
-
-    // ========== MINERALS (mg/100g unless specified) ==========
-
-    /**
-     * Sodium (mg/100g)
-     * Important for fluid balance
-     */
-    @SerializedName("sodium")
-    private Double sodium;
-
-    /**
-     * Salt equivalent (g/100g)
-     * Calculated from sodium (salt â‰ˆ sodium Ã- 2.5)
-     */
-    @SerializedName("sel")
-    private Double sel;
-
-    /**
-     * Calcium (mg/100g)
-     * Important for bones and teeth
-     */
-    @SerializedName("calcium")
-    private Double calcium;
-
-    /**
-     * Magnesium (mg/100g)
-     * Important for muscle and nerve function
-     */
-    @SerializedName("magnesium")
-    private Double magnesium;
-
-    /**
-     * Phosphorus (mg/100g)
-     * Important for bones and energy metabolism
-     */
-    @SerializedName("phosphore")
-    private Double phosphore;
-
-    /**
-     * Potassium (mg/100g)
-     * Important for heart and muscle function
-     */
-    @SerializedName("potassium")
-    private Double potassium;
-
-    /**
-     * Iron (mg/100g)
-     * Important for blood and oxygen transport
-     */
-    @SerializedName("fer")
-    private Double fer;
-
-    /**
-     * Zinc (mg/100g)
-     * Important for immune function
-     */
-    @SerializedName("zinc")
-    private Double zinc;
-
-    // ========== VITAMINS ==========
-
-    /**
-     * Vitamin C / Ascorbic acid (mg/100g)
-     * Antioxidant, immune support
-     */
-    @SerializedName("vitamine_c")
-    private Double vitamineC;
-
-    /**
-     * Vitamin B1 / Thiamin (mg/100g)
-     * Energy metabolism
-     */
-    @SerializedName("vitamine_b1")
-    private Double vitamineB1;
-
-    /**
-     * Vitamin B2 / Riboflavin (mg/100g)
-     * Energy metabolism
-     */
-    @SerializedName("vitamine_b2")
-    private Double vitamineB2;
-
-    /**
-     * Vitamin B3 / Niacin (mg/100g)
-     * Energy metabolism
-     */
-    @SerializedName("vitamine_b3")
-    private Double vitamineB3;
-
-    /**
-     * Vitamin B5 / Pantothenic acid (mg/100g)
-     * Energy metabolism
-     */
-    @SerializedName("vitamine_b5")
-    private Double vitamineB5;
-
-    /**
-     * Vitamin B6 / Pyridoxine (mg/100g)
-     * Protein metabolism
-     */
-    @SerializedName("vitamine_b6")
-    private Double vitamineB6;
-
-    /**
-     * Vitamin B9 / Folate (Âµg/100g)
-     * DNA synthesis, important for pregnancy
-     */
-    @SerializedName("vitamine_b9")
-    private Double vitamineB9;
-
-    /**
-     * Vitamin B12 / Cobalamin (Âµg/100g)
-     * Red blood cell formation (only in animal products)
-     */
-    @SerializedName("vitamine_b12")
-    private Double vitamineB12;
-
-    /**
-     * Vitamin A / Retinol (Âµg/100g)
-     * Vision, immune function
-     */
-    @SerializedName("vitamine_a")
-    private Double vitamineA;
-
-    /**
-     * Vitamin D (Âµg/100g)
-     * Calcium absorption, bone health
-     */
-    @SerializedName("vitamine_d")
-    private Double vitamineD;
-
-    /**
-     * Vitamin E / Tocopherol (mg/100g)
-     * Antioxidant
-     */
-    @SerializedName("vitamine_e")
-    private Double vitamineE;
-
-    /**
-     * Vitamin K (Âµg/100g)
-     * Blood clotting
-     */
-    @SerializedName("vitamine_k")
-    private Double vitamineK;
-
     // ========== NESTED CLASSES ==========
 
     /**
@@ -490,53 +248,6 @@ public class CiqualElasticsearchFood {
     public String getNomSortEng() { return nomSortEng; }
     public String getNomIndexFr() { return nomIndexFr; }
     public String getNomIndexEng() { return nomIndexEng; }
-
-    // ========== GETTERS - ENERGY ==========
-
-    public Double getEnergieKcal() { return energieKcal; }
-    public Double getEnergieKj() { return energieKj; }
-
-    // ========== GETTERS - MACRONUTRIENTS ==========
-
-    public Double getEau() { return eau; }
-    public Double getProteines() { return proteines; }
-    public Double getGlucides() { return glucides; }
-    public Double getLipides() { return lipides; }
-    public Double getSucres() { return sucres; }
-    public Double getFibres() { return fibres; }
-
-    // ========== GETTERS - FATS ==========
-
-    public Double getAgSatures() { return agSatures; }
-    public Double getAgMonoinsatures() { return agMonoinsatures; }
-    public Double getAgPolyinsatures() { return agPolyinsatures; }
-    public Double getCholesterol() { return cholesterol; }
-
-    // ========== GETTERS - MINERALS ==========
-
-    public Double getSodium() { return sodium; }
-    public Double getSel() { return sel; }
-    public Double getCalcium() { return calcium; }
-    public Double getMagnesium() { return magnesium; }
-    public Double getPhosphore() { return phosphore; }
-    public Double getPotassium() { return potassium; }
-    public Double getFer() { return fer; }
-    public Double getZinc() { return zinc; }
-
-    // ========== GETTERS - VITAMINS ==========
-
-    public Double getVitamineC() { return vitamineC; }
-    public Double getVitamineB1() { return vitamineB1; }
-    public Double getVitamineB2() { return vitamineB2; }
-    public Double getVitamineB3() { return vitamineB3; }
-    public Double getVitamineB5() { return vitamineB5; }
-    public Double getVitamineB6() { return vitamineB6; }
-    public Double getVitamineB9() { return vitamineB9; }
-    public Double getVitamineB12() { return vitamineB12; }
-    public Double getVitamineA() { return vitamineA; }
-    public Double getVitamineD() { return vitamineD; }
-    public Double getVitamineE() { return vitamineE; }
-    public Double getVitamineK() { return vitamineK; }
 
     // ========== CONVENIENCE METHODS ==========
 
@@ -613,7 +324,7 @@ public class CiqualElasticsearchFood {
         sb.append(String.format("CiqualElasticsearchFood[code=%s, name=%s", code, nomFr));
 
         if (hasNutritionData()) {
-            sb.append(String.format(", energy=%.1fkcal", energieKcal != null ? energieKcal : 0.0));
+            sb.append(", compos=").append(compos.size());
         }
 
         sb.append("]");

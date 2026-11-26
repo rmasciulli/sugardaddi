@@ -24,7 +24,6 @@ import li.masciul.sugardaddi.data.network.ApiConfig;
 import li.masciul.sugardaddi.data.network.NetworkManager;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -959,66 +958,6 @@ public class MealRepository {
                 runOnMainThread(() -> {
                     if (callback != null) callback.onError("Failed to create template: " + e.getMessage());
                 });
-            }
-        });
-    }
-
-    /**
-     * Create meal from template
-     */
-    public void createMealFromTemplate(String templateId, LocalDateTime scheduledTime, MealCallback callback) {
-        getMeal(templateId, new MealCallback() {
-            @Override
-            public void onSuccess(Meal template) {
-                // Create new meal copying template properties
-                Meal newMeal = new Meal();
-
-                // Copy basic properties
-                newMeal.setMealType(template.getMealType());
-                newMeal.setUserId(template.getUserId());
-                newMeal.setCurrentLanguage(template.getCurrentLanguage());
-                newMeal.setUserImagePath(template.getUserImagePath());
-
-                // Copy all translations (contains all language data)
-                newMeal.setTranslations(new HashMap<>(template.getTranslations()));
-
-                // Set primary fields from current language
-                String lang = template.getCurrentLanguage();
-                newMeal.setName(template.getName(lang));
-                newMeal.setDescription(template.getDescription(lang));
-                newMeal.setNotes(template.getNotes(lang));
-                newMeal.setOccasion(template.getOccasion(lang));
-                newMeal.setLocation(template.getLocation(lang));
-
-                // Copy portions - deep copy, as the comment always promised:
-                // getPortions() copies the LIST, not the portions, so adding
-                // them as-is shared each FoodPortion between the template and
-                // the new meal. Harmless while portions were never edited;
-                // a bug now that FoodPortion.setQuantity() edits in place.
-                List<FoodPortion> templatePortions = template.getPortions();
-                for (FoodPortion portion : templatePortions) {
-                    newMeal.addPortion(portion.copy());
-                }
-
-                // Copy tags
-                newMeal.setTags(new HashSet<>(template.getTags()));
-
-                // Set new meal specific properties
-                newMeal.setId(UUID.randomUUID().toString());
-                newMeal.setTemplate(false);
-                newMeal.setPlanned(true);
-                newMeal.setStartTime(scheduledTime);
-                newMeal.setCreatedAt(System.currentTimeMillis());
-                newMeal.setLastUpdated(System.currentTimeMillis());
-                // accessCount starts at 0 automatically
-
-                // Save as new meal
-                createMeal(newMeal, callback);
-            }
-
-            @Override
-            public void onError(String error) {
-                if (callback != null) callback.onError("Template not found: " + error);
             }
         });
     }

@@ -283,12 +283,6 @@ public interface FoodProductDao {
             + " AND id NOT IN (" + MealPortionEntity.USED_PRODUCT_IDS + ")")
     int deleteExpiredProducts(long threshold);
 
-    /**
-     * Clear all products
-     */
-    @Query("DELETE FROM food_products")
-    void clearAllProducts();
-
     // ========== CACHE MANAGEMENT (settings) ==========
     // Operations backing the cache card in Settings, orchestrated by
     // CacheRepository. What keeps a row ("pins"):
