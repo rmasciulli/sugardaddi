@@ -836,9 +836,10 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
         }
 
         // One unit for both columns, chosen from the per-100 value:
-        // 7450 mg reads "7.45 g", and the custom column follows.
+        // 7450 mg reads "7.5 g", 1 760 000 µg reads "1.8 g", and the custom
+        // column follows.
         String unit = displayUnit(value, info.getUnit());
-        double divisor = unit.equals(info.getUnit()) ? 1.0 : 1000.0;
+        double divisor = unitDivisor(info.getUnit(), unit);
         Double shown100 = value != null ? value / divisor : null;
         Double shownCustom = calculateScaledValue(shown100, customAmount);
 
@@ -1048,15 +1049,45 @@ public class NutritionLabelManager<T extends Searchable & Nutritional> {
     }
 
     /**
-     * The unit to show a value in: mg from 1000 mg up becomes g, µg from
-     * 1000 µg up becomes mg. Stored values never change, only the display.
+     * The unit to show a value in: from 1000 up, the next unit up, as many
+     * steps as needed (µg -> mg -> g). 7450 mg is shown in g, 1 760 000 µg
+     * in g too (one step used to stop it at "1760.0 mg"). Stored values never
+     * change, only the display.
      */
     @NonNull
     private static String displayUnit(@Nullable Double value, @NonNull String unit) {
-        if (value == null || value < 1000.0) return unit;
-        if ("mg".equals(unit)) return "g";
+        if (value == null) return unit;
+        double shown = value;
+        String shownUnit = unit;
+        String larger = largerUnit(shownUnit);
+        while (shown >= 1000.0 && larger != null) {
+            shown /= 1000.0;
+            shownUnit = larger;
+            larger = largerUnit(shownUnit);
+        }
+        return shownUnit;
+    }
+
+    /** The unit 1000 times larger (µg -> mg -> g), or null at the top. */
+    @Nullable
+    private static String largerUnit(@NonNull String unit) {
         if ("\u00b5g".equals(unit)) return "mg";
-        return unit;
+        if ("mg".equals(unit)) return "g";
+        return null;
+    }
+
+    /**
+     * What to divide a stored value by to show it in the unit chosen by
+     * displayUnit(): 1000 per step from the stored unit (1 for the same unit).
+     */
+    private static double unitDivisor(@NonNull String storedUnit, @NonNull String shownUnit) {
+        double divisor = 1.0;
+        String unit = storedUnit;
+        while (unit != null && !unit.equals(shownUnit)) {
+            divisor *= 1000.0;
+            unit = largerUnit(unit);
+        }
+        return unit == null ? 1.0 : divisor;
     }
 
     private void addToggleButton() {
