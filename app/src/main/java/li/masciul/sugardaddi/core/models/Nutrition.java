@@ -127,7 +127,6 @@ public class Nutrition {
     private Double vitaminB6;       // mg per 100g/ml - Pyridoxine
     private Double vitaminB7;       // µg per 100g/ml - Biotin
     private Double vitaminB9;       // µg per 100g/ml - Folate
-    private Double folate;          // µg per 100g/ml - Natural folate (alternative name)
     private Double vitaminB12;      // µg per 100g/ml - Cobalamin
 
     // Other water-soluble vitamins
@@ -333,7 +332,6 @@ public class Nutrition {
             this.vitaminB6 = source.vitaminB6;
             this.vitaminB7 = source.vitaminB7;
             this.vitaminB9 = source.vitaminB9;
-            this.folate = source.folate;
             this.vitaminB12 = source.vitaminB12;
             this.vitaminC = source.vitaminC;
             this.choline = source.choline;
@@ -493,7 +491,6 @@ public class Nutrition {
         copy.vitaminB6 = this.vitaminB6;
         copy.vitaminB7 = this.vitaminB7;
         copy.vitaminB9 = this.vitaminB9;
-        copy.folate = this.folate;
         copy.vitaminB12 = this.vitaminB12;
         copy.choline = this.choline;
 
@@ -630,7 +627,6 @@ public class Nutrition {
     public boolean hasVitaminB6() { return vitaminB6 != null; }
     public boolean hasVitaminB7() { return vitaminB7 != null; }
     public boolean hasVitaminB9() { return vitaminB9 != null; }
-    public boolean hasFolate() { return folate != null; }
     public boolean hasVitaminB12() { return vitaminB12 != null; }
     public boolean hasVitaminC() { return vitaminC != null; }
     public boolean hasCholine() { return choline != null; }
@@ -766,7 +762,6 @@ public class Nutrition {
         if (vitaminB6 != null) scaled.vitaminB6 = vitaminB6 * multiplier;
         if (vitaminB7 != null) scaled.vitaminB7 = vitaminB7 * multiplier;
         if (vitaminB9 != null) scaled.vitaminB9 = vitaminB9 * multiplier;
-        if (folate != null) scaled.folate = folate * multiplier;
         if (vitaminB12 != null) scaled.vitaminB12 = vitaminB12 * multiplier;
         if (vitaminC != null) scaled.vitaminC = vitaminC * multiplier;
         if (choline != null) scaled.choline = choline * multiplier;
@@ -898,7 +893,6 @@ public class Nutrition {
         sum.vitaminB6 = addNullable(this.vitaminB6, other.vitaminB6);
         sum.vitaminB7 = addNullable(this.vitaminB7, other.vitaminB7);
         sum.vitaminB9 = addNullable(this.vitaminB9, other.vitaminB9);
-        sum.folate = addNullable(this.folate, other.folate);
         sum.vitaminB12 = addNullable(this.vitaminB12, other.vitaminB12);
         sum.vitaminC = addNullable(this.vitaminC, other.vitaminC);
         sum.choline = addNullable(this.choline, other.choline);
@@ -1292,9 +1286,6 @@ public class Nutrition {
 
     public Double getVitaminB9() { return vitaminB9; }
     public void setVitaminB9(Double vitaminB9) { this.vitaminB9 = vitaminB9; }
-
-    public Double getFolate() { return folate; }
-    public void setFolate(Double folate) { this.folate = folate; }
 
     public Double getVitaminB12() { return vitaminB12; }
     public void setVitaminB12(Double vitaminB12) { this.vitaminB12 = vitaminB12; }
@@ -2016,7 +2007,6 @@ public class Nutrition {
         VITAMIN_B6("vitaminB6", "nutrient_vitamin_b6", "mg", NutrientCategory.VITAMINS, false, 62, 0),
         VITAMIN_B7("vitaminB7", "nutrient_vitamin_b7", "µg", NutrientCategory.VITAMINS, false, 63, 0),
         VITAMIN_B9("vitaminB9", "nutrient_vitamin_b9", "µg", NutrientCategory.VITAMINS, false, 64, 0),
-        FOLATE("folate", "nutrient_folate", "µg", NutrientCategory.VITAMINS, false, 65, 0),
         VITAMIN_B12("vitaminB12", "nutrient_vitamin_b12", "µg", NutrientCategory.VITAMINS, false, 66, 0),
 
         // ========== OTHER WATER-SOLUBLE VITAMINS (Order: 67-68) ==========

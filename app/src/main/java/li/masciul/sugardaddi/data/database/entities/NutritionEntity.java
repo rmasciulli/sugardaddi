@@ -151,7 +151,6 @@ public class NutritionEntity {
     private Double vitaminB6;       // mg per 100g/ml - Pyridoxine
     private Double vitaminB7;       // µg per 100g/ml - Biotin
     private Double vitaminB9;       // µg per 100g/ml - Folate
-    private Double folate;          // µg per 100g/ml - Natural folate (alternative name)
     private Double vitaminB12;      // µg per 100g/ml - Cobalamin
 
     // Other water-soluble vitamins
@@ -433,9 +432,6 @@ public class NutritionEntity {
     public Double getVitaminB9() { return vitaminB9; }
     public void setVitaminB9(Double vitaminB9) { this.vitaminB9 = vitaminB9; }
 
-    public Double getFolate() { return folate; }
-    public void setFolate(Double folate) { this.folate = folate; }
-
     public Double getVitaminB12() { return vitaminB12; }
     public void setVitaminB12(Double vitaminB12) { this.vitaminB12 = vitaminB12; }
 
@@ -716,7 +712,6 @@ public class NutritionEntity {
         nutrition.setVitaminB6(this.vitaminB6);
         nutrition.setVitaminB7(this.vitaminB7);
         nutrition.setVitaminB9(this.vitaminB9);
-        nutrition.setFolate(this.folate);
         nutrition.setVitaminB12(this.vitaminB12);
         nutrition.setVitaminC(this.vitaminC);
         nutrition.setCholine(this.choline);
@@ -880,7 +875,6 @@ public class NutritionEntity {
             entity.setVitaminB6(nutrition.getVitaminB6());
             entity.setVitaminB7(nutrition.getVitaminB7());
             entity.setVitaminB9(nutrition.getVitaminB9());
-            entity.setFolate(nutrition.getFolate());
             entity.setVitaminB12(nutrition.getVitaminB12());
             entity.setVitaminC(nutrition.getVitaminC());
             entity.setCholine(nutrition.getCholine());
